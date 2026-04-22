@@ -1,0 +1,128 @@
+.signup-container {
+  min-height: 100vh;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: #f4f7f6; /* Matching login background */
+  padding: 20px;
+}
+
+.signup-card {
+  background: white;
+  padding: 40px;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 450px;
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.05);
+}
+
+.brand-header {
+  text-align: center;
+  margin-bottom: 25px;
+}
+
+.brand-logo {
+  color: #08634f; /* Your Brand Green */
+  font-size: 28px;
+  font-weight: 800;
+  margin: 0;
+}
+
+.subtitle {
+  color: #666;
+  font-size: 14px;
+  margin-top: 5px;
+}
+
+.input-group {
+  margin-bottom: 20px;
+  text-align: left;
+}
+
+.input-group label {
+  display: block;
+  font-size: 12px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
+  font-weight: 700;
+  color: #888;
+  margin-bottom: 10px;
+}
+
+.signup-card input {
+  width: 100%;
+  padding: 12px 15px;
+  margin-bottom: 12px;
+  border-radius: 8px;
+  border: 1px solid #e0e0e0;
+  background-color: #fafafa;
+  font-size: 14px;
+  box-sizing: border-box;
+  transition: border-color 0.3s;
+}
+
+.signup-card input:focus {
+  border-color: #08634f;
+  outline: none;
+  background-color: #fff;
+}
+
+.submit-btn {
+  width: 100%;
+  padding: 15px;
+  background: #08634f; /* Brand Green */
+  color: white;
+  border: none;
+  border-radius: 10px;
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: transform 0.2s, opacity 0.3s;
+  margin-top: 10px;
+}
+
+.submit-btn:hover {
+  opacity: 0.9;
+}
+
+.submit-btn:active {
+  transform: scale(0.98);
+}
+
+.submit-btn:disabled {
+  background: #ccc;
+  cursor: not-allowed;
+}
+
+.login-link {
+  text-align: center;
+  margin-top: 20px;
+  font-size: 14px;
+  color: #555;
+}
+
+.link-text {
+  color: #08634f;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.link-text:hover {
+  text-decoration: underline;
+}
+
+/* Scroll area for long forms on small screens */
+.form-scroll-area {
+  max-height: 60vh;
+  overflow-y: auto;
+  padding-right: 5px;
+}
+
+/* Custom Scrollbar for the form */
+.form-scroll-area::-webkit-scrollbar {
+  width: 4px;
+}
+.form-scroll-area::-webkit-scrollbar-thumb {
+  background: #eee;
+  border-radius: 10px;
+}
