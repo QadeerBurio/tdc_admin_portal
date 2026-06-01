@@ -3,21 +3,26 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Signup.css";
 
-export default function BrandSignUp() {
+export default function Signup() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
 
+  // 👉 ROLE STATE
+  const [role, setRole] = useState("");
+
   const [formData, setFormData] = useState({
+    fullName: "",
     brandName: "",
     email: "",
     phone: "",
     address: "",
-    instagram: "",
     password: "",
     confirmPassword: "",
   });
 
-  const validatePassword = (pass) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(pass);
+  const validatePassword = (pass) =>
+    /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(pass);
+
   const validatePhone = (num) => /^[0]\d{10}$/.test(num);
 
   const handleChange = (e) => {
@@ -26,10 +31,13 @@ export default function BrandSignUp() {
 
   const handleSignup = async (e) => {
     e.preventDefault();
-    const { brandName, email, phone, address, instagram, password, confirmPassword } = formData;
 
-    if (!brandName || !email || !phone || !address || !password) {
-      return alert("Please fill all required fields");
+    if (!role) return alert("Please select a role");
+
+    const { fullName, brandName, email, phone, address, password, confirmPassword } = formData;
+
+    if (!email || !password) {
+      return alert("Please fill required fields");
     }
 
     if (password !== confirmPassword) {
@@ -37,28 +45,41 @@ export default function BrandSignUp() {
     }
 
     if (!validatePassword(password)) {
-      return alert("Password must have 6+ characters, including uppercase, lowercase, and a number");
+      return alert("Password must contain uppercase, lowercase, number (6+ chars)");
     }
 
-    if (!validatePhone(phone)) {
-      return alert("Phone must start with 0 and contain 11 digits");
+    if (phone && !validatePhone(phone)) {
+      return alert("Phone must be 11 digits starting with 0");
     }
 
     try {
       setLoading(true);
+
       const body = {
-        role: "brand",
+        role,
         email,
         password,
-        brandName,
         phone,
         address,
-        instagram,
       };
 
-      await axios.post("https://the-deft-crew-production.up.railway.app/api/auth/signup", body);
-      alert("Brand account created successfully!");
-      navigate("/login", { replace: true });
+      // 👉 ROLE-BASED DATA
+      if (role === "brand") {
+        if (!brandName) return alert("Brand name required");
+        body.brandName = brandName;
+      } else {
+        if (!fullName) return alert("Full name required");
+        body.fullName = fullName;
+      }
+
+      await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        body
+      );
+
+      alert(`${role} account created successfully`);
+      navigate("/login");
+
     } catch (err) {
       alert(err.response?.data?.error || "Signup failed");
     } finally {
@@ -69,88 +90,96 @@ export default function BrandSignUp() {
   return (
     <div className="signup-container">
       <form className="signup-card" onSubmit={handleSignup}>
-        <div className="brand-header">
-          <h2 className="brand-logo">PartnerHub</h2>
-          <p className="subtitle">Create your brand partner account</p>
+        <h2>Create Account</h2>
+
+        {/* ✅ ROLE SELECTION */}
+        <div className="role-selection">
+          <label>Select Role</label>
+          <select value={role} onChange={(e) => setRole(e.target.value)} required>
+            <option value="">-- Choose Role --</option>
+            
+            <option value="brand">Brand</option>
+            <option value="traveler">Traveler</option>
+            <option value="employee">Employee</option>
+          </select>
         </div>
 
-        <div className="form-scroll-area">
-          <div className="input-group">
-            <label>Business Details</label>
-            <input
-              type="text"
-              name="brandName"
-              placeholder="Brand / Business Name"
-              value={formData.brandName}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="email"
-              name="email"
-              placeholder="Business Email"
-              value={formData.email}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="phone"
-              placeholder="Contact Number (e.g. 03001234567)"
-              value={formData.phone}
-              onChange={handleChange}
-              required
-            />
-          </div>
+        {/* ✅ DYNAMIC NAME FIELD */}
+        {role === "brand" ? (
+          <input
+            type="text"
+            name="brandName"
+            placeholder="Brand Name"
+            value={formData.brandName}
+            onChange={handleChange}
+            required
+          />
+        ) : role ? (
+          <input
+            type="text"
+            name="fullName"
+            placeholder="Full Name"
+            value={formData.fullName}
+            onChange={handleChange}
+            required
+          />
+        ) : null}
 
-          <div className="input-group">
-            <label>Location & Social</label>
-            <input
-              type="text"
-              name="address"
-              placeholder="Business Address"
-              value={formData.address}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="text"
-              name="instagram"
-              placeholder="Instagram Handle (Optional)"
-              value={formData.instagram}
-              onChange={handleChange}
-            />
-          </div>
+        {/* COMMON FIELDS */}
+        <input
+          type="email"
+          name="email"
+          placeholder="Email"
+          value={formData.email}
+          onChange={handleChange}
+          required
+        />
 
-          <div className="input-group">
-            <label>Security</label>
-            <input
-              type="password"
-              name="password"
-              placeholder="Password"
-              value={formData.password}
-              onChange={handleChange}
-              required
-            />
-            <input
-              type="password"
-              name="confirmPassword"
-              placeholder="Confirm Password"
-              value={formData.confirmPassword}
-              onChange={handleChange}
-              required
-            />
-          </div>
-        </div>
+        <input
+          type="text"
+          name="phone"
+          placeholder="Phone (03001234567)"
+          value={formData.phone}
+          onChange={handleChange}
+        />
 
-        <button type="submit" className="submit-btn" disabled={loading}>
-          {loading ? "Processing..." : "Register Brand"}
+        <input
+          type="text"
+          name="address"
+          placeholder="Address"
+          value={formData.address}
+          onChange={handleChange}
+        />
+
+        <input
+          type="password"
+          name="password"
+          placeholder="Password"
+          value={formData.password}
+          onChange={handleChange}
+          required
+        />
+
+        <input
+          type="password"
+          name="confirmPassword"
+          placeholder="Confirm Password"
+          value={formData.confirmPassword}
+          onChange={handleChange}
+          required
+        />
+
+        <button type="submit" disabled={loading}>
+          {loading ? "Creating..." : "Signup"}
         </button>
 
-        <p className="login-link">
-          Already a partner?{" "}
-          <span className="link-text" onClick={() => navigate("/login")}>
-            Login to Dashboard
+        <p style={{ marginTop: "10px" }}>
+          Already have an account?{" "}
+          <span
+            onClick={() => navigate("/login")}
+            style={{ color: "#08634f", cursor: "pointer", fontWeight: "bold" }}
+          >
+            Login
           </span>
         </p>
       </form>

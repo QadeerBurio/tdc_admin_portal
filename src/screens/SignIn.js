@@ -24,17 +24,19 @@ export default function SignIn() {
       setLoading(true);
 
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/login",
+        "http://localhost:5000/api/auth/login",
         { email, password }
       );
 
       const { token, user } = res.data;
 
       // Allow only Brand and Admin
-      if (user.role !== "brand" && user.role !== "admin") {
-        alert("Access Denied: Only Brand or Admin can login.");
-        return;
-      }
+      const allowedRoles = ["brand", "admin", "employee", "traveler"];
+
+if (!allowedRoles.includes(user.role)) {
+  alert("Access Denied");
+  return;
+}
 
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
 
@@ -42,11 +44,21 @@ export default function SignIn() {
       setUser(user);
 
       // Redirect based on role
-      if (user.role === "admin") {
-        navigate("/admin");
-      } else {
-        navigate("/home");
-      }
+       if (user.role === "admin") {
+  navigate("/admin");
+} 
+else if (user.role === "brand") {
+  navigate("/home");
+}
+else if (user.role === "employee") {
+  navigate("/employee-dashboard");
+}
+else if (user.role === "traveler") {
+  navigate("/traveler-dashboard");
+}
+else {
+  navigate("/home"); // student fallback
+}
     } catch (err) {
       alert(err.response?.data?.message || "Login failed");
     } finally {

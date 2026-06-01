@@ -25,7 +25,7 @@ export default function AdminUserList({ role, title }) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`, {
+      const res = await fetch(`http://localhost:5000/api/admin/users/${role}`, {
         headers: getAuthHeaders(),
       });
       const data = await res.json();
@@ -57,7 +57,7 @@ export default function AdminUserList({ role, title }) {
     setTogglingId(id);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
+        `http://localhost:5000/api/admin/approve-user/${id}`,
         {
           method: "POST",
           headers: getAuthHeaders(),

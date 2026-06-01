@@ -24,7 +24,7 @@ export default function VerifyOTP() {
       setLoading(true);
 
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/verify-otp",
+        "http://localhost:5000/api/auth/verify-otp",
         { userId, otp }
       );
 

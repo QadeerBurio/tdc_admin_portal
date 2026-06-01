@@ -23,7 +23,7 @@ const ProgramApplication = () => {
 
     const fetchApplicants = async () => {
       try {
-        const res = await axios.get(`https://the-deft-crew-production.up.railway.app/api/admin/exchange/applications/${programId}`, {
+        const res = await axios.get(`http://localhost:5000/api/admin/exchange/applications/${programId}`, {
           headers: { Authorization: `Bearer ${token}` }
         });
         setApplicants(res.data);

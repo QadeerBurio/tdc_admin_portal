@@ -70,7 +70,7 @@ const ClaimedUsers = () => {
 
   const fetchClaimedUsers = async () => {
     try {
-      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/claimed-users", {
+      const res = await axios.get("http://localhost:5000/api/offers/claimed-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setClaimedUsers(res.data);

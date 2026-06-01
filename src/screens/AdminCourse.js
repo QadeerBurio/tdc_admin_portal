@@ -66,7 +66,7 @@ const AdminCoursePortal = () => {
   const fetchCourses = async () => {
     try {
       setLoading(true);
-      const response = await fetch('https://the-deft-crew-production.up.railway.app/api/admin/courses', {
+      const response = await fetch('http://localhost:5000/api/admin/courses', {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -93,7 +93,7 @@ const AdminCoursePortal = () => {
   const fetchEnrollments = async (courseId) => {
     setLoadingEnrollments(true);
     try {
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/courses/${courseId}/enrollments`, {
+      const response = await fetch(`http://localhost:5000/api/admin/courses/${courseId}/enrollments`, {
         headers: { 
           'Authorization': `Bearer ${token}`,
           'Content-Type': 'application/json'
@@ -192,8 +192,8 @@ const AdminCoursePortal = () => {
     }
 
     const url = editingId 
-      ? `https://the-deft-crew-production.up.railway.app/api/admin/courses/${editingId}`
-      : 'https://the-deft-crew-production.up.railway.app/api/admin/courses/create';
+      ? `http://localhost:5000/api/admin/courses/${editingId}`
+      : 'http://localhost:5000/api/admin/courses/create';
     
     const method = editingId ? 'PUT' : 'POST';
 
@@ -229,7 +229,7 @@ const AdminCoursePortal = () => {
     
     setDeletingId(id);
     try {
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/courses/${id}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/courses/${id}`, {
         method: 'DELETE',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -257,7 +257,7 @@ const AdminCoursePortal = () => {
     setTogglingId(course.id);
     try {
       setCourses(courses.map(c => c.id === course.id ? { ...c, isActive: !c.isActive } : c));
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/courses/${course.id}/toggle`, {
+      const response = await fetch(`http://localhost:5000/api/admin/courses/${course.id}/toggle`, {
         method: 'PATCH',
         headers: { 
           'Authorization': `Bearer ${token}`,
@@ -296,7 +296,7 @@ const AdminCoursePortal = () => {
 
     setSendingResponse(true);
     try {
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/courses/${selectedCourse?.id}/respond/${selectedUser?.userId}`, {
+      const response = await fetch(`http://localhost:5000/api/admin/courses/${selectedCourse?.id}/respond/${selectedUser?.userId}`, {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`,

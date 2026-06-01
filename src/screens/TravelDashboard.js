@@ -4,43 +4,39 @@ import { useNavigate } from "react-router-dom";
 import axios from "axios";
 
 // Components
-import CreateOffer from "./CreateOffer";
-import ClaimedUsers from "./ClaimedUsers";
-import VerifyClaim from "./VerifyClaim";
-import SavingsHistory from "./SavingsHistory";
-import MyOffers from "./MyOffers";
-
+import Package from "./AdminPackage";
+import Traveling from './Traveling'
 // Icons
 import {
-  FaGift, FaUsers, FaSignOutAlt, FaShieldAlt, 
-  FaChartLine, FaHome, FaArrowUp, FaCheckCircle, FaTicketAlt
+  FaPlane, FaTicketAlt, FaSignOutAlt, FaSearch, 
+  FaMapMarkedAlt, FaHome, FaArrowUp, FaCheckCircle, FaWallet
 } from "react-icons/fa";
 
-const Dashboard = () => {
+const TravelDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
   const [stats, setStats] = useState({ 
-    totalLeads: 0, 
-    completedRedemptions: 0, 
-    totalSavings: 0 
+    totalBookings: 0, 
+    activeOffers: 0, 
+    totalSaved: 0 
   });
 
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const leadRes = await axios.get("http://localhost:5000/api/offers/claimed-users", {
+        const bookingRes = await axios.get("http://localhost:5000/api/traveler/bookings", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const savingRes = await axios.get("http://localhost:5000/api/offers/savings-report", {
+        const savingRes = await axios.get("http://localhost:5000/api/traveler/savings", {
           headers: { Authorization: `Bearer ${token}` }
         });
 
-        const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
+        const savings = savingRes.data.reduce((acc, curr) => acc + curr.amountSaved, 0);
         setStats({
-          totalLeads: leadRes.data.length,
-          completedRedemptions: savingRes.data.length,
-          totalSavings: savings
+          totalBookings: bookingRes.data.length,
+          activeOffers: savingRes.data.filter(s => s.isActive).length,
+          totalSaved: savings
         });
       } catch (err) {
         console.error("Error fetching dashboard stats", err);
@@ -56,11 +52,11 @@ const Dashboard = () => {
 
   const navItems = [
     { id: "home", label: "Dashboard", icon: <FaHome /> },
-    { id: "createOffer", label: "Create Offer", icon: <FaGift /> },
-    { id: "myOffers", label: "My Offers", icon: <FaTicketAlt /> },
-    { id: "claimedUsers", label: "Claimed Leads", icon: <FaUsers /> },
-    { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt /> },
-    { id: "savingsHistory", label: "Redemption History", icon: <FaChartLine /> },
+    { id: "browseOffers", label: "Browse Offers", icon: <FaSearch /> },
+    { id: "myClaims", label: "My Bookings", icon: <FaTicketAlt /> },
+    { id: "redeemOffer", label: "Redeem Offer", icon: <FaWallet /> },
+    { id: "travelHistory", label: "Travel History", icon: <FaMapMarkedAlt /> },
+    { id: "savingsTracker", label: "My Savings", icon: <FaPlane /> },
   ];
 
   const renderHome = () => (
@@ -68,10 +64,10 @@ const Dashboard = () => {
       <div style={styles.welcomeHero}>
         <div style={{ zIndex: 2 }}>
           <h2 style={{ fontSize: "28px", fontWeight: "800", margin: 0 }}>
-            Welcome back, {user?.name || "Partner"}! 
+            Welcome back, {user?.name || "Traveler"}! 
           </h2>
           <p style={{ opacity: 0.9, marginTop: "10px", fontSize: "16px" }}>
-            Here's what's happening with your student offers today.
+            Discover exclusive student offers and plan your next journey.
           </p>
         </div>
       </div>
@@ -81,25 +77,25 @@ const Dashboard = () => {
           icon={<FaTicketAlt />} 
           color="#f97316" 
           bg="#fff7ed" 
-          label="Offer Claims" 
-          value={stats.totalLeads} 
-          trend="12% Interest"
+          label="My Bookings" 
+          value={stats.totalBookings} 
+          trend="Travel Plans"
         />
         <StatCard 
           icon={<FaCheckCircle />} 
           color="#10b981" 
           bg="#f0fdf4" 
-          label="Redemptions" 
-          value={stats.completedRedemptions} 
-          trend="5% Conv."
+          label="Active Offers" 
+          value={stats.activeOffers} 
+          trend="Ready to Use"
         />
         <StatCard 
-          icon={<FaChartLine />} 
+          icon={<FaWallet />} 
           color="#3b82f6" 
           bg="#eff6ff" 
-          label="Savings Impact" 
-          value={`PKR ${stats.totalSavings.toLocaleString()}`} 
-          trend="Social Impact"
+          label="Total Saved" 
+          value={`PKR ${stats.totalSaved.toLocaleString()}`} 
+          trend="Student Savings"
         />
       </div>
     </div>
@@ -112,20 +108,20 @@ const Dashboard = () => {
       case "home":
         content = renderHome();
         break;
-      case "createOffer":
-        content = <CreateOffer />;
+      case "browseOffers":
+        content = <Traveling />;
         break;
-      case "myOffers":
-        content = <MyOffers />;
+      case "myClaims":
+        content = <Package />;
         break;
-      case "claimedUsers":
-        content = <ClaimedUsers />;
+      case "redeemOffer":
+        content = <Package />;
         break;
-      case "verifyClaim":
-        content = <VerifyClaim />;
+      case "travelHistory":
+        content = <Package />;
         break;
       default:
-        content = <SavingsHistory />;
+        content = <Package />;
     }
     
     return (
@@ -141,7 +137,7 @@ const Dashboard = () => {
       <nav style={styles.sidebar}>
         <div style={styles.brandSection}>
           <div style={styles.logoBadge}>tdc<span style={{color:'#ff961a'}}>.</span></div>
-          <h2 style={styles.logoText}>Partner <span style={{fontWeight: '300'}}>Portal</span></h2>
+          <h2 style={styles.logoText}>Traveler <span style={{fontWeight: '300'}}>Portal</span></h2>
         </div>
 
         <div style={styles.navGroup}>
@@ -323,7 +319,7 @@ const styles = {
     overflow: "hidden" 
   },
   sidebar: {
-    width: "240px", 
+    width: "230px", 
     backgroundImage: "linear-gradient(195deg, #f3b245 0%, #ff961a 100%)",
     padding: "32px 16px",
     display: "flex",
@@ -419,4 +415,4 @@ const styles = {
   trend: { fontSize: "13px", fontWeight: "600", display: "flex", alignItems: "center", gap: "4px"}
 };
 
-export default Dashboard;
+export default TravelDashboard;

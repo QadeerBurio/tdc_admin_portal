@@ -1,5 +1,5 @@
 import React, { useContext } from "react";
-import { Routes,Route,Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
 
 import SignIn from "./screens/SignIn";
@@ -26,35 +26,35 @@ import AdminPackageScreen from "./screens/Traveling";
 import CardManager from "./screens/CardManager";
 import AdminPackage from "./screens/AdminPackage";
 import AdminCoursePortal from "./screens/AdminCourse";
+import TravelDashboard from "./screens/TravelDashboard";
+import CompanyDashboard from "./screens/CompanyDashboard";
+import CandidatesManager from "./screens/CandidateManager";
+import InterviewsManager from "./screens/InterviewsManager";
+import ReportsManager from "./screens/ReportsManager";
 
-export default function AppNavigator(){
-
+export default function AppNavigator() {
   const { user } = useContext(AuthContext);
 
   // ---------------- NOT LOGGED IN ----------------
-  if(!user){
-
-    return(
+  if (!user) {
+    return (
       <Routes>
-
         <Route path="/login" element={<SignIn />} />
+
         <Route path="/signup" element={<SignupScreen />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
 
         <Route path="*" element={<Navigate to="/login" replace />} />
-
       </Routes>
     );
   }
 
   // ---------------- ADMIN ROUTES ----------------
-  if(user.role === "admin"){
-
-    return(
+  if (user.role === "admin") {
+    return (
       <Routes>
-
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/createofferadmin" element={<CreateOfferAdmin />} />
         <Route path="/adminoffers" element={<AdminOffers />} />
@@ -67,25 +67,40 @@ export default function AppNavigator(){
         <Route path="/booking" element={<AdminPackage />} />
         <Route path="/admincourse" element={<AdminCoursePortal />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
+      </Routes>
+    );
+  }
+    // ---------------- TRAVELER ROUTES ----------------
 
+  if (user.role === "traveler") {
+    return (
+      <Routes>
+        <Route path="/traveler-dashboard" element={<TravelDashboard />} />
       </Routes>
     );
   }
 
+   // ---------------- Jobs Portal ROUTES ----------------
+
+  if (user.role === "employee") {
+    return (
+      <Routes>
+        <Route path="/employee-dashboard" element={<CompanyDashboard />} />
+        <Route path="/candidate" element={<CandidatesManager />} />
+        <Route path="/interviews" element={<InterviewsManager />} />
+        <Route path="/reports" element={<ReportsManager />} />
+      </Routes>
+    );
+  }
   // ---------------- BRAND ROUTES ----------------
-  return(
-
+  return (
     <Routes>
-
       <Route path="/home" element={<Home />} />
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />
 
       <Route path="*" element={<Navigate to="/home" replace />} />
-
     </Routes>
-
   );
-
 }

@@ -3,7 +3,7 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import './styles/AdminPackage.css';
 
-const API_URL = 'https://the-deft-crew-production.up.railway.app/api/admin';
+const API_URL = 'http://localhost:5000/api/admin';
 
 const AdminPackage = () => {
     const { token } = useContext(AuthContext);

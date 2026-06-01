@@ -7,7 +7,7 @@ import {
   FaArrowRight, FaPercent, FaSpinner
 } from "react-icons/fa";
 
-const BASE_URL = "https://the-deft-crew-production.up.railway.app"; 
+const BASE_URL = "http://localhost:5000"; 
 const API_URL = `${BASE_URL}/api/offers`;
 
 export default function MyOffers() {

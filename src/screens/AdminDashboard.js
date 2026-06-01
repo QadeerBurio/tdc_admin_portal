@@ -56,7 +56,7 @@ export default function AdminDashboard() {
     
     try {
       const headers = { "Authorization": `Bearer ${token}` };
-      const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
+      const API_BASE = "http://localhost:5000/api/admin";
 
       const endpoints = [
         `${API_BASE}/all`,
