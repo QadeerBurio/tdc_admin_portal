@@ -40,12 +40,10 @@ export default function AppNavigator() {
     return (
       <Routes>
         <Route path="/login" element={<SignIn />} />
-
         <Route path="/signup" element={<SignupScreen />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-
         <Route path="*" element={<Navigate to="/login" replace />} />
       </Routes>
     );
@@ -61,7 +59,8 @@ export default function AppNavigator() {
         <Route path="/adminjobsmanager" element={<AdminJobsManager />} />
         <Route path="/adminexchangemanage" element={<ManageExchange />} />
         <Route path="/program" element={<ProgramApplication />} />
-        <Route path="/dossier/:id" element={<StudentDossier />} />
+        {/* Fixed: Using state instead of URL params */}
+        <Route path="/dossier" element={<StudentDossier />} />
         <Route path="/package" element={<AdminPackageScreen />} />
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
@@ -70,18 +69,18 @@ export default function AppNavigator() {
       </Routes>
     );
   }
-    // ---------------- TRAVELER ROUTES ----------------
 
+  // ---------------- TRAVELER ROUTES ----------------
   if (user.role === "traveler") {
     return (
       <Routes>
         <Route path="/traveler-dashboard" element={<TravelDashboard />} />
+        <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>
     );
   }
 
-   // ---------------- Jobs Portal ROUTES ----------------
-
+  // ---------------- EMPLOYEE ROUTES ----------------
   if (user.role === "employee") {
     return (
       <Routes>
@@ -89,17 +88,18 @@ export default function AppNavigator() {
         <Route path="/candidate" element={<CandidatesManager />} />
         <Route path="/interviews" element={<InterviewsManager />} />
         <Route path="/reports" element={<ReportsManager />} />
+        <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>
     );
   }
-  // ---------------- BRAND ROUTES ----------------
+
+  // ---------------- STUDENT/BRAND ROUTES ----------------
   return (
     <Routes>
       <Route path="/home" element={<Home />} />
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />
-
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );
