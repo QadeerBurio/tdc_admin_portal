@@ -1,3 +1,4 @@
+// AppNavigator.jsx
 import React, { useContext } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
@@ -31,6 +32,9 @@ import CompanyDashboard from "./screens/CompanyDashboard";
 import CandidatesManager from "./screens/CandidateManager";
 import InterviewsManager from "./screens/InterviewsManager";
 import ReportsManager from "./screens/ReportsManager";
+import Landing from "./screens/Landing";
+import CompanyProfile from "./screens/roles/CompanyProfile";
+import BrandsProfile from "./screens/roles/BrandsProfile";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -39,12 +43,15 @@ export default function AppNavigator() {
   if (!user) {
     return (
       <Routes>
+        <Route path="/" element={<Landing />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignupScreen />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />
-        <Route path="*" element={<Navigate to="/login" replace />} />
+        <Route path="/brands" element={<BrandsProfile />} />
+        <Route path="/company_profile" element={<CompanyProfile />} />
+        <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
   }
@@ -59,12 +66,12 @@ export default function AppNavigator() {
         <Route path="/adminjobsmanager" element={<AdminJobsManager />} />
         <Route path="/adminexchangemanage" element={<ManageExchange />} />
         <Route path="/program" element={<ProgramApplication />} />
-        {/* Fixed: Using state instead of URL params */}
         <Route path="/dossier" element={<StudentDossier />} />
         <Route path="/package" element={<AdminPackageScreen />} />
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
-        <Route path="/admincourse" element={<AdminCoursePortal />} />
+        
+        <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
     );
@@ -75,6 +82,7 @@ export default function AppNavigator() {
     return (
       <Routes>
         <Route path="/traveler-dashboard" element={<TravelDashboard />} />
+        <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>
     );
@@ -88,6 +96,7 @@ export default function AppNavigator() {
         <Route path="/candidate" element={<CandidatesManager />} />
         <Route path="/interviews" element={<InterviewsManager />} />
         <Route path="/reports" element={<ReportsManager />} />
+        <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>
     );
@@ -100,6 +109,8 @@ export default function AppNavigator() {
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />
+      
+      <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
   );

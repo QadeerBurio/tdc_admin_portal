@@ -1,41 +1,94 @@
-import React from 'react';
+// StudentDossier.js
+import React, { useState, useEffect } from 'react';
 import { 
   ArrowLeft, MapPin, Phone, GraduationCap, 
   Briefcase, FileText, Globe, Mail, 
-  ExternalLink, Award, Calendar, User, ShieldCheck
+  ExternalLink, Award, Calendar, User, ShieldCheck,
+  Loader2, AlertCircle
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import { motion } from 'framer-motion';
 
 const StudentDossier = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { application } = location.state || {};
+  const [loading, setLoading] = useState(true);
+  const [studentData, setStudentData] = useState(null);
+  const [error, setError] = useState(null);
+  const userId = location.state?.userId;
 
-  // Error State Handling
-  if (!application) {
+  useEffect(() => {
+    if (!userId) {
+      setError('No student ID provided');
+      setLoading(false);
+      return;
+    }
+    fetchStudentData(userId);
+  }, [userId]);
+
+  const fetchStudentData = async (id) => {
+    setLoading(true);
+    try {
+      const token = localStorage.getItem("token");
+      const res = await fetch(`http://localhost:5000/api/admin/users/student/${id}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json',
+        },
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to fetch student data');
+      }
+      
+      const data = await res.json();
+      setStudentData(data);
+    } catch (err) {
+      console.error('Error fetching student:', err);
+      setError(err.message);
+    } finally {
+      setTimeout(() => setLoading(false), 500);
+    }
+  };
+
+  const DetailItem = ({ label, value, icon: Icon }) => (
+    <div style={styles.detailCard}>
+      <div style={styles.detailLabelWrap}>
+        {Icon && <Icon size={14} style={{ color: '#EAB308' }} />}
+        <label style={styles.detailLabel}>{label}</label>
+      </div>
+      <p style={styles.detailValue}>{value || '—'}</p>
+    </div>
+  );
+
+  if (loading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <motion.div
+          animate={{ rotate: 360 }}
+          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+        >
+          <Loader2 size={48} color="#EAB308" />
+        </motion.div>
+        <p style={{ color: '#64748b', marginTop: '16px' }}>Loading student dossier...</p>
+      </div>
+    );
+  }
+
+  if (error || !studentData) {
     return (
       <div style={styles.errorContainer}>
         <div style={styles.errorCard}>
-          <ShieldCheck size={48} color="#EAB308" style={{ marginBottom: '16px' }} />
-          <h2 style={{ fontWeight: 900, fontSize: '24px' }}>ACCESS DENIED</h2>
-          <p style={{ color: '#64748b', margin: '8px 0 24px' }}>No student record was found in the current session.</p>
+          <AlertCircle size={48} color="#EF4444" style={{ marginBottom: '16px' }} />
+          <h2 style={{ fontWeight: 900, fontSize: '24px' }}>STUDENT NOT FOUND</h2>
+          <p style={{ color: '#64748b', margin: '8px 0 24px' }}>{error || 'No student record found'}</p>
           <button onClick={() => navigate(-1)} style={styles.primaryBtn}>BACK TO DASHBOARD</button>
         </div>
       </div>
     );
   }
 
-  const { formData = {}, experiences = [] } = application;
-
-  const DetailItem = ({ label, value, icon: Icon }) => (
-    <div style={styles.detailCard}>
-      <div style={styles.detailLabelWrap}>
-          {Icon && <Icon size={14} style={{ color: '#EAB308' }} />}
-          <label style={styles.detailLabel}>{label}</label>
-      </div>
-      <p style={styles.detailValue}>{value || '—'}</p>
-    </div>
-  );
+  const { formData = {}, experiences = [] } = studentData;
 
   return (
     <div style={styles.pageWrapper}>
@@ -47,7 +100,7 @@ const StudentDossier = () => {
             <span>RETURN TO ARCHIVE</span>
           </button>
           <div style={styles.idBadge}>
-             REF: {application._id?.slice(-8).toUpperCase()} 
+            REF: {studentData._id?.slice(-8).toUpperCase()}
           </div>
         </div>
       </nav>
@@ -62,21 +115,27 @@ const StudentDossier = () => {
               </div>
             </div>
             
-            <h1 style={styles.userName}>{formData.fullName}</h1>
-            <p style={styles.userSubHeader}>{formData.lastDegree || 'Candidate'}</p>
+            <h1 style={styles.userName}>{formData.fullName || 'Candidate'}</h1>
+            <p style={styles.userSubHeader}>{formData.lastDegree || 'Student'}</p>
             
             <div style={styles.yellowDivider} />
             
             <div style={styles.contactStack}>
-              <a href={`mailto:${formData.email}`} style={styles.contactLink}>
-                <Mail size={16} /> {formData.email}
-              </a>
-              <div style={styles.contactLink}>
-                <Phone size={16} /> {formData.contactNo}
-              </div>
-              <div style={styles.contactLink}>
-                <MapPin size={16} /> {formData.address || 'Location Not Specified'}
-              </div>
+              {formData.email && (
+                <a href={`mailto:${formData.email}`} style={styles.contactLink}>
+                  <Mail size={16} /> {formData.email}
+                </a>
+              )}
+              {formData.contactNo && (
+                <div style={styles.contactLink}>
+                  <Phone size={16} /> {formData.contactNo}
+                </div>
+              )}
+              {formData.address && (
+                <div style={styles.contactLink}>
+                  <MapPin size={16} /> {formData.address}
+                </div>
+              )}
               {formData.linkedin && (
                 <a href={formData.linkedin} target="_blank" rel="noreferrer" style={styles.socialLink}>
                   <Globe size={16} /> LINKEDIN PROFILE <ExternalLink size={12} />
@@ -112,18 +171,18 @@ const StudentDossier = () => {
               <h2 style={styles.sectionTitle}>Professional Journey</h2>
             </div>
             
-            {experiences.length > 0 ? (
+            {experiences && experiences.length > 0 ? (
               <div style={styles.timeline}>
                 {experiences.map((exp, i) => (
                   <div key={i} style={styles.timelineItem}>
                     <div style={styles.timelineDot} />
                     <div style={styles.experienceCard}>
                       <div style={styles.expHeader}>
-                        <h3 style={styles.expRole}>{exp.role}</h3>
-                        <span style={styles.expDate}>{exp.start} — {exp.end}</span>
+                        <h3 style={styles.expRole}>{exp.role || 'Position'}</h3>
+                        <span style={styles.expDate}>{exp.start || ''} — {exp.end || ''}</span>
                       </div>
-                      <div style={styles.expField}>{exp.field}</div>
-                      <p style={styles.expDesc}>{exp.description}</p>
+                      <div style={styles.expField}>{exp.field || 'Field'}</div>
+                      <p style={styles.expDesc}>{exp.description || 'No description provided'}</p>
                     </div>
                   </div>
                 ))}
@@ -152,9 +211,17 @@ const StudentDossier = () => {
 const styles = {
   pageWrapper: {
     minHeight: '100vh',
-    backgroundColor: '#F8FAFC', // Light grayish background to make white cards pop
+    backgroundColor: '#F8FAFC',
     fontFamily: '"Inter", sans-serif',
     color: '#000000',
+  },
+  loadingContainer: {
+    minHeight: '100vh',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: '#F8FAFC',
   },
   navBar: {
     backgroundColor: '#000000',

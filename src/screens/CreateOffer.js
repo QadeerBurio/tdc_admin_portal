@@ -1,10 +1,31 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { 
-  FaCloudUploadAlt, FaTag, FaMapMarkerAlt, FaLayerGroup, 
-  FaAlignLeft, FaGlobe, FaStore, FaPercent, FaArrowRight,
-  FaCheckCircle, FaImage, FaInfoCircle, FaStar
+  FaCloudUploadAlt, 
+  FaTag, 
+  FaMapMarkerAlt, 
+  FaLayerGroup, 
+  FaAlignLeft, 
+  FaGlobe, 
+  FaStore, 
+  FaPercent, 
+  FaArrowRight,
+  FaCheckCircle, 
+  FaImage, 
+  FaInfoCircle, 
+  FaStar,
+  FaTimes,
+  FaPlus,
+  FaMinus,
+  FaClock,
+  FaBuilding,
+  FaUsers,
+  FaRocket,
+  FaSpinner,
+  FaShieldAlt,
+  FaCalendarAlt,
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 const API_BASE_URL = "http://localhost:5000/api/offers";
 const CATEGORIES = [
@@ -47,6 +68,8 @@ export default function CreateOffer() {
   const [preview, setPreview] = useState(null);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  const [showSuccess, setShowSuccess] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
 
   const createOffer = async () => {
     if (!form.title || !form.discountPercentage || !form.category || !image || !form.description) {
@@ -71,7 +94,19 @@ export default function CreateOffer() {
 
     try {
       setLoading(true);
+      setUploadProgress(0);
       const token = localStorage.getItem("token");
+      
+      // Simulate upload progress
+      const interval = setInterval(() => {
+        setUploadProgress(prev => {
+          if (prev >= 90) {
+            clearInterval(interval);
+            return 90;
+          }
+          return prev + 10;
+        });
+      }, 200);
       
       await axios.post(API_BASE_URL, formData, {
         headers: {
@@ -80,14 +115,20 @@ export default function CreateOffer() {
         },
       });
 
-      alert("🎉 Offer Created! Your students have been notified via the app.");
+      clearInterval(interval);
+      setUploadProgress(100);
+      setShowSuccess(true);
       
-      setForm({
-        title: "", description: "", discountPercentage: "", category: "",
-        redeemInstructions: "", location: "", isOnline: false, isInStore: false
-      });
-      setPreview(null);
-      setImage(null);
+      setTimeout(() => {
+        setForm({
+          title: "", description: "", discountPercentage: "", category: "",
+          redeemInstructions: "", location: "", isOnline: false, isInStore: false
+        });
+        setPreview(null);
+        setImage(null);
+        setShowSuccess(false);
+        setUploadProgress(0);
+      }, 3000);
       
     } catch (error) {
       console.error("Upload Error:", error.response?.data);
@@ -104,62 +145,110 @@ export default function CreateOffer() {
     }
   };
 
+  const renderField = (id, label, icon, type = "text", required = false, extraProps = {}) => {
+    const isFocused = focusedField === id;
+    return (
+      <motion.div 
+        className="animate-field"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4 }}
+        style={styles.inputGroup}
+      >
+        <label style={{...styles.label, color: isFocused ? '#ff961a' : '#64748b'}}>
+          {label} {required && <span style={styles.required}>*</span>}
+        </label>
+        <div style={{...styles.inputWrapper, borderColor: isFocused ? '#ff961a' : '#e2e8f0', boxShadow: isFocused ? '0 0 0 3px rgba(255,150,26,0.1)' : 'none'}}>
+          {icon && <span style={styles.fieldIcon}>{icon}</span>}
+          <input
+            style={styles.input}
+            placeholder={`Enter ${label.toLowerCase()}...`}
+            value={form[id]}
+            type={type}
+            onFocus={() => setFocusedField(id)}
+            onBlur={() => setFocusedField(null)}
+            onChange={(e) => setForm({ ...form, [id]: e.target.value })}
+            {...extraProps}
+          />
+        </div>
+      </motion.div>
+    );
+  };
+
   return (
     <div style={styles.container}>
       {/* Decorative Elements */}
       <div style={styles.decorCircle1}></div>
       <div style={styles.decorCircle2}></div>
+      <div style={styles.decorCircle3}></div>
       
-      <div style={styles.header}>
-        <div style={styles.headerBadge}>
-          <FaStar style={styles.headerIcon} />
-          <span>New Offer</span>
-        </div>
+      {/* Success Overlay */}
+      <AnimatePresence>
+        {showSuccess && (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            style={styles.successOverlay}
+          >
+            <div style={styles.successContent}>
+              <FaCheckCircle size={60} color="#10b981" />
+              <h3 style={styles.successTitle}>Offer Created Successfully! 🎉</h3>
+              <p style={styles.successText}>Your students have been notified via the app</p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Header */}
+      <motion.div
+        initial={{ opacity: 0, y: -20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5 }}
+        style={styles.header}
+      >
+        
         <h2 style={styles.mainTitle}>Create <span style={{color: '#ff961a'}}>Student Offer</span></h2>
         <p style={styles.subTitle}>Launch your discount and connect with thousands of students instantly</p>
-      </div>
+      </motion.div>
+
+      {/* Progress Bar */}
+      {loading && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: 'auto' }}
+          style={styles.progressContainer}
+        >
+          <div style={styles.progressBar}>
+            <motion.div
+              initial={{ width: 0 }}
+              animate={{ width: `${uploadProgress}%` }}
+              transition={{ duration: 0.5 }}
+              style={{...styles.progressFill, width: `${uploadProgress}%`}}
+            />
+          </div>
+          <p style={styles.progressText}>{uploadProgress}% Uploading...</p>
+        </motion.div>
+      )}
 
       <div style={styles.formGrid}>
+        {/* Left Column */}
         <div style={styles.inputSection}>
           {/* Title */}
-          <div className="animate-field" style={styles.inputGroup}>
-            <label style={{...styles.label, color: focusedField === 'title' ? '#ff961a' : '#64748b'}}>
-              Offer Title <span style={styles.required}>*</span>
-            </label>
-            <div style={{...styles.inputWrapper, borderColor: focusedField === 'title' ? '#ff961a' : '#e2e8f0'}}>
-              <FaTag style={styles.fieldIcon} />
-              <input
-                style={styles.input}
-                placeholder="e.g., 50% Off Summer Collection"
-                value={form.title}
-                onFocus={() => setFocusedField('title')}
-                onBlur={() => setFocusedField(null)}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-              />
-            </div>
-          </div>
-
+          {renderField("title", "Offer Title", <FaTag />, "text", true)}
+          
           {/* Description */}
-          <div className="animate-field" style={styles.inputGroup}>
-            <label style={{...styles.label, color: focusedField === 'description' ? '#ff961a' : '#64748b'}}>
-              Description <span style={styles.required}>*</span>
-            </label>
-            <div style={{...styles.inputWrapper, borderColor: focusedField === 'description' ? '#ff961a' : '#e2e8f0'}}>
-              <FaAlignLeft style={styles.fieldIcon} />
-              <input
-                style={styles.input}
-                placeholder="Briefly describe the deal..."
-                value={form.description}
-                onFocus={() => setFocusedField('description')}
-                onBlur={() => setFocusedField(null)}
-                onChange={(e) => setForm({ ...form, description: e.target.value })}
-              />
-            </div>
-          </div>
+          {renderField("description", "Description", <FaAlignLeft />, "text", true)}
 
           <div style={styles.row}>
             {/* Category */}
-            <div className="animate-field" style={{...styles.inputGroup, flex: 2}}>
+            <motion.div 
+              className="animate-field"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              style={{...styles.inputGroup, flex: 2}}
+            >
               <label style={styles.label}>Category <span style={styles.required}>*</span></label>
               <div style={styles.inputWrapper}>
                 <FaLayerGroup style={styles.fieldIcon} />
@@ -174,10 +263,16 @@ export default function CreateOffer() {
                   ))}
                 </select>
               </div>
-            </div>
+            </motion.div>
 
             {/* Discount */}
-            <div className="animate-field" style={{...styles.inputGroup, flex: 1}}>
+            <motion.div 
+              className="animate-field"
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.4, delay: 0.15 }}
+              style={{...styles.inputGroup, flex: 1}}
+            >
               <label style={styles.label}>Discount % <span style={styles.required}>*</span></label>
               <div style={{...styles.inputWrapper, background: 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)'}}>
                 <FaPercent style={{...styles.fieldIcon, color: '#ff961a'}} />
@@ -189,11 +284,17 @@ export default function CreateOffer() {
                   onChange={(e) => setForm({ ...form, discountPercentage: e.target.value })}
                 />
               </div>
-            </div>
+            </motion.div>
           </div>
 
           {/* Availability Toggles */}
-          <div className="animate-field" style={styles.inputGroup}>
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
+            style={styles.inputGroup}
+          >
             <label style={styles.label}>Availability</label>
             <div style={styles.checkboxContainer}>
               <label style={{...styles.checkboxLabel, background: form.isOnline ? '#fff7ed' : '#f8fafc', borderColor: form.isOnline ? '#ff961a' : '#e2e8f0'}}>
@@ -207,10 +308,16 @@ export default function CreateOffer() {
                 In-Store
               </label>
             </div>
-          </div>
+          </motion.div>
 
           {/* Location */}
-          <div className="animate-field" style={styles.inputGroup}>
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            style={styles.inputGroup}
+          >
             <label style={styles.label}>Store Location</label>
             <div style={styles.inputWrapper}>
               <FaMapMarkerAlt style={styles.fieldIcon} />
@@ -221,13 +328,40 @@ export default function CreateOffer() {
                 onChange={(e) => setForm({ ...form, location: e.target.value })}
               />
             </div>
-          </div>
+          </motion.div>
+
+          {/* Redemption Instructions */}
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.3 }}
+            style={styles.inputGroup}
+          >
+            <label style={styles.label}>
+              <FaInfoCircle style={{marginRight: '6px', fontSize: '12px'}} />
+              Redemption Instructions
+            </label>
+            <textarea
+              style={styles.textarea}
+              placeholder="How can students claim this? (e.g., Show student ID at counter, use code STUDENT20)"
+              value={form.redeemInstructions}
+              onChange={(e) => setForm({ ...form, redeemInstructions: e.target.value })}
+              rows={4}
+            />
+          </motion.div>
         </div>
 
-        {/* Right Side: Upload & Redemption */}
+        {/* Right Column */}
         <div style={styles.uploadSection}>
           {/* Image Upload */}
-          <div className="animate-field" style={styles.imageCard}>
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            style={styles.imageCard}
+          >
             <div style={styles.imageHeader}>
               <FaImage style={{color: '#ff961a'}} />
               <span style={styles.imageLabel}>Offer Banner <span style={styles.required}>*</span></span>
@@ -242,7 +376,7 @@ export default function CreateOffer() {
                     setImage(null);
                   }}
                 >
-                  Change
+                  <FaTimes /> Change
                 </button>
               </div>
             ) : (
@@ -253,26 +387,19 @@ export default function CreateOffer() {
                 <p style={styles.uploadHint}>PNG, JPG up to 5MB (16:9 recommended)</p>
               </label>
             )}
-          </div>
-
-          {/* Redemption Instructions */}
-          <div className="animate-field" style={styles.inputGroup}>
-            <label style={styles.label}>
-              <FaInfoCircle style={{marginRight: '6px', fontSize: '12px'}} />
-              Redemption Instructions
-            </label>
-            <textarea
-              style={styles.textarea}
-              placeholder="How can students claim this? (e.g., Show student ID at counter, use code STUDENT20)"
-              value={form.redeemInstructions}
-              onChange={(e) => setForm({ ...form, redeemInstructions: e.target.value })}
-              rows={4}
-            />
-          </div>
+          </motion.div>
 
           {/* Preview Card */}
-          <div className="animate-field" style={styles.previewCard}>
-            <p style={styles.previewTitle}>Live Preview</p>
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.2 }}
+            style={styles.previewCard}
+          >
+            <p style={styles.previewTitle}>
+              <FaRocket style={{marginRight: '6px'}} /> Live Preview
+            </p>
             <div style={styles.previewContent}>
               <div style={styles.previewDiscountBadge}>
                 {form.discountPercentage || '0'}% OFF
@@ -283,12 +410,38 @@ export default function CreateOffer() {
               <p style={styles.previewCategory}>
                 {form.category || 'Select Category'}
               </p>
+              <div style={styles.previewTags}>
+                {form.isOnline && <span style={styles.previewTag}><FaGlobe size={10} /> Online</span>}
+                {form.isInStore && <span style={styles.previewTag}><FaStore size={10} /> In-Store</span>}
+              </div>
             </div>
-          </div>
+          </motion.div>
+
+          {/* Quick Tips */}
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, x: 20 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.5, delay: 0.25 }}
+            style={styles.tipsCard}
+          >
+            <p style={styles.tipsTitle}>💡 Pro Tips</p>
+            <ul style={styles.tipsList}>
+              <li style={styles.tipItem}>Use eye-catching titles with discounts</li>
+              <li style={styles.tipItem}>High-quality images attract more students</li>
+              <li style={styles.tipItem}>Clear instructions increase redemption rate</li>
+            </ul>
+          </motion.div>
         </div>
       </div>
 
-      <div style={styles.footer}>
+      {/* Footer */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.5, delay: 0.3 }}
+        style={styles.footer}
+      >
         <button 
           style={{...styles.submitBtn, opacity: loading ? 0.7 : 1}} 
           onClick={createOffer} 
@@ -297,7 +450,7 @@ export default function CreateOffer() {
         >
           {loading ? (
             <>
-              <div style={styles.spinner}></div>
+              <FaSpinner style={styles.spinnerIcon} className="spinner" />
               Publishing...
             </>
           ) : (
@@ -307,56 +460,83 @@ export default function CreateOffer() {
             </>
           )}
         </button>
-      </div>
+        <p style={styles.footerNote}>
+          <FaShieldAlt size={12} style={{marginRight: '4px'}} />
+          Your offer will be visible to all students instantly
+        </p>
+      </motion.div>
 
-      <style>{`
-        @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
-          to { opacity: 1; transform: translateY(0); }
-        }
-        @keyframes fadeInScale {
-          from { opacity: 0; transform: scale(0.95); }
-          to { opacity: 1; transform: scale(1); }
-        }
-        @keyframes shimmer {
-          0% { background-position: -1000px 0; }
-          100% { background-position: 1000px 0; }
-        }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
-        }
-        
-        .animate-field {
-          animation: slideUp 0.5s ease forwards;
-          opacity: 0;
-        }
-        .animate-field:nth-child(1) { animation-delay: 0.05s; }
-        .animate-field:nth-child(2) { animation-delay: 0.1s; }
-        .animate-field:nth-child(3) { animation-delay: 0.15s; }
-        .animate-field:nth-child(4) { animation-delay: 0.2s; }
-        .animate-field:nth-child(5) { animation-delay: 0.25s; }
-        .animate-field:nth-child(6) { animation-delay: 0.3s; }
-        
-        .submit-btn {
-          transition: all 0.3s ease;
-        }
-        .submit-btn:hover {
-          transform: translateY(-2px);
-          box-shadow: 0 20px 25px -12px rgba(255, 150, 26, 0.4);
-        }
-        
-        input:focus, select:focus, textarea:focus {
-          outline: none;
-        }
-        
-        input[type="checkbox"] {
-          width: 18px;
-          height: 18px;
-          cursor: pointer;
-          accent-color: #ff961a;
-        }
-      `}</style>
+      <style>
+        {`
+          @keyframes slideUp {
+            from { opacity: 0; transform: translateY(30px); }
+            to { opacity: 1; transform: translateY(0); }
+          }
+          @keyframes fadeInScale {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+          }
+          @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.6; }
+          }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+          @keyframes shimmer {
+            0% { background-position: -200% 0; }
+            100% { background-position: 200% 0; }
+          }
+          
+          .spinner {
+            animation: spin 1s linear infinite;
+            margin-right: 8px;
+          }
+          
+          .animate-field {
+            animation: slideUp 0.5s ease forwards;
+            opacity: 0;
+          }
+          
+          .submit-btn {
+            transition: all 0.3s ease;
+          }
+          .submit-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 20px 25px -12px rgba(255, 150, 26, 0.4);
+          }
+          .submit-btn:disabled {
+            cursor: not-allowed;
+          }
+          
+          input:focus, select:focus, textarea:focus {
+            outline: none;
+          }
+          
+          input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: #ff961a;
+          }
+          
+          ::-webkit-scrollbar {
+            width: 6px;
+          }
+          ::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+          }
+          ::-webkit-scrollbar-thumb {
+            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            border-radius: 10px;
+          }
+          ::-webkit-scrollbar-thumb:hover {
+            background: #ff961a;
+          }
+        `}
+      </style>
     </div>
   );
 }
@@ -370,7 +550,8 @@ const styles = {
     position: "relative",
     background: "#fff",
     borderRadius: "40px",
-    overflow: "hidden"
+    overflow: "hidden",
+    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
   },
   decorCircle1: {
     position: "absolute",
@@ -391,6 +572,71 @@ const styles = {
     background: "radial-gradient(circle, rgba(255,150,26,0.05) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
     pointerEvents: "none"
+  },
+  decorCircle3: {
+    position: "absolute",
+    top: "50%",
+    right: "-50px",
+    width: "150px",
+    height: "150px",
+    background: "radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)",
+    borderRadius: "50%",
+    pointerEvents: "none"
+  },
+  successOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(8px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 1000,
+  },
+  successContent: {
+    background: "#fff",
+    padding: "40px 60px",
+    borderRadius: "24px",
+    textAlign: "center",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
+  },
+  successTitle: {
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: "16px 0 8px",
+  },
+  successText: {
+    fontSize: "14px",
+    color: "#64748b",
+    margin: 0,
+  },
+  progressContainer: {
+    marginBottom: "24px",
+    padding: "16px",
+    background: "#f8fafc",
+    borderRadius: "12px",
+  },
+  progressBar: {
+    height: "6px",
+    background: "#e5e7eb",
+    borderRadius: "3px",
+    overflow: "hidden",
+  },
+  progressFill: {
+    height: "100%",
+    background: "linear-gradient(90deg, #f9c349 0%, #ff961a 100%)",
+    borderRadius: "3px",
+    transition: "width 0.5s ease",
+  },
+  progressText: {
+    fontSize: "12px",
+    color: "#64748b",
+    marginTop: "8px",
+    textAlign: "center",
   },
   header: { 
     marginBottom: "40px", 
@@ -435,6 +681,14 @@ const styles = {
     position: "relative",
     zIndex: 1
   },
+  inputSection: {
+    display: "flex",
+    flexDirection: "column",
+  },
+  uploadSection: {
+    display: "flex",
+    flexDirection: "column",
+  },
   row: { 
     display: "flex", 
     gap: "20px" 
@@ -452,21 +706,23 @@ const styles = {
     fontSize: "14px"
   },
   inputGroup: { 
-    marginBottom: "24px" 
+    marginBottom: "20px" 
   },
   inputWrapper: { 
     display: "flex", 
     alignItems: "center", 
     backgroundColor: "#f8fafc", 
     border: "2px solid #e2e8f0", 
-    borderRadius: "16px", 
+    borderRadius: "14px", 
     padding: "0 16px",
     transition: "all 0.2s ease"
   },
   fieldIcon: { 
     color: "#94a3b8", 
     marginRight: "12px",
-    fontSize: "16px"
+    fontSize: "16px",
+    display: "flex",
+    alignItems: "center"
   },
   input: { 
     width: "100%", 
@@ -481,7 +737,7 @@ const styles = {
   textarea: { 
     width: "100%", 
     padding: "14px 16px", 
-    borderRadius: "16px", 
+    borderRadius: "14px", 
     border: "2px solid #e2e8f0", 
     backgroundColor: "#f8fafc", 
     outline: "none", 
@@ -489,11 +745,13 @@ const styles = {
     fontFamily: "inherit",
     resize: "vertical",
     transition: "border-color 0.2s ease",
-    boxSizing: "border-box"
+    boxSizing: "border-box",
+    minHeight: "100px",
+    color: "#1e293b"
   },
   checkboxContainer: { 
     display: "flex", 
-    gap: "16px" 
+    gap: "12px" 
   },
   checkboxLabel: { 
     display: "flex", 
@@ -509,11 +767,11 @@ const styles = {
     transition: "all 0.2s ease"
   },
   imageCard: { 
-    borderRadius: "24px", 
+    borderRadius: "20px", 
     backgroundColor: "#f8fafc",
     border: "2px dashed #e2e8f0",
     overflow: "hidden",
-    marginBottom: "24px"
+    marginBottom: "20px"
   },
   imageHeader: {
     display: "flex",
@@ -553,26 +811,30 @@ const styles = {
   },
   previewImage: { 
     width: "100%", 
-    height: "180px", 
+    height: "200px", 
     objectFit: "cover"
   },
   changeImageBtn: {
     position: "absolute",
     bottom: "12px",
     right: "12px",
-    background: "rgba(0,0,0,0.7)",
+    background: "rgba(0,0,0,0.75)",
     color: "#fff",
     border: "none",
-    padding: "6px 12px",
+    padding: "8px 16px",
     borderRadius: "20px",
     fontSize: "12px",
-    cursor: "pointer"
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "all 0.3s ease",
   },
   previewCard: {
     background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
     borderRadius: "20px",
-    padding: "16px",
-    marginTop: "8px"
+    padding: "20px",
+    marginBottom: "16px"
   },
   previewTitle: {
     fontSize: "11px",
@@ -580,7 +842,9 @@ const styles = {
     color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: "1px",
-    marginBottom: "12px"
+    marginBottom: "16px",
+    display: "flex",
+    alignItems: "center",
   },
   previewContent: {
     position: "relative"
@@ -589,25 +853,62 @@ const styles = {
     display: "inline-block",
     background: "#ff961a",
     color: "#fff",
-    padding: "4px 12px",
+    padding: "4px 14px",
     borderRadius: "20px",
     fontSize: "14px",
     fontWeight: "800",
-    marginBottom: "10px"
+    marginBottom: "12px"
   },
   previewOfferTitle: {
     color: "#fff",
-    fontSize: "16px",
+    fontSize: "18px",
     fontWeight: "600",
     margin: "0 0 6px 0"
   },
   previewCategory: {
     color: "#94a3b8",
-    fontSize: "12px",
+    fontSize: "13px",
     margin: 0
   },
+  previewTags: {
+    display: "flex",
+    gap: "8px",
+    marginTop: "12px",
+    flexWrap: "wrap"
+  },
+  previewTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    background: "rgba(255,255,255,0.1)",
+    color: "#94a3b8",
+    padding: "4px 12px",
+    borderRadius: "20px",
+    fontSize: "11px"
+  },
+  tipsCard: {
+    background: "#fff7ed",
+    borderRadius: "16px",
+    padding: "16px 20px",
+    border: "1px solid #fef3c7",
+  },
+  tipsTitle: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#d97706",
+    margin: "0 0 8px 0"
+  },
+  tipsList: {
+    margin: 0,
+    paddingLeft: "20px",
+    color: "#92400e",
+    fontSize: "13px",
+  },
+  tipItem: {
+    marginBottom: "4px"
+  },
   footer: { 
-    marginTop: "40px", 
+    marginTop: "32px", 
     paddingTop: "24px", 
     borderTop: "2px solid #f1f5f9", 
     textAlign: "center",
@@ -627,15 +928,18 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    boxShadow: "0 10px 20px -8px rgba(255, 150, 26, 0.4)"
+    boxShadow: "0 10px 20px -8px rgba(255, 150, 26, 0.4)",
+    transition: "all 0.3s ease"
   },
-  spinner: {
-    width: "18px",
-    height: "18px",
-    border: "2px solid rgba(255,255,255,0.3)",
-    borderTop: "2px solid #fff",
-    borderRadius: "50%",
-    animation: "pulse 0.8s linear infinite",
-    marginRight: "8px"
+  spinnerIcon: {
+    marginRight: "8px",
+  },
+  footerNote: {
+    marginTop: "12px",
+    fontSize: "12px",
+    color: "#94a3b8",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   }
 };
