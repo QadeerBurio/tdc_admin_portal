@@ -579,7 +579,7 @@ const BrandsProfile = () => {
                 }}
                 whileTap={{ scale: 0.95 }}
               >
-                Claim Your Free Real Estate Now
+                Claim Your Free Brand Now
                 <FaArrowRight />
               </motion.button>
             </motion.div>
