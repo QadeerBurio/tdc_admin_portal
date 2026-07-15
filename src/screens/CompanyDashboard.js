@@ -91,7 +91,7 @@ const CompanyDashboard = () => {
   const fetchDashboardStats = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/jobs/admin/stats",
+        "https://the-deft-crew-production.up.railway.app/api/jobs/admin/stats",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -114,7 +114,7 @@ const CompanyDashboard = () => {
   const fetchRecentApplications = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/jobs/candidates/all?limit=5",
+        "https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all?limit=5",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -131,7 +131,7 @@ const CompanyDashboard = () => {
   const fetchUpcomingInterviews = async () => {
     try {
       const res = await axios.get(
-        "http://localhost:5000/api/jobs/interviews/upcoming",
+        "https://the-deft-crew-production.up.railway.app/api/jobs/interviews/upcoming",
         {
           headers: { Authorization: `Bearer ${token}` },
         }

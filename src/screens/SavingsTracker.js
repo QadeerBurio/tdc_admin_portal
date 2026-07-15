@@ -15,7 +15,7 @@ const SavingsTracker = () => {
   const fetchSavings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/traveler/savings', {
+      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/savings', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setSavings(Array.isArray(response.data) ? response.data : []);

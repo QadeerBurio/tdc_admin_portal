@@ -29,7 +29,7 @@ export default function SignIn() {
       setLoading(true);
 
       const res = await axios.post(
-        "http://localhost:5000/api/auth/login",
+        "https://the-deft-crew-production.up.railway.app/api/auth/login",
         { email, password }
       );
 
@@ -95,7 +95,7 @@ export default function SignIn() {
         <div className="signin-card">
           {/* Brand Section - Logo TDC */}
           <div className="brand-section">
-            <div className="brand-icon">
+            <div className="image-brand-icon">
               <p>tdc<span style={{color:'#f9c349'}}>.</span></p>
             </div>
             <h2 className="brand-title">The Deft <span className="brand-suffix">Crew</span></h2>
@@ -213,9 +213,8 @@ export default function SignIn() {
 
         {/* Image Side - Right */}
         <div className="signin-image-side">
-        <div className="signin-image-side">
           <img src={loginImage} alt="Login" className="side-image" />
-          </div>
+          
         </div>
       </div>
     </div>

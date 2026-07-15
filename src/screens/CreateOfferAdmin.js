@@ -61,7 +61,7 @@ export default function AdminPanel() {
         });
       }, 200);
       
-      const response = await fetch("http://localhost:5000/api/admin/add", {
+      const response = await fetch("https://the-deft-crew-production.up.railway.app/api/admin/add", {
         method: "POST",
         body: formData,
       });

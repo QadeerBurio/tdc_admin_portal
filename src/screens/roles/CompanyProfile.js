@@ -194,7 +194,7 @@ const CompanyProfile = () => {
               </motion.div>
 
               <motion.div className="hero-micro-copy" variants={itemVariants} custom={4}>
-                <span>Join 200+ leading companies</span>
+                <span>Join 50+ leading companies</span>
                 <span className="dot">•</span>
                 <span>Hire for tech, marketing, finance & operations</span>
                 <span className="dot">•</span>
@@ -643,7 +643,7 @@ const CompanyProfile = () => {
             <motion.div className="finalcta-trust" variants={itemVariants} custom={3}>
               <div className="trust-item">
                 <FaCheckCircle />
-                <span>200+ Companies Trust Us</span>
+                <span>50+ Companies Trust Us</span>
               </div>
               <div className="trust-item">
                 <FaCheckCircle />

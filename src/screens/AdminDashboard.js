@@ -15,6 +15,7 @@ import {
   Calendar as CalendarIcon, BarChart4
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import "./styles/AdminDashboard.css";
 
 // Sub-Components
 import CreateOfferAdmin from "./CreateOfferAdmin";
@@ -98,7 +99,7 @@ export default function AdminDashboard() {
     
     try {
       const headers = { "Authorization": `Bearer ${token}` };
-      const API_BASE = "http://localhost:5000/api/admin";
+      const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
 
       const endpoints = [
         `${API_BASE}/all`,

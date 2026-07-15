@@ -46,7 +46,7 @@ const ReportsManager = ({ token, stats }) => {
   const fetchReportData = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("http://localhost:5000/api/jobs/admin/stats", {
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/admin/stats", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setWeeklyData(res.data.weeklyApplications || [
@@ -74,7 +74,7 @@ const ReportsManager = ({ token, stats }) => {
 
   const exportReport = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/jobs/candidates/export", {
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/export", {
         headers: { Authorization: `Bearer ${token}` }
       });
       const csvData = convertToCSV(res.data);

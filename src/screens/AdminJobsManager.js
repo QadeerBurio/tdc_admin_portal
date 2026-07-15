@@ -87,7 +87,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
   });
 
   const token = localStorage.getItem("token");
-  const API_URL = "http://localhost:5000/api/jobs";
+  const API_URL = "https://the-deft-crew-production.up.railway.app/api/jobs";
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {

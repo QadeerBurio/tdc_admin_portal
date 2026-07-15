@@ -18,7 +18,7 @@ const CATEGORIES = [
   'Student Tours', 'Luxury Travel'
 ];
 
-const API_BASE_URL = 'http://localhost:5000/api/admin/packages';
+const API_BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/packages';
 
 const AdminPackageScreen = () => {
   const fileInputRef = useRef(null);

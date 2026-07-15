@@ -15,7 +15,7 @@ const TravelHistory = () => {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('http://localhost:5000/api/traveler/history', {
+      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/history', {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistory(response.data);

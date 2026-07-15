@@ -80,7 +80,7 @@ export default function Signup() {
       }
 
       await axios.post(
-        "http://localhost:5000/api/auth/signup",
+        "https://the-deft-crew-production.up.railway.app/api/auth/signup",
         body
       );
 
@@ -149,8 +149,8 @@ export default function Signup() {
                 >
                   <option value="">-- Choose Your Role --</option>
                   <option value="brand">🏢 Brand</option>
-                  <option value="traveler">✈️ Traveler</option>
-                  <option value="employee">👨‍💼 Employee</option>
+                  
+                  <option value="employee">🏬 Company</option>
                 </select>
                 <div className="select-arrow">
                   <i className="fas fa-chevron-down"></i>
@@ -369,7 +369,7 @@ export default function Signup() {
         {/* Image Side - Right */}
         <div className="signup-image-side">
           <img src={signupImage} alt="Signup" className="side-image" />
-          
+         
         </div>
       </div>
     </div>

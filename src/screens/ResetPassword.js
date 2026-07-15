@@ -30,7 +30,7 @@ export default function ResetPassword() {
       setLoading(true);
 
       await axios.post(
-        "http://localhost:5000/api/auth/reset-password",
+        "https://the-deft-crew-production.up.railway.app/api/auth/reset-password",
         { resetToken, newPassword: password }
       );
 

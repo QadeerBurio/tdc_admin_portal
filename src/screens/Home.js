@@ -63,10 +63,10 @@ const Dashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const leadRes = await axios.get("http://localhost:5000/api/offers/claimed-users", {
+        const leadRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/claimed-users", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const savingRes = await axios.get("http://localhost:5000/api/offers/savings-report", {
+        const savingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/savings-report", {
           headers: { Authorization: `Bearer ${token}` }
         });
 

@@ -59,7 +59,7 @@ const InterviewsManager = ({ token }) => {
   const fetchInterviews = async () => {
     try {
       setLoading(true);
-      const res = await axios.get("http://localhost:5000/api/jobs/interviews/all", {
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/interviews/all", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setInterviews(res.data);
@@ -89,7 +89,7 @@ const InterviewsManager = ({ token }) => {
 
   const fetchApplicationsForScheduling = async () => {
     try {
-      const res = await axios.get("http://localhost:5000/api/jobs/candidates/all?status=shortlisted", {
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all?status=shortlisted", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setApplications(res.data);
@@ -112,7 +112,7 @@ const InterviewsManager = ({ token }) => {
     setSubmitting(true);
     try {
       await axios.post(
-        `http://localhost:5000/api/jobs/interviews/schedule`,
+        `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/schedule`,
         {
           applicationId: selectedApplication,
           interviewDate: new Date(interviewDate).toISOString(),
@@ -156,7 +156,7 @@ const InterviewsManager = ({ token }) => {
         }
         
         await axios.put(
-          `http://localhost:5000/api/jobs/interviews/reschedule/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/reschedule/${interviewId}`,
           {
             interviewDate: formattedDate.toISOString(),
             interviewNotes: "Interview rescheduled"
@@ -179,7 +179,7 @@ const InterviewsManager = ({ token }) => {
       setActionInProgress(interviewId);
       try {
         await axios.delete(
-          `http://localhost:5000/api/jobs/interviews/cancel/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/cancel/${interviewId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         alert("Interview cancelled successfully");
@@ -199,7 +199,7 @@ const InterviewsManager = ({ token }) => {
       setActionInProgress(interviewId);
       try {
         await axios.patch(
-          `http://localhost:5000/api/jobs/interviews/complete/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/complete/${interviewId}`,
           { feedback },
           { headers: { Authorization: `Bearer ${token}` } }
         );

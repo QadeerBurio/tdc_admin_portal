@@ -131,7 +131,7 @@ const VerifyClaim = () => {
   const handleProcessPayment = async () => {
     try {
       await axios.post(
-        "http://localhost:5000/api/offers/redeem-payment",
+        "https://the-deft-crew-production.up.railway.app/api/offers/redeem-payment",
         {
           offerId: result.offerId,
           userId: result._id,

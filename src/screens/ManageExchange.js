@@ -68,7 +68,7 @@ const ManageExchange = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  const BASE_URL = 'http://localhost:5000/api/admin/exchange';
+  const BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/exchange';
   
   const api = axios.create({ 
     headers: { Authorization: `Bearer ${token}` } 

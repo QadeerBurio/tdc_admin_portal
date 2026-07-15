@@ -25,10 +25,10 @@ const TravelDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const bookingRes = await axios.get("http://localhost:5000/api/traveler/bookings", {
+        const bookingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/bookings", {
           headers: { Authorization: `Bearer ${token}` }
         });
-        const savingRes = await axios.get("http://localhost:5000/api/traveler/savings", {
+        const savingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/savings", {
           headers: { Authorization: `Bearer ${token}` }
         });
 

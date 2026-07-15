@@ -27,7 +27,7 @@ import {
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
-const API_BASE_URL = "http://localhost:5000/api/offers";
+const API_BASE_URL = "https://the-deft-crew-production.up.railway.app/api/offers";
 const CATEGORIES = [
   "Restaurant",
   "Cafe & Coffee",
