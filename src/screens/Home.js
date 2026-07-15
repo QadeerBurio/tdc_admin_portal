@@ -26,13 +26,13 @@ import {
   FaCog,
   FaBars,
   FaTimes,
-  FaArrowRight,
+  // FaArrowRight,
   FaStar,
   FaLongArrowAltUp,
   FaUserCircle,
   FaChevronDown,
   FaPlus,
-  FaEye,
+  // FaEye,
   FaFileAlt,
   FaEdit,
   FaLock,
@@ -107,6 +107,12 @@ const Dashboard = () => {
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
+  };
+
+  // Function to handle navigation to Create Offer tab
+  const handleCreateOfferNavigation = () => {
+    setActiveTab("createOffer");
+    if (isMobile) setIsMobileMenuOpen(false);
   };
 
   const navItems = [
@@ -202,7 +208,7 @@ const Dashboard = () => {
           <button
             style={styles.actionBtn}
             className="quick-action"
-            onClick={() => setActiveTab("createOffer")}
+            onClick={handleCreateOfferNavigation}
           >
             <div style={styles.actionIconWrapper}>
               <FaPlus size={24} />
@@ -212,7 +218,10 @@ const Dashboard = () => {
           <button
             style={styles.actionBtn}
             className="quick-action"
-            onClick={() => setActiveTab("myOffers")}
+            onClick={() => {
+              setActiveTab("myOffers");
+              if (isMobile) setIsMobileMenuOpen(false);
+            }}
           >
             <div style={styles.actionIconWrapper}>
               <FaFileAlt size={24} />
@@ -222,7 +231,10 @@ const Dashboard = () => {
           <button
             style={styles.actionBtn}
             className="quick-action"
-            onClick={() => setActiveTab("claimedUsers")}
+            onClick={() => {
+              setActiveTab("claimedUsers");
+              if (isMobile) setIsMobileMenuOpen(false);
+            }}
           >
             <div style={styles.actionIconWrapper}>
               <FaUsers size={24} />
@@ -232,7 +244,10 @@ const Dashboard = () => {
           <button
             style={styles.actionBtn}
             className="quick-action"
-            onClick={() => setActiveTab("verifyClaim")}
+            onClick={() => {
+              setActiveTab("verifyClaim");
+              if (isMobile) setIsMobileMenuOpen(false);
+            }}
           >
             <div style={styles.actionIconWrapper}>
               <FaShieldAlt size={24} />
@@ -262,8 +277,11 @@ const Dashboard = () => {
       case "verifyClaim":
         content = <VerifyClaim />;
         break;
-      default:
+      case "savingsHistory":
         content = <SavingsHistory />;
+        break;
+      default:
+        content = renderHome();
     }
 
     return <div className="animated-content">{content}</div>;

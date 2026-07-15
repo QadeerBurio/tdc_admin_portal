@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import axios from "axios";
 import { 
   FaCloudUploadAlt, 
@@ -13,17 +13,17 @@ import {
   FaCheckCircle, 
   FaImage, 
   FaInfoCircle, 
-  FaStar,
+  // FaStar,
   FaTimes,
-  FaPlus,
-  FaMinus,
-  FaClock,
-  FaBuilding,
-  FaUsers,
+  // FaPlus,
+  // FaMinus,
+  // FaClock,
+  // FaBuilding,
+  // FaUsers,
   FaRocket,
   FaSpinner,
   FaShieldAlt,
-  FaCalendarAlt,
+  // FaCalendarAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -52,13 +52,22 @@ const CATEGORIES = [
   "Others"
 ];
 
+// Default redemption instructions with the 7 steps
+const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the Offers section.
+2. Browse Brand and select the offer you want.
+3. Save the discount offer in the app.
+4. Visit the participating brand/store offering the discount.
+5. Show your TDC Card or Student ID Card to the staff before making the payment.
+6. The store staff will verify your eligibility for the offer.
+7. Once verified, the discount will be applied, and you can redeem the offer successfully.`;
+
 export default function CreateOffer() {
   const [form, setForm] = useState({
     title: "",
     description: "",
     discountPercentage: "",
     category: "",
-    redeemInstructions: "",
+    redeemInstructions: DEFAULT_REDEMPTION_INSTRUCTIONS,
     location: "",
     isOnline: false,
     isInStore: false,
@@ -97,7 +106,6 @@ export default function CreateOffer() {
       setUploadProgress(0);
       const token = localStorage.getItem("token");
       
-      // Simulate upload progress
       const interval = setInterval(() => {
         setUploadProgress(prev => {
           if (prev >= 90) {
@@ -122,7 +130,8 @@ export default function CreateOffer() {
       setTimeout(() => {
         setForm({
           title: "", description: "", discountPercentage: "", category: "",
-          redeemInstructions: "", location: "", isOnline: false, isInStore: false
+          redeemInstructions: DEFAULT_REDEMPTION_INSTRUCTIONS,
+          location: "", isOnline: false, isInStore: false
         });
         setPreview(null);
         setImage(null);
@@ -177,12 +186,10 @@ export default function CreateOffer() {
 
   return (
     <div style={styles.container}>
-      {/* Decorative Elements */}
       <div style={styles.decorCircle1}></div>
       <div style={styles.decorCircle2}></div>
       <div style={styles.decorCircle3}></div>
       
-      {/* Success Overlay */}
       <AnimatePresence>
         {showSuccess && (
           <motion.div
@@ -200,19 +207,16 @@ export default function CreateOffer() {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
         style={styles.header}
       >
-        
         <h2 style={styles.mainTitle}>Create <span style={{color: '#ff961a'}}>Student Offer</span></h2>
         <p style={styles.subTitle}>Launch your discount and connect with thousands of students instantly</p>
       </motion.div>
 
-      {/* Progress Bar */}
       {loading && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -232,16 +236,11 @@ export default function CreateOffer() {
       )}
 
       <div style={styles.formGrid}>
-        {/* Left Column */}
         <div style={styles.inputSection}>
-          {/* Title */}
           {renderField("title", "Offer Title", <FaTag />, "text", true)}
-          
-          {/* Description */}
           {renderField("description", "Description", <FaAlignLeft />, "text", true)}
 
           <div style={styles.row}>
-            {/* Category */}
             <motion.div 
               className="animate-field"
               initial={{ opacity: 0, y: 20 }}
@@ -265,7 +264,6 @@ export default function CreateOffer() {
               </div>
             </motion.div>
 
-            {/* Discount */}
             <motion.div 
               className="animate-field"
               initial={{ opacity: 0, y: 20 }}
@@ -287,7 +285,6 @@ export default function CreateOffer() {
             </motion.div>
           </div>
 
-          {/* Availability Toggles */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, y: 20 }}
@@ -310,7 +307,6 @@ export default function CreateOffer() {
             </div>
           </motion.div>
 
-          {/* Location */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, y: 20 }}
@@ -330,7 +326,6 @@ export default function CreateOffer() {
             </div>
           </motion.div>
 
-          {/* Redemption Instructions */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, y: 20 }}
@@ -338,23 +333,25 @@ export default function CreateOffer() {
             transition={{ duration: 0.4, delay: 0.3 }}
             style={styles.inputGroup}
           >
-            <label style={styles.label}>
-              <FaInfoCircle style={{marginRight: '6px', fontSize: '12px'}} />
+            <label style={{...styles.label, display: 'flex', alignItems: 'center'}}>
+              <FaInfoCircle style={{marginRight: '6px', fontSize: '14px'}} />
               Redemption Instructions
             </label>
-            <textarea
-              style={styles.textarea}
-              placeholder="How can students claim this? (e.g., Show student ID at counter, use code STUDENT20)"
-              value={form.redeemInstructions}
-              onChange={(e) => setForm({ ...form, redeemInstructions: e.target.value })}
-              rows={4}
-            />
+            <div style={{...styles.textareaWrapper, borderColor: focusedField === 'redeemInstructions' ? '#ff961a' : '#e2e8f0'}}>
+              <textarea
+                style={styles.textarea}
+                placeholder="How can students claim this? (e.g., Show student ID at counter, use code STUDENT20)"
+                value={form.redeemInstructions}
+                onChange={(e) => setForm({ ...form, redeemInstructions: e.target.value })}
+                onFocus={() => setFocusedField('redeemInstructions')}
+                onBlur={() => setFocusedField(null)}
+                rows={7}
+              />
+            </div>
           </motion.div>
         </div>
 
-        {/* Right Column */}
         <div style={styles.uploadSection}>
-          {/* Image Upload */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, x: 20 }}
@@ -389,7 +386,6 @@ export default function CreateOffer() {
             )}
           </motion.div>
 
-          {/* Preview Card */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, x: 20 }}
@@ -417,7 +413,6 @@ export default function CreateOffer() {
             </div>
           </motion.div>
 
-          {/* Quick Tips */}
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, x: 20 }}
@@ -435,7 +430,6 @@ export default function CreateOffer() {
         </div>
       </div>
 
-      {/* Footer */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -644,21 +638,6 @@ const styles = {
     position: "relative",
     zIndex: 1
   },
-  headerBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    background: "#fff7ed",
-    padding: "6px 16px",
-    borderRadius: "40px",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#ff961a",
-    marginBottom: "16px"
-  },
-  headerIcon: {
-    fontSize: "12px"
-  },
   mainTitle: { 
     margin: 0, 
     fontSize: "32px", 
@@ -734,20 +713,28 @@ const styles = {
     color: "#1e293b",
     fontWeight: "500"
   },
+  textareaWrapper: {
+    border: "2px solid #e2e8f0",
+    borderRadius: "14px",
+    backgroundColor: "#f8fafc",
+    transition: "all 0.2s ease",
+    overflow: "hidden"
+  },
   textarea: { 
     width: "100%", 
     padding: "14px 16px", 
-    borderRadius: "14px", 
-    border: "2px solid #e2e8f0", 
-    backgroundColor: "#f8fafc", 
+    border: "none", 
+    backgroundColor: "transparent", 
     outline: "none", 
     fontSize: "14px", 
     fontFamily: "inherit",
     resize: "vertical",
-    transition: "border-color 0.2s ease",
+    minHeight: "180px",
+    maxHeight: "350px",
+    color: "#1e293b",
     boxSizing: "border-box",
-    minHeight: "100px",
-    color: "#1e293b"
+    lineHeight: "1.8",
+    whiteSpace: "pre-wrap"
   },
   checkboxContainer: { 
     display: "flex", 

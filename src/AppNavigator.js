@@ -26,7 +26,7 @@ import StudentDossier from "./screens/StudentDossier";
 import AdminPackageScreen from "./screens/Traveling";
 import CardManager from "./screens/CardManager";
 import AdminPackage from "./screens/AdminPackage";
-import AdminCoursePortal from "./screens/AdminCourse";
+// import AdminCoursePortal from "./screens/AdminCourse";
 import TravelDashboard from "./screens/TravelDashboard";
 import CompanyDashboard from "./screens/CompanyDashboard";
 import CandidatesManager from "./screens/CandidateManager";
@@ -35,6 +35,7 @@ import ReportsManager from "./screens/ReportsManager";
 import Landing from "./screens/Landing";
 import CompanyProfile from "./screens/roles/CompanyProfile";
 import BrandsProfile from "./screens/roles/BrandsProfile";
+import CreateOffer from "./screens/CreateOffer";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -106,6 +107,7 @@ export default function AppNavigator() {
   return (
     <Routes>
       <Route path="/home" element={<Home />} />
+      <Route path="/create-offer" element={<CreateOffer />} />
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />
