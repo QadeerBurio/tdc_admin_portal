@@ -1872,12 +1872,12 @@ body {
 
 /* ── COMPANIES & BRANDS COLLABORATION - MODERN DESIGN ────────────────────── */
 
-/* ── COMPANIES & BRANDS COLLABORATION - ATTRACTIVE MODERN DESIGN ────────────── */
+/* ── COMPANIES & BRANDS COLLABORATION - MODERN MINIMAL DESIGN ────────────── */
 
 /* ── Section Container ──────────────────────────────────────────────────── */
 .brands-collab-section {
   position: relative;
-  padding: 7rem 0;
+  padding: 6rem 0 5rem 0;
   background: linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
   overflow: hidden;
 }
@@ -1901,9 +1901,9 @@ body {
   right: 0;
   bottom: 0;
   background: 
-    radial-gradient(ellipse at 50% 20%, rgba(249, 195, 73, 0.08) 0%, transparent 60%),
-    radial-gradient(ellipse at 80% 80%, rgba(249, 195, 73, 0.05) 0%, transparent 50%),
-    radial-gradient(ellipse at 20% 80%, rgba(249, 195, 73, 0.04) 0%, transparent 50%);
+    radial-gradient(ellipse at 50% 20%, rgba(249, 195, 73, 0.06) 0%, transparent 60%),
+    radial-gradient(ellipse at 80% 80%, rgba(249, 195, 73, 0.04) 0%, transparent 50%),
+    radial-gradient(ellipse at 20% 80%, rgba(249, 195, 73, 0.03) 0%, transparent 50%);
   z-index: 0;
 }
 
@@ -1914,8 +1914,8 @@ body {
   right: 0;
   bottom: 0;
   background-image: 
-    linear-gradient(rgba(249, 195, 73, 0.06) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(249, 195, 73, 0.06) 1px, transparent 1px);
+    linear-gradient(rgba(249, 195, 73, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249, 195, 73, 0.04) 1px, transparent 1px);
   background-size: 80px 80px;
   background-position: center;
   z-index: 1;
@@ -1933,9 +1933,9 @@ body {
   top: -30%;
   left: 50%;
   transform: translateX(-50%);
-  width: 1200px;
-  height: 700px;
-  background: radial-gradient(circle, rgba(249, 195, 73, 0.10) 0%, transparent 70%);
+  width: 1000px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(249, 195, 73, 0.08) 0%, transparent 70%);
   z-index: 2;
   pointer-events: none;
   animation: spotlightFloat 10s ease-in-out infinite;
@@ -1956,115 +1956,31 @@ body {
   }
 }
 
-/* Floating particles */
-.brands-collab-particles {
-  position: absolute;
-  inset: 0;
-  z-index: 1;
-  pointer-events: none;
-}
-
-.brands-collab-particle {
-  position: absolute;
-  border-radius: 50%;
-  background: rgba(249, 195, 73, 0.12);
-  animation: particleDrift 12s ease-in-out infinite;
-}
-
-.brands-collab-particle:nth-child(1) {
-  width: 8px;
-  height: 8px;
-  top: 15%;
-  left: 10%;
-  animation-delay: 0s;
-}
-
-.brands-collab-particle:nth-child(2) {
-  width: 12px;
-  height: 12px;
-  top: 25%;
-  right: 15%;
-  animation-delay: 2s;
-  background: rgba(249, 195, 73, 0.08);
-}
-
-.brands-collab-particle:nth-child(3) {
-  width: 6px;
-  height: 6px;
-  bottom: 30%;
-  left: 20%;
-  animation-delay: 4s;
-}
-
-.brands-collab-particle:nth-child(4) {
-  width: 10px;
-  height: 10px;
-  bottom: 20%;
-  right: 10%;
-  animation-delay: 1s;
-  background: rgba(249, 195, 73, 0.10);
-}
-
-.brands-collab-particle:nth-child(5) {
-  width: 7px;
-  height: 7px;
-  top: 50%;
-  left: 5%;
-  animation-delay: 3s;
-}
-
-.brands-collab-particle:nth-child(6) {
-  width: 9px;
-  height: 9px;
-  top: 40%;
-  right: 5%;
-  animation-delay: 5s;
-  background: rgba(249, 195, 73, 0.09);
-}
-
-@keyframes particleDrift {
-  0%, 100% { 
-    transform: translate(0, 0) scale(1);
-    opacity: 0.3;
-  }
-  25% { 
-    transform: translate(30px, -20px) scale(1.5);
-    opacity: 0.7;
-  }
-  50% { 
-    transform: translate(-20px, 30px) scale(0.8);
-    opacity: 0.2;
-  }
-  75% { 
-    transform: translate(15px, 15px) scale(1.2);
-    opacity: 0.5;
-  }
-}
-
 /* ── Content Container ──────────────────────────────────────────────────── */
 .brands-collab-content {
   position: relative;
+  width: 100%;
   z-index: 5;
   text-align: center;
-  max-width: 1200px;
+  /* max-width: 1800px; */
   margin: 0 auto;
   padding: 0 1.5rem;
 }
 
 /* ── Header Styles ──────────────────────────────────────────────────────── */
 .brands-collab-header {
-  margin-bottom: 4rem;
+  margin-bottom: 3.5rem;
   position: relative;
 }
 
 .brands-collab-badge {
   display: inline-block;
-  background: linear-gradient(135deg, rgba(249, 195, 73, 0.15), rgba(249, 195, 73, 0.05));
-  border: 1px solid rgba(249, 195, 73, 0.2);
+  background: linear-gradient(135deg, rgba(249, 195, 73, 0.12), rgba(249, 195, 73, 0.04));
+  border: 1px solid rgba(249, 195, 73, 0.15);
   color: #c9951e;
   padding: 0.5rem 2rem;
   border-radius: 50px;
-  font-size: 0.75rem;
+  font-size: 0.7rem;
   font-weight: 700;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -2078,7 +1994,6 @@ body {
 .brands-collab-badge:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 30px rgba(249, 195, 73, 0.12);
-  background: linear-gradient(135deg, rgba(249, 195, 73, 0.2), rgba(249, 195, 73, 0.08));
 }
 
 .brands-collab-badge .badge-icon {
@@ -2131,11 +2046,6 @@ body {
   font-weight: 400;
 }
 
-.brands-collab-subtext strong {
-  color: #f9c349;
-  font-weight: 600;
-}
-
 /* ── Stats Row ──────────────────────────────────────────────────────────── */
 .brands-collab-stats {
   display: flex;
@@ -2179,46 +2089,17 @@ body {
 /* ── Brand Marquee ───────────────────────────────────────────────────────── */
 .brands-marquee {
   overflow: hidden;
-  padding: 2.5rem 0;
+  padding: 2rem 0;
   position: relative;
-  background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(30px);
-  -webkit-backdrop-filter: blur(30px);
-  border-radius: 24px;
-  border: 1px solid rgba(249, 195, 73, 0.08);
-  box-shadow: 
-    0 4px 40px rgba(0, 0, 0, 0.02),
-    inset 0 1px 0 rgba(255, 255, 255, 0.8);
-}
-
-.brands-marquee::before,
-.brands-marquee::after {
-  content: '';
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  width: 100px;
-  z-index: 3;
-  pointer-events: none;
-}
-
-.brands-marquee::before {
-  left: 0;
-  background: linear-gradient(90deg, rgba(255, 255, 255, 0.9) 0%, transparent 100%);
-}
-
-.brands-marquee::after {
-  right: 0;
-  background: linear-gradient(270deg, rgba(255, 255, 255, 0.9) 0%, transparent 100%);
 }
 
 /* ── Marquee Track ──────────────────────────────────────────────────────── */
 .brands-marquee-track {
   display: flex;
   align-items: center;
-  gap: 3.5rem;
+  gap: 4rem;
   padding: 0.5rem 0;
-  animation: marqueeScroll 40s linear infinite;
+  animation: marqueeScroll 35s linear infinite;
   width: max-content;
 }
 
@@ -2231,164 +2112,122 @@ body {
   100% { transform: translateX(-50%); }
 }
 
-/* ── Brand Item ──────────────────────────────────────────────────────────── */
+/* ── Brand Item - Clean Minimal Design ────────────────────────────────── */
 .brand-item {
   display: flex;
   align-items: center;
-  gap: 1.2rem;
-  padding: 1rem 2rem;
-  background: #ffffff;
-  border-radius: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  justify-content: center;
+  padding: 1rem 1.5rem;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   white-space: nowrap;
-  box-shadow: 0 2px 16px rgba(0, 0, 0, 0.02);
   position: relative;
-  overflow: hidden;
   cursor: pointer;
+  background: transparent;
 }
 
-/* ── Brand Item Glow Effect ─────────────────────────────────────────────── */
-.brand-item::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: radial-gradient(circle, rgba(249, 195, 73, 0.06) 0%, transparent 60%);
-  opacity: 0;
-  transition: opacity 0.6s ease;
-  pointer-events: none;
-}
-
-.brand-item:hover::before {
-  opacity: 1;
-}
-
-/* ── Brand Item Hover ────────────────────────────────────────────────────── */
-.brand-item:hover {
-  transform: translateY(-8px) scale(1.03);
-  box-shadow: 
-    0 16px 60px rgba(249, 195, 73, 0.12),
-    0 4px 20px rgba(249, 195, 73, 0.05);
-  border-color: rgba(249, 195, 73, 0.15);
-  background: #ffffff;
-}
-
-/* ── Brand Logo ──────────────────────────────────────────────────────────── */
-.brand-logo-circle {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: linear-gradient(135deg, #f8f8f8, #ffffff);
-  border: 1px solid rgba(0, 0, 0, 0.04);
+/* ── Brand Logo Wrapper ────────────────────────────────────────────────── */
+.brand-logo-wrapper {
+  width: 90px;
+  height: 90px;
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
-  padding: 0.6rem;
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.02);
   position: relative;
-  z-index: 1;
 }
 
-.brand-item:hover .brand-logo-circle {
-  border-color: rgba(249, 195, 73, 0.25);
-  box-shadow: 0 4px 24px rgba(249, 195, 73, 0.12);
-  transform: scale(1.05);
-  background: linear-gradient(135deg, #ffffff, #faf8f5);
-}
-
+/* ── Brand Logo Image ──────────────────────────────────────────────────── */
 .brand-logo-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  filter: grayscale(0.2);
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  filter: grayscale(0.3) brightness(0.95);
+  opacity: 0.7;
 }
 
+/* ── Brand Item Hover ────────────────────────────────────────────────────── */
 .brand-item:hover .brand-logo-img {
-  transform: scale(1.1) rotate(-3deg);
-  filter: grayscale(0);
-}
-
-/* ── Brand Name ──────────────────────────────────────────────────────────── */
-.brand-name {
-  font-weight: 600;
-  font-size: 0.95rem;
-  color: #1a1a1a;
-  transition: all 0.3s ease;
-  position: relative;
-  z-index: 1;
-}
-
-.brand-item:hover .brand-name {
-  color: #f9c349;
-  transform: translateX(2px);
-}
-
-/* ── Brand Hover Ring ────────────────────────────────────────────────────── */
-.brand-item .brand-hover-ring {
-  position: absolute;
-  inset: -2px;
-  border-radius: 18px;
-  padding: 2px;
-  background: linear-gradient(135deg, rgba(249, 195, 73, 0.2), transparent 60%);
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  pointer-events: none;
-}
-
-.brand-item:hover .brand-hover-ring {
+  filter: grayscale(0) brightness(1);
   opacity: 1;
+  transform: scale(1.15);
+}
+
+/* ── Glow Effect on Hover ───────────────────────────────────────────────── */
+.brand-item::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0);
+  width: 140px;
+  height: 140px;
+  background: radial-gradient(circle, rgba(249, 195, 73, 0.1) 0%, transparent 70%);
+  border-radius: 50%;
+  opacity: 0;
+  transition: all 0.5s cubic-bezier(0.16, 1, 0.3, 1);
+  pointer-events: none;
+  z-index: -1;
+}
+
+.brand-item:hover::after {
+  transform: translate(-50%, -50%) scale(1);
+  opacity: 1;
+}
+
+/* ── Subtle Underline Effect ────────────────────────────────────────────── */
+.brand-item::before {
+  content: '';
+  position: absolute;
+  bottom: -4px;
+  left: 50%;
+  transform: translateX(-50%) scaleX(0);
+  width: 60%;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(249, 195, 73, 0.3), transparent);
+  border-radius: 2px;
+  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.brand-item:hover::before {
+  transform: translateX(-50%) scaleX(1);
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 1200px) {
   .brands-marquee-track {
-    gap: 2.5rem;
+    gap: 3rem;
   }
   
-  .brand-item {
-    padding: 0.8rem 1.5rem;
-    gap: 1rem;
-  }
-  
-  .brand-logo-circle {
-    width: 48px;
-    height: 48px;
-    padding: 0.5rem;
-  }
-  
-  .brand-name {
-    font-size: 0.85rem;
+  .brand-logo-wrapper {
+    width: 75px;
+    height: 75px;
   }
 }
 
 @media (max-width: 1024px) {
   .brands-collab-section {
-    padding: 5rem 0;
+    padding: 5rem 0 4rem 0;
   }
   
   .brands-collab-headline {
     font-size: 2.8rem;
   }
   
-  .brands-collab-stats {
-    gap: 2rem;
+  .brands-marquee-track {
+    gap: 2.5rem;
   }
   
-  .brands-collab-stat-number {
-    font-size: 1.8rem;
+  .brand-logo-wrapper {
+    width: 65px;
+    height: 65px;
   }
 }
 
 @media (max-width: 768px) {
   .brands-collab-section {
-    padding: 4rem 0;
+    padding: 4rem 0 3rem 0;
   }
   
   .brands-collab-header {
@@ -2406,32 +2245,19 @@ body {
   
   .brands-marquee {
     padding: 1.5rem 0;
-    border-radius: 18px;
-  }
-  
-  .brands-marquee::before,
-  .brands-marquee::after {
-    width: 50px;
   }
   
   .brands-marquee-track {
-    gap: 1.8rem;
+    gap: 1rem;
   }
   
   .brand-item {
-    padding: 0.6rem 1.2rem;
-    gap: 0.8rem;
-    border-radius: 14px;
+    padding: 0.8rem 1rem;
   }
   
-  .brand-logo-circle {
-    width: 40px;
-    height: 40px;
-    padding: 0.4rem;
-  }
-  
-  .brand-name {
-    font-size: 0.8rem;
+  .brand-logo-wrapper {
+    width: 55px;
+    height: 55px;
   }
   
   .brands-collab-stats {
@@ -2442,19 +2268,20 @@ body {
     font-size: 1.6rem;
   }
   
-  .brands-collab-stat-divider {
-    height: 30px;
-  }
-  
   .brands-collab-badge {
     font-size: 0.65rem;
     padding: 0.4rem 1.5rem;
+  }
+  
+  .brand-item::after {
+    width: 100px;
+    height: 100px;
   }
 }
 
 @media (max-width: 480px) {
   .brands-collab-section {
-    padding: 3rem 0;
+    padding: 3rem 0 2rem 0;
   }
   
   .brands-collab-headline {
@@ -2468,32 +2295,19 @@ body {
   
   .brands-marquee {
     padding: 1rem 0;
-    border-radius: 14px;
-  }
-  
-  .brands-marquee::before,
-  .brands-marquee::after {
-    width: 30px;
   }
   
   .brands-marquee-track {
-    gap: 1.2rem;
+    gap: 1.5rem;
   }
   
   .brand-item {
     padding: 0.5rem 0.8rem;
-    gap: 0.6rem;
-    border-radius: 12px;
   }
   
-  .brand-logo-circle {
-    width: 34px;
-    height: 34px;
-    padding: 0.3rem;
-  }
-  
-  .brand-name {
-    font-size: 0.7rem;
+  .brand-logo-wrapper {
+    width: 45px;
+    height: 45px;
   }
   
   .brands-collab-stats {
@@ -2524,9 +2338,14 @@ body {
   }
   
   .brands-collab-radial-spotlight {
-    width: 600px;
-    height: 400px;
+    width: 500px;
+    height: 350px;
     top: -20%;
+  }
+  
+  .brand-item::after {
+    width: 80px;
+    height: 80px;
   }
 }
 
@@ -2537,7 +2356,6 @@ body {
 @media (prefers-reduced-motion: reduce) {
   .brands-collab-digital-grid,
   .brands-collab-radial-spotlight,
-  .brands-collab-particle,
   .brands-marquee-track,
   .highlight-text {
     animation: none !important;
@@ -2548,8 +2366,13 @@ body {
     transition: none !important;
   }
   
-  .brand-item:hover {
+  .brand-item:hover .brand-logo-img {
     transform: none !important;
+  }
+  
+  .brand-item::after,
+  .brand-item::before {
+    transition: none !important;
   }
   
   .brands-marquee-track:hover {
@@ -2568,21 +2391,14 @@ body {
     display: none !important;
   }
   
-  .brands-marquee {
-    background: #f8f8f8 !important;
-    backdrop-filter: none !important;
-    border: 1px solid #e0e0e0 !important;
+  .brand-item::after,
+  .brand-item::before {
+    display: none !important;
   }
   
-  .brand-item {
-    background: #ffffff !important;
-    border: 1px solid #e0e0e0 !important;
-    box-shadow: none !important;
-  }
-  
-  .brand-item:hover {
-    transform: none !important;
-    box-shadow: none !important;
+  .brand-logo-img {
+    filter: grayscale(1) !important;
+    opacity: 1 !important;
   }
   
   .highlight-text {
@@ -2590,7 +2406,6 @@ body {
     background: none !important;
   }
 }
-
 /* ── CONTACT US SECTION - MODERN DESIGN ─────────────────────────────────── */
 
 /* ── Section Container ──────────────────────────────────────────────────── */

@@ -313,8 +313,8 @@
   50% { transform: scale(1.02); }
 }
 
-.hero-headline {
-  font-size: clamp(2.2rem, 4vw, 3.5rem);
+.hero-headlines {
+  font-size: 30px;
   font-weight: 900;
   line-height: 1.1;
   color: #1a1a1a;

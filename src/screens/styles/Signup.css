@@ -366,8 +366,10 @@
   flex: 1;
 }
 
+/* ── Input Group with Error States ───────────────────────────────────────── */
 .input-group {
   text-align: left;
+  position: relative;
 }
 
 .input-group label {
@@ -388,6 +390,66 @@
 .input-group label i {
   font-size: 0.75rem;
   color: #f9c349;
+}
+
+/* Error state for input group */
+.input-group.error label {
+  color: #e74c3c;
+}
+
+.input-group.error label i {
+  color: #e74c3c;
+}
+
+.input-group.error .input-wrapper input,
+.input-group.error .select-wrapper select {
+  border-color: #e74c3c !important;
+  background: #fff5f5;
+}
+
+.input-group.error .input-wrapper input:focus,
+.input-group.error .select-wrapper select:focus {
+  box-shadow: 0 0 0 4px rgba(231, 76, 60, 0.1);
+}
+
+.input-group.error .input-highlight {
+  background: #e74c3c;
+}
+
+.input-group.error .password-hint,
+.input-group.error .phone-hint {
+  color: #e74c3c;
+}
+
+.input-group.error .password-hint i,
+.input-group.error .phone-hint i {
+  color: #e74c3c;
+}
+
+.error-message {
+  font-size: 0.7rem;
+  color: #e74c3c;
+  margin-top: 0.3rem;
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  animation: shakeError 0.4s ease;
+}
+
+.error-message::before {
+  content: '⚠';
+  font-size: 0.6rem;
+}
+
+@keyframes shakeError {
+  0%, 100% { transform: translateX(0); }
+  25% { transform: translateX(-4px); }
+  75% { transform: translateX(4px); }
+}
+
+.required-star {
+  color: #e74c3c;
+  margin-left: 2px;
 }
 
 .input-wrapper {
@@ -498,9 +560,31 @@
   font-size: 0.65rem;
 }
 
+.phone-hint {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.7rem;
+  color: #a0a0a0;
+  margin-top: 0.3rem;
+}
+
+.phone-hint i {
+  color: #f9c349;
+  font-size: 0.65rem;
+}
+
 /* ── Terms Group ──────────────────────────────────────────────────────────── */
 .terms-group {
   margin-top: 0.2rem;
+}
+
+.terms-group.error .terms-checkbox {
+  color: #e74c3c;
+}
+
+.terms-group.error .terms-checkbox label {
+  color: #e74c3c;
 }
 
 .terms-checkbox {
@@ -887,7 +971,8 @@
     font-size: 0.7rem;
   }
 
-  .password-hint {
+  .password-hint,
+  .phone-hint {
     font-size: 0.6rem;
   }
 
@@ -897,6 +982,10 @@
 
   .login-redirect {
     font-size: 0.85rem;
+  }
+
+  .error-message {
+    font-size: 0.6rem;
   }
 }
 
@@ -1054,5 +1143,9 @@
 
   .image-feature:hover {
     transform: none !important;
+  }
+  
+  .error-message {
+    animation: none !important;
   }
 }

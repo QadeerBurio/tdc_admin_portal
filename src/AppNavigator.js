@@ -36,6 +36,8 @@ import Landing from "./screens/Landing";
 import CompanyProfile from "./screens/roles/CompanyProfile";
 import BrandsProfile from "./screens/roles/BrandsProfile";
 import CreateOffer from "./screens/CreateOffer";
+import OfferImagesGallery from "./screens/OfferImagesGallery";
+import AppStoreReviews from "./screens/roles/AppStoreReviews";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -52,6 +54,8 @@ export default function AppNavigator() {
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/brands" element={<BrandsProfile />} />
         <Route path="/company_profile" element={<CompanyProfile />} />
+        <Route path="/OfferImagesGallery" element={<OfferImagesGallery />} />
+         <Route path="/AppStoreReviews" element={<AppStoreReviews />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

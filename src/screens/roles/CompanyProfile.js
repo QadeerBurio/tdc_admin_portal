@@ -172,7 +172,7 @@ const CompanyProfile = () => {
                 <span className="pre-headline-badge">⚡ THE RECRUITMENT SHORTCUT FOR FAST-GROWING COMPANIES</span>
               </motion.div>
 
-              <motion.h1 className="hero-headline" variants={itemVariants} custom={1}>
+              <motion.h1 className="hero-headlines" variants={itemVariants} custom={1}>
                 Hire Top-Tier Final Year Students and Fresh Graduates{' '}
                 <span className="highlight-text">Before Your Competitors Even See Their CVs.</span>
               </motion.h1>

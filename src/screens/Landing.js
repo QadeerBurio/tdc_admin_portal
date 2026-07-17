@@ -67,6 +67,8 @@ import peng from "../../src/assets/logos/peng.jpeg";
 import appScreenshot1 from "../../src/assets/screen1.jpeg";
 import appScreenshot2 from "../../src/assets/screen2.jpeg";
 import appScreenshot3 from "../../src/assets/screen3.png";
+import OfferImagesGallery from "./OfferImagesGallery";
+import HomeReviews from "./roles/HomeReviews";
 const Landing = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -977,98 +979,67 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* COMPANIES & BRANDS COLLABORATION SECTION */}
-      <section className="brands-collab-section">
-        <div className="brands-collab-bg-effects">
-          <div className="brands-collab-half-white-bg"></div>
-          <div className="brands-collab-digital-grid"></div>
-          <div className="brands-collab-radial-spotlight"></div>
-        </div>
+     {/* COMPANIES & BRANDS COLLABORATION SECTION */}
+<section className="brands-collab-section">
+  <div className="brands-collab-bg-effects">
+    <div className="brands-collab-half-white-bg"></div>
+    <div className="brands-collab-digital-grid"></div>
+    <div className="brands-collab-radial-spotlight"></div>
+  </div>
 
-        <div className="container">
-          <motion.div
-            className="brands-collab-content"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <motion.div
-              className="brands-collab-header"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
-              <motion.span
-                className="brands-collab-badge"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-              >
-                🏢 COMPANIES & BRANDS
-              </motion.span>
+  <div className="container">
+    <motion.div
+      className="brands-collab-content"
+      initial={{ opacity: 0, y: 40 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true }}
+      transition={{ duration: 0.7 }}
+    >
+      <motion.div
+        className="brands-collab-header"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ delay: 0.1, duration: 0.6 }}
+      >
+        <motion.span
+          className="brands-collab-badge"
+          initial={{ opacity: 0, scale: 0.8 }}
+          whileInView={{ opacity: 1, scale: 1 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.2, duration: 0.4 }}
+        >
+          <span className="badge-icon"></span> COMPANIES & BRANDS
+        </motion.span>
 
-              <motion.h2
-                className="brands-collab-headline"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
-                Trusted by{" "}
-                <span className="highlight-text">Industry Leaders</span>
-              </motion.h2>
+        <motion.h2
+          className="brands-collab-headline"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.3, duration: 0.6 }}
+        >
+          Trusted by{" "}
+          <span className="highlight-text">Industry Leaders</span>
+        </motion.h2>
 
-              <motion.p
-                className="brands-collab-subtext"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                Partnering with top companies and brands to create meaningful
-                connections with students
-              </motion.p>
-            </motion.div>
+        <motion.p
+          className="brands-collab-subtext"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          transition={{ delay: 0.4, duration: 0.6 }}
+        >
+          Partnering with top companies and brands to create meaningful
+          connections with students
+        </motion.p>
+      </motion.div>
 
-            <motion.div
-              className="brands-marquee"
-              initial={{ opacity: 0, scale: 0.95 }}
-              whileInView={{ opacity: 1, scale: 1 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.5, duration: 0.8 }}
-            >
-              <div className="brands-marquee-track">
-                {[...brands, ...brands].map((brand, index) => (
-                  <motion.div
-                    key={index}
-                    className="brand-item"
-                    whileHover={{
-                      y: -6,
-                      scale: 1.02,
-                      boxShadow: "0 12px 40px rgba(229, 182, 62, 0.08)",
-                    }}
-                    transition={{ duration: 0.3 }}
-                  >
-                    <div className="brand-logo-circle">
-                      <img
-                        src={brand.logo}
-                        alt={brand.name}
-                        className="brand-logo-img"
-                      />
-                    </div>
-                    <span className="brand-name">{brand.name}</span>
-                    <div className="brand-glow"></div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
+      <OfferImagesGallery/>
+    </motion.div>
+  </div>
+</section>
+<HomeReviews/>
       {/* CONTACT US SECTION */}
       <section
         ref={sectionRefs.contact}
@@ -1171,7 +1142,7 @@ const Landing = () => {
                     <iframe
                       src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2858.069255290672!2d67.066767!3d24.791769799999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33cebff2f4c39%3A0xd0b467e3ee81f4a7!2sThe%20Deft%20Crew-Digital%20Marketing%20Agency%20%7C%20Social%20Media%20Marketing%20%26%20Influencer%20Agency!5e1!3m2!1sen!2s!4v1784106864269!5m2!1sen!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
                       width="100%"
-                      height="300"
+                      height="500"
                       style={{ border: 0, borderRadius: "12px" }}
                       allowFullScreen=""
                       loading="lazy"
