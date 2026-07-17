@@ -106,6 +106,7 @@ export default function AppNavigator() {
   // ---------------- STUDENT/BRAND ROUTES ----------------
   return (
     <Routes>
+      
       <Route path="/home" element={<Home />} />
       <Route path="/create-offer" element={<CreateOffer />} />
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
