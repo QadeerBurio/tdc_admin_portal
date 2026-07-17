@@ -213,7 +213,7 @@ export default function CreateOffer() {
         transition={{ duration: 0.5 }}
         style={styles.header}
       >
-        <h2 style={styles.mainTitle}>Create <span style={{color: '#ff961a'}}>Student Offer</span></h2>
+        <h2 style={styles.mainTitle}>Students <span style={{color: '#ff961a'}}>Discount Offer</span></h2>
         <p style={styles.subTitle}>Launch your discount and connect with thousands of students instantly</p>
       </motion.div>
 

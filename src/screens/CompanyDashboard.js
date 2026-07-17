@@ -37,6 +37,8 @@ import {
   FaLock,
   FaShieldAlt,
   FaGlobe,
+  FaBuilding,
+  FaImage,
 } from "react-icons/fa";
 
 const CompanyDashboard = () => {
@@ -60,11 +62,19 @@ const CompanyDashboard = () => {
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [employeeData, setEmployeeData] = useState(null);
+  const [employeeStats, setEmployeeStats] = useState({
+    totalApplications: 0,
+    pendingReviews: 0,
+    interviewsScheduled: 0,
+    offersMade: 0,
+  });
   const userMenuRef = useRef(null);
 
   useEffect(() => {
     if (token) {
       fetchAllData();
+      fetchEmployeeData();
     }
   }, [token]);
 
@@ -84,8 +94,66 @@ const CompanyDashboard = () => {
       fetchDashboardStats(),
       fetchRecentApplications(),
       fetchUpcomingInterviews(),
+      fetchEmployeeStats(),
     ]);
     setRefreshing(false);
+  };
+
+  const fetchEmployeeData = async () => {
+    try {
+      const res = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/auth/me",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      // Set employee data with proper fallbacks
+      setEmployeeData({
+        ...res.data,
+        logo: res.data.logo || "",
+        companyName: res.data.companyName || res.data.brandName || "",
+        brandName: res.data.brandName || "",
+        name: res.data.name || user?.name || "",
+      });
+      
+      console.log("✅ Employee Data loaded:", res.data);
+    } catch (err) {
+      console.error("❌ Error fetching employee data", err);
+      // Fallback to user data from context
+      setEmployeeData({
+        name: user?.name || "",
+        email: user?.email || "",
+        companyName: user?.companyName || "",
+        logo: user?.logo || "",
+      });
+    }
+  };
+
+  const fetchEmployeeStats = async () => {
+    try {
+      const res = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/jobs/employee/stats",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      setEmployeeStats({
+        totalApplications: res.data.totalApplications || 0,
+        pendingReviews: res.data.pendingReviews || 0,
+        interviewsScheduled: res.data.interviewsScheduled || 0,
+        offersMade: res.data.offersMade || 0,
+      });
+    } catch (err) {
+      console.error("Error fetching employee stats", err);
+      // Use fallback
+      setEmployeeStats({
+        totalApplications: stats.totalApplications || 0,
+        pendingReviews: stats.pendingApplications || 0,
+        interviewsScheduled: stats.upcomingInterviews || 0,
+        offersMade: stats.hiredCandidates || 0,
+      });
+    }
   };
 
   const fetchDashboardStats = async () => {
@@ -148,6 +216,25 @@ const CompanyDashboard = () => {
     navigate("/login", { replace: true });
   };
 
+  // Get company name from employee data or user data
+  const getCompanyName = () => {
+    return employeeData?.companyName || 
+           employeeData?.brandName || 
+           user?.companyName || 
+           user?.brandName || 
+           "Employer";
+  };
+
+  // Get user display name
+  const getDisplayName = () => {
+    return employeeData?.name || user?.name || "User";
+  };
+
+  // Get logo URL
+  const getLogoUrl = () => {
+    return employeeData?.logo || user?.logo || "";
+  };
+
   const navItems = [
     {
       id: "dashboard",
@@ -200,257 +287,322 @@ const CompanyDashboard = () => {
     }
   };
 
-  const renderDashboard = () => (
-    <div style={styles.dashboardContainer}>
-      <div style={styles.dashboardHeader}>
-        <div style={styles.headerLeft}>
-          <h1 style={styles.pageTitle}>Dashboard</h1>
-          <p style={styles.pageSubtitle}>Welcome back, {user?.name || "Employer"}! Here's your overview</p>
-        </div>
-        <div style={styles.headerRight}>
-          <div style={styles.searchBar}>
-            <FaSearch style={styles.searchIcon} />
-            <input type="text" placeholder="Search..." style={styles.searchInput} />
-          </div>
-          <button style={styles.notificationBtn}>
-            <FaBell />
-            <span style={styles.notificationBadge}>3</span>
-          </button>
-          <button style={styles.settingsBtn}>
-            <FaCog />
-          </button>
-        </div>
-      </div>
+  const renderDashboard = () => {
+    const companyName = getCompanyName();
+    const displayName = getDisplayName();
+    const logoUrl = getLogoUrl();
 
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard} className="stat-card">
-          <div style={styles.statIconWrapper}>
-            <FaBriefcase style={styles.statIcon} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>{stats.totalJobs}</h3>
-            <p style={styles.statLabel}>Total Jobs</p>
-            <span style={styles.statTrend}>
-              <span style={styles.trendUp}>↑</span> {stats.activeJobs} active
-            </span>
-          </div>
-        </div>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#ecfdf5" }}>
-            <FaFileAlt style={{ ...styles.statIcon, color: "#10b981" }} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>{stats.totalApplications}</h3>
-            <p style={styles.statLabel}>Applications</p>
-            <span style={styles.statTrend}>
-              <span style={styles.trendUp}>↑</span> {stats.pendingApplications} pending
-            </span>
-          </div>
-        </div>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#fef3c7" }}>
-            <FaUserTie style={{ ...styles.statIcon, color: "#f59e0b" }} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>{stats.shortlistedCandidates}</h3>
-            <p style={styles.statLabel}>Shortlisted</p>
-            <span style={styles.statTrend}>Ready for interview</span>
-          </div>
-        </div>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#f3e8ff" }}>
-            <FaCalendarCheck style={{ ...styles.statIcon, color: "#8b5cf6" }} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>{stats.upcomingInterviews}</h3>
-            <p style={styles.statLabel}>Upcoming Interviews</p>
-            <span style={styles.statTrend}>Total: {stats.totalInterviews} scheduled</span>
-          </div>
-        </div>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#dcfce7" }}>
-            <FaCheckCircle style={{ ...styles.statIcon, color: "#059669" }} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>{stats.hiredCandidates}</h3>
-            <p style={styles.statLabel}>Hired</p>
-            <span style={styles.statTrend}>Successfully placed</span>
-          </div>
-        </div>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#ffe4e6" }}>
-            <FaEye style={{ ...styles.statIcon, color: "#e11d48" }} />
-          </div>
-          <div style={styles.statContent}>
-            <h3 style={styles.statValue}>245</h3>
-            <p style={styles.statLabel}>Total Views</p>
-            <span style={styles.statTrend}>Last 30 days</span>
-          </div>
-        </div>
-      </div>
-
-      <div style={styles.twoColumnGrid}>
-        <div style={styles.sectionCard} className="section-card">
-          <div style={styles.sectionHeader}>
-            <div>
-              <h3 style={styles.sectionTitle}>Recent Applications</h3>
-              <p style={styles.sectionSubtitle}>Latest candidates who applied</p>
+    return (
+      <div style={styles.dashboardContainer}>
+        {/* Welcome Banner with Employee Info */}
+        <div style={styles.welcomeBanner}>
+          <div style={styles.welcomeContent}>
+            <div style={styles.welcomeText}>
+              <h1 style={styles.welcomeTitle}>
+                Welcome back, {displayName}! 👋
+              </h1>
+              <p style={styles.welcomeSubtitle}>
+                {companyName ? (
+                  <>Managing <strong>{companyName}</strong></>
+                ) : (
+                  "Here's your recruitment overview"
+                )}
+              </p>
             </div>
+            <div style={styles.welcomeStats}>
+              <div style={styles.welcomeStat}>
+                <span style={styles.welcomeStatValue}>{employeeStats.totalApplications}</span>
+                <span style={styles.welcomeStatLabel}>Applications</span>
+              </div>
+              <div style={styles.welcomeStatDivider} />
+              <div style={styles.welcomeStat}>
+                <span style={styles.welcomeStatValue}>{employeeStats.pendingReviews}</span>
+                <span style={styles.welcomeStatLabel}>Pending</span>
+              </div>
+              <div style={styles.welcomeStatDivider} />
+              <div style={styles.welcomeStat}>
+                <span style={styles.welcomeStatValue}>{employeeStats.interviewsScheduled}</span>
+                <span style={styles.welcomeStatLabel}>Interviews</span>
+              </div>
+              <div style={styles.welcomeStatDivider} />
+              <div style={styles.welcomeStat}>
+                <span style={styles.welcomeStatValue}>{employeeStats.offersMade}</span>
+                <span style={styles.welcomeStatLabel}>Offers</span>
+              </div>
+            </div>
+          </div>
+          {logoUrl && (
+            <div style={styles.companyLogoContainer}>
+              <img 
+                src={logoUrl} 
+                alt="Company Logo" 
+                style={styles.companyLogo}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = `
+                    <div style="${styles.companyLogoFallback}">
+                      <FaBuilding size={40} color="#94a3b8" />
+                    </div>
+                  `;
+                }}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* Rest of the dashboard content remains the same */}
+        <div style={styles.dashboardHeader}>
+          <div style={styles.headerLeft}>
+            <p style={styles.pageSubtitle}>Your recruitment dashboard at a glance</p>
+          </div>
+          <div style={styles.headerRight}>
+            <div style={styles.searchBar}>
+              <FaSearch style={styles.searchIcon} />
+              <input type="text" placeholder="Search..." style={styles.searchInput} />
+            </div>
+            <button style={styles.notificationBtn}>
+              <FaBell />
+              <span style={styles.notificationBadge}>3</span>
+            </button>
+            <button style={styles.settingsBtn}>
+              <FaCog />
+            </button>
+          </div>
+        </div>
+
+        {/* Stats Grid */}
+        <div style={styles.statsGrid}>
+          <div style={styles.statCard} className="stat-card">
+            <div style={styles.statIconWrapper}>
+              <FaBriefcase style={styles.statIcon} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>{stats.totalJobs}</h3>
+              <p style={styles.statLabel}>Total Jobs</p>
+              <span style={styles.statTrend}>
+                <span style={styles.trendUp}>↑</span> {stats.activeJobs} active
+              </span>
+            </div>
+          </div>
+          <div style={styles.statCard} className="stat-card">
+            <div style={{ ...styles.statIconWrapper, background: "#ecfdf5" }}>
+              <FaFileAlt style={{ ...styles.statIcon, color: "#10b981" }} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>{stats.totalApplications}</h3>
+              <p style={styles.statLabel}>Applications</p>
+              <span style={styles.statTrend}>
+                <span style={styles.trendUp}>↑</span> {stats.pendingApplications} pending
+              </span>
+            </div>
+          </div>
+          <div style={styles.statCard} className="stat-card">
+            <div style={{ ...styles.statIconWrapper, background: "#fef3c7" }}>
+              <FaUserTie style={{ ...styles.statIcon, color: "#f59e0b" }} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>{stats.shortlistedCandidates}</h3>
+              <p style={styles.statLabel}>Shortlisted</p>
+              <span style={styles.statTrend}>Ready for interview</span>
+            </div>
+          </div>
+          <div style={styles.statCard} className="stat-card">
+            <div style={{ ...styles.statIconWrapper, background: "#f3e8ff" }}>
+              <FaCalendarCheck style={{ ...styles.statIcon, color: "#8b5cf6" }} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>{stats.upcomingInterviews}</h3>
+              <p style={styles.statLabel}>Upcoming Interviews</p>
+              <span style={styles.statTrend}>Total: {stats.totalInterviews} scheduled</span>
+            </div>
+          </div>
+          <div style={styles.statCard} className="stat-card">
+            <div style={{ ...styles.statIconWrapper, background: "#dcfce7" }}>
+              <FaCheckCircle style={{ ...styles.statIcon, color: "#059669" }} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>{stats.hiredCandidates}</h3>
+              <p style={styles.statLabel}>Hired</p>
+              <span style={styles.statTrend}>Successfully placed</span>
+            </div>
+          </div>
+          <div style={styles.statCard} className="stat-card">
+            <div style={{ ...styles.statIconWrapper, background: "#ffe4e6" }}>
+              <FaEye style={{ ...styles.statIcon, color: "#e11d48" }} />
+            </div>
+            <div style={styles.statContent}>
+              <h3 style={styles.statValue}>245</h3>
+              <p style={styles.statLabel}>Total Views</p>
+              <span style={styles.statTrend}>Last 30 days</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Two Column Grid - Recent Applications & Upcoming Interviews */}
+        <div style={styles.twoColumnGrid}>
+          <div style={styles.sectionCard} className="section-card">
+            <div style={styles.sectionHeader}>
+              <div>
+                <h3 style={styles.sectionTitle}>Recent Applications</h3>
+                <p style={styles.sectionSubtitle}>Latest candidates who applied</p>
+              </div>
+              <button
+                style={styles.viewAllBtn}
+                onClick={() => setActiveTab("candidates")}
+              >
+                View All <FaArrowRight size={12} />
+              </button>
+            </div>
+            <div style={styles.applicationsList}>
+              {recentApplications.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <FaFileAlt size={40} color="#cbd5e1" />
+                  <p>No applications yet</p>
+                </div>
+              ) : (
+                recentApplications.map((app) => (
+                  <div key={app._id} style={styles.applicationItem}>
+                    <div style={styles.applicantAvatar}>
+                      {app.fullName?.charAt(0) || "A"}
+                    </div>
+                    <div style={styles.applicantInfo}>
+                      <div style={styles.applicantName}>{app.fullName}</div>
+                      <div style={styles.applicantDetails}>
+                        <span>
+                          <FaEnvelope size={10} /> {app.email}
+                        </span>
+                        <span>
+                          <FaPhone size={10} /> {app.phone}
+                        </span>
+                      </div>
+                      <div style={styles.jobTitle}>{app.jobId?.title}</div>
+                    </div>
+                    <div style={styles.applicationStatus}>
+                      <span
+                        style={{
+                          ...styles.statusBadge,
+                          background: getStatusColor(app.status),
+                        }}
+                      >
+                        {app.status}
+                      </span>
+                      <span style={styles.appliedDate}>
+                        {new Date(app.appliedAt).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+
+          <div style={styles.sectionCard} className="section-card">
+            <div style={styles.sectionHeader}>
+              <div>
+                <h3 style={styles.sectionTitle}>Upcoming Interviews</h3>
+                <p style={styles.sectionSubtitle}>Scheduled interviews this week</p>
+              </div>
+              <button
+                style={styles.viewAllBtn}
+                onClick={() => setActiveTab("interviews")}
+              >
+                Schedule <FaArrowRight size={12} />
+              </button>
+            </div>
+            <div style={styles.interviewsList}>
+              {upcomingInterviewsList.length === 0 ? (
+                <div style={styles.emptyState}>
+                  <FaCalendarCheck size={40} color="#cbd5e1" />
+                  <p>No interviews scheduled</p>
+                </div>
+              ) : (
+                upcomingInterviewsList.map((interview) => (
+                  <div key={interview._id} style={styles.interviewItem}>
+                    <div style={styles.interviewDate}>
+                      <div style={styles.dateDay}>
+                        {new Date(interview.interviewDate).getDate()}
+                      </div>
+                      <div style={styles.dateMonth}>
+                        {new Date(interview.interviewDate).toLocaleString(
+                          "default",
+                          { month: "short" }
+                        )}
+                      </div>
+                    </div>
+                    <div style={styles.interviewInfo}>
+                      <div style={styles.candidateName}>{interview.fullName}</div>
+                      <div style={styles.interviewJob}>
+                        {interview.jobId?.title}
+                      </div>
+                      <div style={styles.interviewTime}>
+                        <FaClock size={12} />{" "}
+                        {new Date(interview.interviewDate).toLocaleTimeString()}
+                      </div>
+                    </div>
+                    <button
+                      style={styles.joinBtn}
+                      onClick={() =>
+                        window.open(interview.meetingLink || "#", "_blank")
+                      }
+                    >
+                      Join
+                    </button>
+                  </div>
+                ))
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Quick Actions */}
+        <div style={styles.quickActions}>
+          <h3 style={styles.sectionTitle}>Quick Actions</h3>
+          <div style={styles.actionsGrid}>
             <button
-              style={styles.viewAllBtn}
+              style={styles.actionBtn}
+              className="quick-action"
+              onClick={() => setActiveTab("jobs")}
+            >
+              <div style={styles.actionIconWrapper}>
+                <FaPlus size={24} />
+              </div>
+              <span>Post a Job</span>
+            </button>
+            <button
+              style={styles.actionBtn}
+              className="quick-action"
               onClick={() => setActiveTab("candidates")}
             >
-              View All <FaArrowRight size={12} />
-            </button>
-          </div>
-          <div style={styles.applicationsList}>
-            {recentApplications.length === 0 ? (
-              <div style={styles.emptyState}>
-                <FaFileAlt size={40} color="#cbd5e1" />
-                <p>No applications yet</p>
+              <div style={styles.actionIconWrapper}>
+                <FaUserPlus size={24} />
               </div>
-            ) : (
-              recentApplications.map((app) => (
-                <div key={app._id} style={styles.applicationItem}>
-                  <div style={styles.applicantAvatar}>
-                    {app.fullName?.charAt(0) || "A"}
-                  </div>
-                  <div style={styles.applicantInfo}>
-                    <div style={styles.applicantName}>{app.fullName}</div>
-                    <div style={styles.applicantDetails}>
-                      <span>
-                        <FaEnvelope size={10} /> {app.email}
-                      </span>
-                      <span>
-                        <FaPhone size={10} /> {app.phone}
-                      </span>
-                    </div>
-                    <div style={styles.jobTitle}>{app.jobId?.title}</div>
-                  </div>
-                  <div style={styles.applicationStatus}>
-                    <span
-                      style={{
-                        ...styles.statusBadge,
-                        background: getStatusColor(app.status),
-                      }}
-                    >
-                      {app.status}
-                    </span>
-                    <span style={styles.appliedDate}>
-                      {new Date(app.appliedAt).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-              ))
-            )}
-          </div>
-        </div>
-
-        <div style={styles.sectionCard} className="section-card">
-          <div style={styles.sectionHeader}>
-            <div>
-              <h3 style={styles.sectionTitle}>Upcoming Interviews</h3>
-              <p style={styles.sectionSubtitle}>Scheduled interviews this week</p>
-            </div>
+              <span>Review Candidates</span>
+            </button>
             <button
-              style={styles.viewAllBtn}
+              style={styles.actionBtn}
+              className="quick-action"
               onClick={() => setActiveTab("interviews")}
             >
-              Schedule <FaArrowRight size={12} />
+              <div style={styles.actionIconWrapper}>
+                <FaCalendarCheck size={24} />
+              </div>
+              <span>Schedule Interview</span>
+            </button>
+            <button
+              style={styles.actionBtn}
+              className="quick-action"
+              onClick={() => setActiveTab("reports")}
+            >
+              <div style={styles.actionIconWrapper}>
+                <FaDownload size={24} />
+              </div>
+              <span>Download Report</span>
             </button>
           </div>
-          <div style={styles.interviewsList}>
-            {upcomingInterviewsList.length === 0 ? (
-              <div style={styles.emptyState}>
-                <FaCalendarCheck size={40} color="#cbd5e1" />
-                <p>No interviews scheduled</p>
-              </div>
-            ) : (
-              upcomingInterviewsList.map((interview) => (
-                <div key={interview._id} style={styles.interviewItem}>
-                  <div style={styles.interviewDate}>
-                    <div style={styles.dateDay}>
-                      {new Date(interview.interviewDate).getDate()}
-                    </div>
-                    <div style={styles.dateMonth}>
-                      {new Date(interview.interviewDate).toLocaleString(
-                        "default",
-                        { month: "short" }
-                      )}
-                    </div>
-                  </div>
-                  <div style={styles.interviewInfo}>
-                    <div style={styles.candidateName}>{interview.fullName}</div>
-                    <div style={styles.interviewJob}>
-                      {interview.jobId?.title}
-                    </div>
-                    <div style={styles.interviewTime}>
-                      <FaClock size={12} />{" "}
-                      {new Date(interview.interviewDate).toLocaleTimeString()}
-                    </div>
-                  </div>
-                  <button
-                    style={styles.joinBtn}
-                    onClick={() =>
-                      window.open(interview.meetingLink || "#", "_blank")
-                    }
-                  >
-                    Join
-                  </button>
-                </div>
-              ))
-            )}
-          </div>
         </div>
       </div>
-
-      <div style={styles.quickActions}>
-        <h3 style={styles.sectionTitle}>Quick Actions</h3>
-        <div style={styles.actionsGrid}>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => setActiveTab("jobs")}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaPlus size={24} />
-            </div>
-            <span>Post a Job</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => setActiveTab("candidates")}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaUserPlus size={24} />
-            </div>
-            <span>Review Candidates</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => setActiveTab("interviews")}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaCalendarCheck size={24} />
-            </div>
-            <span>Schedule Interview</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => setActiveTab("reports")}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaDownload size={24} />
-            </div>
-            <span>Download Report</span>
-          </button>
-        </div>
-      </div>
-    </div>
-  );
+    );
+  };
 
   const renderContent = () => {
     switch (activeTab) {
@@ -469,12 +621,28 @@ const CompanyDashboard = () => {
     }
   };
 
+  const companyName = getCompanyName();
+  const displayName = getDisplayName();
+  const logoUrl = getLogoUrl();
+
   return (
     <div style={styles.container}>
       <nav style={styles.sidebar}>
         <div style={styles.brandSection}>
           <div style={styles.logoBadge}>
-            <span style={styles.logoIcon}>J</span>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Company Logo" 
+                style={styles.sidebarLogo}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<span style={styles.logoIcon}>J</span>';
+                }}
+              />
+            ) : (
+              <span style={styles.logoIcon}>J</span>
+            )}
           </div>
           <div>
             <h2 style={styles.logoText}>Job<span style={styles.logoHighlight}>Portal</span></h2>
@@ -524,11 +692,25 @@ const CompanyDashboard = () => {
             className="user-info-clickable"
           >
             <div style={styles.userAvatar}>
-              {user?.name?.charAt(0) || "E"}
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt="Company Logo" 
+                  style={styles.userAvatarImg}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.textContent = displayName?.charAt(0) || "E";
+                  }}
+                />
+              ) : (
+                displayName?.charAt(0) || "E"
+              )}
             </div>
             <div style={styles.userInfoText}>
-              <div style={styles.userName}>{user?.name || "Employer"}</div>
-              <div style={styles.userRole}>{user?.role || "Employer"}</div>
+              <div style={styles.userName}>{displayName}</div>
+              <div style={styles.userRole}>
+                {companyName || "Employer"}
+              </div>
             </div>
             <FaChevronDown style={{ 
               ...styles.userChevron, 
@@ -592,23 +774,59 @@ const CompanyDashboard = () => {
               </button>
             </div>
             <div style={styles.profileContent}>
-              <div style={styles.profileAvatar}>
-                {user?.name?.charAt(0) || "E"}
+              <div style={styles.profileAvatarContainer}>
+                {logoUrl ? (
+                  <img 
+                    src={logoUrl} 
+                    alt="Company Logo" 
+                    style={styles.profileAvatarImg}
+                    onError={(e) => {
+                      e.target.style.display = 'none';
+                      e.target.parentElement.innerHTML = `
+                        <div style="${styles.profileAvatar}">
+                          ${displayName?.charAt(0) || "E"}
+                        </div>
+                      `;
+                    }}
+                  />
+                ) : (
+                  <div style={styles.profileAvatar}>
+                    {displayName?.charAt(0) || "E"}
+                  </div>
+                )}
               </div>
               <div style={styles.profileInfo}>
-                <div style={styles.profileName}>{user?.name || "Employer"}</div>
+                <div style={styles.profileName}>{displayName}</div>
                 <div style={styles.profileEmail}>{user?.email || "employer@example.com"}</div>
-                <div style={styles.profileRole}>{user?.role || "Employer"}</div>
+                <div style={styles.profileRole}>
+                  {companyName || "Employer"}
+                </div>
+                {logoUrl && (
+                  <div style={styles.profileLogoInfo}>
+                    <FaImage size={14} style={{ marginRight: '6px' }} />
+                    Logo uploaded
+                  </div>
+                )}
               </div>
               <div style={styles.profileDivider} />
               <div style={styles.profileDetails}>
                 <div style={styles.profileDetailItem}>
                   <span style={styles.profileDetailLabel}>Member Since</span>
-                  <span style={styles.profileDetailValue}>January 2025</span>
+                  <span style={styles.profileDetailValue}>
+                    {employeeData?.createdAt ? 
+                      new Date(employeeData.createdAt).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      }) : 
+                      'January 2025'
+                    }
+                  </span>
                 </div>
                 <div style={styles.profileDetailItem}>
                   <span style={styles.profileDetailLabel}>Company</span>
-                  <span style={styles.profileDetailValue}>Tech Corp Inc.</span>
+                  <span style={styles.profileDetailValue}>
+                    {companyName || 'Not specified'}
+                  </span>
                 </div>
                 <div style={styles.profileDetailItem}>
                   <span style={styles.profileDetailLabel}>Total Jobs Posted</span>
@@ -650,6 +868,16 @@ const CompanyDashboard = () => {
                     <div style={styles.settingsItemDesc}>Update your personal information</div>
                   </div>
                   <button style={styles.settingsItemBtn}>Edit</button>
+                </div>
+                <div style={styles.settingsItem}>
+                  <div style={styles.settingsItemIcon}><FaBuilding /></div>
+                  <div style={styles.settingsItemContent}>
+                    <div style={styles.settingsItemLabel}>Company Details</div>
+                    <div style={styles.settingsItemDesc}>
+                      {companyName || 'Update company information'}
+                    </div>
+                  </div>
+                  <button style={styles.settingsItemBtn}>Update</button>
                 </div>
                 <div style={styles.settingsItem}>
                   <div style={styles.settingsItemIcon}><FaEnvelope /></div>
@@ -838,11 +1066,19 @@ const CompanyDashboard = () => {
           .user-dropdown {
             animation: slideDown 0.2s ease forwards;
           }
+
+          .company-logo {
+            transition: all 0.3s ease;
+          }
+          .company-logo:hover {
+            transform: scale(1.05);
+          }
         `}
       </style>
     </div>
   );
 };
+
 
 const styles = {
   container: {
@@ -884,6 +1120,12 @@ const styles = {
     fontWeight: "800",
     color: "#0f172a",
     boxShadow: "0 8px 25px rgba(249, 195, 73, 0.3)",
+    overflow: "hidden",
+  },
+  sidebarLogo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   logoIcon: {
     transform: "rotate(-5deg)",
@@ -985,6 +1227,12 @@ const styles = {
     fontSize: "16px",
     color: "#0f172a",
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  userAvatarImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   userName: {
     fontSize: "14px",
@@ -1048,6 +1296,90 @@ const styles = {
   },
   dashboardContainer: {
     animation: "fadeInUp 0.5s ease",
+  },
+  welcomeBanner: {
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    borderRadius: "16px",
+    padding: "24px 32px",
+    marginBottom: "24px",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    color: "#fff",
+  },
+  welcomeContent: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    flex: 1,
+  },
+  welcomeText: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  welcomeTitle: {
+    fontSize: "24px",
+    fontWeight: "700",
+    margin: 0,
+    letterSpacing: "-0.5px",
+  },
+  welcomeSubtitle: {
+    fontSize: "14px",
+    opacity: 0.7,
+    margin: 0,
+  },
+  welcomeStats: {
+    display: "flex",
+    alignItems: "center",
+    gap: "20px",
+    marginTop: "8px",
+  },
+  welcomeStat: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  welcomeStatValue: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#f9c349",
+  },
+  welcomeStatLabel: {
+    fontSize: "11px",
+    opacity: 0.6,
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+  },
+  welcomeStatDivider: {
+    width: "1px",
+    height: "30px",
+    background: "rgba(255,255,255,0.1)",
+  },
+  companyLogoContainer: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "16px",
+    background: "rgba(255,255,255,0.1)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+    border: "2px solid rgba(255,255,255,0.1)",
+  },
+  companyLogo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    padding: "8px",
+  },
+  companyLogoFallback: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
   },
   dashboardHeader: {
     display: "flex",
@@ -1474,6 +1806,11 @@ const styles = {
     padding: "32px",
     textAlign: "center",
   },
+  profileAvatarContainer: {
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: "16px",
+  },
   profileAvatar: {
     width: "80px",
     height: "80px",
@@ -1485,7 +1822,13 @@ const styles = {
     fontSize: "32px",
     fontWeight: "700",
     color: "#fff",
-    margin: "0 auto 16px",
+  },
+  profileAvatarImg: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "50%",
+    objectFit: "cover",
+    border: "3px solid #f9c349",
   },
   profileName: {
     fontSize: "22px",
@@ -1502,6 +1845,14 @@ const styles = {
     color: "#f9c349",
     fontWeight: "600",
     marginTop: "4px",
+  },
+  profileLogoInfo: {
+    fontSize: "12px",
+    color: "#10b981",
+    marginTop: "8px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
   },
   profileDivider: {
     height: "1px",

@@ -3,7 +3,7 @@ import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import "./styles/Signup.css";
-import signupImage from "../assets/login.jpeg"; // Make sure you have this image
+import signupImage from "../assets/login.jpeg";
 
 export default function Signup() {
   const navigate = useNavigate();
@@ -13,7 +13,10 @@ export default function Signup() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
-  const [touchedFields, setTouchedFields] = useState({}); // Track which fields have been touched
+  const [touchedFields, setTouchedFields] = useState({});
+  const [logoFile, setLogoFile] = useState(null);
+  const [logoPreview, setLogoPreview] = useState("");
+  const [logoError, setLogoError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -36,6 +39,38 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
+  const handleLogoChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    // Validate file type
+    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      setLogoError('Please upload a JPEG, PNG, GIF, or WEBP image');
+      setLogoFile(null);
+      setLogoPreview("");
+      return;
+    }
+
+    // Validate file size (5MB)
+    if (file.size > 5 * 1024 * 1024) {
+      setLogoError('Logo must be less than 5MB');
+      setLogoFile(null);
+      setLogoPreview("");
+      return;
+    }
+
+    setLogoError("");
+    setLogoFile(file);
+    
+    // Create preview
+    const reader = new FileReader();
+    reader.onloadend = () => {
+      setLogoPreview(reader.result);
+    };
+    reader.readAsDataURL(file);
+  };
+
   const handleBlur = (field) => {
     setTouchedFields({ ...touchedFields, [field]: true });
     setFocusedField(null);
@@ -45,7 +80,6 @@ export default function Signup() {
     setFocusedField(field);
   };
 
-  // Validation functions for each field
   const isFieldValid = (field) => {
     switch (field) {
       case "fullName":
@@ -64,6 +98,11 @@ export default function Signup() {
         return role !== "";
       case "terms":
         return agreeTerms;
+      case "logo":
+        if (role === "brand" || role === "employee") {
+          return logoFile !== null;
+        }
+        return true;
       default:
         return true;
     }
@@ -92,6 +131,8 @@ export default function Signup() {
         return "Please select a role";
       case "terms":
         return "You must agree to the Terms & Conditions";
+      case "logo":
+        return `${role === "brand" ? "Brand" : "Company"} logo is required`;
       default:
         return null;
     }
@@ -112,8 +153,10 @@ export default function Signup() {
 
     if (role === "brand") {
       allFields.brandName = true;
+      allFields.logo = true;
     } else if (role === "employee") {
       allFields.fullName = true;
+      allFields.logo = true;
     }
 
     setTouchedFields(allFields);
@@ -128,6 +171,10 @@ export default function Signup() {
     if (!validatePassword(formData.password)) errors.push("Password must contain uppercase, lowercase, and number (6+ chars)");
     if (formData.password !== formData.confirmPassword) errors.push("Passwords do not match");
     if (!agreeTerms) errors.push("Please agree to the Terms & Conditions");
+    
+    if ((role === "brand" || role === "employee") && !logoFile) {
+      errors.push(`${role === "brand" ? "Brand" : "Company"} logo is required`);
+    }
 
     if (errors.length > 0) {
       alert(errors.join("\n"));
@@ -137,34 +184,55 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      const body = {
-        role,
-        email: formData.email,
-        password: formData.password,
-        phone: formData.phone,
-        address: formData.address || "",
-      };
+      // Create FormData for file upload
+      const formDataToSend = new FormData();
+      formDataToSend.append("role", role);
+      formDataToSend.append("email", formData.email);
+      formDataToSend.append("password", formData.password);
+      formDataToSend.append("phone", formData.phone);
+      formDataToSend.append("address", formData.address || "");
 
       if (role === "brand") {
-        body.brandName = formData.brandName;
+        formDataToSend.append("brandName", formData.brandName);
+        if (logoFile) {
+          formDataToSend.append("logo", logoFile);
+        }
+      } else if (role === "employee") {
+        formDataToSend.append("fullName", formData.fullName);
+        if (logoFile) {
+          formDataToSend.append("logo", logoFile);
+        }
       } else {
-        body.fullName = formData.fullName;
+        formDataToSend.append("fullName", formData.fullName || "");
       }
 
-      await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/signup",
-        body
+      const response = await axios.post(
+        "http://localhost:5000/api/auth/signup",
+        formDataToSend,
+        {
+          headers: {
+            "Content-Type": "multipart/form-data",
+          },
+        }
       );
 
       alert(`${role} account created successfully`);
       navigate("/login");
 
     } catch (err) {
-      alert(err.response?.data?.error || "Signup failed");
+      const errorMessage = err.response?.data?.error || "Signup failed";
+      alert(errorMessage);
+      // Clear logo preview if upload failed
+      if (logoPreview) {
+        setLogoPreview("");
+        setLogoFile(null);
+      }
     } finally {
       setLoading(false);
     }
   };
+
+  const showLogoUpload = role === "brand" || role === "employee";
 
   return (
     <div className="signup-container">
@@ -194,7 +262,7 @@ export default function Signup() {
       <div className="signup-wrapper">
         {/* Form Side - Left */}
         <div className="signup-card">
-          {/* Brand Section - Logo TDC matching Signin */}
+          {/* Brand Section */}
           <div className="brand-section">
             <div className="brand-icon">
               <span className="logo-text">tdc<span className="logo-dot">.</span></span>
@@ -258,6 +326,54 @@ export default function Signup() {
                 {isFieldInvalid(role === "brand" ? 'brandName' : 'fullName') && (
                   <div className="error-message">{getFieldError(role === "brand" ? 'brandName' : 'fullName')}</div>
                 )}
+              </div>
+            )}
+
+            {/* Logo Upload for Brand and Employee */}
+            {showLogoUpload && (
+              <div className={`input-group ${isFieldInvalid('logo') ? 'error' : ''}`}>
+                <label className={focusedField === 'logo' ? 'focused' : ''}>
+                  <i className="fas fa-image"></i>
+                  {role === "brand" ? "Brand Logo" : "Company Logo"}
+                  <span className="required-star">*</span>
+                </label>
+                <div className="logo-upload-container">
+                  <div className="logo-upload-area">
+                    <input
+                      type="file"
+                      id="logo-upload"
+                      accept="image/*"
+                      onChange={handleLogoChange}
+                      onFocus={() => handleFocus('logo')}
+                      onBlur={() => handleBlur('logo')}
+                      className="logo-input"
+                      required={role === "brand" || role === "employee"}
+                    />
+                    <label htmlFor="logo-upload" className="logo-upload-label">
+                      {logoPreview ? (
+                        <div className="logo-preview-container">
+                          <img src={logoPreview} alt="Logo preview" className="logo-preview" />
+                          <div className="logo-overlay">
+                            <i className="fas fa-edit"></i>
+                            <span>Change Logo</span>
+                          </div>
+                        </div>
+                      ) : (
+                        <div className="logo-upload-placeholder">
+                          <i className="fas fa-cloud-upload-alt"></i>
+                          <p>Click to upload {role === "brand" ? "brand" : "company"} logo</p>
+                          <small>JPEG, PNG, GIF, WEBP (Max 5MB)</small>
+                        </div>
+                      )}
+                    </label>
+                  </div>
+                  {logoError && (
+                    <div className="error-message">{logoError}</div>
+                  )}
+                  {isFieldInvalid('logo') && !logoError && (
+                    <div className="error-message">{getFieldError('logo')}</div>
+                  )}
+                </div>
               </div>
             )}
 

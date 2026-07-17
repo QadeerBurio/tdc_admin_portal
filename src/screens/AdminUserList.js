@@ -1,4 +1,4 @@
-// AdminUserList.js - Fixed Modal
+// AdminUserList.js - Complete Component with Role Management
 import React, { useState, useEffect } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
@@ -9,7 +9,10 @@ import {
   UserPlus, Link2, Phone, MapPin, Calendar, Star,
   CreditCard, Hash, User, GraduationCap, FileText,
   Crown, Zap, BarChart3, Gift, Trophy, Flame,
-  ChevronDown, ChevronUp, RefreshCw, ArrowUpRight
+  ChevronDown, ChevronUp, RefreshCw, ArrowUpRight,
+  Briefcase, HardHat, Plane, Store, Settings, Key,
+  Image, Layers, PieChart, BookOpen, Briefcase as BriefcaseIcon,
+  Ticket, ShoppingBag, FileCheck, Users as UsersIcon
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -25,6 +28,17 @@ export default function AdminUserList({ role, title }) {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
   const [refreshing, setRefreshing] = useState(false);
+  const [showPassword, setShowPassword] = useState({});
+  const [userDetails, setUserDetails] = useState({
+    offers: [],
+    jobs: [],
+    applications: [],
+    claimedOffers: [],
+    savings: [],
+    resume: null,
+    stats: {}
+  });
+  const [loadingDetails, setLoadingDetails] = useState(false);
   const navigate = useNavigate();
 
   const getAuthHeaders = () => ({
@@ -39,9 +53,10 @@ export default function AdminUserList({ role, title }) {
   const fetchUsers = async () => {
     setLoading(true);
     try {
-      const res = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`, {
-        headers: getAuthHeaders(),
-      });
+      const res = await fetch(
+        `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
+        { headers: getAuthHeaders() }
+      );
       const data = await res.json();
       setUsers(Array.isArray(data) ? data : []);
     } catch (err) {
@@ -64,7 +79,8 @@ export default function AdminUserList({ role, title }) {
       'Phone': user.phone || 'N/A',
       'Role': user.role,
       'Status': user.status,
-      'University': role === "student" ? (user.university?.name || "N/A") : "N/A",
+      'Brand/Company': user.brandName || user.companyName || 'N/A',
+      'University': user.university?.name || 'N/A',
       'Roll No': user.rollNo || 'N/A',
       'Referral Code': user.referralCode || 'N/A',
       'Referral Count': user.referralCount || 0,
@@ -74,6 +90,7 @@ export default function AdminUserList({ role, title }) {
       'Card Status': user.cardStatus || 'None',
       'Payment Status': user.paymentStatus || 'None',
       'Joined Date': new Date(user.createdAt).toLocaleDateString(),
+      'Has Logo': user.logo ? 'Yes' : 'No',
     }));
 
     const worksheet = XLSX.utils.json_to_sheet(dataToExport);
@@ -88,10 +105,7 @@ export default function AdminUserList({ role, title }) {
     try {
       const res = await fetch(
         `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
-        {
-          method: "POST",
-          headers: getAuthHeaders(),
-        }
+        { method: "POST", headers: getAuthHeaders() }
       );
       if (res.ok) fetchUsers();
     } catch (err) {
@@ -101,22 +115,160 @@ export default function AdminUserList({ role, title }) {
     }
   };
 
-  const viewStudentDetails = (userId) => {
+  const viewUserDetails = (userId) => {
     setShowModal(false);
     document.body.style.overflow = 'unset';
     navigate('/dossier', { state: { userId } });
   };
 
-  const openUserModal = (user) => {
+  const openUserModal = async (user) => {
     setSelectedUser(user);
     setShowModal(true);
     document.body.style.overflow = 'hidden';
+    await fetchUserCompleteDetails(user);
   };
 
   const closeModal = () => {
     setShowModal(false);
     setSelectedUser(null);
+    setUserDetails({
+      offers: [],
+      jobs: [],
+      applications: [],
+      claimedOffers: [],
+      savings: [],
+      resume: null,
+      stats: {}
+    });
     document.body.style.overflow = 'unset';
+  };
+
+  const fetchUserCompleteDetails = async (user) => {
+    setLoadingDetails(true);
+    try {
+      const token = localStorage.getItem("token");
+      
+      // Fetch based on role
+      let details = {
+        offers: [],
+        jobs: [],
+        applications: [],
+        claimedOffers: [],
+        savings: [],
+        resume: null,
+        stats: {}
+      };
+
+      // For Brand users - fetch their offers
+      if (user.role === 'brand') {
+        try {
+          const offersRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const offersData = await offersRes.json();
+          details.offers = Array.isArray(offersData) ? offersData : [];
+          
+          // Get brand stats
+          const statsRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/offers/claimed-users`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const statsData = await statsRes.json();
+          details.stats.claimedUsers = Array.isArray(statsData) ? statsData.filter(c => c.brandId === user._id) : [];
+        } catch (err) {
+          console.error("Error fetching brand details:", err);
+        }
+      }
+
+      // For Employee users - fetch their jobs
+      if (user.role === 'employee') {
+        try {
+          const jobsRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const jobsData = await jobsRes.json();
+          details.jobs = Array.isArray(jobsData) ? jobsData : [];
+          
+          // Get job applications
+          if (details.jobs.length > 0) {
+            const appPromises = details.jobs.map(job => 
+              fetch(
+                `https://the-deft-crew-production.up.railway.app/api/jobs/job/${job._id}/applications`,
+                { headers: { Authorization: `Bearer ${token}` } }
+              ).then(res => res.json())
+            );
+            const allApps = await Promise.all(appPromises);
+            details.applications = allApps.flat();
+          }
+        } catch (err) {
+          console.error("Error fetching employee details:", err);
+        }
+      }
+
+      // For Student users - fetch their claimed offers, applications, resume
+      if (user.role === 'student') {
+        try {
+          // Fetch claimed offers (discounts)
+          const claimedRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const claimedData = await claimedRes.json();
+          details.claimedOffers = Array.isArray(claimedData) ? claimedData : [];
+          
+          // Fetch savings
+          const savingsRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const savingsData = await savingsRes.json();
+          details.savings = savingsData || { totalSaved: 0, redemptionCount: 0 };
+          
+          // Fetch job applications
+          const jobAppsRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const jobAppsData = await jobAppsRes.json();
+          details.applications = Array.isArray(jobAppsData) ? jobAppsData : [];
+          
+          // Fetch resume
+          const resumeRes = await fetch(
+            `https://the-deft-crew-production.up.railway.app/api/resume/primary`,
+            { headers: { Authorization: `Bearer ${token}` } }
+          );
+          const resumeData = await resumeRes.json();
+          details.resume = resumeData.success ? resumeData.data : null;
+          
+          // Get student stats
+          details.stats = {
+            totalDiscounts: details.claimedOffers.length,
+            totalSavings: details.savings.totalSaved || 0,
+            totalJobApplications: details.applications.length,
+            hasResume: !!details.resume,
+            referralCount: user.referralCount || 0
+          };
+        } catch (err) {
+          console.error("Error fetching student details:", err);
+        }
+      }
+
+      setUserDetails(details);
+    } catch (err) {
+      console.error("Error fetching user details:", err);
+    } finally {
+      setLoadingDetails(false);
+    }
+  };
+
+  const togglePasswordVisibility = (userId, e) => {
+    e.stopPropagation();
+    setShowPassword(prev => ({
+      ...prev,
+      [userId]: !prev[userId]
+    }));
   };
 
   const handleSort = (field) => {
@@ -128,12 +280,43 @@ export default function AdminUserList({ role, title }) {
     }
   };
 
+  const getRoleIcon = (role) => {
+    switch(role) {
+      case 'student': return <GraduationCap size={14} />;
+      case 'brand': return <Store size={14} />;
+      case 'employee': return <Briefcase size={14} />;
+      case 'traveler': return <Plane size={14} />;
+      case 'admin': return <Shield size={14} />;
+      default: return <User size={14} />;
+    }
+  };
+
+  const getRoleColor = (role) => {
+    switch(role) {
+      case 'student': return '#3b82f6';
+      case 'brand': return '#8b5cf6';
+      case 'employee': return '#10b981';
+      case 'traveler': return '#f59e0b';
+      case 'admin': return '#ef4444';
+      default: return '#94a3b8';
+    }
+  };
+
+  const getReferralLevel = (count) => {
+    if (count >= 10) return { level: 'Elite', color: '#8b5cf6', bg: '#f5f3ff', icon: '👑' };
+    if (count >= 5) return { level: 'Pro', color: '#f59e0b', bg: '#fffbeb', icon: '⭐' };
+    if (count >= 1) return { level: 'Starter', color: '#3b82f6', bg: '#eff6ff', icon: '🌟' };
+    return { level: 'New', color: '#94a3b8', bg: '#f1f5f9', icon: '💫' };
+  };
+
   const filteredAndSortedUsers = users
     .filter((user) => {
       const matchesSearch = 
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.referralCode?.toLowerCase().includes(searchTerm.toLowerCase());
+        user.referralCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
       
       const matchesStatus = filterStatus === "all" || 
         (filterStatus === "verified" && user.status === "Verified") ||
@@ -166,17 +349,14 @@ export default function AdminUserList({ role, title }) {
       return 0;
     });
 
-  const verifiedCount = users.filter(u => u.status === "Verified").length;
-  const pendingCount = users.filter(u => u.status !== "Verified").length;
-  const vipCount = users.filter(u => u.isVip).length;
-  const totalReferrals = users.reduce((sum, u) => sum + (u.referralCount || 0), 0);
-  const highReferralCount = users.filter(u => (u.referralCount || 0) >= 10).length;
-
-  const getReferralLevel = (count) => {
-    if (count >= 10) return { level: 'Elite', color: '#8b5cf6', bg: '#f5f3ff', icon: '👑' };
-    if (count >= 5) return { level: 'Pro', color: '#f59e0b', bg: '#fffbeb', icon: '⭐' };
-    if (count >= 1) return { level: 'Starter', color: '#3b82f6', bg: '#eff6ff', icon: '🌟' };
-    return { level: 'New', color: '#94a3b8', bg: '#f1f5f9', icon: '💫' };
+  const stats = {
+    total: users.length,
+    verified: users.filter(u => u.status === "Verified").length,
+    pending: users.filter(u => u.status !== "Verified").length,
+    vip: users.filter(u => u.isVip).length,
+    totalReferrals: users.reduce((sum, u) => sum + (u.referralCount || 0), 0),
+    topReferrers: users.filter(u => (u.referralCount || 0) >= 10).length,
+    withLogo: users.filter(u => u.logo).length,
   };
 
   if (loading) {
@@ -193,7 +373,7 @@ export default function AdminUserList({ role, title }) {
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
         />
-        <p style={styles.loadingText}>Loading user records...</p>
+        <p style={styles.loadingText}>Loading {role} records...</p>
         <div style={styles.loadingBar}>
           <motion.div
             initial={{ width: "0%" }}
@@ -223,8 +403,8 @@ export default function AdminUserList({ role, title }) {
         >
           <div>
             <div style={styles.headerBadge}>
-              <Users size={14} />
-              <span>User Management</span>
+              {getRoleIcon(role)}
+              <span>{role.charAt(0).toUpperCase() + role.slice(1)} Management</span>
             </div>
             <h2 style={styles.title}>{title}</h2>
             <p style={styles.subtitle}>
@@ -257,7 +437,7 @@ export default function AdminUserList({ role, title }) {
           </div>
         </motion.div>
 
-        {/* Compact Stats Summary */}
+        {/* Stats Summary */}
         <motion.div 
           className="stats-group" 
           style={styles.statsGrid}
@@ -266,12 +446,12 @@ export default function AdminUserList({ role, title }) {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {[
-            { icon: <Users size={16} />, label: 'Total', value: filteredAndSortedUsers.length, color: '#10b981', bg: '#ecfdf5' },
-            { icon: <CheckCircle size={16} />, label: 'Verified', value: verifiedCount, color: '#3b82f6', bg: '#eff6ff' },
-            { icon: <Clock size={16} />, label: 'Pending', value: pendingCount, color: '#f59e0b', bg: '#fef3c7' },
-            { icon: <Crown size={16} />, label: 'VIP', value: vipCount, color: '#ec4899', bg: '#fdf2f8' },
-            { icon: <Gift size={16} />, label: 'Referrals', value: totalReferrals, color: '#eab308', bg: '#fefce8' },
-            { icon: <Flame size={16} />, label: 'Top Referrers', value: highReferralCount, color: '#8b5cf6', bg: '#f5f3ff' },
+            { icon: <Users size={16} />, label: 'Total', value: stats.total, color: '#10b981', bg: '#ecfdf5' },
+            { icon: <CheckCircle size={16} />, label: 'Verified', value: stats.verified, color: '#3b82f6', bg: '#eff6ff' },
+            { icon: <Clock size={16} />, label: 'Pending', value: stats.pending, color: '#f59e0b', bg: '#fef3c7' },
+            { icon: <Crown size={16} />, label: 'VIP', value: stats.vip, color: '#ec4899', bg: '#fdf2f8' },
+            { icon: <Gift size={16} />, label: 'Referrals', value: stats.totalReferrals, color: '#eab308', bg: '#fefce8' },
+            { icon: <Image size={16} />, label: 'With Logo', value: stats.withLogo, color: '#8b5cf6', bg: '#f5f3ff' },
           ].map((stat, index) => (
             <motion.div 
               key={index}
@@ -305,7 +485,7 @@ export default function AdminUserList({ role, title }) {
             <Search size={18} style={styles.searchIcon} />
             <input
               type="text"
-              placeholder="Search by name, email or referral code..."
+              placeholder={`Search by name, email, ${role === 'brand' || role === 'employee' ? 'company or ' : ''}referral code...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               style={styles.searchInput}
@@ -404,6 +584,11 @@ export default function AdminUserList({ role, title }) {
                 <th style={styles.th} onClick={() => handleSort('email')} className="sortable">
                   CONTACT {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
+                {(role === "brand" || role === "employee") && (
+                  <th style={styles.th} onClick={() => handleSort('brandName')} className="sortable">
+                    COMPANY/BRAND {sortField === 'brandName' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                )}
                 {role === "student" && (
                   <th style={styles.th} onClick={() => handleSort('university')} className="sortable">
                     UNIVERSITY {sortField === 'university' && (sortDirection === 'asc' ? '↑' : '↓')}
@@ -415,7 +600,8 @@ export default function AdminUserList({ role, title }) {
                 <th style={styles.th} onClick={() => handleSort('status')} className="sortable">
                   STATUS {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
                 </th>
-                <th style={{...styles.th, textAlign: 'center'}}>VIP</th>
+                <th style={{...styles.th, textAlign: 'center'}}>LOGO</th>
+                <th style={{...styles.th, textAlign: 'center'}}>ROLE</th>
                 <th style={{...styles.th, textAlign: 'center'}}>ACTIONS</th>
               </tr>
             </thead>
@@ -424,6 +610,7 @@ export default function AdminUserList({ role, title }) {
                 filteredAndSortedUsers.map((u, index) => {
                   const referralLevel = getReferralLevel(u.referralCount);
                   const isTop = u.referralCount >= 10;
+                  const roleColor = getRoleColor(u.role);
                   
                   return (
                     <motion.tr
@@ -452,7 +639,7 @@ export default function AdminUserList({ role, title }) {
                           <div>
                             <span style={styles.userName}>{u.name}</span>
                             <div style={styles.userRole}>
-                              {u.role} • {u.isAlumni ? '🎓 Alumni' : '📚 Student'}
+                              {u.role} {u.isAlumni ? '• 🎓 Alumni' : ''}
                             </div>
                           </div>
                         </div>
@@ -469,6 +656,20 @@ export default function AdminUserList({ role, title }) {
                           </div>
                         )}
                       </td>
+                      {(role === "brand" || role === "employee") && (
+                        <td style={styles.td}>
+                          <span style={styles.companyTag}>
+                            <Building size={12} />
+                            {u.brandName || u.companyName || "N/A"}
+                          </span>
+                          {u.logo && (
+                            <div style={styles.logoIndicator}>
+                              <Image size={10} color="#10b981" />
+                              <span>Has Logo</span>
+                            </div>
+                          )}
+                        </td>
+                      )}
                       {role === "student" && (
                         <td style={styles.td}>
                           <span style={styles.universityTag}>
@@ -535,14 +736,30 @@ export default function AdminUserList({ role, title }) {
                         </span>
                       </td>
                       <td style={{...styles.td, textAlign: 'center'}}>
-                        {u.isVip ? (
-                          <span style={styles.vipBadge}>
-                            <Star size={12} color="#eab308" />
-                            VIP
-                          </span>
+                        {u.logo ? (
+                          <img 
+                            src={u.logo} 
+                            alt="Logo" 
+                            style={styles.logoThumb}
+                            onError={(e) => {
+                              e.target.style.display = 'none';
+                              e.target.parentElement.innerHTML = '<span style={{color:"#94a3b8"}}>—</span>';
+                            }}
+                          />
                         ) : (
-                          <span style={styles.nonVipBadge}>—</span>
+                          <span style={{color: '#94a3b8'}}>—</span>
                         )}
+                      </td>
+                      <td style={{...styles.td, textAlign: 'center'}}>
+                        <span style={{
+                          ...styles.roleBadge,
+                          background: `${roleColor}15`,
+                          color: roleColor,
+                          border: `1px solid ${roleColor}30`,
+                        }}>
+                          {getRoleIcon(u.role)}
+                          {u.role}
+                        </span>
                       </td>
                       <td style={{...styles.td, textAlign: 'center'}}>
                         <div style={styles.actionGroup}>
@@ -550,10 +767,10 @@ export default function AdminUserList({ role, title }) {
                             className="action-btn"
                             onClick={(e) => {
                               e.stopPropagation();
-                              viewStudentDetails(u._id);
+                              viewUserDetails(u._id);
                             }}
                             style={styles.viewBtn}
-                            title="View Full Dossier"
+                            title="View Full Profile"
                             whileHover={{ scale: 1.1 }}
                             whileTap={{ scale: 0.9 }}
                           >
@@ -603,11 +820,11 @@ export default function AdminUserList({ role, title }) {
                 })
               ) : (
                 <tr>
-                  <td colSpan="7" style={styles.emptyState}>
+                  <td colSpan="9" style={styles.emptyState}>
                     <div style={styles.emptyIcon}>👥</div>
                     <p style={styles.emptyTitle}>No users found</p>
                     <span style={styles.emptySubtext}>
-                      {searchTerm ? "Try adjusting your search" : "No users registered yet"}
+                      {searchTerm ? "Try adjusting your search" : `No ${role} users registered yet`}
                     </span>
                   </td>
                 </tr>
@@ -617,7 +834,7 @@ export default function AdminUserList({ role, title }) {
         </motion.div>
       </div>
 
-      {/* User Details Modal - Fixed Position */}
+      {/* User Details Modal */}
       <AnimatePresence>
         {showModal && selectedUser && (
           <motion.div 
@@ -641,7 +858,19 @@ export default function AdminUserList({ role, title }) {
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
                   <div style={styles.modalAvatar}>
-                    {selectedUser.name?.charAt(0).toUpperCase() || 'U'}
+                    {selectedUser.logo ? (
+                      <img 
+                        src={selectedUser.logo} 
+                        alt="Logo" 
+                        style={styles.modalAvatarImg}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.textContent = selectedUser.name?.charAt(0).toUpperCase() || 'U';
+                        }}
+                      />
+                    ) : (
+                      selectedUser.name?.charAt(0).toUpperCase() || 'U'
+                    )}
                     {selectedUser.referralCount >= 10 && <div style={styles.modalCrown}>👑</div>}
                   </div>
                   <div>
@@ -661,273 +890,441 @@ export default function AdminUserList({ role, title }) {
                 </motion.button>
               </div>
 
-              {/* Modal Body with Scroll */}
+              {/* Modal Body */}
               <div style={styles.modalBody}>
-                {/* Quick Stats */}
-                <div style={styles.modalStats}>
-                  <div style={styles.modalStat}>
-                    <span style={styles.modalStatValue}>{selectedUser.referralCount || 0}</span>
-                    <span style={styles.modalStatLabel}>Referrals</span>
+                {loadingDetails ? (
+                  <div style={styles.loadingDetails}>
+                    <div style={styles.spinnerSmall}></div>
+                    <p>Loading user details...</p>
                   </div>
-                  <div style={styles.modalStatDivider} />
-                  <div style={styles.modalStat}>
-                    <span style={styles.modalStatValue}>{selectedUser.status === 'Verified' ? '✅' : '⏳'}</span>
-                    <span style={styles.modalStatLabel}>{selectedUser.status}</span>
-                  </div>
-                  <div style={styles.modalStatDivider} />
-                  <div style={styles.modalStat}>
-                    <span style={styles.modalStatValue}>{selectedUser.isVip ? '⭐' : '—'}</span>
-                    <span style={styles.modalStatLabel}>VIP</span>
-                  </div>
-                </div>
-
-                <div style={styles.modalGrid}>
-                  {/* Personal Information */}
-                  <div style={styles.modalSection}>
-                    <h4 style={styles.modalSectionTitle}>
-                      <User size={14} /> Personal Information
-                    </h4>
-                    <div style={styles.modalDetails}>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Full Name</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.name}</span>
+                ) : (
+                  <>
+                    {/* Quick Stats */}
+                    <div style={styles.modalStats}>
+                      <div style={styles.modalStat}>
+                        <span style={styles.modalStatValue}>{selectedUser.referralCount || 0}</span>
+                        <span style={styles.modalStatLabel}>Referrals</span>
                       </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Email</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.email}</span>
+                      <div style={styles.modalStatDivider} />
+                      <div style={styles.modalStat}>
+                        <span style={styles.modalStatValue}>{selectedUser.status === 'Verified' ? '✅' : '⏳'}</span>
+                        <span style={styles.modalStatLabel}>{selectedUser.status}</span>
                       </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Phone</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.phone || 'N/A'}</span>
+                      <div style={styles.modalStatDivider} />
+                      <div style={styles.modalStat}>
+                        <span style={styles.modalStatValue}>{selectedUser.isVip ? '⭐' : '—'}</span>
+                        <span style={styles.modalStatLabel}>VIP</span>
                       </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Address</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.address || 'N/A'}</span>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Location</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.location || 'N/A'}</span>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Instagram</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.instagram || 'N/A'}</span>
+                      <div style={styles.modalStatDivider} />
+                      <div style={styles.modalStat}>
+                        <span style={styles.modalStatValue}>{selectedUser.role}</span>
+                        <span style={styles.modalStatLabel}>Role</span>
                       </div>
                     </div>
-                  </div>
 
-                  {/* Academic Information */}
-                  {role === "student" && (
-                    <div style={styles.modalSection}>
-                      <h4 style={styles.modalSectionTitle}>
-                        <GraduationCap size={14} /> Academic Information
-                      </h4>
-                      <div style={styles.modalDetails}>
-                        <div style={styles.modalDetailRow}>
-                          <span style={styles.modalDetailLabel}>University</span>
-                          <span style={styles.modalDetailValue}>{selectedUser.university?.name || 'N/A'}</span>
-                        </div>
-                        <div style={styles.modalDetailRow}>
-                          <span style={styles.modalDetailLabel}>Roll No</span>
-                          <span style={styles.modalDetailValue}>{selectedUser.rollNo || 'N/A'}</span>
-                        </div>
-                        <div style={styles.modalDetailRow}>
-                          <span style={styles.modalDetailLabel}>Alumni</span>
-                          <span style={styles.modalDetailValue}>{selectedUser.isAlumni ? '✅ Yes' : '❌ No'}</span>
-                        </div>
-                        {selectedUser.skills && selectedUser.skills.length > 0 && (
+                    <div style={styles.modalGrid}>
+                      {/* Personal Information */}
+                      <div style={styles.modalSection}>
+                        <h4 style={styles.modalSectionTitle}>
+                          <User size={14} /> Personal Information
+                        </h4>
+                        <div style={styles.modalDetails}>
                           <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>Skills</span>
-                            <div style={styles.modalSkillsList}>
-                              {selectedUser.skills.map((skill, i) => (
-                                <span key={i} style={styles.modalSkillTag}>{skill}</span>
-                              ))}
+                            <span style={styles.modalDetailLabel}>Full Name</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.name}</span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Email</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.email}</span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Phone</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.phone || 'N/A'}</span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Address</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.address || 'N/A'}</span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Location</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.location || 'N/A'}</span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Instagram</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.instagram || 'N/A'}</span>
+                          </div>
+                          {selectedUser.logo && (
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Logo</span>
+                              <img 
+                                src={selectedUser.logo} 
+                                alt="Logo" 
+                                style={styles.modalLogoPreview}
+                                onError={(e) => { e.target.style.display = 'none'; }}
+                              />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+
+                      {/* Brand/Employee Specific */}
+                      {(selectedUser.role === "brand" || selectedUser.role === "employee") && (
+                        <div style={styles.modalSection}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <Store size={14} /> Company/Brand Details
+                          </h4>
+                          <div style={styles.modalDetails}>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Name</span>
+                              <span style={styles.modalDetailValue}>
+                                {selectedUser.brandName || selectedUser.companyName || 'N/A'}
+                              </span>
+                            </div>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Role</span>
+                              <span style={styles.modalDetailValue}>
+                                <span style={{
+                                  ...styles.modalRoleBadge,
+                                  background: `${getRoleColor(selectedUser.role)}15`,
+                                  color: getRoleColor(selectedUser.role),
+                                }}>
+                                  {getRoleIcon(selectedUser.role)}
+                                  {selectedUser.role}
+                                </span>
+                              </span>
                             </div>
                           </div>
-                        )}
-                      </div>
-                    </div>
-                  )}
-
-                  {/* Referral Information */}
-                  <div style={styles.modalSection}>
-                    <h4 style={styles.modalSectionTitle}>
-                      <UserPlus size={14} /> Referral Information
-                    </h4>
-                    <div style={styles.modalDetails}>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Referral Code</span>
-                        <code style={styles.modalReferralCode}>{selectedUser.referralCode || 'N/A'}</code>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Referral Count</span>
-                        <span style={styles.modalDetailValue}>
-                          <span style={{
-                            ...styles.modalReferralBadge,
-                            ...(selectedUser.referralCount >= 10 ? styles.modalTopReferralBadge : {})
-                          }}>
-                            {selectedUser.referralCount || 0}
-                            {selectedUser.referralCount >= 10 && ' 🔥'}
-                          </span>
-                        </span>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Referral Level</span>
-                        <span style={styles.modalDetailValue}>
-                          <span style={{
-                            ...styles.modalLevelBadge,
-                            background: getReferralLevel(selectedUser.referralCount).bg,
-                            color: getReferralLevel(selectedUser.referralCount).color,
-                          }}>
-                            {getReferralLevel(selectedUser.referralCount).icon} {getReferralLevel(selectedUser.referralCount).level}
-                          </span>
-                        </span>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Referred By</span>
-                        <span style={styles.modalDetailValue}>{selectedUser.referredBy?.name || 'None'}</span>
-                      </div>
-                      {selectedUser.referredBy && (
-                        <div style={styles.modalDetailRow}>
-                          <span style={styles.modalDetailLabel}>Referrer Email</span>
-                          <span style={styles.modalDetailValue}>{selectedUser.referredBy?.email || 'N/A'}</span>
                         </div>
                       )}
-                    </div>
-                  </div>
 
-                  {/* Membership & Card */}
-                  <div style={styles.modalSection}>
-                    <h4 style={styles.modalSectionTitle}>
-                      <CreditCard size={14} /> Membership & Card
-                    </h4>
-                    <div style={styles.modalDetails}>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>VIP Status</span>
-                        <span style={styles.modalDetailValue}>
-                          {selectedUser.isVip ? (
-                            <span style={styles.modalVipBadge}>⭐ Active</span>
-                          ) : '❌ Not Active'}
-                        </span>
-                      </div>
-                      {selectedUser.isVip && selectedUser.vipExpiry && (
-                        <div style={styles.modalDetailRow}>
-                          <span style={styles.modalDetailLabel}>VIP Expiry</span>
-                          <span style={styles.modalDetailValue}>
-                            {new Date(selectedUser.vipExpiry).toLocaleDateString()}
-                          </span>
+                      {/* Student Specific */}
+                      {selectedUser.role === "student" && (
+                        <div style={styles.modalSection}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <GraduationCap size={14} /> Academic Information
+                          </h4>
+                          <div style={styles.modalDetails}>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>University</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.university?.name || 'N/A'}</span>
+                            </div>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Roll No</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.rollNo || 'N/A'}</span>
+                            </div>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Alumni</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.isAlumni ? '✅ Yes' : '❌ No'}</span>
+                            </div>
+                            {selectedUser.skills && selectedUser.skills.length > 0 && (
+                              <div style={styles.modalDetailRow}>
+                                <span style={styles.modalDetailLabel}>Skills</span>
+                                <div style={styles.modalSkillsList}>
+                                  {selectedUser.skills.map((skill, i) => (
+                                    <span key={i} style={styles.modalSkillTag}>{skill}</span>
+                                  ))}
+                                </div>
+                              </div>
+                            )}
+                          </div>
                         </div>
                       )}
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Card Status</span>
-                        <span style={styles.modalDetailValue}>
-                          <span style={{
-                            ...styles.modalCardStatus,
-                            backgroundColor: {
-                              'Ordered': '#3b82f620',
-                              'Printing': '#eab30820',
-                              'Shipped': '#8b5cf620',
-                              'Delivered': '#22c55e20',
-                              'None': '#94a3b820'
-                            }[selectedUser.cardStatus] || '#94a3b820',
-                            color: {
-                              'Ordered': '#3b82f6',
-                              'Printing': '#eab308',
-                              'Shipped': '#8b5cf6',
-                              'Delivered': '#22c55e',
-                              'None': '#94a3b8'
-                            }[selectedUser.cardStatus] || '#94a3b8'
-                          }}>
-                            {selectedUser.cardStatus || 'None'}
-                          </span>
-                        </span>
-                      </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Payment Status</span>
-                        <span style={styles.modalDetailValue}>
-                          <span style={{
-                            ...styles.modalPaymentStatus,
-                            backgroundColor: {
-                              'Verified': '#22c55e20',
-                              'Pending Verification': '#eab30820',
-                              'Rejected': '#ef444420',
-                              'None': '#94a3b820'
-                            }[selectedUser.paymentStatus] || '#94a3b820',
-                            color: {
-                              'Verified': '#22c55e',
-                              'Pending Verification': '#eab308',
-                              'Rejected': '#ef4444',
-                              'None': '#94a3b8'
-                            }[selectedUser.paymentStatus] || '#94a3b8'
-                          }}>
-                            {selectedUser.paymentStatus || 'None'}
-                          </span>
-                        </span>
-                      </div>
-                    </div>
-                  </div>
 
-                  {/* Bio */}
-                  {selectedUser.bio && (
-                    <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                      <h4 style={styles.modalSectionTitle}>
-                        <FileText size={14} /> Bio
-                      </h4>
-                      <p style={styles.modalBioText}>{selectedUser.bio}</p>
-                    </div>
-                  )}
+                      {/* Role Specific Details - Offers, Jobs, Applications */}
+                      {selectedUser.role === "brand" && (
+                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <Gift size={14} /> Brand Offers ({userDetails.offers?.length || 0})
+                          </h4>
+                          {userDetails.offers && userDetails.offers.length > 0 ? (
+                            <div style={styles.offerList}>
+                              {userDetails.offers.slice(0, 5).map((offer, i) => (
+                                <div key={i} style={styles.offerItem}>
+                                  <span style={styles.offerTitle}>{offer.title}</span>
+                                  <span style={styles.offerDiscount}>{offer.discountPercentage}% off</span>
+                                  <span style={styles.offerStatus}>
+                                    {offer.claimedBy?.length || 0} claims
+                                  </span>
+                                </div>
+                              ))}
+                              {userDetails.offers.length > 5 && (
+                                <div style={styles.moreItems}>+{userDetails.offers.length - 5} more</div>
+                              )}
+                            </div>
+                          ) : (
+                            <p style={styles.noItems}>No offers created</p>
+                          )}
+                        </div>
+                      )}
 
-                  {/* Education History */}
-                  {selectedUser.education && selectedUser.education.length > 0 && (
-                    <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                      <h4 style={styles.modalSectionTitle}>
-                        <GraduationCap size={14} /> Education History
-                      </h4>
-                      {selectedUser.education.map((edu, i) => (
-                        <div key={i} style={styles.modalEduItem}>
-                          <div style={styles.modalEduHeader}>
-                            <strong>{edu.school}</strong>
-                            <span style={styles.modalEduYear}>
-                              {edu.startYear} — {edu.endYear}
+                      {selectedUser.role === "employee" && (
+                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <BriefcaseIcon size={14} /> Jobs Posted ({userDetails.jobs?.length || 0})
+                          </h4>
+                          {userDetails.jobs && userDetails.jobs.length > 0 ? (
+                            <div style={styles.jobList}>
+                              {userDetails.jobs.slice(0, 5).map((job, i) => (
+                                <div key={i} style={styles.jobItem}>
+                                  <span style={styles.jobTitle}>{job.title}</span>
+                                  <span style={styles.jobStatus}>
+                                    {job.active ? '🟢 Active' : '🔴 Inactive'}
+                                  </span>
+                                  <span style={styles.jobApps}>
+                                    {job.totalApplications || 0} applications
+                                  </span>
+                                </div>
+                              ))}
+                              {userDetails.jobs.length > 5 && (
+                                <div style={styles.moreItems}>+{userDetails.jobs.length - 5} more</div>
+                              )}
+                            </div>
+                          ) : (
+                            <p style={styles.noItems}>No jobs posted</p>
+                          )}
+                        </div>
+                      )}
+
+                      {selectedUser.role === "student" && (
+                        <>
+                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                            <h4 style={styles.modalSectionTitle}>
+                              <Ticket size={14} /> Claimed Discounts ({userDetails.claimedOffers?.length || 0})
+                            </h4>
+                            {userDetails.claimedOffers && userDetails.claimedOffers.length > 0 ? (
+                              <div style={styles.claimedList}>
+                                {userDetails.claimedOffers.slice(0, 5).map((offer, i) => (
+                                  <div key={i} style={styles.claimedItem}>
+                                    <span style={styles.claimedTitle}>{offer.title}</span>
+                                    <span style={styles.claimedBrand}>{offer.brand?.name || 'Brand'}</span>
+                                    <span style={styles.claimedDiscount}>{offer.discountPercentage}% off</span>
+                                  </div>
+                                ))}
+                                {userDetails.claimedOffers.length > 5 && (
+                                  <div style={styles.moreItems}>+{userDetails.claimedOffers.length - 5} more</div>
+                                )}
+                              </div>
+                            ) : (
+                              <p style={styles.noItems}>No discounts claimed</p>
+                            )}
+                          </div>
+
+                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                            <h4 style={styles.modalSectionTitle}>
+                              <FileCheck size={14} /> Job Applications ({userDetails.applications?.length || 0})
+                            </h4>
+                            {userDetails.applications && userDetails.applications.length > 0 ? (
+                              <div style={styles.applicationList}>
+                                {userDetails.applications.slice(0, 5).map((app, i) => (
+                                  <div key={i} style={styles.applicationItem}>
+                                    <span style={styles.applicationJob}>{app.jobId?.title || 'Job'}</span>
+                                    <span style={{
+                                      ...styles.applicationStatus,
+                                      background: {
+                                        'pending': '#f59e0b20',
+                                        'reviewed': '#3b82f620',
+                                        'shortlisted': '#10b98120',
+                                        'interview': '#8b5cf620',
+                                        'rejected': '#ef444420',
+                                        'hired': '#05966920'
+                                      }[app.status] || '#94a3b820',
+                                      color: {
+                                        'pending': '#f59e0b',
+                                        'reviewed': '#3b82f6',
+                                        'shortlisted': '#10b981',
+                                        'interview': '#8b5cf6',
+                                        'rejected': '#ef4444',
+                                        'hired': '#059669'
+                                      }[app.status] || '#94a3b8'
+                                    }}>
+                                      {app.status || 'Pending'}
+                                    </span>
+                                  </div>
+                                ))}
+                                {userDetails.applications.length > 5 && (
+                                  <div style={styles.moreItems}>+{userDetails.applications.length - 5} more</div>
+                                )}
+                              </div>
+                            ) : (
+                              <p style={styles.noItems}>No job applications</p>
+                            )}
+                          </div>
+
+                          {/* Resume & Savings */}
+                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                            <h4 style={styles.modalSectionTitle}>
+                              <FileText size={14} /> Resume & Savings
+                            </h4>
+                            <div style={styles.modalDetails}>
+                              <div style={styles.modalDetailRow}>
+                                <span style={styles.modalDetailLabel}>Resume</span>
+                                <span style={styles.modalDetailValue}>
+                                  {userDetails.resume ? '✅ Uploaded' : '❌ Not uploaded'}
+                                </span>
+                              </div>
+                              <div style={styles.modalDetailRow}>
+                                <span style={styles.modalDetailLabel}>Total Savings</span>
+                                <span style={styles.modalDetailValue}>
+                                  PKR {userDetails.savings?.totalSaved?.toLocaleString() || 0}
+                                </span>
+                              </div>
+                              <div style={styles.modalDetailRow}>
+                                <span style={styles.modalDetailLabel}>Redemptions</span>
+                                <span style={styles.modalDetailValue}>
+                                  {userDetails.savings?.redemptionCount || 0}
+                                </span>
+                              </div>
+                            </div>
+                          </div>
+                        </>
+                      )}
+
+                      {/* Referral Information */}
+                      <div style={styles.modalSection}>
+                        <h4 style={styles.modalSectionTitle}>
+                          <UserPlus size={14} /> Referral Information
+                        </h4>
+                        <div style={styles.modalDetails}>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Referral Code</span>
+                            <code style={styles.modalReferralCode}>{selectedUser.referralCode || 'N/A'}</code>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Referral Count</span>
+                            <span style={styles.modalDetailValue}>
+                              <span style={{
+                                ...styles.modalReferralBadge,
+                                ...(selectedUser.referralCount >= 10 ? styles.modalTopReferralBadge : {})
+                              }}>
+                                {selectedUser.referralCount || 0}
+                                {selectedUser.referralCount >= 10 && ' 🔥'}
+                              </span>
                             </span>
                           </div>
-                          <div style={styles.modalEduDegree}>{edu.degree}</div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Referral Level</span>
+                            <span style={styles.modalDetailValue}>
+                              <span style={{
+                                ...styles.modalLevelBadge,
+                                background: getReferralLevel(selectedUser.referralCount).bg,
+                                color: getReferralLevel(selectedUser.referralCount).color,
+                              }}>
+                                {getReferralLevel(selectedUser.referralCount).icon} {getReferralLevel(selectedUser.referralCount).level}
+                              </span>
+                            </span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Referred By</span>
+                            <span style={styles.modalDetailValue}>{selectedUser.referredBy?.name || 'None'}</span>
+                          </div>
                         </div>
-                      ))}
-                    </div>
-                  )}
+                      </div>
 
-                  {/* Timestamps */}
-                  <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                    <h4 style={styles.modalSectionTitle}>
-                      <Calendar size={14} /> Timestamps
-                    </h4>
-                    <div style={styles.modalDetails}>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Joined</span>
-                        <span style={styles.modalDetailValue}>
-                          {new Date(selectedUser.createdAt).toLocaleString()}
-                        </span>
+                      {/* Membership & Card */}
+                      <div style={styles.modalSection}>
+                        <h4 style={styles.modalSectionTitle}>
+                          <CreditCard size={14} /> Membership & Card
+                        </h4>
+                        <div style={styles.modalDetails}>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>VIP Status</span>
+                            <span style={styles.modalDetailValue}>
+                              {selectedUser.isVip ? (
+                                <span style={styles.modalVipBadge}>⭐ Active</span>
+                              ) : '❌ Not Active'}
+                            </span>
+                          </div>
+                          {selectedUser.isVip && selectedUser.vipExpiry && (
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>VIP Expiry</span>
+                              <span style={styles.modalDetailValue}>
+                                {new Date(selectedUser.vipExpiry).toLocaleDateString()}
+                              </span>
+                            </div>
+                          )}
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Card Status</span>
+                            <span style={styles.modalDetailValue}>
+                              <span style={{
+                                ...styles.modalCardStatus,
+                                backgroundColor: {
+                                  'Ordered': '#3b82f620',
+                                  'Printing': '#eab30820',
+                                  'Shipped': '#8b5cf620',
+                                  'Delivered': '#22c55e20',
+                                  'None': '#94a3b820'
+                                }[selectedUser.cardStatus] || '#94a3b820',
+                                color: {
+                                  'Ordered': '#3b82f6',
+                                  'Printing': '#eab308',
+                                  'Shipped': '#8b5cf6',
+                                  'Delivered': '#22c55e',
+                                  'None': '#94a3b8'
+                                }[selectedUser.cardStatus] || '#94a3b8'
+                              }}>
+                                {selectedUser.cardStatus || 'None'}
+                              </span>
+                            </span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Payment Status</span>
+                            <span style={styles.modalDetailValue}>
+                              <span style={{
+                                ...styles.modalPaymentStatus,
+                                backgroundColor: {
+                                  'Verified': '#22c55e20',
+                                  'Pending Verification': '#eab30820',
+                                  'Rejected': '#ef444420',
+                                  'None': '#94a3b820'
+                                }[selectedUser.paymentStatus] || '#94a3b820',
+                                color: {
+                                  'Verified': '#22c55e',
+                                  'Pending Verification': '#eab308',
+                                  'Rejected': '#ef4444',
+                                  'None': '#94a3b8'
+                                }[selectedUser.paymentStatus] || '#94a3b8'
+                              }}>
+                                {selectedUser.paymentStatus || 'None'}
+                              </span>
+                            </span>
+                          </div>
+                        </div>
                       </div>
-                      <div style={styles.modalDetailRow}>
-                        <span style={styles.modalDetailLabel}>Last Updated</span>
-                        <span style={styles.modalDetailValue}>
-                          {new Date(selectedUser.updatedAt).toLocaleString()}
-                        </span>
+
+                      {/* Timestamps */}
+                      <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                        <h4 style={styles.modalSectionTitle}>
+                          <Calendar size={14} /> Timestamps
+                        </h4>
+                        <div style={styles.modalDetails}>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Joined</span>
+                            <span style={styles.modalDetailValue}>
+                              {new Date(selectedUser.createdAt).toLocaleString()}
+                            </span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Last Updated</span>
+                            <span style={styles.modalDetailValue}>
+                              {new Date(selectedUser.updatedAt).toLocaleString()}
+                            </span>
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                </div>
+                  </>
+                )}
               </div>
 
               {/* Modal Footer */}
               <div style={styles.modalFooter}>
                 <motion.button 
-                  onClick={() => viewStudentDetails(selectedUser._id)}
+                  onClick={() => viewUserDetails(selectedUser._id)}
                   style={styles.modalViewBtn}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  View Full Dossier <ChevronRight size={16} />
+                  View Full Profile <ChevronRight size={16} />
                 </motion.button>
                 <motion.button 
                   onClick={closeModal}
@@ -966,42 +1363,27 @@ export default function AdminUserList({ role, title }) {
             50% { opacity: 0.7; transform: scale(1.05); }
           }
           
-          .spinning {
-            animation: spin 1s linear infinite;
-          }
+          .spinning { animation: spin 1s linear infinite; }
           
-          .stat-card {
-            transition: all 0.3s ease;
-          }
+          .stat-card { transition: all 0.3s ease; }
           
-          .filter-btn {
-            transition: all 0.2s ease;
-          }
+          .filter-btn { transition: all 0.2s ease; }
           .filter-btn.active {
             background: #fff;
             color: #ff961a;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           }
           
-          .user-row {
-            transition: all 0.2s ease;
-          }
+          .user-row { transition: all 0.2s ease; }
           .user-row.top-referrer {
             background: linear-gradient(90deg, #faf5ff 0%, #ffffff 100%);
             border-left: 3px solid #8b5cf6;
           }
           
-          .sortable {
-            cursor: pointer;
-            user-select: none;
-          }
-          .sortable:hover {
-            color: #0a0b0f;
-          }
+          .sortable { cursor: pointer; user-select: none; }
+          .sortable:hover { color: #0a0b0f; }
           
-          .action-btn {
-            transition: all 0.2s ease;
-          }
+          .action-btn { transition: all 0.2s ease; }
 
           .modal-overlay {
             position: fixed !important;
@@ -1025,58 +1407,29 @@ export default function AdminUserList({ role, title }) {
             max-height: calc(90vh - 180px) !important;
           }
 
-          .modal-body::-webkit-scrollbar {
-            width: 6px;
-          }
-          .modal-body::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
+          .modal-body::-webkit-scrollbar { width: 6px; }
+          .modal-body::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
           .modal-body::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
             border-radius: 10px;
           }
 
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
+          ::-webkit-scrollbar { width: 6px; }
+          ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
           ::-webkit-scrollbar-thumb {
             background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
             border-radius: 10px;
           }
 
           @media (max-width: 768px) {
-            .stat-card {
-              min-width: unset !important;
-            }
-            .header {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .headerActions {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .filterGroupWrapper {
-              flex-direction: column !important;
-            }
-            .filterGroup {
-              flex-wrap: wrap !important;
-            }
-            .modalGrid {
-              grid-template-columns: 1fr !important;
-            }
-            .modal-content {
-              max-width: 98% !important;
-              max-height: 95vh !important;
-            }
-            .modal-body {
-              max-height: calc(95vh - 180px) !important;
-            }
+            .stat-card { min-width: unset !important; }
+            .header { flex-direction: column !important; align-items: stretch !important; }
+            .headerActions { flex-direction: column !important; align-items: stretch !important; }
+            .filterGroupWrapper { flex-direction: column !important; }
+            .filterGroup { flex-wrap: wrap !important; }
+            .modalGrid { grid-template-columns: 1fr !important; }
+            .modal-content { max-width: 98% !important; max-height: 95vh !important; }
+            .modal-body { max-height: calc(95vh - 180px) !important; }
           }
         `}
       </style>
@@ -1085,6 +1438,169 @@ export default function AdminUserList({ role, title }) {
 }
 
 const styles = {
+  // ... (all the styles from the previous version, plus new ones)
+  // I'll include the additional styles needed for the new features
+  
+  logoThumb: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    border: '1px solid #e5e7eb',
+  },
+  logoIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '10px',
+    color: '#10b981',
+    marginTop: '2px',
+  },
+  modalLogoPreview: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    border: '1px solid #e5e7eb',
+  },
+  modalAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    objectFit: 'cover',
+  },
+  offerList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  offerItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  offerTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  offerDiscount: {
+    color: '#f59e0b',
+    fontWeight: '600',
+  },
+  offerStatus: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  jobList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  jobItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  jobTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  jobStatus: {
+    fontSize: '11px',
+  },
+  jobApps: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  claimedList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  claimedItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  claimedTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  claimedBrand: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  claimedDiscount: {
+    color: '#10b981',
+    fontWeight: '600',
+  },
+  applicationList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  applicationItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  applicationJob: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  applicationStatus: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '10px',
+    fontWeight: '600',
+  },
+  moreItems: {
+    textAlign: 'center',
+    fontSize: '11px',
+    color: '#94a3b8',
+    padding: '4px',
+  },
+  noItems: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textAlign: 'center',
+    padding: '8px',
+  },
+  loadingDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px',
+    gap: '12px',
+    color: '#64748b',
+  },
+  spinnerSmall: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid #e2e8f0',
+    borderTopColor: '#ff961a',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
+  },
+  // ... (include all other styles from the previous version)
+
   pageWrapper: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
@@ -1424,6 +1940,25 @@ const styles = {
     color: "#64748b",
     fontSize: "11px",
   },
+  companyTag: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "rgba(241, 245, 249, 0.8)",
+    padding: "4px 10px",
+    borderRadius: "8px",
+    fontSize: "11px",
+    fontWeight: "500",
+    color: "#475569",
+  },
+  designationText: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "10px",
+    color: "#94a3b8",
+    marginTop: "2px",
+  },
   universityTag: {
     display: "inline-flex",
     alignItems: "center",
@@ -1489,11 +2024,6 @@ const styles = {
     color: "#8b5cf6",
     animation: "flamePulse 2s ease-in-out infinite",
   },
-  referredBy: {
-    fontSize: "10px",
-    color: "#64748b",
-    marginTop: "2px",
-  },
   badge: {
     padding: "4px 12px",
     borderRadius: "20px",
@@ -1517,20 +2047,15 @@ const styles = {
     backgroundColor: "#f59e0b",
     display: "inline-block",
   },
-  vipBadge: {
+  roleBadge: {
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    background: "linear-gradient(135deg, #fefce8, #fef3c7)",
-    color: "#d97706",
-    padding: "2px 10px",
-    borderRadius: "16px",
+    padding: "2px 8px",
+    borderRadius: "12px",
     fontSize: "10px",
-    fontWeight: "700",
-  },
-  nonVipBadge: {
-    color: "#cbd5e1",
-    fontSize: "14px",
+    fontWeight: "600",
+    textTransform: "capitalize",
   },
   actionGroup: {
     display: "flex",
@@ -1581,11 +2106,8 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    
     display: 'flex',
-    
     zIndex: 0,
-    
   },
   modalContent: {
     background: '#fff',
@@ -1740,6 +2262,16 @@ const styles = {
     textAlign: 'right',
     wordBreak: 'break-word',
     fontWeight: '500',
+  },
+  modalRoleBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '2px 10px',
+    borderRadius: '12px',
+    fontSize: '11px',
+    fontWeight: '600',
+    textTransform: 'capitalize',
   },
   modalReferralCode: {
     fontFamily: 'monospace',

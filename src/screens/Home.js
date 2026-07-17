@@ -26,13 +26,11 @@ import {
   FaCog,
   FaBars,
   FaTimes,
-  // FaArrowRight,
   FaStar,
   FaLongArrowAltUp,
   FaUserCircle,
   FaChevronDown,
   FaPlus,
-  // FaEye,
   FaFileAlt,
   FaEdit,
   FaLock,
@@ -41,10 +39,14 @@ import {
   FaBuilding,
   FaCalendarAlt,
   FaUser,
+  FaImage,
+  FaStore,
+  FaGlobe
 } from "react-icons/fa";
+// Add FaGlobe import if not already imported
 import { motion, AnimatePresence } from "framer-motion";
 
-const Dashboard = () => {
+const BrandDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState("home");
@@ -58,29 +60,14 @@ const Dashboard = () => {
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
+  const [brandData, setBrandData] = useState(null);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
-    const fetchStats = async () => {
-      try {
-        const leadRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/claimed-users", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-        const savingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/savings-report", {
-          headers: { Authorization: `Bearer ${token}` }
-        });
-
-        const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
-        setStats({
-          totalLeads: leadRes.data.length,
-          completedRedemptions: savingRes.data.length,
-          totalSavings: savings
-        });
-      } catch (err) {
-        console.error("Error fetching dashboard stats", err);
-      }
-    };
-    if (token) fetchStats();
+    if (token) {
+      fetchStats();
+      fetchBrandData();
+    }
   }, [token]);
 
   useEffect(() => {
@@ -104,15 +91,83 @@ const Dashboard = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const fetchBrandData = async () => {
+    try {
+      const res = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/auth/me",
+        {
+          headers: { Authorization: `Bearer ${token}` },
+        }
+      );
+      
+      setBrandData({
+        ...res.data,
+        logo: res.data.logo || "",
+        brandName: res.data.brandName || res.data.companyName || "",
+        name: res.data.name || user?.name || "",
+      });
+      
+      console.log("✅ Brand Data loaded:", res.data);
+    } catch (err) {
+      console.error("❌ Error fetching brand data", err);
+      setBrandData({
+        name: user?.name || "",
+        email: user?.email || "",
+        brandName: user?.brandName || user?.companyName || "",
+        logo: user?.logo || "",
+      });
+    }
+  };
+
+  const fetchStats = async () => {
+    try {
+      const leadRes = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      const savingRes = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+
+      const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
+      setStats({
+        totalLeads: leadRes.data.length,
+        completedRedemptions: savingRes.data.length,
+        totalSavings: savings
+      });
+    } catch (err) {
+      console.error("Error fetching dashboard stats", err);
+    }
+  };
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
-  // Function to handle navigation to Create Offer tab
   const handleCreateOfferNavigation = () => {
     setActiveTab("createOffer");
     if (isMobile) setIsMobileMenuOpen(false);
+  };
+
+  // Get brand name
+  const getBrandName = () => {
+    return brandData?.brandName || brandData?.companyName || user?.brandName || user?.companyName || "Brand";
+  };
+
+  // Get display name
+  const getDisplayName = () => {
+    return brandData?.name || user?.name || "Brand Partner";
+  };
+
+  // Get logo URL
+  const getLogoUrl = () => {
+    return brandData?.logo || user?.logo || "";
   };
 
   const navItems = [
@@ -124,6 +179,10 @@ const Dashboard = () => {
     { id: "savingsHistory", label: "Redemptions", icon: <FaChartLine />, description: "History" },
   ];
 
+  const brandName = getBrandName();
+  const displayName = getDisplayName();
+  const logoUrl = getLogoUrl();
+
   const renderHome = () => (
     <div style={styles.homeContainer}>
       {/* Welcome Banner */}
@@ -131,13 +190,17 @@ const Dashboard = () => {
         <div style={styles.heroContent}>
           <div>
             <div style={styles.heroBadge}>
-              <FaStar /> Partner Dashboard
+              <FaStar /> Brand Dashboard
             </div>
             <h2 style={styles.heroTitle}>
-              Welcome back, {user?.name || "Partner"}! 👋
+              Welcome back, {displayName}! 👋
             </h2>
             <p style={styles.heroSubtitle}>
-              Here's what's happening with your student offers today.
+              {brandName ? (
+                <>Managing <strong>{brandName}</strong> offers</>
+              ) : (
+                "Here's what's happening with your offers today."
+              )}
             </p>
           </div>
           <div style={styles.heroStats}>
@@ -157,6 +220,23 @@ const Dashboard = () => {
             </div>
           </div>
         </div>
+        {logoUrl && (
+          <div style={styles.brandLogoContainer}>
+            <img 
+              src={logoUrl} 
+              alt="Brand Logo" 
+              style={styles.brandLogo}
+              onError={(e) => {
+                e.target.style.display = 'none';
+                e.target.parentElement.innerHTML = `
+                  <div style="${styles.brandLogoFallback}">
+                    <FaStore size={40} color="#94a3b8" />
+                  </div>
+                `;
+              }}
+            />
+          </div>
+        )}
       </div>
 
       {/* Stats Grid */}
@@ -301,11 +381,23 @@ const Dashboard = () => {
       }}>
         <div style={styles.brandSection}>
           <div style={styles.logoBadge}>
-            <span style={styles.logoIcon}>P</span>
+            {logoUrl ? (
+              <img 
+                src={logoUrl} 
+                alt="Brand Logo" 
+                style={styles.sidebarLogo}
+                onError={(e) => {
+                  e.target.style.display = 'none';
+                  e.target.parentElement.innerHTML = '<span style={styles.logoIcon}>B</span>';
+                }}
+              />
+            ) : (
+              <span style={styles.logoIcon}>B</span>
+            )}
           </div>
           <div style={styles.brandText}>
-            <h2 style={styles.logoText}>Partner<span style={styles.logoHighlight}>Portal</span> </h2>
-            <p style={styles.logoSubtext}>Recruitment Partner</p>
+            <h2 style={styles.logoText}>Brand<span style={styles.logoHighlight}>Portal</span></h2>
+            <p style={styles.logoSubtext}>{brandName || "Brand Partner"}</p>
           </div>
           {isMobile && (
             <button style={styles.mobileCloseBtn} onClick={() => setIsMobileMenuOpen(false)}>
@@ -354,11 +446,23 @@ const Dashboard = () => {
         <div style={styles.userSection} ref={userMenuRef}>
           <div style={styles.userInfo} onClick={() => setShowUserMenu(!showUserMenu)}>
             <div style={styles.userAvatar}>
-              {user?.name?.charAt(0) || "P"}
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt="Brand Logo" 
+                  style={styles.userAvatarImg}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                    e.target.parentElement.textContent = displayName?.charAt(0) || "B";
+                  }}
+                />
+              ) : (
+                displayName?.charAt(0) || "B"
+              )}
             </div>
             <div style={styles.userInfoText}>
-              <div style={styles.userName}>{user?.name || "Partner"}</div>
-              <div style={styles.userRole}>Partner</div>
+              <div style={styles.userName}>{displayName}</div>
+              <div style={styles.userRole}>{brandName || "Brand"}</div>
             </div>
             <FaChevronDown style={{
               ...styles.userChevron,
@@ -468,11 +572,23 @@ const Dashboard = () => {
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
                   <div style={styles.modalAvatar}>
-                    {user?.name?.charAt(0) || "P"}
+                    {logoUrl ? (
+                      <img 
+                        src={logoUrl} 
+                        alt="Brand Logo" 
+                        style={styles.modalAvatarImg}
+                        onError={(e) => {
+                          e.target.style.display = 'none';
+                          e.target.parentElement.textContent = displayName?.charAt(0) || "B";
+                        }}
+                      />
+                    ) : (
+                      displayName?.charAt(0) || "B"
+                    )}
                   </div>
                   <div>
-                    <h2 style={styles.modalTitle}>{user?.name || "Partner"}</h2>
-                    <p style={styles.modalSubtitle}>Partner Account</p>
+                    <h2 style={styles.modalTitle}>{displayName}</h2>
+                    <p style={styles.modalSubtitle}>{brandName || "Brand Partner"}</p>
                   </div>
                 </div>
                 <button style={styles.modalCloseBtn} onClick={() => setShowProfileModal(false)}>
@@ -514,7 +630,16 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <span style={styles.profileDetailLabel}>Full Name</span>
-                      <span style={styles.profileDetailValue}>{user?.name || "Partner"}</span>
+                      <span style={styles.profileDetailValue}>{displayName}</span>
+                    </div>
+                  </div>
+                  <div style={styles.profileDetailItem}>
+                    <div style={styles.profileDetailIcon}>
+                      <FaStore size={16} color="#ff961a" />
+                    </div>
+                    <div>
+                      <span style={styles.profileDetailLabel}>Brand Name</span>
+                      <span style={styles.profileDetailValue}>{brandName || "Not specified"}</span>
                     </div>
                   </div>
                   <div style={styles.profileDetailItem}>
@@ -523,7 +648,7 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <span style={styles.profileDetailLabel}>Email</span>
-                      <span style={styles.profileDetailValue}>{user?.email || "partner@example.com"}</span>
+                      <span style={styles.profileDetailValue}>{user?.email || "brand@example.com"}</span>
                     </div>
                   </div>
                   <div style={styles.profileDetailItem}>
@@ -537,20 +662,19 @@ const Dashboard = () => {
                   </div>
                   <div style={styles.profileDetailItem}>
                     <div style={styles.profileDetailIcon}>
-                      <FaBuilding size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Company</span>
-                      <span style={styles.profileDetailValue}>{user?.company || "Tech Solutions Inc."}</span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
                       <FaCalendarAlt size={16} color="#ff961a" />
                     </div>
                     <div>
                       <span style={styles.profileDetailLabel}>Member Since</span>
-                      <span style={styles.profileDetailValue}>January 2025</span>
+                      <span style={styles.profileDetailValue}>
+                        {brandData?.createdAt ? 
+                          new Date(brandData.createdAt).toLocaleDateString('en-US', { 
+                            month: 'long', 
+                            year: 'numeric' 
+                          }) : 
+                          'January 2025'
+                        }
+                      </span>
                     </div>
                   </div>
                   <div style={styles.profileDetailItem}>
@@ -559,10 +683,17 @@ const Dashboard = () => {
                     </div>
                     <div>
                       <span style={styles.profileDetailLabel}>Role</span>
-                      <span style={styles.profileDetailValue}>Partner</span>
+                      <span style={styles.profileDetailValue}>Brand Partner</span>
                     </div>
                   </div>
                 </div>
+
+                {logoUrl && (
+                  <div style={styles.profileLogoInfo}>
+                    <FaImage size={14} style={{ marginRight: '6px' }} />
+                    Brand logo uploaded
+                  </div>
+                )}
               </div>
 
               <button style={styles.modalCloseBtnBottom} onClick={() => setShowProfileModal(false)}>
@@ -597,7 +728,7 @@ const Dashboard = () => {
                   </div>
                   <div>
                     <h2 style={styles.modalTitle}>Settings</h2>
-                    <p style={styles.modalSubtitle}>Manage your account preferences</p>
+                    <p style={styles.modalSubtitle}>Manage your brand account preferences</p>
                   </div>
                 </div>
                 <button style={styles.modalCloseBtn} onClick={() => setShowSettingsModal(false)}>
@@ -622,7 +753,29 @@ const Dashboard = () => {
                   </div>
                   <div style={styles.settingsItem}>
                     <div style={styles.settingsItemIcon}>
-                      <FaEnvelope size={18} color="#8b5cf6" />
+                      <FaStore size={18} color="#8b5cf6" />
+                    </div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Brand Details</div>
+                      <div style={styles.settingsItemDesc}>
+                        {brandName || 'Update brand information'}
+                      </div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Update</button>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}>
+                      <FaImage size={18} color="#f59e0b" />
+                    </div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Brand Logo</div>
+                      <div style={styles.settingsItemDesc}>Upload or update your brand logo</div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Upload</button>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}>
+                      <FaEnvelope size={18} color="#3b82f6" />
                     </div>
                     <div style={styles.settingsItemContent}>
                       <div style={styles.settingsItemLabel}>Email Preferences</div>
@@ -648,13 +801,17 @@ const Dashboard = () => {
                   <h3 style={styles.settingsGroupTitle}>Preferences</h3>
                   <div style={styles.settingsItem}>
                     <div style={styles.settingsItemIcon}>
-                      <FaBuilding size={18} color="#10b981" />
+                      <FaGlobe size={18} color="#10b981" />
                     </div>
                     <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Company Details</div>
-                      <div style={styles.settingsItemDesc}>Update your company information</div>
+                      <div style={styles.settingsItemLabel}>Language</div>
+                      <div style={styles.settingsItemDesc}>Choose your preferred language</div>
                     </div>
-                    <button style={styles.settingsItemBtn}>Manage</button>
+                    <select style={styles.settingsSelect}>
+                      <option>English</option>
+                      <option>Spanish</option>
+                      <option>French</option>
+                    </select>
                   </div>
                   <div style={styles.settingsItem}>
                     <div style={styles.settingsItemIcon}>
@@ -856,6 +1013,12 @@ const styles = {
     color: "#0f172a",
     boxShadow: "0 8px 25px rgba(249, 195, 73, 0.3)",
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  sidebarLogo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   logoIcon: {
     transform: "rotate(-5deg)",
@@ -966,6 +1129,12 @@ const styles = {
     fontSize: "16px",
     color: "#0f172a",
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  userAvatarImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   userName: {
     fontSize: "14px",
@@ -1151,6 +1320,11 @@ const styles = {
     boxShadow: "0 10px 40px rgba(255, 150, 26, 0.2)",
     position: "relative",
     overflow: "hidden",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    flexWrap: "wrap",
+    gap: "20px",
   },
   heroContent: {
     display: "flex",
@@ -1158,6 +1332,7 @@ const styles = {
     alignItems: "center",
     flexWrap: "wrap",
     gap: "20px",
+    flex: 1,
     position: "relative",
     zIndex: 2,
   },
@@ -1210,6 +1385,31 @@ const styles = {
     width: "1px",
     height: "40px",
     background: "rgba(255,255,255,0.2)",
+  },
+  brandLogoContainer: {
+    width: "80px",
+    height: "80px",
+    borderRadius: "16px",
+    background: "rgba(255,255,255,0.15)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+    flexShrink: 0,
+    border: "2px solid rgba(255,255,255,0.2)",
+  },
+  brandLogo: {
+    width: "100%",
+    height: "100%",
+    objectFit: "contain",
+    padding: "8px",
+  },
+  brandLogoFallback: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "100%",
+    height: "100%",
   },
   statsGrid: {
     display: "grid",
@@ -1302,7 +1502,6 @@ const styles = {
     color: "#fff",
     transition: "all 0.3s ease",
   },
-  // Modal Styles
   modalOverlay: {
     position: "fixed",
     top: 0,
@@ -1350,6 +1549,12 @@ const styles = {
     fontWeight: "700",
     color: "#fff",
     flexShrink: 0,
+    overflow: "hidden",
+  },
+  modalAvatarImg: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
   modalTitle: {
     fontSize: "20px",
@@ -1392,7 +1597,6 @@ const styles = {
     transition: "all 0.3s ease",
     borderTop: "1px solid #e5e7eb",
   },
-  // Profile Styles
   profileStats: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr",
@@ -1459,7 +1663,14 @@ const styles = {
     fontWeight: "600",
     color: "#0f172a",
   },
-  // Settings Styles
+  profileLogoInfo: {
+    fontSize: "12px",
+    color: "#10b981",
+    marginTop: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
   settingsIconWrapper: {
     width: "48px",
     height: "48px",
@@ -1524,6 +1735,14 @@ const styles = {
     alignItems: "center",
     gap: "4px",
   },
+  settingsSelect: {
+    padding: "6px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    fontSize: "12px",
+    background: "#fff",
+    cursor: "pointer",
+  },
   settingsDivider: {
     height: "1px",
     background: "#e5e7eb",
@@ -1531,4 +1750,6 @@ const styles = {
   },
 };
 
-export default Dashboard;
+
+
+export default BrandDashboard;

@@ -12,11 +12,14 @@ import {
   User, Mail, Phone, MapPin, CalendarDays,
   Shield, Edit, Lock, ChevronDown,
   ArrowUpRight, Activity, Zap, 
-  Calendar as CalendarIcon, BarChart4
+  Calendar as CalendarIcon, BarChart4,
+  HardHat, UsersRound, BriefcaseBusiness, UserCog,
+  Store, GraduationCap as GraduationCapIcon, 
+  Building, UserPlus, UserCheck, UserX,
+  PlaneTakeoff, Luggage, Compass
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./styles/AdminDashboard.css";
-
 // Sub-Components
 import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
@@ -56,6 +59,8 @@ export default function AdminDashboard() {
     jobs: 0,
     students: 0,
     brands: 0,
+    employees: 0,
+    travelers: 0,
     exchange: 0,
     packages: 0,
     pendingCards: 0,
@@ -106,6 +111,8 @@ export default function AdminDashboard() {
         `${API_BASE}/jobs/all`,
         `${API_BASE}/users/student`,
         `${API_BASE}/users/brand`,
+        `${API_BASE}/users/employee`,
+        `${API_BASE}/users/traveler`,
         `${API_BASE}/exchange/all`,
         `${API_BASE}/packages/all`,
         `${API_BASE}/card-stats`,
@@ -126,12 +133,14 @@ export default function AdminDashboard() {
         jobs: Array.isArray(responses[1]) ? responses[1].length : 0,
         students: Array.isArray(responses[2]) ? responses[2].length : 0,
         brands: Array.isArray(responses[3]) ? responses[3].length : 0,
-        exchange: Array.isArray(responses[4]) ? responses[4].length : 0,
-        packages: Array.isArray(responses[5]) ? responses[5].length : 0,
-        pendingCards: responses[6]?.pending || 0,
-        approvedCards: responses[6]?.approvedTotal || 0,
-        bookings: responses[7]?.totalBookings || 0,
-        courses: Array.isArray(responses[8]) ? responses[8].length : 0
+        employees: Array.isArray(responses[4]) ? responses[4].length : 0,
+        travelers: Array.isArray(responses[5]) ? responses[5].length : 0,
+        exchange: Array.isArray(responses[6]) ? responses[6].length : 0,
+        packages: Array.isArray(responses[7]) ? responses[7].length : 0,
+        pendingCards: responses[8]?.pending || 0,
+        approvedCards: responses[8]?.approvedTotal || 0,
+        bookings: responses[9]?.totalBookings || 0,
+        courses: Array.isArray(responses[10]) ? responses[10].length : 0
       });
     } catch (err) {
       console.error("Dashboard Stats Sync Error:", err);
@@ -148,29 +157,176 @@ export default function AdminDashboard() {
     }
   }, [token, loading, navigate, fetchDashboardStats]);
 
+  // ==================== COMPLETE MENU ITEMS ====================
   const menuItems = [
-    { id: "dashboard", label: "Dashboard", icon: <LayoutDashboard size={20} /> },
-    { id: "offer", label: "Create Offer", icon: <PlusCircle size={20} /> },
-    { id: "all offer", label: "Manage Offers", icon: <Tag size={20} /> },
-    { id: "manage_jobs", label: "Career Portal", icon: <Briefcase size={20} /> },
-    { id: "exchange_program", label: "Exchange", icon: <Repeat size={20} /> },
-    { id: "traveling", label: "Traveling", icon: <Plane size={20} /> },
-    { id: "brands", label: "All Brands", icon: <Building2 size={20} /> },
-    { id: "students", label: "All Students", icon: <GraduationCap size={20} /> },
-    
+    { 
+      id: "dashboard", 
+      label: "Dashboard", 
+      icon: <LayoutDashboard size={20} />,
+      section: "main"
+    },
+    { 
+      id: "offer", 
+      label: "Create Offer", 
+      icon: <PlusCircle size={20} />,
+      section: "content"
+    },
+    { 
+      id: "all offer", 
+      label: "Manage Offers", 
+      icon: <Tag size={20} />,
+      section: "content"
+    },
+    { 
+      id: "manage_jobs", 
+      label: "Career Portal", 
+      icon: <Briefcase size={20} />,
+      section: "content"
+    },
+    { 
+      id: "exchange_program", 
+      label: "Exchange", 
+      icon: <Repeat size={20} />,
+      section: "content"
+    },
+    { 
+      id: "traveling", 
+      label: "Traveling", 
+      icon: <Plane size={20} />,
+      section: "content"
+    },
+    // ==================== USER MANAGEMENT SECTION ====================
+    { 
+      id: "students", 
+      label: "All Students", 
+      icon: <GraduationCapIcon size={20} />,
+      section: "users"
+    },
+    { 
+      id: "brands", 
+      label: "All Brands", 
+      icon: <Store size={20} />,
+      section: "users"
+    },
+    { 
+      id: "employees", 
+      label: "All Employees", 
+      icon: <HardHat size={20} />,
+      section: "users"
+    },
+    { 
+      id: "travelers", 
+      label: "All Travelers", 
+      icon: <Compass size={20} />,
+      section: "users"
+    },
   ];
 
+  // ==================== CARD DATA WITH ALL USER TYPES ====================
   const cardData = [
-    { id: "students", label: "Total Students", value: stats.students, icon: <GraduationCap size={28} />, trend: "+12% this month", color: "#6366f1", bg: "#eef2ff", gradient: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)" },
-    { id: "brands", label: "Active Brands", value: stats.brands, icon: <Building2 size={28} />, trend: "+5 new", color: "#10b981", bg: "#ecfdf5", gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)" },
-    { id: "booking", label: "Total Bookings", value: stats.bookings, icon: <ShoppingCart size={28} />, trend: "This week", color: "#8b5cf6", bg: "#f5f3ff", gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" },
-    { id: "card_manager", label: "Approved Cards", value: stats.approvedCards, icon: <CreditCard size={28} />, trend: `${stats.pendingCards} pending`, color: "#f43f5e", bg: "#fff1f2", gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)" },
-    { id: "all offer", label: "Total Offers", value: stats.offers, icon: <Tag size={28} />, trend: "Active deals", color: "#ff961a", bg: "#fff7ed", gradient: "linear-gradient(135deg, #ff961a 0%, #fbbf24 100%)" },
-    { id: "manage_jobs", label: "Open Jobs", value: stats.jobs, icon: <Briefcase size={28} />, trend: "New positions", color: "#f59e0b", bg: "#fef3c7", gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)" },
-    { id: "exchange_program", label: "Exchange Programs", value: stats.exchange, icon: <Globe size={28} />, trend: "Global study", color: "#ec4899", bg: "#fdf2f8", gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)" },
-    { id: "traveling", label: "Travel Packages", value: stats.packages, icon: <Plane size={28} />, trend: "Adventure", color: "#3b82f6", bg: "#eff6ff", gradient: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)" },
+    { 
+      id: "students", 
+      label: "Total Students", 
+      value: stats.students, 
+      icon: <GraduationCapIcon size={28} />, 
+      trend: "+12% this month", 
+      color: "#6366f1", 
+      bg: "#eef2ff", 
+      gradient: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)" 
+    },
+    { 
+      id: "brands", 
+      label: "Active Brands", 
+      value: stats.brands, 
+      icon: <Store size={28} />, 
+      trend: "+5 new", 
+      color: "#10b981", 
+      bg: "#ecfdf5", 
+      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)" 
+    },
+    { 
+      id: "employees", 
+      label: "Employees", 
+      value: stats.employees, 
+      icon: <HardHat size={28} />, 
+      trend: "This month", 
+      color: "#8b5cf6", 
+      bg: "#f5f3ff", 
+      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
+    },
+    { 
+      id: "travelers", 
+      label: "Travelers", 
+      value: stats.travelers, 
+      icon: <Compass size={28} />, 
+      trend: "Global", 
+      color: "#06b6d4", 
+      bg: "#ecfeff", 
+      gradient: "linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)" 
+    },
+    { 
+      id: "booking", 
+      label: "Total Bookings", 
+      value: stats.bookings, 
+      icon: <ShoppingCart size={28} />, 
+      trend: "This week", 
+      color: "#f43f5e", 
+      bg: "#fff1f2", 
+      gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)" 
+    },
+    { 
+      id: "card_manager", 
+      label: "Approved Cards", 
+      value: stats.approvedCards, 
+      icon: <CreditCard size={28} />, 
+      trend: `${stats.pendingCards} pending`, 
+      color: "#f59e0b", 
+      bg: "#fef3c7", 
+      gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)" 
+    },
+    { 
+      id: "all offer", 
+      label: "Total Offers", 
+      value: stats.offers, 
+      icon: <Tag size={28} />, 
+      trend: "Active deals", 
+      color: "#ff961a", 
+      bg: "#fff7ed", 
+      gradient: "linear-gradient(135deg, #ff961a 0%, #fbbf24 100%)" 
+    },
+    { 
+      id: "manage_jobs", 
+      label: "Open Jobs", 
+      value: stats.jobs, 
+      icon: <Briefcase size={28} />, 
+      trend: "New positions", 
+      color: "#3b82f6", 
+      bg: "#eff6ff", 
+      gradient: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)" 
+    },
+    { 
+      id: "exchange_program", 
+      label: "Exchange Programs", 
+      value: stats.exchange, 
+      icon: <Globe size={28} />, 
+      trend: "Global study", 
+      color: "#ec4899", 
+      bg: "#fdf2f8", 
+      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)" 
+    },
+    { 
+      id: "traveling", 
+      label: "Travel Packages", 
+      value: stats.packages, 
+      icon: <PlaneTakeoff size={28} />, 
+      trend: "Adventure", 
+      color: "#8b5cf6", 
+      bg: "#f5f3ff", 
+      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
+    },
   ];
 
+  // ==================== RENDER CONTENT ====================
   const renderContent = () => {
     switch (activePage) {
       case "dashboard":
@@ -269,7 +425,7 @@ export default function AdminDashboard() {
             >
               <div style={styles.quickStatItem}>
                 <Users size={18} color="#6366f1" />
-                <span>{stats.students + stats.brands} Total Users</span>
+                <span>{stats.students + stats.brands + stats.employees + stats.travelers} Total Users</span>
               </div>
               <div style={styles.quickStatDivider} />
               <div style={styles.quickStatItem}>
@@ -297,10 +453,19 @@ export default function AdminDashboard() {
       case "manage_jobs": return <AdminJobManager />;
       case "exchange_program": return <ManageExchange />;
       case "traveling": return <AdminPackageScreen />;
-      case "brands": return <AdminUserList role="brand" title="Brand Management" />;
-      case "students": return <AdminUserList role="student" title="Student Directory" />;
       
-      default: return <div style={styles.placeholderSection}><h2>Section Under Construction</h2></div>;
+      // ==================== USER MANAGEMENT ROUTES ====================
+      case "students": 
+        return <AdminUserList role="student" title="Student Directory" />;
+      case "brands": 
+        return <AdminUserList role="brand" title="Brand Management" />;
+      case "employees": 
+        return <AdminUserList role="employee" title="Employee Management" />;
+      case "travelers": 
+        return <AdminUserList role="traveler" title="Traveler Management" />;
+      
+      default: 
+        return <div style={styles.placeholderSection}><h2>Section Under Construction</h2></div>;
     }
   };
 
@@ -315,6 +480,63 @@ export default function AdminDashboard() {
   const markAllAsRead = () => {
     setNotifications(prev => 
       prev.map(n => ({ ...n, read: true }))
+    );
+  };
+
+  // ==================== GROUPED SIDEBAR MENU ====================
+  const renderSidebarMenu = () => {
+    const mainItems = menuItems.filter(item => item.section === "main");
+    const contentItems = menuItems.filter(item => item.section === "content");
+    const userItems = menuItems.filter(item => item.section === "users");
+
+    return (
+      <>
+        {/* Main Section */}
+        {mainItems.map((item) => renderMenuItem(item))}
+        
+        <div style={styles.divider} />
+        <p style={styles.menuLabel}>CONTENT MANAGEMENT</p>
+        {contentItems.map((item) => renderMenuItem(item))}
+        
+        <div style={styles.divider} />
+        <p style={styles.menuLabel}>USER MANAGEMENT</p>
+        {userItems.map((item) => renderMenuItem(item))}
+      </>
+    );
+  };
+
+  const renderMenuItem = (item) => {
+    const isActive = activePage === item.id;
+    return (
+      <motion.button
+        key={item.id}
+        className={`menu-item ${isActive ? 'active' : ''}`}
+        onMouseEnter={() => setHoveredItem(item.id)}
+        onMouseLeave={() => setHoveredItem(null)}
+        style={{
+          ...styles.menuBtn,
+          backgroundColor: isActive 
+            ? "rgba(249, 195, 73, 0.12)" 
+            : (hoveredItem === item.id ? "rgba(255,255,255,0.05)" : "transparent"),
+          borderRight: isActive 
+            ? "3px solid rgba(249, 195, 73, 0.12)" 
+            : "3px solid transparent",
+        }}
+        onClick={() => {
+          setActivePage(item.id);
+          if (isMobile) setIsMobileMenuOpen(false);
+        }}
+        whileHover={{ x: 4 }}
+        whileTap={{ scale: 0.98 }}
+      >
+        <span style={{...styles.btnIcon, color: isActive ? '#f9c349' : '#94a3b8'}}>
+          {item.icon}
+        </span>
+        <span style={{...styles.btnLabel, color: isActive ? '#fff' : '#cbd5e1'}}>
+          {item.label}
+        </span>
+        {isActive && <ChevronRight size={14} style={{ color: '#f9c349', marginLeft: 'auto' }} />}
+      </motion.button>
     );
   };
 
@@ -378,40 +600,8 @@ export default function AdminDashboard() {
             )}
           </div>
           
-          <div style={styles.divider} />
-          
           <nav style={styles.menu}>
-            <p style={styles.menuLabel}>MAIN MENU</p>
-            {menuItems.map((item) => {
-              const isActive = activePage === item.id;
-              return (
-                <motion.button
-                  key={item.id}
-                  className={`menu-item ${isActive ? 'active' : ''}`}
-                  onMouseEnter={() => setHoveredItem(item.id)}
-                  onMouseLeave={() => setHoveredItem(null)}
-                  style={{
-                    ...styles.menuBtn,
-                    backgroundColor: isActive ? "rgba(249, 195, 73, 0.12)" : (hoveredItem === item.id ? "rgba(255,255,255,0.05)" : "transparent"),
-                    borderRight: isActive ? "3px solid rgba(249, 195, 73, 0.12)" : "3px solid transparent",
-                  }}
-                  onClick={() => {
-                    setActivePage(item.id);
-                    if (isMobile) setIsMobileMenuOpen(false);
-                  }}
-                  whileHover={{ x: 4 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span style={{...styles.btnIcon, color: isActive ? '#f9c349' : '#94a3b8'}}>
-                    {item.icon}
-                  </span>
-                  <span style={{...styles.btnLabel, color: isActive ? '#fff' : '#cbd5e1'}}>
-                    {item.label}
-                  </span>
-                  {isActive && <ChevronRight size={14} style={{ color: '#f9c349', marginLeft: 'auto' }} />}
-                </motion.button>
-              );
-            })}
+            {renderSidebarMenu()}
           </nav>
         </div>
         
@@ -621,11 +811,29 @@ export default function AdminDashboard() {
                   </div>
                   <div style={styles.profileStat}>
                     <div style={{...styles.profileStatIcon, background: '#f0fdf4', color: '#10b981'}}>
-                      <Building2 size={18} />
+                      <Store size={18} />
                     </div>
                     <div>
                       <span style={styles.profileStatValue}>{stats.brands}</span>
                       <span style={styles.profileStatLabel}>Brands</span>
+                    </div>
+                  </div>
+                  <div style={styles.profileStat}>
+                    <div style={{...styles.profileStatIcon, background: '#f5f3ff', color: '#8b5cf6'}}>
+                      <HardHat size={18} />
+                    </div>
+                    <div>
+                      <span style={styles.profileStatValue}>{stats.employees}</span>
+                      <span style={styles.profileStatLabel}>Employees</span>
+                    </div>
+                  </div>
+                  <div style={styles.profileStat}>
+                    <div style={{...styles.profileStatIcon, background: '#ecfeff', color: '#06b6d4'}}>
+                      <Compass size={18} />
+                    </div>
+                    <div>
+                      <span style={styles.profileStatValue}>{stats.travelers}</span>
+                      <span style={styles.profileStatLabel}>Travelers</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
@@ -938,6 +1146,36 @@ export default function AdminDashboard() {
             .stat-card {
               min-width: unset !important;
             }
+            .sidebar {
+              position: fixed !important;
+              top: 0;
+              left: 0;
+              height: 100vh !important;
+              width: 280px !important;
+              z-index: 100 !important;
+              margin: 0 !important;
+              border-radius: 0 !important;
+            }
+            .mobileMenuBtn {
+              display: flex !important;
+            }
+            .modalContent {
+              max-width: 95% !important;
+            }
+            .profileDetails {
+              grid-template-columns: 1fr !important;
+            }
+            .profileStats {
+              grid-template-columns: 1fr 1fr !important;
+            }
+            .dashboardHeader {
+              flex-direction: column !important;
+              align-items: flex-start !important;
+            }
+            .dashboardHeaderRight {
+              width: 100% !important;
+              justify-content: space-between !important;
+            }
           }
         `}
       </style>
@@ -1008,6 +1246,8 @@ const styles = {
     zIndex: 10,
     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     border: "1px solid rgba(255,255,255,0.05)",
+    borderRadius: "16px",
+    minHeight: "calc(100vh - 4px)",
   },
   mobileCloseBtn: {
     background: "transparent",
@@ -1062,12 +1302,14 @@ const styles = {
   divider: {
     height: "1px",
     background: "rgba(255,255,255,0.06)",
-    marginBottom: "20px",
+    marginBottom: "16px",
+    marginTop: "16px",
   },
   menu: { 
     display: "flex", 
     flexDirection: "column", 
-    gap: "2px" 
+    gap: "2px",
+    flex: 1,
   },
   menuLabel: {
     fontSize: "10px",
@@ -1075,7 +1317,8 @@ const styles = {
     letterSpacing: "1.5px",
     textTransform: "uppercase",
     padding: "0 12px",
-    marginBottom: "12px",
+    marginBottom: "8px",
+    marginTop: "4px",
   },
   menuBtn: { 
     border: "none", 
@@ -1091,12 +1334,13 @@ const styles = {
     width: "100%",
     background: "transparent",
     position: "relative",
+    gap: "12px",
   },
   btnIcon: { 
-    marginRight: "12px", 
     display: "flex", 
     alignItems: "center",
     transition: "color 0.2s ease",
+    flexShrink: 0,
   },
   btnLabel: {
     flex: 1,
@@ -1667,7 +1911,7 @@ const styles = {
   // Profile Styles
   profileStats: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
     gap: "12px",
     marginBottom: "24px",
   },
@@ -1807,4 +2051,3 @@ const styles = {
     outline: "none",
   },
 };
-
