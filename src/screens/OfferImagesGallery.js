@@ -24,7 +24,7 @@ const OfferImagesGallery = () => {
       const token = getToken();
       
       const response = await axios.get(
-        'http://localhost:5000/api/offers/images/all',
+        'https://the-deft-crew-production.up.railway.app/api/offers/images/all',
         {
           headers: {
             'Authorization': `Bearer ${token}`
