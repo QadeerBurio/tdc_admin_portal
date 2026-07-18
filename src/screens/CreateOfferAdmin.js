@@ -39,53 +39,65 @@ export default function AdminPanel() {
   };
 
   const handlePublish = async () => {
-    if (!data.image) return alert("Please select an image first!");
+  if (!data.image) return alert("Please select an image first!");
 
-    const formData = new FormData();
-    formData.append("type", view);
-    formData.append("title", data.title);
-    formData.append("description", data.description);
-    formData.append("image", data.image);
+  const token = localStorage.getItem('token');
+  if (!token) {
+    alert("You must be logged in as admin!");
+    return;
+  }
 
-    setLoading(true);
-    setUploadProgress(0);
-    
-    try {
-      const interval = setInterval(() => {
-        setUploadProgress(prev => {
-          if (prev >= 90) {
-            clearInterval(interval);
-            return 90;
-          }
-          return prev + 10;
-        });
-      }, 200);
-      
-      const response = await fetch("https://the-deft-crew-production.up.railway.app/api/admin/add", {
-        method: "POST",
-        body: formData,
+  const formData = new FormData();
+  formData.append("type", view);
+  formData.append("title", data.title);
+  formData.append("description", data.description);
+  formData.append("image", data.image);
+
+  setLoading(true);
+  setUploadProgress(0);
+  
+  try {
+    const interval = setInterval(() => {
+      setUploadProgress(prev => {
+        if (prev >= 90) {
+          clearInterval(interval);
+          return 90;
+        }
+        return prev + 10;
       });
+    }, 200);
+    
+    const response = await fetch("https://the-deft-crew-production.up.railway.app/api/admin/add", {
+      method: "POST",
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData,
+    });
 
-      clearInterval(interval);
-      setUploadProgress(100);
-      
-      const result = await response.json();
+    clearInterval(interval);
+    setUploadProgress(100);
+    
+    const result = await response.json();
+    console.log("Server response:", result);
 
-      if (response.ok) {
-        setSuccess(true);
-        setTimeout(() => setSuccess(false), 3000);
-        clearForm();
-        setTimeout(() => setUploadProgress(0), 500);
-      } else {
-        alert("Server Error: " + result.message);
-      }
-    } catch (error) {
-      console.error("Upload failed:", error);
-      alert("Failed to connect to server.");
-    } finally {
-      setLoading(false);
+    if (response.ok) {
+      setSuccess(true);
+      setTimeout(() => setSuccess(false), 3000);
+      clearForm();
+      setTimeout(() => setUploadProgress(0), 500);
+    } else {
+      // Show detailed error
+      const errorMsg = result.errors ? result.errors.join(', ') : result.message || "Unknown error";
+      alert(`Server Error: ${errorMsg}`);
     }
-  };
+  } catch (error) {
+    console.error("Upload failed:", error);
+    alert("Failed to connect to server. Check your network connection.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleDrag = (e) => {
     e.preventDefault();

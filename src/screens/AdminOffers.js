@@ -48,18 +48,24 @@ export default function AdminOffers() {
     }
   };
 
-  const handleDelete = async (id) => {
-    if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
-    setDeletingId(id);
-    try {
-      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { method: "DELETE" });
-      await fetchItems();
-    } catch (error) {
-      alert("Failed to delete");
-    } finally {
-      setDeletingId(null);
-    }
-  };
+ const handleDelete = async (id) => {
+  if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
+  setDeletingId(id);
+  try {
+    await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
+      method: "DELETE",
+      headers: {
+        'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this if needed
+      }
+    });
+    await fetchItems();
+  } catch (error) {
+    console.error("Delete error:", error);
+    alert("Failed to delete");
+  } finally {
+    setDeletingId(null);
+  }
+};
 
   const filteredItems = items
     .filter(item =>
