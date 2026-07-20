@@ -288,8 +288,8 @@ export default function Signup() {
                   required
                 >
                   <option value="">-- Choose Your Role --</option>
-                  <option value="brand">🏢 Brand</option>
-                  <option value="employee">🏬 Company</option>
+                  <option value="brand">Brand</option>
+                  <option value="employee">Employer</option>
                 </select>
                 <div className="select-arrow">
                   <i className="fas fa-chevron-down"></i>
