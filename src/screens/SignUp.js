@@ -225,7 +225,7 @@ export default function Signup() {
       }
 
       const response = await axios.post(
-        "http://localhost:5000/api/auth/signup",
+        "https://the-deft-crew-production.up.railway.app/api/auth/signup",
         formDataToSend,
         {
           headers: {
