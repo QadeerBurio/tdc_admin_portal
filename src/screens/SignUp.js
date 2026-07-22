@@ -1,4 +1,4 @@
-// Signup.jsx
+// Signup.jsx - Complete Fixed Version
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -41,13 +41,19 @@ export default function Signup() {
 
   const handleLogoChange = (e) => {
     const file = e.target.files[0];
-    if (!file) return;
+    if (!file) {
+      setLogoError("Please select a file");
+      setLogoFile(null);
+      setLogoPreview("");
+      return;
+    }
 
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setLogoError('Please upload a JPEG, PNG, GIF, or WEBP image');
       setLogoFile(null);
       setLogoPreview("");
+      e.target.value = ""; // Clear the input
       return;
     }
 
@@ -55,6 +61,7 @@ export default function Signup() {
       setLogoError('Logo must be less than 5MB');
       setLogoFile(null);
       setLogoPreview("");
+      e.target.value = "";
       return;
     }
 
@@ -138,6 +145,7 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
 
+    // Validate all fields
     const allFields = {
       role: true,
       email: true,
@@ -179,29 +187,45 @@ export default function Signup() {
     try {
       setLoading(true);
 
+      // ⭐ CRITICAL FIX: Properly create FormData
       const formDataToSend = new FormData();
+      
+      // Add all text fields
       formDataToSend.append("role", role);
       formDataToSend.append("email", formData.email);
       formDataToSend.append("password", formData.password);
       formDataToSend.append("phone", formData.phone);
       formDataToSend.append("address", formData.address || "");
 
+      // Add role-specific fields
       if (role === "brand") {
         formDataToSend.append("brandName", formData.brandName);
-        if (logoFile) {
-          formDataToSend.append("logo", logoFile);
-        }
       } else if (role === "employee") {
         formDataToSend.append("fullName", formData.fullName);
-        if (logoFile) {
-          formDataToSend.append("logo", logoFile);
-        }
       } else {
         formDataToSend.append("fullName", formData.fullName || "");
       }
 
+      // ⭐ CRITICAL: Append logo file if it exists
+      if (logoFile) {
+        formDataToSend.append("logo", logoFile);
+        console.log("✅ Logo file appended:", logoFile.name, logoFile.size);
+      } else {
+        console.warn("⚠️ No logo file to append");
+      }
+
+      // Log FormData contents for debugging
+      console.log("📤 Sending FormData:");
+      for (let [key, value] of formDataToSend.entries()) {
+        if (key === 'logo') {
+          console.log(`  ${key}: File (${value.name}, ${value.size} bytes)`);
+        } else {
+          console.log(`  ${key}: ${value}`);
+        }
+      }
+
       const response = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/signup",
+        "http://localhost:5000/api/auth/signup",
         formDataToSend,
         {
           headers: {
@@ -210,16 +234,15 @@ export default function Signup() {
         }
       );
 
+      console.log("✅ Signup successful:", response.data);
       alert(`${role} account created successfully`);
       navigate("/login");
 
     } catch (err) {
-      const errorMessage = err.response?.data?.error || "Signup failed";
+      console.error("❌ Signup error:", err);
+      console.error("Error response:", err.response?.data);
+      const errorMessage = err.response?.data?.error || err.response?.data?.message || "Signup failed";
       alert(errorMessage);
-      if (logoPreview) {
-        setLogoPreview("");
-        setLogoFile(null);
-      }
     } finally {
       setLoading(false);
     }
