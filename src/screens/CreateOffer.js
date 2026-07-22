@@ -237,7 +237,7 @@ export default function CreateOffer() {
 
       <div style={styles.formGrid}>
         <div style={styles.inputSection}>
-          {renderField("title", "Offer Title", <FaTag />, "text", true)}
+          {renderField("title", "Brand Name", <FaTag />, "text", true)}
           {renderField("description", "Description", <FaAlignLeft />, "text", true)}
 
           <div style={styles.row}>
@@ -361,7 +361,7 @@ export default function CreateOffer() {
           >
             <div style={styles.imageHeader}>
               <FaImage style={{color: '#ff961a'}} />
-              <span style={styles.imageLabel}>Offer Banner <span style={styles.required}>*</span></span>
+              <span style={styles.imageLabel}>Logo <span style={styles.required}>*</span></span>
             </div>
             {preview ? (
               <div style={styles.previewContainer}>

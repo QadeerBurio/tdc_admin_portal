@@ -38,6 +38,7 @@ import BrandsProfile from "./screens/roles/BrandsProfile";
 import CreateOffer from "./screens/CreateOffer";
 import OfferImagesGallery from "./screens/OfferImagesGallery";
 import AppStoreReviews from "./screens/roles/AppStoreReviews";
+import EventManagement from "./screens/EventManagement";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -75,7 +76,7 @@ export default function AppNavigator() {
         <Route path="/package" element={<AdminPackageScreen />} />
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
-        
+        <Route path="/eventmanagement" element={<EventManagement />} />
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>

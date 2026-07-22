@@ -16,7 +16,9 @@ import {
   HardHat, UsersRound, BriefcaseBusiness, UserCog,
   Store, GraduationCap as GraduationCapIcon, 
   Building, UserPlus, UserCheck, UserX,
-  PlaneTakeoff, Luggage, Compass
+  PlaneTakeoff, Luggage, Compass, CalendarCheck,
+  Map, Clock as ClockIcon, Users as UsersIcon,
+  Trophy, Sparkle
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import "./styles/AdminDashboard.css";
@@ -30,6 +32,7 @@ import AdminPackageScreen from "./Traveling";
 import CardManager from "./CardManager";
 import AdminPackage from "./AdminPackage";
 import AdminCoursePortal from "./AdminCourse";
+import EventManagement from "./EventManagement";
 
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
@@ -42,7 +45,7 @@ export default function AdminDashboard() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [notifications, setNotifications] = useState([
-    { id: 1, title: "New Offer Created", message: "TechCorp added a new discount", time: "2 min ago", read: false },
+    { id: 1, title: "New Event Created", message: "Tech Summit 2026 added", time: "2 min ago", read: false },
     { id: 2, title: "Student Registration", message: "5 new students joined today", time: "15 min ago", read: false },
     { id: 3, title: "Job Application", message: "3 new applications received", time: "1 hour ago", read: false },
   ]);
@@ -66,8 +69,16 @@ export default function AdminDashboard() {
     pendingCards: 0,
     approvedCards: 0,
     bookings: 0,
-    courses: 0
+    courses: 0,
+    events: 0,
+    eventRegistrations: 0
   });
+
+  // Recent Events State
+  const [recentEvents, setRecentEvents] = useState([]);
+
+  // API Base URL - Use the same as your backend
+  const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -104,20 +115,21 @@ export default function AdminDashboard() {
     
     try {
       const headers = { "Authorization": `Bearer ${token}` };
-      const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
+      const adminAPI = `${API_BASE}/admin`;
 
       const endpoints = [
-        `${API_BASE}/all`,
-        `${API_BASE}/jobs/all`,
-        `${API_BASE}/users/student`,
-        `${API_BASE}/users/brand`,
-        `${API_BASE}/users/employee`,
-        `${API_BASE}/users/traveler`,
-        `${API_BASE}/exchange/all`,
-        `${API_BASE}/packages/all`,
-        `${API_BASE}/card-stats`,
-        `${API_BASE}/bookings/stats`,
-        `${API_BASE}/courses`
+        `${adminAPI}/all`,
+        `${adminAPI}/jobs/all`,
+        `${adminAPI}/users/student`,
+        `${adminAPI}/users/brand`,
+        `${adminAPI}/users/employee`,
+        `${adminAPI}/users/traveler`,
+        `${adminAPI}/exchange/all`,
+        `${adminAPI}/packages/all`,
+        `${adminAPI}/card-stats`,
+        `${adminAPI}/bookings/stats`,
+        `${adminAPI}/courses`,
+        `${adminAPI}/events/stats`
       ];
 
       const responses = await Promise.all(
@@ -140,7 +152,9 @@ export default function AdminDashboard() {
         pendingCards: responses[8]?.pending || 0,
         approvedCards: responses[8]?.approvedTotal || 0,
         bookings: responses[9]?.totalBookings || 0,
-        courses: Array.isArray(responses[10]) ? responses[10].length : 0
+        courses: Array.isArray(responses[10]) ? responses[10].length : 0,
+        events: responses[11]?.totalEvents || 0,
+        eventRegistrations: responses[11]?.totalRegistrations || 0
       });
     } catch (err) {
       console.error("Dashboard Stats Sync Error:", err);
@@ -149,13 +163,46 @@ export default function AdminDashboard() {
     }
   }, [token]);
 
+  // Fetch recent events - FIXED
+  const fetchRecentEvents = useCallback(async () => {
+    if (!token) return;
+    try {
+      const headers = { "Authorization": `Bearer ${token}` };
+      const eventsAPI = `${API_BASE}/events`;
+      
+      // Fetch events created by the user
+      const res = await fetch(`${eventsAPI}/my-events`, { headers });
+      const data = await res.json();
+      
+      if (Array.isArray(data)) {
+        // Get registrations for each event
+        const eventsWithRegistrations = await Promise.all(
+          data.slice(0, 5).map(async (event) => {
+            try {
+              const regRes = await fetch(`${eventsAPI}/registrations/${event._id}`, { headers });
+              const regData = await regRes.json();
+              return { ...event, registrations: Array.isArray(regData) ? regData : [] };
+            } catch (err) {
+              return { ...event, registrations: [] };
+            }
+          })
+        );
+        setRecentEvents(eventsWithRegistrations);
+      }
+    } catch (err) {
+      console.error("Error fetching recent events:", err);
+      setRecentEvents([]);
+    }
+  }, [token]);
+
   useEffect(() => {
     if (!loading && !token) {
       navigate("/login");
     } else if (token) {
       fetchDashboardStats();
+      fetchRecentEvents();
     }
-  }, [token, loading, navigate, fetchDashboardStats]);
+  }, [token, loading, navigate, fetchDashboardStats, fetchRecentEvents]);
 
   // ==================== COMPLETE MENU ITEMS ====================
   const menuItems = [
@@ -165,6 +212,7 @@ export default function AdminDashboard() {
       icon: <LayoutDashboard size={20} />,
       section: "main"
     },
+   
     { 
       id: "offer", 
       label: "Create Offer", 
@@ -193,6 +241,12 @@ export default function AdminDashboard() {
       id: "traveling", 
       label: "Traveling", 
       icon: <Plane size={20} />,
+      section: "content"
+    },
+     { 
+      id: "events", 
+      label: "Events", 
+      icon: <CalendarCheck size={20} />,
       section: "content"
     },
     // ==================== USER MANAGEMENT SECTION ====================
@@ -224,15 +278,25 @@ export default function AdminDashboard() {
 
   // ==================== CARD DATA WITH ALL USER TYPES ====================
   const cardData = [
+    // { 
+    //   id: "events", 
+    //   label: "Total Events", 
+    //   value: stats.events, 
+    //   icon: <CalendarCheck size={28} />, 
+    //   trend: `${stats.eventRegistrations} registrations`, 
+    //   color: "#6366f1", 
+    //   bg: "#eef2ff", 
+    //   gradient: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)" 
+    // },
     { 
       id: "students", 
       label: "Total Students", 
       value: stats.students, 
       icon: <GraduationCapIcon size={28} />, 
       trend: "+12% this month", 
-      color: "#6366f1", 
-      bg: "#eef2ff", 
-      gradient: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)" 
+      color: "#10b981", 
+      bg: "#ecfdf5", 
+      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)" 
     },
     { 
       id: "brands", 
@@ -240,9 +304,9 @@ export default function AdminDashboard() {
       value: stats.brands, 
       icon: <Store size={28} />, 
       trend: "+5 new", 
-      color: "#10b981", 
-      bg: "#ecfdf5", 
-      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)" 
+      color: "#8b5cf6", 
+      bg: "#f5f3ff", 
+      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
     },
     { 
       id: "employees", 
@@ -250,9 +314,9 @@ export default function AdminDashboard() {
       value: stats.employees, 
       icon: <HardHat size={28} />, 
       trend: "This month", 
-      color: "#8b5cf6", 
-      bg: "#f5f3ff", 
-      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
+      color: "#06b6d4", 
+      bg: "#ecfeff", 
+      gradient: "linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)" 
     },
     { 
       id: "travelers", 
@@ -260,9 +324,9 @@ export default function AdminDashboard() {
       value: stats.travelers, 
       icon: <Compass size={28} />, 
       trend: "Global", 
-      color: "#06b6d4", 
-      bg: "#ecfeff", 
-      gradient: "linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)" 
+      color: "#f43f5e", 
+      bg: "#fff1f2", 
+      gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)" 
     },
     { 
       id: "booking", 
@@ -270,9 +334,9 @@ export default function AdminDashboard() {
       value: stats.bookings, 
       icon: <ShoppingCart size={28} />, 
       trend: "This week", 
-      color: "#f43f5e", 
-      bg: "#fff1f2", 
-      gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)" 
+      color: "#f59e0b", 
+      bg: "#fef3c7", 
+      gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)" 
     },
     { 
       id: "card_manager", 
@@ -280,9 +344,9 @@ export default function AdminDashboard() {
       value: stats.approvedCards, 
       icon: <CreditCard size={28} />, 
       trend: `${stats.pendingCards} pending`, 
-      color: "#f59e0b", 
-      bg: "#fef3c7", 
-      gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)" 
+      color: "#ec4899", 
+      bg: "#fdf2f8", 
+      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)" 
     },
     { 
       id: "all offer", 
@@ -310,16 +374,6 @@ export default function AdminDashboard() {
       value: stats.exchange, 
       icon: <Globe size={28} />, 
       trend: "Global study", 
-      color: "#ec4899", 
-      bg: "#fdf2f8", 
-      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)" 
-    },
-    { 
-      id: "traveling", 
-      label: "Travel Packages", 
-      value: stats.packages, 
-      icon: <PlaneTakeoff size={28} />, 
-      trend: "Adventure", 
       color: "#8b5cf6", 
       bg: "#f5f3ff", 
       gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
@@ -429,8 +483,8 @@ export default function AdminDashboard() {
               </div>
               <div style={styles.quickStatDivider} />
               <div style={styles.quickStatItem}>
-                <Award size={18} color="#f59e0b" />
-                <span>Active Platform</span>
+                <CalendarCheck size={18} color="#f59e0b" />
+                <span>{stats.events} Events</span>
               </div>
               <div style={styles.quickStatDivider} />
               <div style={styles.quickStatItem}>
@@ -443,18 +497,105 @@ export default function AdminDashboard() {
                 <span>{stats.offers + stats.jobs} Total Listings</span>
               </div>
             </motion.div>
+
+            {/* Recent Events Section */}
+            <motion.div 
+              style={styles.recentEventsSection}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5, delay: 0.7 }}
+            >
+              <div style={styles.recentEventsHeader}>
+                <div style={styles.recentEventsTitle}>
+                  <CalendarCheck size={20} color="#ff961a" />
+                  <h2 style={styles.recentEventsHeading}>Recent Events</h2>
+                </div>
+                <button 
+                  style={styles.viewAllBtn}
+                  onClick={() => setActivePage("events")}
+                >
+                  View All <ArrowUpRight size={16} />
+                </button>
+              </div>
+
+              <div style={styles.recentEventsGrid}>
+                {recentEvents.length === 0 ? (
+                  <div style={styles.emptyEvents}>
+                    <Calendar size={40} color="#cbd5e1" />
+                    <p>No recent events</p>
+                    <span>Create your first event to get started</span>
+                  </div>
+                ) : (
+                  recentEvents.map((event, index) => (
+                    <motion.div 
+                      key={event._id || index}
+                      style={styles.eventCard}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.1 + 0.7 }}
+                      whileHover={{ y: -4, boxShadow: "0 8px 25px rgba(0,0,0,0.08)" }}
+                      onClick={() => setActivePage("events")}
+                    >
+                      <div style={styles.eventCardImage}>
+                        <img 
+                          src={event.image || "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=800"} 
+                          alt={event.title}
+                          style={styles.eventImage}
+                          onError={(e) => {
+                            e.target.src = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=800";
+                          }}
+                        />
+                        <div style={styles.eventCardBadge}>
+                          {event.type || "Event"}
+                        </div>
+                      </div>
+                      <div style={styles.eventCardContent}>
+                        <h3 style={styles.eventCardTitle}>{event.title}</h3>
+                        <div style={styles.eventCardMeta}>
+                          <span style={styles.eventCardMetaItem}>
+                            <MapPin size={14} />
+                            {event.city || "TBD"}
+                          </span>
+                          <span style={styles.eventCardMetaItem}>
+                            <Calendar size={14} />
+                            {event.date || "TBA"}
+                          </span>
+                        </div>
+                        <div style={styles.eventCardFooter}>
+                          <span style={styles.eventCardRegistrations}>
+                            <UsersIcon size={14} />
+                            {event.registrations?.length || 0} Registered
+                          </span>
+                          <span style={styles.eventCardStatus}>
+                            <CheckCircle size={14} color="#10b981" />
+                            Active
+                          </span>
+                        </div>
+                      </div>
+                    </motion.div>
+                  ))
+                )}
+              </div>
+            </motion.div>
           </div>
         );
       
-      case "booking": return <AdminPackage />;
-      case "card_manager": return <CardManager />;
-      case "offer": return <CreateOfferAdmin />;
-      case "all offer": return <AdminOffers />;
-      case "manage_jobs": return <AdminJobManager />;
-      case "exchange_program": return <ManageExchange />;
-      case "traveling": return <AdminPackageScreen />;
-      
-      // ==================== USER MANAGEMENT ROUTES ====================
+      case "events": 
+        return <EventManagement />;
+      case "booking": 
+        return <AdminPackage />;
+      case "card_manager": 
+        return <CardManager />;
+      case "offer": 
+        return <CreateOfferAdmin />;
+      case "all offer": 
+        return <AdminOffers />;
+      case "manage_jobs": 
+        return <AdminJobManager />;
+      case "exchange_program": 
+        return <ManageExchange />;
+      case "traveling": 
+        return <AdminPackageScreen />;
       case "students": 
         return <AdminUserList role="student" title="Student Directory" />;
       case "brands": 
@@ -463,7 +604,6 @@ export default function AdminDashboard() {
         return <AdminUserList role="employee" title="Employee Management" />;
       case "travelers": 
         return <AdminUserList role="traveler" title="Traveler Management" />;
-      
       default: 
         return <div style={styles.placeholderSection}><h2>Section Under Construction</h2></div>;
     }
@@ -731,7 +871,7 @@ export default function AdminDashboard() {
                           onClick={() => markAsRead(notif.id)}
                         >
                           <div style={styles.notificationIcon}>
-                            {notif.id === 1 ? <Gift size={14} /> : 
+                            {notif.id === 1 ? <CalendarCheck size={14} /> : 
                              notif.id === 2 ? <Users size={14} /> : 
                              <Briefcase size={14} />}
                           </div>
@@ -838,6 +978,15 @@ export default function AdminDashboard() {
                   </div>
                   <div style={styles.profileStat}>
                     <div style={{...styles.profileStatIcon, background: '#fff7ed', color: '#ff961a'}}>
+                      <CalendarCheck size={18} />
+                    </div>
+                    <div>
+                      <span style={styles.profileStatValue}>{stats.events}</span>
+                      <span style={styles.profileStatLabel}>Events</span>
+                    </div>
+                  </div>
+                  <div style={styles.profileStat}>
+                    <div style={{...styles.profileStatIcon, background: '#fef3c7', color: '#f59e0b'}}>
                       <Tag size={18} />
                     </div>
                     <div>
@@ -1175,6 +1324,9 @@ export default function AdminDashboard() {
             .dashboardHeaderRight {
               width: 100% !important;
               justify-content: space-between !important;
+            }
+            .recentEventsGrid {
+              grid-template-columns: 1fr !important;
             }
           }
         `}
@@ -1758,7 +1910,8 @@ const styles = {
     background: "#fff",
     borderRadius: "16px",
     border: "1px solid #e5e7eb",
-    flexWrap: "wrap"
+    flexWrap: "wrap",
+    marginBottom: "24px"
   },
   quickStatItem: {
     display: "flex",
@@ -1772,6 +1925,139 @@ const styles = {
     width: "1px",
     height: "24px",
     background: "#e5e7eb"
+  },
+  // Recent Events Styles
+  recentEventsSection: {
+    background: "#fff",
+    borderRadius: "20px",
+    border: "1px solid #e5e7eb",
+    padding: "24px",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
+  },
+  recentEventsHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "20px"
+  },
+  recentEventsTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px"
+  },
+  recentEventsHeading: {
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0
+  },
+  viewAllBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    background: "transparent",
+    border: "none",
+    color: "#ff961a",
+    fontWeight: "600",
+    fontSize: "14px",
+    cursor: "pointer",
+    padding: "6px 12px",
+    borderRadius: "8px",
+    transition: "all 0.3s ease"
+  },
+  recentEventsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+    gap: "16px"
+  },
+  eventCard: {
+    display: "flex",
+    flexDirection: "column",
+    background: "#f8fafc",
+    borderRadius: "16px",
+    overflow: "hidden",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    border: "1px solid #f1f5f9"
+  },
+  eventCardImage: {
+    position: "relative",
+    height: "140px",
+    overflow: "hidden"
+  },
+  eventImage: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover"
+  },
+  eventCardBadge: {
+    position: "absolute",
+    top: "10px",
+    right: "10px",
+    background: "#f9c349",
+    color: "#0f172a",
+    padding: "4px 12px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "700",
+    textTransform: "uppercase"
+  },
+  eventCardContent: {
+    padding: "14px 16px",
+    flex: 1
+  },
+  eventCardTitle: {
+    fontSize: "15px",
+    fontWeight: "600",
+    color: "#0f172a",
+    margin: "0 0 8px 0",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
+  },
+  eventCardMeta: {
+    display: "flex",
+    gap: "12px",
+    marginBottom: "8px",
+    flexWrap: "wrap"
+  },
+  eventCardMetaItem: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#64748b"
+  },
+  eventCardFooter: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingTop: "8px",
+    borderTop: "1px solid #e5e7eb"
+  },
+  eventCardRegistrations: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#475569",
+    fontWeight: "500"
+  },
+  eventCardStatus: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#10b981",
+    fontWeight: "500"
+  },
+  emptyEvents: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    gap: "8px",
+    padding: "40px 20px",
+    color: "#94a3b8"
   },
   placeholderSection: { 
     background: "#fff", 
@@ -1911,7 +2197,7 @@ const styles = {
   // Profile Styles
   profileStats: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
     gap: "12px",
     marginBottom: "24px",
   },

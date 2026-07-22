@@ -1,73 +1,125 @@
-import React, { useState, useContext } from "react";
+import React, { useState, useContext, useRef, useEffect } from "react";
 import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import { 
-  
   FaUniversity, 
   FaIdCard, 
   FaSearch, 
   FaCalculator, 
-  
   FaCheckCircle,
   FaShieldAlt,
-  
   FaArrowRight,
   FaCreditCard,
   FaPercent,
-  FaUserGraduate
+  FaUserGraduate,
+  FaTimes
 } from "react-icons/fa";
 
 const VerifyClaim = () => {
   const { token } = useContext(AuthContext);
 
   const universities = [
-  "Aga Khan University",
-  "Baqai Medical University",
-  "Bahria University Karachi",
-  "NED University of Engineering & Technology",
-  "University of Karachi",
-  "Institute of Business Administration (IBA Karachi)",
-  "Institute of Business Management (IoBM)",
-  "SZABIST",
-  "FAST-NUCES Karachi",
-  "Sir Syed University of Engineering & Technology",
-  "Dawood University of Engineering & Technology",
-  "Hamdard University",
-  "Iqra University",
-  "Jinnah Sindh Medical University",
-  "Dow University of Health Sciences",
-  "Indus University",
-  "Benazir Bhutto Shaheed University Lyari",
-  "Federal Urdu University",
-  "Karachi Institute of Economics & Technology (KIET)",
-  "Muhammad Ali Jinnah University",
-  "Habib University",
-  "Shaheed Zulfikar Ali Bhutto Institute of Science & Technology",
-  "Preston University Karachi",
-  "Mohi-ud-Din Islamic University Karachi",
-  "Greenwich University",
-  "Newports Institute of Communications & Economics",
-  "Textile Institute of Pakistan",
-  "Sindh Madressatul Islam University",
-  "DHA Suffa University",
-  "Usman Institute of Technology",
-  "Jinnah University for Women",
-  "Ziauddin University",
-  "Al-Hamd Islamic University Karachi Campus",
-  "Virtual University of Pakistan Karachi Campus",
-  "Allama Iqbal Open University Karachi Campus",
-  "Iqra National University Karachi Campus",
-  "Dadabhoy Institute of Higher Education",
-  "KASBIT",
-  "CAMS Institute of Business & Technology",
-  "Pakistan Institute of Engineering & Applied Sciences Karachi Campus",
-  "APWA Government College for Women",
-  "Government College University Hyderabad Karachi Campus",
-  "Royal Institute of Science & Technology",
-  "Metropolitan University Karachi",
-  "Ilma University",
-  "The Millennium Universal College (TMUC) Karachi",
-];
+    "Aga Khan University",
+    "Air University",
+    "Aror University of Art, Architecture, Design & Heritage",
+    "Allama Iqbal Open University",
+    "Bahria University Islamabad",
+    "Bahria University Karachi",
+    "COMSATS University Islamabad",
+    "COMSATS University Lahore Campus",
+    "COMSATS University Sahiwal Campus",
+    "COMSATS University Vehari Campus",
+    "Dawood University of Engineering & Technology Karachi",
+    "DHA Suffa University",
+    "Dow International Medical College",
+    "Faisalabad Medical University",
+    "FAST-NUCES Karachi",
+    "FAST-NUCES Lahore",
+    "Fatima Jinnah Medical University",
+    "FMH College of Medicine & Dentistry",
+    "Foundation University Medical College",
+    "Gambat Institute of Medical Sciences (GIMS)",
+    "Gilgit Medical College",
+    "Government College University Faisalabad",
+    "Government College University Lahore",
+    "Habib University Karachi",
+    "Hamdard University Karachi",
+    "Ilma University Karachi",
+    "Indus Medical College",
+    "Indus University",
+    "Institute of Business Administration (IBA Karachi)",
+    "Institute of Business Management (IoBM)",
+    "International Islamic University Islamabad",
+    "Iqra University",
+    "Islamabad Medical & Dental College",
+    "Isra Medical College",
+    "Isra University",
+    "Jhalawan Medical College",
+    "Jinnah Medical & Dental College",
+    "Jinnah Sindh Medical University",
+    "Karakoram International University",
+    "Karachi Institute of Medical Sciences",
+    "Karachi Medical & Dental College",
+    "KASBIT",
+    "Khawaja Muhammad Safdar Medical College",
+    "Khyber Medical College",
+    "Khyber Medical University",
+    "King Edward Medical University",
+    "Lahore Medical & Dental College",
+    "Lahore University of Management Sciences (LUMS)",
+    "Liaquat College of Medicine & Dentistry",
+    "Liaquat University of Medical & Health Sciences",
+    "Loralai Medical College",
+    "Makran Medical College",
+    "Mehran University of Engineering & Technology (MUET)",
+    "Mohtarma Benazir Bhutto Shaheed Medical College",
+    "Muhammad Ali Jinnah University",
+    "National Defence University",
+    "National Textile University",
+    "National University of Medical Sciences (NUMS)",
+    "National University of Modern Languages (NUML)",
+    "National University of Sciences & Technology (NUST)",
+    "NED University of Engineering & Technology",
+    "Pakistan Institute of Engineering & Applied Sciences (PIEAS)",
+    "Pakistan Institute of Medical Sciences (PIMS)",
+    "Peoples University of Medical & Health Sciences",
+    "Pir Mehr Ali Shah Arid Agriculture University",
+    "Punjab Medical College",
+    "Quaid-e-Awam University of Engineering, Science & Technology (QUEST)",
+    "Quaid-e-Azam Medical College",
+    "Quaid-i-Azam University",
+    "Rawalpindi Medical University",
+    "Riphah International University",
+    "Shah Abdul Latif University",
+    "Shaheed Benazir Bhutto University Nawabshah",
+    "Shaheed Mohtarma Benazir Bhutto Medical University Larkana",
+    "Sindh Madressatul Islam University",
+    "Sir Syed University of Engineering & Technology",
+    "Sukkur IBA University",
+    "SZABIST",
+    "The Islamia University of Bahawalpur",
+    "University of Agriculture Faisalabad",
+    "University of Azad Jammu & Kashmir",
+    "University of Balochistan",
+    "University of Central Punjab",
+    "University of Chakwal",
+    "University of Engineering & Technology Lahore",
+    "University of Engineering & Technology Peshawar",
+    "University of Gujrat",
+    "University of Karachi",
+    "University of Lahore",
+    "University of Management & Technology",
+    "University of Okara",
+    "University of Peshawar",
+    "University of Sahiwal",
+    "University of Sindh Jamshoro",
+    "University of South Asia",
+    "University of the Punjab",
+    "Women University Multan",
+    "Ziauddin Medical College",
+    "Ziauddin University",
+    "Ziauddin University Sukkur"
+  ];
 
   const [inputs, setInputs] = useState({
     name: "",
@@ -80,6 +132,36 @@ const VerifyClaim = () => {
   const [paymentInfo, setPaymentInfo] = useState(null);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
+  
+  // Search states
+  const [searchQuery, setSearchQuery] = useState("");
+  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
+  const [filteredUniversities, setFilteredUniversities] = useState(universities);
+  const dropdownRef = useRef(null);
+
+  // Filter universities based on search query
+  useEffect(() => {
+    if (!searchQuery.trim()) {
+      setFilteredUniversities(universities);
+    } else {
+      const query = searchQuery.toLowerCase().trim();
+      const filtered = universities.filter(uni => 
+        uni.toLowerCase().includes(query)
+      );
+      setFilteredUniversities(filtered);
+    }
+  }, [searchQuery]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setIsDropdownOpen(false);
+      }
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
 
   const verify = async () => {
     if (!inputs.name || !inputs.rollNo || !inputs.university) {
@@ -147,18 +229,30 @@ const VerifyClaim = () => {
       setBill("");
       setPaymentInfo(null);
       setInputs({ name: "", rollNo: "", university: "" });
+      setSearchQuery("");
 
     } catch (err) {
       alert(err.response?.data?.message || "Payment processing failed");
     }
   };
 
-  // const resetForm = () => {
-  //   setResult(null);
-  //   setBill("");
-  //   setPaymentInfo(null);
-  //   setInputs({ name: "", rollNo: "", university: "" });
-  // };
+  const handleUniversitySelect = (university) => {
+    setInputs({ ...inputs, university });
+    setSearchQuery(university);
+    setIsDropdownOpen(false);
+  };
+
+  const toggleDropdown = () => {
+    setIsDropdownOpen(!isDropdownOpen);
+    if (!isDropdownOpen) {
+      setSearchQuery(inputs.university || "");
+    }
+  };
+
+  const clearSearch = () => {
+    setSearchQuery("");
+    setFilteredUniversities(universities);
+  };
 
   return (
     <div style={styles.wrapper}>
@@ -223,18 +317,88 @@ const VerifyClaim = () => {
 
           <div className="animate-field" style={styles.inputGroup}>
             <label style={styles.label}>University</label>
-            <div style={styles.inputWrapper}>
-              <FaUniversity style={styles.inputIcon} />
-              <select
-                style={styles.select}
-                value={inputs.university}
-                onChange={e => setInputs({ ...inputs, university: e.target.value })}
+            <div style={styles.customSelectWrapper} ref={dropdownRef}>
+              <div 
+                style={{
+                  ...styles.inputWrapper,
+                  ...styles.customSelectTrigger,
+                  borderColor: isDropdownOpen ? '#ff961a' : '#e2e8f0',
+                  cursor: 'pointer'
+                }}
+                onClick={toggleDropdown}
               >
-                <option value="">Select University</option>
-                {universities.map((uni, index) => (
-                  <option key={index} value={uni}>{uni}</option>
-                ))}
-              </select>
+                <FaUniversity style={styles.inputIcon} />
+                <input
+                  style={styles.customSelectInput}
+                  placeholder="Search or select university..."
+                  value={searchQuery}
+                  onChange={(e) => {
+                    setSearchQuery(e.target.value);
+                    setIsDropdownOpen(true);
+                    if (e.target.value === "") {
+                      setInputs({ ...inputs, university: "" });
+                    }
+                  }}
+                  onFocus={() => setIsDropdownOpen(true)}
+                  onClick={(e) => e.stopPropagation()}
+                />
+                {searchQuery && (
+                  <button 
+                    style={styles.clearButton}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      clearSearch();
+                      setInputs({ ...inputs, university: "" });
+                    }}
+                  >
+                    <FaTimes size={14} />
+                  </button>
+                )}
+                <span style={styles.dropdownArrow}>
+                  {isDropdownOpen ? '▲' : '▼'}
+                </span>
+              </div>
+
+              {isDropdownOpen && (
+                <div style={styles.dropdownMenu}>
+                  {filteredUniversities.length > 0 ? (
+                    <>
+                      <div style={styles.resultsCount}>
+                        {filteredUniversities.length} {filteredUniversities.length === 1 ? 'university' : 'universities'} found
+                      </div>
+                      {filteredUniversities.map((uni, index) => (
+                        <div
+                          key={index}
+                          style={{
+                            ...styles.dropdownItem,
+                            backgroundColor: inputs.university === uni ? '#fff7ed' : 'transparent',
+                            borderLeft: inputs.university === uni ? '3px solid #ff961a' : '3px solid transparent'
+                          }}
+                          onClick={() => handleUniversitySelect(uni)}
+                          onMouseEnter={(e) => {
+                            e.currentTarget.style.backgroundColor = '#f8fafc';
+                          }}
+                          onMouseLeave={(e) => {
+                            e.currentTarget.style.backgroundColor = 
+                              inputs.university === uni ? '#fff7ed' : 'transparent';
+                          }}
+                        >
+                          <span style={styles.dropdownItemText}>{uni}</span>
+                          {inputs.university === uni && (
+                            <FaCheckCircle style={{ color: '#ff961a', fontSize: '14px' }} />
+                          )}
+                        </div>
+                      ))}
+                    </>
+                  ) : (
+                    <div style={styles.noResults}>
+                      <div style={styles.noResultsIcon}>🔍</div>
+                      <p style={styles.noResultsText}>No universities found</p>
+                      <p style={styles.noResultsSubtext}>Try adjusting your search</p>
+                    </div>
+                  )}
+                </div>
+              )}
             </div>
           </div>
 
@@ -376,6 +540,10 @@ const VerifyClaim = () => {
         @keyframes slideInRight {
           from { opacity: 0; transform: translateX(30px); }
           to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes dropdownSlide {
+          from { opacity: 0; transform: translateY(-10px) scale(0.98); }
+          to { opacity: 1; transform: translateY(0) scale(1); }
         }
         
         .animate-card {
@@ -556,16 +724,95 @@ const styles = {
     fontWeight: "500",
     color: "#1e293b"
   },
-  select: { 
-    border: "none", 
-    backgroundColor: "transparent", 
-    padding: "14px 16px", 
-    width: "100%", 
-    outline: "none", 
+  // Custom select styles
+  customSelectWrapper: {
+    position: "relative",
+    width: "100%"
+  },
+  customSelectTrigger: {
+    cursor: "pointer",
+    position: "relative"
+  },
+  customSelectInput: {
+    border: "none",
+    backgroundColor: "transparent",
+    padding: "14px 12px",
+    width: "100%",
+    outline: "none",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#1e293b",
+    flex: 1
+  },
+  clearButton: {
+    background: "none",
+    border: "none",
+    color: "#94a3b8",
+    cursor: "pointer",
+    padding: "4px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  dropdownArrow: {
+    padding: "0 16px",
+    color: "#94a3b8",
+    fontSize: "12px"
+  },
+  dropdownMenu: {
+    position: "absolute",
+    top: "calc(100% + 8px)",
+    left: 0,
+    right: 0,
+    backgroundColor: "#fff",
+    borderRadius: "16px",
+    boxShadow: "0 20px 60px -12px rgba(0,0,0,0.2)",
+    border: "1px solid #e2e8f0",
+    maxHeight: "280px",
+    overflowY: "auto",
+    zIndex: 1000,
+    animation: "dropdownSlide 0.2s ease forwards"
+  },
+  resultsCount: {
+    padding: "12px 16px 8px",
+    fontSize: "12px",
+    color: "#94a3b8",
+    borderBottom: "1px solid #f1f5f9",
+    fontWeight: "500"
+  },
+  dropdownItem: {
+    padding: "12px 16px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    transition: "all 0.15s ease",
+    borderLeft: "3px solid transparent"
+  },
+  dropdownItemText: {
     fontSize: "14px",
     color: "#1e293b",
-    fontWeight: "500",
-    cursor: "pointer"
+    fontWeight: "500"
+  },
+  noResults: {
+    padding: "40px 20px",
+    textAlign: "center"
+  },
+  noResultsIcon: {
+    fontSize: "40px",
+    marginBottom: "12px",
+    opacity: 0.5
+  },
+  noResultsText: {
+    fontSize: "16px",
+    fontWeight: "600",
+    color: "#64748b",
+    margin: 0
+  },
+  noResultsSubtext: {
+    fontSize: "13px",
+    color: "#94a3b8",
+    marginTop: "4px"
   },
   verifyBtn: { 
     background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",

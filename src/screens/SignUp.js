@@ -43,7 +43,6 @@ export default function Signup() {
     const file = e.target.files[0];
     if (!file) return;
 
-    // Validate file type
     const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
     if (!allowedTypes.includes(file.type)) {
       setLogoError('Please upload a JPEG, PNG, GIF, or WEBP image');
@@ -52,7 +51,6 @@ export default function Signup() {
       return;
     }
 
-    // Validate file size (5MB)
     if (file.size > 5 * 1024 * 1024) {
       setLogoError('Logo must be less than 5MB');
       setLogoFile(null);
@@ -63,7 +61,6 @@ export default function Signup() {
     setLogoError("");
     setLogoFile(file);
     
-    // Create preview
     const reader = new FileReader();
     reader.onloadend = () => {
       setLogoPreview(reader.result);
@@ -141,7 +138,6 @@ export default function Signup() {
   const handleSignup = async (e) => {
     e.preventDefault();
 
-    // Mark all fields as touched for validation
     const allFields = {
       role: true,
       email: true,
@@ -161,7 +157,6 @@ export default function Signup() {
 
     setTouchedFields(allFields);
 
-    // Validate all fields
     const errors = [];
     if (!role) errors.push("Please select a role");
     if (role === "brand" && !formData.brandName.trim()) errors.push("Brand name is required");
@@ -184,7 +179,6 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      // Create FormData for file upload
       const formDataToSend = new FormData();
       formDataToSend.append("role", role);
       formDataToSend.append("email", formData.email);
@@ -222,7 +216,6 @@ export default function Signup() {
     } catch (err) {
       const errorMessage = err.response?.data?.error || "Signup failed";
       alert(errorMessage);
-      // Clear logo preview if upload failed
       if (logoPreview) {
         setLogoPreview("");
         setLogoFile(null);
@@ -236,7 +229,6 @@ export default function Signup() {
 
   return (
     <div className="signup-container">
-      {/* Background Effects */}
       <div className="signup-bg-effects">
         <div className="bg-orb bg-orb-1"></div>
         <div className="bg-orb bg-orb-2"></div>
@@ -260,9 +252,7 @@ export default function Signup() {
       </div>
 
       <div className="signup-wrapper">
-        {/* Form Side - Left */}
         <div className="signup-card">
-          {/* Brand Section */}
           <div className="brand-section">
             <div className="brand-icon">
               <span className="logo-text">tdc<span className="logo-dot">.</span></span>
@@ -272,7 +262,6 @@ export default function Signup() {
           </div>
 
           <form className="signup-form" onSubmit={handleSignup} noValidate>
-            {/* Role Selection */}
             <div className={`input-group ${isFieldInvalid('role') ? 'error' : ''}`}>
               <label className={focusedField === 'role' ? 'focused' : ''}>
                 <i className="fas fa-user-tag"></i>
@@ -301,7 +290,6 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Dynamic Name Field */}
             {role && (
               <div className={`input-group ${isFieldInvalid(role === "brand" ? 'brandName' : 'fullName') ? 'error' : ''}`}>
                 <label className={focusedField === 'name' ? 'focused' : ''}>
@@ -329,7 +317,6 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Logo Upload for Brand and Employee */}
             {showLogoUpload && (
               <div className={`input-group ${isFieldInvalid('logo') ? 'error' : ''}`}>
                 <label className={focusedField === 'logo' ? 'focused' : ''}>
@@ -377,7 +364,6 @@ export default function Signup() {
               </div>
             )}
 
-            {/* Email */}
             <div className={`input-group ${isFieldInvalid('email') ? 'error' : ''}`}>
               <label className={focusedField === 'email' ? 'focused' : ''}>
                 <i className="fas fa-envelope"></i>
@@ -402,7 +388,6 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Phone */}
             <div className={`input-group ${isFieldInvalid('phone') ? 'error' : ''}`}>
               <label className={focusedField === 'phone' ? 'focused' : ''}>
                 <i className="fas fa-phone"></i>
@@ -432,7 +417,6 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Address */}
             <div className="input-group">
               <label className={focusedField === 'address' ? 'focused' : ''}>
                 <i className="fas fa-map-marker-alt"></i>
@@ -453,7 +437,6 @@ export default function Signup() {
               </div>
             </div>
 
-            {/* Password */}
             <div className={`input-group ${isFieldInvalid('password') ? 'error' : ''}`}>
               <label className={focusedField === 'password' ? 'focused' : ''}>
                 <i className="fas fa-lock"></i>
@@ -490,7 +473,6 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Confirm Password */}
             <div className={`input-group ${isFieldInvalid('confirmPassword') ? 'error' : ''}`}>
               <label className={focusedField === 'confirmPassword' ? 'focused' : ''}>
                 <i className="fas fa-lock"></i>
@@ -522,7 +504,6 @@ export default function Signup() {
               )}
             </div>
 
-            {/* Terms & Conditions */}
             <div className={`terms-group ${isFieldInvalid('terms') ? 'error' : ''}`}>
               <div className="terms-checkbox">
                 <input
@@ -574,7 +555,6 @@ export default function Signup() {
             </div>
           </form>
 
-          {/* Trust Badge */}
           <div className="trust-badge">
             <i className="fas fa-shield-alt"></i>
             <span>Secure Registration</span>
@@ -584,7 +564,6 @@ export default function Signup() {
           </div>
         </div>
 
-        {/* Image Side - Right */}
         <div className="signup-image-side">
           <img src={signupImage} alt="Signup" className="side-image" />
         </div>

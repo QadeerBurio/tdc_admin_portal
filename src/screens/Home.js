@@ -172,7 +172,7 @@ const BrandDashboard = () => {
 
   const navItems = [
     { id: "home", label: "Dashboard", icon: <FaHome />, description: "Overview" },
-    { id: "createOffer", label: "Create Offer", icon: <FaGift />, description: "New Offer" },
+    { id: "createOffer", label: "Create Discount", icon: <FaGift />, description: "New Offer" },
     { id: "myOffers", label: "My Offers", icon: <FaTicketAlt />, description: "Manage" },
     { id: "claimedUsers", label: "Claimed Leads", icon: <FaUsers />, description: "Leads" },
     { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
