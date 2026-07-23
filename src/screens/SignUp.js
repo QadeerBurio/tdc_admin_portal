@@ -1,4 +1,4 @@
-// Signup.jsx - Complete Fixed Version
+// Signup.jsx - No Logo Upload Version
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -14,9 +14,6 @@ export default function Signup() {
   const [focusedField, setFocusedField] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
-  const [logoFile, setLogoFile] = useState(null);
-  const [logoPreview, setLogoPreview] = useState("");
-  const [logoError, setLogoError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -37,42 +34,6 @@ export default function Signup() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const handleLogoChange = (e) => {
-    const file = e.target.files[0];
-    if (!file) {
-      setLogoError("Please select a file");
-      setLogoFile(null);
-      setLogoPreview("");
-      return;
-    }
-
-    const allowedTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp'];
-    if (!allowedTypes.includes(file.type)) {
-      setLogoError('Please upload a JPEG, PNG, GIF, or WEBP image');
-      setLogoFile(null);
-      setLogoPreview("");
-      e.target.value = ""; // Clear the input
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      setLogoError('Logo must be less than 5MB');
-      setLogoFile(null);
-      setLogoPreview("");
-      e.target.value = "";
-      return;
-    }
-
-    setLogoError("");
-    setLogoFile(file);
-    
-    const reader = new FileReader();
-    reader.onloadend = () => {
-      setLogoPreview(reader.result);
-    };
-    reader.readAsDataURL(file);
   };
 
   const handleBlur = (field) => {
@@ -102,11 +63,6 @@ export default function Signup() {
         return role !== "";
       case "terms":
         return agreeTerms;
-      case "logo":
-        if (role === "brand" || role === "employee") {
-          return logoFile !== null;
-        }
-        return true;
       default:
         return true;
     }
@@ -135,8 +91,6 @@ export default function Signup() {
         return "Please select a role";
       case "terms":
         return "You must agree to the Terms & Conditions";
-      case "logo":
-        return `${role === "brand" ? "Brand" : "Company"} logo is required`;
       default:
         return null;
     }
@@ -157,10 +111,8 @@ export default function Signup() {
 
     if (role === "brand") {
       allFields.brandName = true;
-      allFields.logo = true;
     } else if (role === "employee") {
       allFields.fullName = true;
-      allFields.logo = true;
     }
 
     setTouchedFields(allFields);
@@ -174,10 +126,6 @@ export default function Signup() {
     if (!validatePassword(formData.password)) errors.push("Password must contain uppercase, lowercase, and number (6+ chars)");
     if (formData.password !== formData.confirmPassword) errors.push("Passwords do not match");
     if (!agreeTerms) errors.push("Please agree to the Terms & Conditions");
-    
-    if ((role === "brand" || role === "employee") && !logoFile) {
-      errors.push(`${role === "brand" ? "Brand" : "Company"} logo is required`);
-    }
 
     if (errors.length > 0) {
       alert(errors.join("\n"));
@@ -187,68 +135,52 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      // ⭐ CRITICAL FIX: Properly create FormData
-      const formDataToSend = new FormData();
-      
-      // Add all text fields
-      formDataToSend.append("role", role);
-      formDataToSend.append("email", formData.email);
-      formDataToSend.append("password", formData.password);
-      formDataToSend.append("phone", formData.phone);
-      formDataToSend.append("address", formData.address || "");
+      // Create data object (no FormData needed since no file upload)
+      const data = {
+        role,
+        email: formData.email,
+        password: formData.password,
+        phone: formData.phone,
+        address: formData.address || "",
+      };
 
       // Add role-specific fields
       if (role === "brand") {
-        formDataToSend.append("brandName", formData.brandName);
+        data.brandName = formData.brandName;
       } else if (role === "employee") {
-        formDataToSend.append("fullName", formData.fullName);
+        data.fullName = formData.fullName;
       } else {
-        formDataToSend.append("fullName", formData.fullName || "");
+        data.fullName = formData.fullName || "";
       }
 
-      // ⭐ CRITICAL: Append logo file if it exists
-      if (logoFile) {
-        formDataToSend.append("logo", logoFile);
-        console.log("✅ Logo file appended:", logoFile.name, logoFile.size);
-      } else {
-        console.warn("⚠️ No logo file to append");
-      }
-
-      // Log FormData contents for debugging
-      console.log("📤 Sending FormData:");
-      for (let [key, value] of formDataToSend.entries()) {
-        if (key === 'logo') {
-          console.log(`  ${key}: File (${value.name}, ${value.size} bytes)`);
-        } else {
-          console.log(`  ${key}: ${value}`);
-        }
-      }
+      console.log("📤 Sending data:", {
+        ...data,
+        password: '[HIDDEN]'
+      });
 
       const response = await axios.post(
         "https://the-deft-crew-production.up.railway.app/api/auth/signup",
-        formDataToSend,
+        data,
         {
           headers: {
-            "Content-Type": "multipart/form-data",
+            "Content-Type": "application/json",
           },
         }
       );
 
       console.log("✅ Signup successful:", response.data);
-      alert(`${role} account created successfully`);
+      alert(`${role.charAt(0).toUpperCase() + role.slice(1)} account created successfully!`);
       navigate("/login");
 
     } catch (err) {
       console.error("❌ Signup error:", err);
       console.error("Error response:", err.response?.data);
       const errorMessage = err.response?.data?.error || err.response?.data?.message || "Signup failed";
-      alert(errorMessage);
+      alert(`❌ ${errorMessage}`);
     } finally {
       setLoading(false);
     }
   };
-
-  const showLogoUpload = role === "brand" || role === "employee";
 
   return (
     <div className="signup-container">
@@ -285,6 +217,7 @@ export default function Signup() {
           </div>
 
           <form className="signup-form" onSubmit={handleSignup} noValidate>
+            {/* Role Selection */}
             <div className={`input-group ${isFieldInvalid('role') ? 'error' : ''}`}>
               <label className={focusedField === 'role' ? 'focused' : ''}>
                 <i className="fas fa-user-tag"></i>
@@ -302,6 +235,7 @@ export default function Signup() {
                   <option value="">-- Choose Your Role --</option>
                   <option value="brand">Brand</option>
                   <option value="employee">Employer</option>
+                  
                 </select>
                 <div className="select-arrow">
                   <i className="fas fa-chevron-down"></i>
@@ -313,6 +247,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Name Field */}
             {role && (
               <div className={`input-group ${isFieldInvalid(role === "brand" ? 'brandName' : 'fullName') ? 'error' : ''}`}>
                 <label className={focusedField === 'name' ? 'focused' : ''}>
@@ -340,53 +275,7 @@ export default function Signup() {
               </div>
             )}
 
-            {showLogoUpload && (
-              <div className={`input-group ${isFieldInvalid('logo') ? 'error' : ''}`}>
-                <label className={focusedField === 'logo' ? 'focused' : ''}>
-                  <i className="fas fa-image"></i>
-                  {role === "brand" ? "Brand Logo" : "Company Logo"}
-                  <span className="required-star">*</span>
-                </label>
-                <div className="logo-upload-container">
-                  <div className="logo-upload-area">
-                    <input
-                      type="file"
-                      id="logo-upload"
-                      accept="image/*"
-                      onChange={handleLogoChange}
-                      onFocus={() => handleFocus('logo')}
-                      onBlur={() => handleBlur('logo')}
-                      className="logo-input"
-                      required={role === "brand" || role === "employee"}
-                    />
-                    <label htmlFor="logo-upload" className="logo-upload-label">
-                      {logoPreview ? (
-                        <div className="logo-preview-container">
-                          <img src={logoPreview} alt="Logo preview" className="logo-preview" />
-                          <div className="logo-overlay">
-                            <i className="fas fa-edit"></i>
-                            <span>Change Logo</span>
-                          </div>
-                        </div>
-                      ) : (
-                        <div className="logo-upload-placeholder">
-                          <i className="fas fa-cloud-upload-alt"></i>
-                          <p>Click to upload {role === "brand" ? "brand" : "company"} logo</p>
-                          <small>JPEG, PNG, GIF, WEBP (Max 5MB)</small>
-                        </div>
-                      )}
-                    </label>
-                  </div>
-                  {logoError && (
-                    <div className="error-message">{logoError}</div>
-                  )}
-                  {isFieldInvalid('logo') && !logoError && (
-                    <div className="error-message">{getFieldError('logo')}</div>
-                  )}
-                </div>
-              </div>
-            )}
-
+            {/* Email Field */}
             <div className={`input-group ${isFieldInvalid('email') ? 'error' : ''}`}>
               <label className={focusedField === 'email' ? 'focused' : ''}>
                 <i className="fas fa-envelope"></i>
@@ -411,6 +300,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Phone Field */}
             <div className={`input-group ${isFieldInvalid('phone') ? 'error' : ''}`}>
               <label className={focusedField === 'phone' ? 'focused' : ''}>
                 <i className="fas fa-phone"></i>
@@ -440,6 +330,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Address Field */}
             <div className="input-group">
               <label className={focusedField === 'address' ? 'focused' : ''}>
                 <i className="fas fa-map-marker-alt"></i>
@@ -460,6 +351,7 @@ export default function Signup() {
               </div>
             </div>
 
+            {/* Password Field */}
             <div className={`input-group ${isFieldInvalid('password') ? 'error' : ''}`}>
               <label className={focusedField === 'password' ? 'focused' : ''}>
                 <i className="fas fa-lock"></i>
@@ -496,6 +388,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Confirm Password Field */}
             <div className={`input-group ${isFieldInvalid('confirmPassword') ? 'error' : ''}`}>
               <label className={focusedField === 'confirmPassword' ? 'focused' : ''}>
                 <i className="fas fa-lock"></i>
@@ -527,6 +420,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Terms and Conditions */}
             <div className={`terms-group ${isFieldInvalid('terms') ? 'error' : ''}`}>
               <div className="terms-checkbox">
                 <input
@@ -547,6 +441,7 @@ export default function Signup() {
               )}
             </div>
 
+            {/* Submit Button */}
             <button
               className="signup-btn"
               type="submit"
@@ -565,7 +460,7 @@ export default function Signup() {
             </button>
 
             <div className="divider">
-              <span>already have an account?</span>
+              <span>Already have an account?</span>
             </div>
 
             <div className="login-redirect">
