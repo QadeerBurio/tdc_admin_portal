@@ -69,6 +69,7 @@ import appScreenshot2 from "../../src/assets/screen2.jpeg";
 import appScreenshot3 from "../../src/assets/screen3.png";
 import OfferImagesGallery from "./OfferImagesGallery";
 import HomeReviews from "./roles/HomeReviews";
+import UniversitiesSection from "./roles/UniversitiesSection";
 const Landing = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -1039,6 +1040,7 @@ const Landing = () => {
     </motion.div>
   </div>
 </section>
+<UniversitiesSection/>
 <HomeReviews/>
       {/* CONTACT US SECTION */}
       <section
