@@ -23,6 +23,16 @@ import {
   FaClock,
   FaStar,
   FaSpinner,
+  FaQrcode,
+  FaPercent,
+  FaPhone,
+  FaMapMarkerAlt,
+  FaEdit,
+  FaTrash,
+  FaPrint,
+  FaShare,
+  FaWhatsapp,
+  FaEnvelope as FaEmail,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -37,7 +47,16 @@ const ClaimedUsers = () => {
   const [sortDirection, setSortDirection] = useState("desc");
   const [showFilters, setShowFilters] = useState(false);
   const [filterUniversity, setFilterUniversity] = useState("");
+  const [filterStatus, setFilterStatus] = useState("");
   const [universities, setUniversities] = useState([]);
+  const [showUserModal, setShowUserModal] = useState(false);
+  const [showActionMenu, setShowActionMenu] = useState(null);
+  const [stats, setStats] = useState({
+    total: 0,
+    universities: 0,
+    newThisWeek: 0,
+    avgDiscount: 0
+  });
 
   useEffect(() => {
     fetchClaimedUsers();
@@ -48,21 +67,39 @@ const ClaimedUsers = () => {
       user.name?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
       user.rollNo?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
       user.universityName?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
-      user.email?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+      user.offerTitle?.toLowerCase().includes(searchTerm.toLowerCase().trim()) ||
+      user.phone?.toLowerCase().includes(searchTerm.toLowerCase().trim())
     );
     
     if (filterUniversity) {
       results = results.filter(user => user.universityName === filterUniversity);
     }
     
+    if (filterStatus) {
+      const now = new Date();
+      results = results.filter(user => {
+        const days = Math.floor((now - new Date(user.claimedAt)) / (1000 * 60 * 60 * 24));
+        if (filterStatus === "new") return days <= 7;
+        if (filterStatus === "active") return days > 7 && days <= 30;
+        if (filterStatus === "old") return days > 30;
+        return true;
+      });
+    }
+    
     results = sortUsers(results);
     setFilteredUsers(results);
-  }, [searchTerm, claimedUsers, sortField, sortDirection, filterUniversity]);
+  }, [searchTerm, claimedUsers, sortField, sortDirection, filterUniversity, filterStatus]);
 
   const sortUsers = (users) => {
     return [...users].sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
+      
+      if (sortField === "claimedAt" || sortField === "redemptionsCount") {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      }
       
       if (sortField === "claimedAt") {
         aVal = new Date(aVal);
@@ -95,12 +132,34 @@ const ClaimedUsers = () => {
       const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/claimed-users", {
         headers: { Authorization: `Bearer ${token}` }
       });
-      setClaimedUsers(res.data);
-      setFilteredUsers(res.data);
       
-      // Extract unique universities
-      const uniSet = new Set(res.data.map(u => u.universityName).filter(Boolean));
+      const usersWithUni = res.data.map(user => ({
+        ...user,
+        universityName: user.universityName || user.university?.name || "N/A"
+      }));
+      
+      setClaimedUsers(usersWithUni);
+      setFilteredUsers(usersWithUni);
+      
+      const uniSet = new Set(usersWithUni.map(u => u.universityName).filter(Boolean));
       setUniversities([...uniSet]);
+      
+      const now = new Date();
+      const newThisWeek = usersWithUni.filter(u => {
+        const days = Math.floor((now - new Date(u.claimedAt)) / (1000 * 60 * 60 * 24));
+        return days <= 7;
+      }).length;
+      
+      const avgDiscount = usersWithUni.length > 0 
+        ? usersWithUni.reduce((sum, u) => sum + (u.discountPercentage || 0), 0) / usersWithUni.length 
+        : 0;
+      
+      setStats({
+        total: usersWithUni.length,
+        universities: uniSet.size,
+        newThisWeek: newThisWeek,
+        avgDiscount: Math.round(avgDiscount)
+      });
     } catch (err) {
       console.error("Error fetching claimed users", err);
     } finally {
@@ -109,20 +168,26 @@ const ClaimedUsers = () => {
   };
 
   const downloadCSV = () => {
-    const headers = ["Student Name", "Roll No", "University", "Email", "Offer Title", "Discount", "Date"];
-    const rows = filteredUsers.map(u => [
-      u.name,
-      u.rollNo || "N/A",
-      u.universityName || "N/A",
-      u.email,
-      u.offerTitle,
-      `${u.discountPercentage}%`,
-      new Date(u.claimedAt).toLocaleDateString()
-    ]);
+    const headers = ["Student Name", "Roll No", "University", "Email", "Phone", "Offer Title", "Discount", "Redeemed Count", "Date Claimed", "Status"];
+    const rows = filteredUsers.map(u => {
+      const status = getStatusInfo(u.claimedAt);
+      return [
+        u.name || "N/A",
+        u.rollNo || "N/A",
+        u.universityName || "N/A",
+        u.email || "N/A",
+        u.phone || "N/A",
+        u.offerTitle || "N/A",
+        `${u.discountPercentage || 0}%`,
+        u.redemptionsCount || 0,
+        new Date(u.claimedAt).toLocaleDateString(),
+        status.label
+      ];
+    });
 
     let csvContent = "data:text/csv;charset=utf-8," 
       + headers.join(",") + "\n" 
-      + rows.map(e => e.join(",")).join("\n");
+      + rows.map(e => e.map(v => `"${v}"`).join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
@@ -134,24 +199,84 @@ const ClaimedUsers = () => {
   };
 
   const getUniversityColor = (uni) => {
-    const colors = ['#f97316', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#ef4444'];
-    const index = uni?.length % colors.length;
+    if (!uni) return '#94a3b8';
+    const colors = ['#f97316', '#10b981', '#3b82f6', '#8b5cf6', '#ec4899', '#06b6d4', '#f59e0b', '#ef4444', '#14b8a6', '#6366f1'];
+    const index = uni.length % colors.length;
     return colors[index];
   };
 
-  const getStatusColor = (date) => {
+  const getStatusInfo = (date) => {
+    if (!date) return { bg: '#f1f5f9', color: '#64748b', label: 'Unknown', icon: '❓' };
     const days = Math.floor((new Date() - new Date(date)) / (1000 * 60 * 60 * 24));
-    if (days <= 7) return { bg: '#d1fae5', color: '#059669', label: 'New' };
-    if (days <= 30) return { bg: '#fef3c7', color: '#d97706', label: 'Active' };
-    return { bg: '#f1f5f9', color: '#64748b', label: 'Old' };
+    if (days <= 7) return { bg: '#d1fae5', color: '#059669', label: 'New', icon: '🌟' };
+    if (days <= 30) return { bg: '#fef3c7', color: '#d97706', label: 'Active', icon: '⚡' };
+    return { bg: '#f1f5f9', color: '#64748b', label: 'Old', icon: '📅' };
   };
 
   const formatDate = (date) => {
+    if (!date) return 'N/A';
     return new Date(date).toLocaleDateString('en-US', { 
       month: 'short', 
       day: 'numeric', 
       year: 'numeric' 
     });
+  };
+
+  const formatTime = (date) => {
+    if (!date) return 'N/A';
+    return new Date(date).toLocaleTimeString('en-US', { 
+      hour: '2-digit', 
+      minute: '2-digit' 
+    });
+  };
+
+  const getInitials = (name) => {
+    if (!name) return '?';
+    return name.split(' ').map(n => n[0]).join('').toUpperCase().slice(0, 2);
+  };
+
+  const openUserDetails = (user) => {
+    setSelectedUser(user);
+    setShowUserModal(true);
+    setShowActionMenu(null);
+  };
+
+  const closeUserModal = () => {
+    setShowUserModal(false);
+    setSelectedUser(null);
+  };
+
+  const toggleActionMenu = (userId) => {
+    setShowActionMenu(showActionMenu === userId ? null : userId);
+  };
+
+  const handleAction = (action, user) => {
+    setShowActionMenu(null);
+    switch(action) {
+      case 'view':
+        openUserDetails(user);
+        break;
+      case 'email':
+        window.location.href = `mailto:${user.email}`;
+        break;
+      case 'whatsapp':
+        window.open(`https://wa.me/92${user.phone || ''}`, '_blank');
+        break;
+      case 'print':
+        window.print();
+        break;
+      case 'share':
+        if (navigator.share) {
+          navigator.share({
+            title: `Student: ${user.name}`,
+            text: `Check out this student: ${user.name} from ${user.universityName}`,
+            url: window.location.href,
+          });
+        }
+        break;
+      default:
+        break;
+    }
   };
 
   if (loading) return (
@@ -174,6 +299,103 @@ const ClaimedUsers = () => {
     </div>
   );
 
+  const renderUserModal = () => {
+    if (!showUserModal || !selectedUser) return null;
+
+    const status = getStatusInfo(selectedUser.claimedAt);
+    const uniColor = getUniversityColor(selectedUser.universityName);
+
+    return (
+      <div style={styles.modalOverlay} onClick={closeUserModal}>
+        <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modalHeader}>
+            <div style={styles.modalHeaderLeft}>
+              <div style={{...styles.modalAvatar, background: uniColor}}>
+                {getInitials(selectedUser.name)}
+              </div>
+              <div>
+                <h3 style={styles.modalName}>{selectedUser.name || "Unknown"}</h3>
+                <p style={styles.modalRoll}>
+                  <FaIdCard size={12} style={{marginRight: '6px'}} />
+                  Roll No: {selectedUser.rollNo || "N/A"}
+                </p>
+              </div>
+            </div>
+            <button style={styles.modalClose} onClick={closeUserModal}>
+              <FaTimes />
+            </button>
+          </div>
+
+          <div style={styles.modalBody}>
+            <div style={styles.modalGrid}>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>University</label>
+                <p style={styles.modalValue}>
+                  <FaUniversity size={14} style={{marginRight: '8px', color: uniColor}} />
+                  <span style={{fontWeight: '600', color: uniColor}}>
+                    {selectedUser.universityName || "N/A"}
+                  </span>
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Email</label>
+                <p style={styles.modalValue}>
+                  <FaEnvelope size={14} style={{marginRight: '8px', color: '#94a3b8'}} />
+                  {selectedUser.email || "N/A"}
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Offer</label>
+                <p style={styles.modalValue}>
+                  <FaTag size={14} style={{marginRight: '8px', color: '#ff961a'}} />
+                  {selectedUser.offerTitle || "N/A"}
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Discount</label>
+                <p style={styles.modalValue}>
+                  <FaPercent size={14} style={{marginRight: '8px', color: '#10b981'}} />
+                  <span style={styles.modalDiscount}>{selectedUser.discountPercentage || 0}% OFF</span>
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Redemptions</label>
+                <p style={styles.modalValue}>
+                  <FaCheckCircle size={14} style={{marginRight: '8px', color: '#8b5cf6'}} />
+                  {selectedUser.redemptionsCount || 0} times
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Claimed Date</label>
+                <p style={styles.modalValue}>
+                  <FaCalendarAlt size={14} style={{marginRight: '8px', color: '#94a3b8'}} />
+                  {formatDate(selectedUser.claimedAt)} at {formatTime(selectedUser.claimedAt)}
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Status</label>
+                <p style={styles.modalValue}>
+                  <span style={{...styles.statusBadge, background: status.bg, color: status.color}}>
+                    {status.icon} {status.label}
+                  </span>
+                </p>
+              </div>
+              <div style={styles.modalInfoItem}>
+                <label style={styles.modalLabel}>Total Saved</label>
+                <p style={styles.modalValue}>
+                  <FaStar size={14} style={{marginRight: '8px', color: '#f59e0b'}} />
+                  Rs. {selectedUser.totalSaved?.toLocaleString() || 0}
+                </p>
+              </div>
+            </div>
+
+          
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -181,7 +403,6 @@ const ClaimedUsers = () => {
       transition={{ duration: 0.5 }}
       style={styles.container}
     >
-      {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -219,7 +440,6 @@ const ClaimedUsers = () => {
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -232,8 +452,8 @@ const ClaimedUsers = () => {
           </div>
           <div>
             <span style={styles.statLabel}>Total Leads</span>
-            <h3 style={styles.statValue}>{claimedUsers.length}</h3>
-            <span style={styles.statTrend}>+12% this month</span>
+            <h3 style={styles.statValue}>{stats.total}</h3>
+            <span style={styles.statTrend}>{stats.newThisWeek} new this week</span>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
@@ -242,8 +462,8 @@ const ClaimedUsers = () => {
           </div>
           <div>
             <span style={styles.statLabel}>Universities</span>
-            <h3 style={styles.statValue}>{universities.length}</h3>
-            <span style={styles.statTrend}>Across {claimedUsers.length} students</span>
+            <h3 style={styles.statValue}>{stats.universities}</h3>
+            <span style={styles.statTrend}>Across {stats.total} students</span>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
@@ -251,9 +471,9 @@ const ClaimedUsers = () => {
             <FaChartLine color="#10b981" size={24} />
           </div>
           <div>
-            <span style={styles.statLabel}>Active Claims</span>
-            <h3 style={styles.statValue}>{filteredUsers.length}</h3>
-            <span style={styles.statTrend}>Filtered results</span>
+            <span style={styles.statLabel}>Avg Discount</span>
+            <h3 style={styles.statValue}>{stats.avgDiscount}%</h3>
+            <span style={styles.statTrend}>Average offer discount</span>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
@@ -261,19 +481,13 @@ const ClaimedUsers = () => {
             <FaStar color="#f59e0b" size={24} />
           </div>
           <div>
-            <span style={styles.statLabel}>New This Week</span>
-            <h3 style={styles.statValue}>
-              {claimedUsers.filter(u => {
-                const days = Math.floor((new Date() - new Date(u.claimedAt)) / (1000 * 60 * 60 * 24));
-                return days <= 7;
-              }).length}
-            </h3>
-            <span style={styles.statTrend}>Recent claims</span>
+            <span style={styles.statLabel}>Active Filters</span>
+            <h3 style={styles.statValue}>{filteredUsers.length}</h3>
+            <span style={styles.statTrend}>Showing results</span>
           </div>
         </div>
       </motion.div>
 
-      {/* Filter Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -303,14 +517,26 @@ const ClaimedUsers = () => {
                 ))}
               </select>
             </div>
-            <button style={styles.filterClear} onClick={() => { setFilterUniversity(""); setSearchTerm(""); }}>
+            <div style={styles.filterGroup}>
+              <label style={styles.filterLabel}>Status</label>
+              <select
+                style={styles.filterSelect}
+                value={filterStatus}
+                onChange={(e) => setFilterStatus(e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="new">🌟 New (0-7 days)</option>
+                <option value="active">⚡ Active (8-30 days)</option>
+                <option value="old">📅 Old (30+ days)</option>
+              </select>
+            </div>
+            <button style={styles.filterClear} onClick={() => { setFilterUniversity(""); setFilterStatus(""); setSearchTerm(""); }}>
               Clear All Filters
             </button>
           </motion.div>
         )}
       </motion.div>
 
-      {/* Table */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -320,28 +546,29 @@ const ClaimedUsers = () => {
         <table style={styles.table}>
           <thead>
             <tr style={styles.theadRow}>
-              <th style={styles.th} onClick={() => handleSort("name")}>
+              <th style={{...styles.th, minWidth: '180px'}} onClick={() => handleSort("name")}>
                 Student {sortField === "name" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
               </th>
-              <th style={styles.th} onClick={() => handleSort("universityName")}>
-                University {sortField === "universityName" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("email")}>
-                Contact {sortField === "email" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("offerTitle")}>
+              <th style={{...styles.th, minWidth: '140px'}} onClick={() => handleSort("offerTitle")}>
                 Offer {sortField === "offerTitle" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
               </th>
-              <th style={styles.th} onClick={() => handleSort("claimedAt")}>
+              <th style={{...styles.th, minWidth: '80px'}} onClick={() => handleSort("discountPercentage")}>
+                Discount {sortField === "discountPercentage" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
+              </th>
+              <th style={{...styles.th, minWidth: '80px'}} onClick={() => handleSort("redemptionsCount")}>
+                Uses {sortField === "redemptionsCount" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
+              </th>
+              <th style={{...styles.th, minWidth: '120px'}} onClick={() => handleSort("claimedAt")}>
                 Date {sortField === "claimedAt" && (sortDirection === "asc" ? <FaChevronUp size={12} /> : <FaChevronDown size={12} />)}
               </th>
-              <th style={styles.th}>Status</th>
+              <th style={{...styles.th, minWidth: '100px'}}>Status</th>
+              
             </tr>
           </thead>
           <tbody>
             {filteredUsers.length === 0 ? (
               <tr>
-                <td colSpan="6" style={styles.emptyCell}>
+                <td colSpan="7" style={styles.emptyCell}>
                   <motion.div
                     initial={{ opacity: 0, scale: 0.9 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -355,7 +582,10 @@ const ClaimedUsers = () => {
               </tr>
             ) : (
               filteredUsers.map((item, index) => {
-                const status = getStatusColor(item.claimedAt);
+                const status = getStatusInfo(item.claimedAt);
+                const uniColor = getUniversityColor(item.universityName);
+                const isActionOpen = showActionMenu === item._id;
+                
                 return (
                   <motion.tr 
                     key={item._id || index} 
@@ -368,40 +598,32 @@ const ClaimedUsers = () => {
                   >
                     <td style={styles.td}>
                       <div style={styles.studentCell}>
-                        <div style={{...styles.avatar, background: getUniversityColor(item.name)}}>
-                          {item.name?.charAt(0).toUpperCase()}
+                        <div style={{...styles.avatar, background: uniColor}}>
+                          {getInitials(item.name)}
                         </div>
                         <div>
-                          <div style={styles.studentName}>{item.name}</div>
-                          <div style={styles.studentRoll}>
-                            <FaIdCard size={10} style={{marginRight: '4px'}} />
-                            Roll: {item.rollNo || "N/A"}
-                          </div>
+                          <div style={styles.studentName}>{item.name || "Unknown"}</div>
+                          
                         </div>
-                      </div>
-                    </td>
-                    <td style={styles.td}>
-                      <span style={{...styles.universityBadge, background: `${getUniversityColor(item.universityName)}15`, color: getUniversityColor(item.universityName)}}>
-                        <FaUniversity size={10} style={{marginRight: '6px'}} />
-                        {item.universityName?.length > 30 ? item.universityName.substring(0, 27) + '...' : item.universityName}
-                      </span>
-                    </td>
-                    <td style={styles.td}>
-                      <div style={styles.contactCell}>
-                        <FaEnvelope size={12} color="#94a3b8" />
-                        <span>{item.email}</span>
                       </div>
                     </td>
                     <td style={styles.td}>
                       <div style={styles.offerCell}>
                         <div style={styles.offerBadge}>
                           <FaTag size={10} color="#ff961a" />
-                          <span style={styles.offerTitle}>{item.offerTitle}</span>
-                        </div>
-                        <div style={styles.discountBadge}>
-                          {item.discountPercentage}% OFF
+                          <span style={styles.offerTitle}>{item.offerTitle || "N/A"}</span>
                         </div>
                       </div>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.discountBadge}>
+                        {item.discountPercentage || 0}% OFF
+                      </span>
+                    </td>
+                    <td style={styles.td}>
+                      <span style={styles.usesBadge}>
+                        {item.redemptionsCount || 0} ×
+                      </span>
                     </td>
                     <td style={styles.td}>
                       <div style={styles.dateCell}>
@@ -411,9 +633,10 @@ const ClaimedUsers = () => {
                     </td>
                     <td style={styles.td}>
                       <span style={{...styles.statusBadge, background: status.bg, color: status.color}}>
-                        {status.label}
+                        {status.icon} {status.label}
                       </span>
                     </td>
+                   
                   </motion.tr>
                 );
               })
@@ -422,7 +645,6 @@ const ClaimedUsers = () => {
         </table>
       </motion.div>
 
-      {/* Footer */}
       <motion.div
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
@@ -432,12 +654,15 @@ const ClaimedUsers = () => {
         <span style={styles.footerText}>
           Showing {filteredUsers.length} of {claimedUsers.length} leads
           {filterUniversity && ` • Filtered by: ${filterUniversity}`}
+          {filterStatus && ` • Status: ${filterStatus}`}
           {searchTerm && ` • Search: "${searchTerm}"`}
         </span>
-        <button style={styles.viewAllBtn} onClick={() => { setFilterUniversity(""); setSearchTerm(""); }}>
+        <button style={styles.viewAllBtn} onClick={() => { setFilterUniversity(""); setFilterStatus(""); setSearchTerm(""); }}>
           View All <FaArrowRight size={12} />
         </button>
       </motion.div>
+
+      {renderUserModal()}
 
       <style>
         {`
@@ -457,6 +682,14 @@ const ClaimedUsers = () => {
           @keyframes shimmer {
             0% { background-position: -200% 0; }
             100% { background-position: 200% 0; }
+          }
+          @keyframes modalIn {
+            from { opacity: 0; transform: scale(0.9) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
+          @keyframes dropdownIn {
+            from { opacity: 0; transform: scale(0.95) translateY(-5px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
           }
           
           .stat-card {
@@ -745,12 +978,14 @@ const styles = {
     overflow: "hidden",
     border: "1px solid #e5e7eb",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
+    overflowX: 'auto'
   },
   table: { 
     width: "100%", 
     borderCollapse: "collapse", 
-    textAlign: "left" 
+    textAlign: "left",
+    minWidth: '800px'
   },
   theadRow: {
     background: "#f8fafc"
@@ -763,7 +998,8 @@ const styles = {
     fontWeight: "700", 
     letterSpacing: "0.5px",
     borderBottom: "2px solid #e5e7eb",
-    transition: "background 0.2s"
+    transition: "background 0.2s",
+    whiteSpace: 'nowrap'
   },
   td: { 
     padding: "14px 18px", 
@@ -810,7 +1046,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "16px",
+    fontSize: "14px",
     fontWeight: "700",
     color: "#fff",
     flexShrink: 0
@@ -826,22 +1062,6 @@ const styles = {
     color: "#94a3b8",
     display: "flex",
     alignItems: "center"
-  },
-  universityBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    padding: "4px 12px",
-    borderRadius: "8px",
-    fontSize: "12px",
-    fontWeight: "500",
-    maxWidth: "200px"
-  },
-  contactCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "13px",
-    color: "#475569"
   },
   offerCell: {
     display: "flex",
@@ -865,8 +1085,18 @@ const styles = {
     color: "#10b981",
     padding: "2px 10px",
     borderRadius: "6px",
-    fontSize: "11px",
+    fontSize: "12px",
     fontWeight: "700",
+    width: "fit-content"
+  },
+  usesBadge: {
+    display: "inline-block",
+    background: "#eff6ff",
+    color: "#3b82f6",
+    padding: "2px 10px",
+    borderRadius: "6px",
+    fontSize: "12px",
+    fontWeight: "600",
     width: "fit-content"
   },
   dateCell: {
@@ -882,6 +1112,40 @@ const styles = {
     borderRadius: "20px",
     fontSize: "11px",
     fontWeight: "600"
+  },
+  actionCell: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    position: "relative"
+  },
+  actionBtn: {
+    background: "transparent",
+    border: "none",
+    padding: "6px 8px",
+    borderRadius: "6px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#94a3b8",
+    hover: {
+      background: "#f1f5f9"
+    }
+  },
+  viewBtn: {
+    background: "#f1f5f9",
+    border: "none",
+    borderRadius: "8px",
+    padding: "6px 10px",
+    cursor: "pointer",
+    color: "#475569",
+    transition: "all 0.2s ease",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center"
   },
   footer: {
     marginTop: "20px",
@@ -909,6 +1173,137 @@ const styles = {
     fontWeight: "600",
     fontSize: "13px",
     transition: "all 0.3s ease"
+  },
+  modalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(8px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 9999,
+    padding: "20px"
+  },
+  modalContent: {
+    background: "#fff",
+    borderRadius: "24px",
+    maxWidth: "600px",
+    width: "100%",
+    maxHeight: "90vh",
+    overflow: "auto",
+    animation: "modalIn 0.3s ease forwards",
+    boxShadow: "0 40px 80px -20px rgba(0,0,0,0.3)"
+  },
+  modalHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "24px 28px",
+    borderBottom: "1px solid #e5e7eb"
+  },
+  modalHeaderLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "16px"
+  },
+  modalAvatar: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "16px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#fff",
+    flexShrink: 0
+  },
+  modalName: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0
+  },
+  modalRoll: {
+    fontSize: "13px",
+    color: "#94a3b8",
+    margin: "4px 0 0",
+    display: "flex",
+    alignItems: "center"
+  },
+  modalClose: {
+    background: "none",
+    border: "none",
+    fontSize: "20px",
+    color: "#94a3b8",
+    cursor: "pointer",
+    padding: "8px",
+    borderRadius: "8px",
+    transition: "all 0.2s ease"
+  },
+  modalBody: {
+    padding: "24px 28px"
+  },
+  modalGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "16px"
+  },
+  modalInfoItem: {
+    padding: "12px 16px",
+    background: "#f8fafc",
+    borderRadius: "12px"
+  },
+  modalLabel: {
+    display: "block",
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    marginBottom: "4px"
+  },
+  modalValue: {
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#0f172a",
+    margin: 0,
+    display: "flex",
+    alignItems: "center"
+  },
+  modalDiscount: {
+    color: "#10b981",
+    fontWeight: "700"
+  },
+  modalActions: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "20px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e5e7eb",
+    justifyContent: "center",
+    flexWrap: "wrap"
+  },
+  modalActionBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 20px",
+    border: "none",
+    borderRadius: "10px",
+    color: "#fff",
+    fontWeight: "600",
+    fontSize: "13px",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    hover: {
+      transform: "translateY(-2px)",
+      boxShadow: "0 4px 15px rgba(0,0,0,0.15)"
+    }
   }
 };
 

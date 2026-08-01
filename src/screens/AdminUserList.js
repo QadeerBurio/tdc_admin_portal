@@ -1,5 +1,5 @@
-// AdminUserList.js - Complete Component with Role Management
-import React, { useState, useEffect } from "react";
+// AdminUserList.js - Complete Component with Password Management & QR Display
+import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import { 
@@ -12,9 +12,12 @@ import {
   ChevronDown, ChevronUp, RefreshCw, ArrowUpRight,
   Briefcase, HardHat, Plane, Store, Settings, Key,
   Image, Layers, PieChart, BookOpen, Briefcase as BriefcaseIcon,
-  Ticket, ShoppingBag, FileCheck, Users as UsersIcon
+  Ticket, ShoppingBag, FileCheck, Users as UsersIcon,
+  QrCode, Copy, Download as DownloadIcon, Share2,
+  ChevronLeft, ChevronsLeft, ChevronsRight
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
+import QRCode from "qrcode";
 
 export default function AdminUserList({ role, title }) {
   const [users, setUsers] = useState([]);
@@ -39,6 +42,27 @@ export default function AdminUserList({ role, title }) {
     stats: {}
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
+  const [loadingPassword, setLoadingPassword] = useState({});
+  const [activeStatFilter, setActiveStatFilter] = useState(null);
+  
+  // Pagination states
+  const [currentPage, setCurrentPage] = useState(1);
+  const [itemsPerPage] = useState(30);
+  
+  // QR Code states
+  const [showQRModal, setShowQRModal] = useState(false);
+  const [qrImage, setQrImage] = useState(null);
+  const [selectedOfferForQR, setSelectedOfferForQR] = useState(null);
+  const [qrData, setQrData] = useState(null);
+  const [generatingQR, setGeneratingQR] = useState(false);
+  const [copied, setCopied] = useState(false);
+  
+  // Refs for scroll management
+  const modalRef = useRef(null);
+  const modalBodyRef = useRef(null);
+  const pageWrapperRef = useRef(null);
+  const tableContainerRef = useRef(null);
+  
   const navigate = useNavigate();
 
   const getAuthHeaders = () => ({
@@ -49,6 +73,23 @@ export default function AdminUserList({ role, title }) {
   useEffect(() => {
     fetchUsers();
   }, [role]);
+
+  // Reset to page 1 when filters change
+  useEffect(() => {
+    setCurrentPage(1);
+  }, [searchTerm, filterStatus, filterReferral, sortField, sortDirection]);
+
+  // Scroll to top when modal opens
+  useEffect(() => {
+    if (showModal && modalBodyRef.current) {
+      setTimeout(() => {
+        if (modalBodyRef.current) {
+          modalBodyRef.current.scrollTop = 0;
+        }
+        window.scrollTo({ top: 0, behavior: 'smooth' });
+      }, 50);
+    }
+  }, [showModal]);
 
   const fetchUsers = async () => {
     setLoading(true);
@@ -117,14 +158,16 @@ export default function AdminUserList({ role, title }) {
 
   const viewUserDetails = (userId) => {
     setShowModal(false);
-    document.body.style.overflow = 'unset';
     navigate('/dossier', { state: { userId } });
   };
 
   const openUserModal = async (user) => {
     setSelectedUser(user);
     setShowModal(true);
-    document.body.style.overflow = 'hidden';
+    if (modalBodyRef.current) {
+      modalBodyRef.current.scrollTop = 0;
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
     await fetchUserCompleteDetails(user);
   };
 
@@ -140,7 +183,7 @@ export default function AdminUserList({ role, title }) {
       resume: null,
       stats: {}
     });
-    document.body.style.overflow = 'unset';
+    document.body.style.overflow = '';
   };
 
   const fetchUserCompleteDetails = async (user) => {
@@ -148,7 +191,6 @@ export default function AdminUserList({ role, title }) {
     try {
       const token = localStorage.getItem("token");
       
-      // Fetch based on role
       let details = {
         offers: [],
         jobs: [],
@@ -159,7 +201,6 @@ export default function AdminUserList({ role, title }) {
         stats: {}
       };
 
-      // For Brand users - fetch their offers
       if (user.role === 'brand') {
         try {
           const offersRes = await fetch(
@@ -168,20 +209,11 @@ export default function AdminUserList({ role, title }) {
           );
           const offersData = await offersRes.json();
           details.offers = Array.isArray(offersData) ? offersData : [];
-          
-          // Get brand stats
-          const statsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/claimed-users`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const statsData = await statsRes.json();
-          details.stats.claimedUsers = Array.isArray(statsData) ? statsData.filter(c => c.brandId === user._id) : [];
         } catch (err) {
           console.error("Error fetching brand details:", err);
         }
       }
 
-      // For Employee users - fetch their jobs
       if (user.role === 'employee') {
         try {
           const jobsRes = await fetch(
@@ -190,27 +222,13 @@ export default function AdminUserList({ role, title }) {
           );
           const jobsData = await jobsRes.json();
           details.jobs = Array.isArray(jobsData) ? jobsData : [];
-          
-          // Get job applications
-          if (details.jobs.length > 0) {
-            const appPromises = details.jobs.map(job => 
-              fetch(
-                `https://the-deft-crew-production.up.railway.app/api/jobs/job/${job._id}/applications`,
-                { headers: { Authorization: `Bearer ${token}` } }
-              ).then(res => res.json())
-            );
-            const allApps = await Promise.all(appPromises);
-            details.applications = allApps.flat();
-          }
         } catch (err) {
           console.error("Error fetching employee details:", err);
         }
       }
 
-      // For Student users - fetch their claimed offers, applications, resume
       if (user.role === 'student') {
         try {
-          // Fetch claimed offers (discounts)
           const claimedRes = await fetch(
             `https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -218,7 +236,6 @@ export default function AdminUserList({ role, title }) {
           const claimedData = await claimedRes.json();
           details.claimedOffers = Array.isArray(claimedData) ? claimedData : [];
           
-          // Fetch savings
           const savingsRes = await fetch(
             `https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -226,7 +243,6 @@ export default function AdminUserList({ role, title }) {
           const savingsData = await savingsRes.json();
           details.savings = savingsData || { totalSaved: 0, redemptionCount: 0 };
           
-          // Fetch job applications
           const jobAppsRes = await fetch(
             `https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
             { headers: { Authorization: `Bearer ${token}` } }
@@ -234,22 +250,12 @@ export default function AdminUserList({ role, title }) {
           const jobAppsData = await jobAppsRes.json();
           details.applications = Array.isArray(jobAppsData) ? jobAppsData : [];
           
-          // Fetch resume
           const resumeRes = await fetch(
             `https://the-deft-crew-production.up.railway.app/api/resume/primary`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const resumeData = await resumeRes.json();
           details.resume = resumeData.success ? resumeData.data : null;
-          
-          // Get student stats
-          details.stats = {
-            totalDiscounts: details.claimedOffers.length,
-            totalSavings: details.savings.totalSaved || 0,
-            totalJobApplications: details.applications.length,
-            hasResume: !!details.resume,
-            referralCount: user.referralCount || 0
-          };
         } catch (err) {
           console.error("Error fetching student details:", err);
         }
@@ -263,12 +269,173 @@ export default function AdminUserList({ role, title }) {
     }
   };
 
-  const togglePasswordVisibility = (userId, e) => {
+  const togglePasswordVisibility = async (userId, e) => {
     e.stopPropagation();
-    setShowPassword(prev => ({
-      ...prev,
-      [userId]: !prev[userId]
-    }));
+    
+    if (showPassword[userId]) {
+      setShowPassword(prev => ({
+        ...prev,
+        [userId]: false
+      }));
+      return;
+    }
+
+    const user = users.find(u => u._id === userId);
+    if (user && user.password) {
+      setShowPassword(prev => ({
+        ...prev,
+        [userId]: user.password
+      }));
+      return;
+    }
+
+    setLoadingPassword(prev => ({ ...prev, [userId]: true }));
+    try {
+      const res = await fetch(
+        `https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
+        { headers: getAuthHeaders() }
+      );
+      
+      if (!res.ok) {
+        throw new Error(`HTTP error! status: ${res.status}`);
+      }
+      
+      const data = await res.json();
+      
+      if (data.success && data.password) {
+        setShowPassword(prev => ({
+          ...prev,
+          [userId]: data.password
+        }));
+      } else {
+        const userData = users.find(u => u._id === userId);
+        if (userData && userData.password) {
+          setShowPassword(prev => ({
+            ...prev,
+            [userId]: userData.password
+          }));
+        } else {
+          setShowPassword(prev => ({
+            ...prev,
+            [userId]: 'No password found'
+          }));
+        }
+      }
+    } catch (err) {
+      console.error("Error fetching password:", err);
+      const userData = users.find(u => u._id === userId);
+      if (userData && userData.password) {
+        setShowPassword(prev => ({
+          ...prev,
+          [userId]: userData.password
+        }));
+      } else {
+        setShowPassword(prev => ({
+          ...prev,
+          [userId]: 'Error loading password'
+        }));
+      }
+    } finally {
+      setLoadingPassword(prev => ({ ...prev, [userId]: false }));
+    }
+  };
+
+  const copyToClipboard = (text, e) => {
+    e.stopPropagation();
+    if (!text || text === 'No password found' || text === 'Error loading password') return;
+    navigator.clipboard.writeText(text).then(() => {
+      alert('Password copied to clipboard!');
+    }).catch(err => {
+      console.error('Failed to copy:', err);
+    });
+  };
+
+  // QR Code Functions
+  const generateQRForOffer = async (offer, brandUser, e) => {
+    e.stopPropagation();
+    setSelectedOfferForQR(offer);
+    setGeneratingQR(true);
+    
+    try {
+      const qrPayload = {
+        type: 'offer',
+        offerId: offer._id,
+        brandId: brandUser._id,
+        brandName: brandUser.brandName || brandUser.name || 'Brand',
+        offerTitle: offer.title || 'Offer',
+        discount: offer.discountPercentage || 0,
+        timestamp: new Date().toISOString(),
+        isOnline: offer.isOnline || false,
+        isInStore: offer.isInStore || false,
+        promoCode: offer.promoCode || null
+      };
+
+      const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayload), {
+        width: 400,
+        margin: 2,
+        color: {
+          dark: '#1a1a1a',
+          light: '#ffffff'
+        },
+        errorCorrectionLevel: 'H'
+      });
+
+      setQrImage(qrDataUrl);
+      setQrData(qrPayload);
+      setShowQRModal(true);
+    } catch (err) {
+      console.error("Error generating QR code:", err);
+      alert("Failed to generate QR code for this offer");
+    } finally {
+      setGeneratingQR(false);
+    }
+  };
+
+  const closeQRModal = () => {
+    setShowQRModal(false);
+    setQrImage(null);
+    setQrData(null);
+    setSelectedOfferForQR(null);
+  };
+
+  const downloadQR = () => {
+    if (qrImage) {
+      const link = document.createElement('a');
+      link.download = `qr-${selectedOfferForQR?.title || 'offer'}-${selectedUser?.brandName || 'brand'}.png`;
+      link.href = qrImage;
+      link.click();
+    }
+  };
+
+  const copyQRData = () => {
+    if (qrData) {
+      navigator.clipboard.writeText(JSON.stringify(qrData, null, 2));
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    }
+  };
+
+  const shareQR = async () => {
+    if (qrImage) {
+      try {
+        const response = await fetch(qrImage);
+        const blob = await response.blob();
+        const file = new File([blob], 'qr-code.png', { type: 'image/png' });
+        
+        if (navigator.share) {
+          await navigator.share({
+            title: `${selectedUser?.brandName || 'Brand'} Discount QR Code`,
+            text: `Scan this QR code to get ${selectedOfferForQR?.discountPercentage || 0}% off at ${selectedUser?.brandName || selectedUser?.name || 'Brand'}`,
+            files: [file]
+          });
+        } else {
+          await navigator.clipboard.writeText(qrImage);
+          alert('QR code copied to clipboard!');
+        }
+      } catch (err) {
+        console.error("Share error:", err);
+      }
+    }
   };
 
   const handleSort = (field) => {
@@ -309,6 +476,52 @@ export default function AdminUserList({ role, title }) {
     return { level: 'New', color: '#94a3b8', bg: '#f1f5f9', icon: '💫' };
   };
 
+  const handleStatClick = (filterType, value) => {
+    setCurrentPage(1); // Reset to first page when filtering
+    if (activeStatFilter === filterType) {
+      setActiveStatFilter(null);
+      setFilterStatus("all");
+      setFilterReferral("all");
+    } else {
+      setActiveStatFilter(filterType);
+      if (filterType === 'verified') {
+        setFilterStatus("verified");
+        setFilterReferral("all");
+      } else if (filterType === 'pending') {
+        setFilterStatus("pending");
+        setFilterReferral("all");
+      } else if (filterType === 'vip') {
+        setFilterStatus("all");
+        setFilterReferral("all");
+      } else if (filterType === 'referrals') {
+        setFilterStatus("all");
+        setFilterReferral("high");
+      }
+    }
+  };
+
+  // Pagination functions
+  const goToPage = (page) => {
+    setCurrentPage(page);
+    if (tableContainerRef.current) {
+      tableContainerRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  };
+
+  const goToFirstPage = () => goToPage(1);
+  const goToLastPage = () => goToPage(totalPages);
+  const goToNextPage = () => {
+    if (currentPage < totalPages) {
+      goToPage(currentPage + 1);
+    }
+  };
+  const goToPrevPage = () => {
+    if (currentPage > 1) {
+      goToPage(currentPage - 1);
+    }
+  };
+
+  // Filter and sort users
   const filteredAndSortedUsers = users
     .filter((user) => {
       const matchesSearch = 
@@ -349,6 +562,29 @@ export default function AdminUserList({ role, title }) {
       return 0;
     });
 
+  // Get current page users
+  const indexOfLastItem = currentPage * itemsPerPage;
+  const indexOfFirstItem = indexOfLastItem - itemsPerPage;
+  const currentUsers = filteredAndSortedUsers.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
+
+  // Generate page numbers for pagination
+  const getPageNumbers = () => {
+    const pageNumbers = [];
+    const maxPagesToShow = 5;
+    let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
+    let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
+    
+    if (endPage - startPage + 1 < maxPagesToShow) {
+      startPage = Math.max(1, endPage - maxPagesToShow + 1);
+    }
+    
+    for (let i = startPage; i <= endPage; i++) {
+      pageNumbers.push(i);
+    }
+    return pageNumbers;
+  };
+
   const stats = {
     total: users.length,
     verified: users.filter(u => u.status === "Verified").length,
@@ -387,7 +623,7 @@ export default function AdminUserList({ role, title }) {
   }
 
   return (
-    <div style={styles.pageWrapper}>
+    <div style={styles.pageWrapper} ref={pageWrapperRef}>
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
       <div style={styles.bgDecoration3}></div>
@@ -437,7 +673,7 @@ export default function AdminUserList({ role, title }) {
           </div>
         </motion.div>
 
-        {/* Stats Summary */}
+        {/* Stats Summary - Clickable */}
         <motion.div 
           className="stats-group" 
           style={styles.statsGrid}
@@ -446,21 +682,73 @@ export default function AdminUserList({ role, title }) {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {[
-            { icon: <Users size={16} />, label: 'Total', value: stats.total, color: '#10b981', bg: '#ecfdf5' },
-            { icon: <CheckCircle size={16} />, label: 'Verified', value: stats.verified, color: '#3b82f6', bg: '#eff6ff' },
-            { icon: <Clock size={16} />, label: 'Pending', value: stats.pending, color: '#f59e0b', bg: '#fef3c7' },
-            { icon: <Crown size={16} />, label: 'VIP', value: stats.vip, color: '#ec4899', bg: '#fdf2f8' },
-            { icon: <Gift size={16} />, label: 'Referrals', value: stats.totalReferrals, color: '#eab308', bg: '#fefce8' },
-            { icon: <Image size={16} />, label: 'With Logo', value: stats.withLogo, color: '#8b5cf6', bg: '#f5f3ff' },
+            { 
+              icon: <Users size={16} />, 
+              label: 'Total', 
+              value: stats.total, 
+              color: '#10b981', 
+              bg: '#ecfdf5',
+              filter: 'total'
+            },
+            { 
+              icon: <CheckCircle size={16} />, 
+              label: 'Verified', 
+              value: stats.verified, 
+              color: '#3b82f6', 
+              bg: '#eff6ff',
+              filter: 'verified'
+            },
+            { 
+              icon: <Clock size={16} />, 
+              label: 'Pending', 
+              value: stats.pending, 
+              color: '#f59e0b', 
+              bg: '#fef3c7',
+              filter: 'pending'
+            },
+            { 
+              icon: <Crown size={16} />, 
+              label: 'VIP', 
+              value: stats.vip, 
+              color: '#ec4899', 
+              bg: '#fdf2f8',
+              filter: 'vip'
+            },
+            { 
+              icon: <Gift size={16} />, 
+              label: 'Referrals', 
+              value: stats.totalReferrals, 
+              color: '#eab308', 
+              bg: '#fefce8',
+              filter: 'referrals'
+            },
+            { 
+              icon: <Image size={16} />, 
+              label: 'With Logo', 
+              value: stats.withLogo, 
+              color: '#8b5cf6', 
+              bg: '#f5f3ff',
+              filter: 'logo'
+            },
           ].map((stat, index) => (
             <motion.div 
               key={index}
               className="stat-card" 
-              style={{...styles.statCard}}
+              style={{
+                ...styles.statCard,
+                cursor: stat.filter !== 'total' && stat.filter !== 'logo' ? 'pointer' : 'default',
+                border: activeStatFilter === stat.filter ? `2px solid ${stat.color}` : '1px solid rgba(255,255,255,0.8)',
+                background: activeStatFilter === stat.filter ? stat.bg : 'rgba(255,255,255,0.8)',
+              }}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.05 + index * 0.03 }}
-              whileHover={{ y: -2, boxShadow: "0 4px 12px rgba(0,0,0,0.06)" }}
+              whileHover={{ 
+                y: -2, 
+                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                ...(stat.filter !== 'total' && stat.filter !== 'logo' ? { scale: 1.02 } : {})
+              }}
+              onClick={() => handleStatClick(stat.filter, stat.value)}
             >
               <div style={{...styles.statIcon, background: stat.bg, color: stat.color}}>
                 {stat.icon}
@@ -469,6 +757,11 @@ export default function AdminUserList({ role, title }) {
                 <div style={styles.statValue}>{stat.value}</div>
                 <div style={styles.statLabel}>{stat.label}</div>
               </div>
+              {(stat.filter === 'verified' || stat.filter === 'pending' || stat.filter === 'vip' || stat.filter === 'referrals') && (
+                <div style={{ marginLeft: 'auto', fontSize: '10px', color: stat.color, opacity: 0.5 }}>
+                  {activeStatFilter === stat.filter ? '✓' : '↗'}
+                </div>
+              )}
             </motion.div>
           ))}
         </motion.div>
@@ -507,21 +800,21 @@ export default function AdminUserList({ role, title }) {
               <button
                 className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterStatus === "all" ? styles.activeFilter : {})}}
-                onClick={() => setFilterStatus("all")}
+                onClick={() => { setFilterStatus("all"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 All
               </button>
               <button
                 className={`filter-btn ${filterStatus === "verified" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterStatus === "verified" ? styles.activeFilter : {})}}
-                onClick={() => setFilterStatus("verified")}
+                onClick={() => { setFilterStatus("verified"); setActiveStatFilter('verified'); setCurrentPage(1); }}
               >
                 <CheckCircle size={12} /> Verified
               </button>
               <button
                 className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterStatus === "pending" ? styles.activeFilter : {})}}
-                onClick={() => setFilterStatus("pending")}
+                onClick={() => { setFilterStatus("pending"); setActiveStatFilter('pending'); setCurrentPage(1); }}
               >
                 <Clock size={12} /> Pending
               </button>
@@ -531,35 +824,35 @@ export default function AdminUserList({ role, title }) {
               <button
                 className={`filter-btn ${filterReferral === "all" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterReferral === "all" ? styles.activeFilter : {})}}
-                onClick={() => setFilterReferral("all")}
+                onClick={() => { setFilterReferral("all"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 All
               </button>
               <button
                 className={`filter-btn ${filterReferral === "high" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterReferral === "high" ? styles.activeFilter : {})}}
-                onClick={() => setFilterReferral("high")}
+                onClick={() => { setFilterReferral("high"); setActiveStatFilter('referrals'); setCurrentPage(1); }}
               >
                 <Flame size={12} /> 10+
               </button>
               <button
                 className={`filter-btn ${filterReferral === "medium" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterReferral === "medium" ? styles.activeFilter : {})}}
-                onClick={() => setFilterReferral("medium")}
+                onClick={() => { setFilterReferral("medium"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 <TrendingUp size={12} /> 5-9
               </button>
               <button
                 className={`filter-btn ${filterReferral === "low" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterReferral === "low" ? styles.activeFilter : {})}}
-                onClick={() => setFilterReferral("low")}
+                onClick={() => { setFilterReferral("low"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 <UserPlus size={12} /> 1-4
               </button>
               <button
                 className={`filter-btn ${filterReferral === "none" ? "active" : ""}`}
                 style={{...styles.filterBtn, ...(filterReferral === "none" ? styles.activeFilter : {})}}
-                onClick={() => setFilterReferral("none")}
+                onClick={() => { setFilterReferral("none"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 <X size={12} /> 0
               </button>
@@ -571,6 +864,7 @@ export default function AdminUserList({ role, title }) {
         <motion.div 
           className="table-container" 
           style={styles.tableWrapper}
+          ref={tableContainerRef}
           initial={{ opacity: 0, scale: 0.98 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
@@ -606,8 +900,8 @@ export default function AdminUserList({ role, title }) {
               </tr>
             </thead>
             <tbody>
-              {filteredAndSortedUsers.length > 0 ? (
-                filteredAndSortedUsers.map((u, index) => {
+              {currentUsers.length > 0 ? (
+                currentUsers.map((u, index) => {
                   const referralLevel = getReferralLevel(u.referralCount);
                   const isTop = u.referralCount >= 10;
                   const roleColor = getRoleColor(u.role);
@@ -831,10 +1125,71 @@ export default function AdminUserList({ role, title }) {
               )}
             </tbody>
           </table>
+
+          {/* Pagination Controls */}
+          {filteredAndSortedUsers.length > itemsPerPage && (
+            <div style={styles.paginationWrapper}>
+              <div style={styles.paginationInfo}>
+                Showing {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length} users
+              </div>
+              <div style={styles.paginationControls}>
+                <button
+                  onClick={goToFirstPage}
+                  disabled={currentPage === 1}
+                  style={{...styles.paginationBtn, ...(currentPage === 1 ? styles.paginationBtnDisabled : {})}}
+                  title="First Page"
+                >
+                  <ChevronsLeft size={16} />
+                </button>
+                <button
+                  onClick={goToPrevPage}
+                  disabled={currentPage === 1}
+                  style={{...styles.paginationBtn, ...(currentPage === 1 ? styles.paginationBtnDisabled : {})}}
+                  title="Previous Page"
+                >
+                  <ChevronLeft size={16} />
+                </button>
+                
+                {getPageNumbers().map(page => (
+                  <button
+                    key={page}
+                    onClick={() => goToPage(page)}
+                    style={{
+                      ...styles.paginationBtn,
+                      ...styles.paginationNumberBtn,
+                      ...(page === currentPage ? styles.paginationActive : {})
+                    }}
+                  >
+                    {page}
+                  </button>
+                ))}
+                
+                <button
+                  onClick={goToNextPage}
+                  disabled={currentPage === totalPages}
+                  style={{...styles.paginationBtn, ...(currentPage === totalPages ? styles.paginationBtnDisabled : {})}}
+                  title="Next Page"
+                >
+                  <ChevronRight size={16} />
+                </button>
+                <button
+                  onClick={goToLastPage}
+                  disabled={currentPage === totalPages}
+                  style={{...styles.paginationBtn, ...(currentPage === totalPages ? styles.paginationBtnDisabled : {})}}
+                  title="Last Page"
+                >
+                  <ChevronsRight size={16} />
+                </button>
+              </div>
+              <div style={styles.paginationPageSize}>
+                {itemsPerPage} per page
+              </div>
+            </div>
+          )}
         </motion.div>
       </div>
 
-      {/* User Details Modal */}
+      {/* User Details Modal - Modern Design with QR for Brands */}
       <AnimatePresence>
         {showModal && selectedUser && (
           <motion.div 
@@ -848,6 +1203,7 @@ export default function AdminUserList({ role, title }) {
             <motion.div 
               className="modal-content" 
               style={styles.modalContent}
+              ref={modalRef}
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 30, opacity: 0 }}
@@ -890,8 +1246,12 @@ export default function AdminUserList({ role, title }) {
                 </motion.button>
               </div>
 
-              {/* Modal Body */}
-              <div style={styles.modalBody}>
+              {/* Modal Body with scroll reference */}
+              <div 
+                style={styles.modalBody} 
+                ref={modalBodyRef}
+                className="modal-body"
+              >
                 {loadingDetails ? (
                   <div style={styles.loadingDetails}>
                     <div style={styles.spinnerSmall}></div>
@@ -938,6 +1298,48 @@ export default function AdminUserList({ role, title }) {
                             <span style={styles.modalDetailValue}>{selectedUser.email}</span>
                           </div>
                           <div style={styles.modalDetailRow}>
+                            <span style={styles.modalDetailLabel}>Password</span>
+                            <span style={styles.modalDetailValue}>
+                              <span style={styles.passwordDisplay}>
+                                {showPassword[selectedUser._id] ? (
+                                  <span 
+                                    style={{ 
+                                      fontFamily: 'monospace', 
+                                      fontSize: '12px',
+                                      background: '#f1f5f9',
+                                      padding: '2px 8px',
+                                      borderRadius: '4px',
+                                      wordBreak: 'break-all',
+                                      maxWidth: '200px',
+                                      display: 'inline-block',
+                                      cursor: 'pointer'
+                                    }}
+                                    onClick={(e) => copyToClipboard(showPassword[selectedUser._id], e)}
+                                    title="Click to copy password"
+                                  >
+                                    {showPassword[selectedUser._id]}
+                                  </span>
+                                ) : (
+                                  '********'
+                                )}
+                                <motion.button
+                                  onClick={(e) => togglePasswordVisibility(selectedUser._id, e)}
+                                  style={styles.passwordToggleBtn}
+                                  whileHover={{ scale: 1.1 }}
+                                  whileTap={{ scale: 0.9 }}
+                                  title={showPassword[selectedUser._id] ? "Hide Password" : "Show Password"}
+                                  disabled={loadingPassword[selectedUser._id]}
+                                >
+                                  {loadingPassword[selectedUser._id] ? (
+                                    <div style={styles.spinnerSmall}></div>
+                                  ) : (
+                                    <Eye size={14} />
+                                  )}
+                                </motion.button>
+                              </span>
+                            </span>
+                          </div>
+                          <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Phone</span>
                             <span style={styles.modalDetailValue}>{selectedUser.phone || 'N/A'}</span>
                           </div>
@@ -964,14 +1366,36 @@ export default function AdminUserList({ role, title }) {
                               />
                             </div>
                           )}
+                          {selectedUser.bio && (
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Bio</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.bio}</span>
+                            </div>
+                          )}
+                          {selectedUser.headline && (
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Headline</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.headline}</span>
+                            </div>
+                          )}
+                          {selectedUser.skills && selectedUser.skills.length > 0 && (
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Skills</span>
+                              <div style={styles.modalSkillsList}>
+                                {selectedUser.skills.map((skill, i) => (
+                                  <span key={i} style={styles.modalSkillTag}>{skill}</span>
+                                ))}
+                              </div>
+                            </div>
+                          )}
                         </div>
                       </div>
 
-                      {/* Brand/Employee Specific */}
+                      {/* Brand/Employee Company Details */}
                       {(selectedUser.role === "brand" || selectedUser.role === "employee") && (
                         <div style={styles.modalSection}>
                           <h4 style={styles.modalSectionTitle}>
-                            <Store size={14} /> Company/Brand Details
+                            <Store size={14} /> Company Details
                           </h4>
                           <div style={styles.modalDetails}>
                             <div style={styles.modalDetailRow}>
@@ -980,6 +1404,12 @@ export default function AdminUserList({ role, title }) {
                                 {selectedUser.brandName || selectedUser.companyName || 'N/A'}
                               </span>
                             </div>
+                            {selectedUser.role === "brand" && selectedUser.category && (
+                              <div style={styles.modalDetailRow}>
+                                <span style={styles.modalDetailLabel}>Category</span>
+                                <span style={styles.modalDetailValue}>{selectedUser.category}</span>
+                              </div>
+                            )}
                             <div style={styles.modalDetailRow}>
                               <span style={styles.modalDetailLabel}>Role</span>
                               <span style={styles.modalDetailValue}>
@@ -997,7 +1427,7 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       )}
 
-                      {/* Student Specific */}
+                      {/* Student Academic Info */}
                       {selectedUser.role === "student" && (
                         <div style={styles.modalSection}>
                           <h4 style={styles.modalSectionTitle}>
@@ -1016,12 +1446,18 @@ export default function AdminUserList({ role, title }) {
                               <span style={styles.modalDetailLabel}>Alumni</span>
                               <span style={styles.modalDetailValue}>{selectedUser.isAlumni ? '✅ Yes' : '❌ No'}</span>
                             </div>
-                            {selectedUser.skills && selectedUser.skills.length > 0 && (
+                            {selectedUser.education && selectedUser.education.length > 0 && (
                               <div style={styles.modalDetailRow}>
-                                <span style={styles.modalDetailLabel}>Skills</span>
-                                <div style={styles.modalSkillsList}>
-                                  {selectedUser.skills.map((skill, i) => (
-                                    <span key={i} style={styles.modalSkillTag}>{skill}</span>
+                                <span style={styles.modalDetailLabel}>Education</span>
+                                <div style={styles.modalEduList}>
+                                  {selectedUser.education.map((edu, i) => (
+                                    <div key={i} style={styles.modalEduItem}>
+                                      <div style={styles.modalEduHeader}>
+                                        <span style={{fontWeight: 600}}>{edu.school}</span>
+                                        <span style={styles.modalEduYear}>{edu.startYear} - {edu.endYear}</span>
+                                      </div>
+                                      <div style={styles.modalEduDegree}>{edu.degree}</div>
+                                    </div>
                                   ))}
                                 </div>
                               </div>
@@ -1030,156 +1466,26 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       )}
 
-                      {/* Role Specific Details - Offers, Jobs, Applications */}
-                      {selectedUser.role === "brand" && (
-                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                      {/* Traveler Details */}
+                      {selectedUser.role === "traveler" && (
+                        <div style={styles.modalSection}>
                           <h4 style={styles.modalSectionTitle}>
-                            <Gift size={14} /> Brand Offers ({userDetails.offers?.length || 0})
+                            <Plane size={14} /> Traveler Details
                           </h4>
-                          {userDetails.offers && userDetails.offers.length > 0 ? (
-                            <div style={styles.offerList}>
-                              {userDetails.offers.slice(0, 5).map((offer, i) => (
-                                <div key={i} style={styles.offerItem}>
-                                  <span style={styles.offerTitle}>{offer.title}</span>
-                                  <span style={styles.offerDiscount}>{offer.discountPercentage}% off</span>
-                                  <span style={styles.offerStatus}>
-                                    {offer.claimedBy?.length || 0} claims
-                                  </span>
-                                </div>
-                              ))}
-                              {userDetails.offers.length > 5 && (
-                                <div style={styles.moreItems}>+{userDetails.offers.length - 5} more</div>
-                              )}
+                          <div style={styles.modalDetails}>
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Name</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.name}</span>
                             </div>
-                          ) : (
-                            <p style={styles.noItems}>No offers created</p>
-                          )}
+                            <div style={styles.modalDetailRow}>
+                              <span style={styles.modalDetailLabel}>Phone</span>
+                              <span style={styles.modalDetailValue}>{selectedUser.phone || 'N/A'}</span>
+                            </div>
+                          </div>
                         </div>
                       )}
 
-                      {selectedUser.role === "employee" && (
-                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <BriefcaseIcon size={14} /> Jobs Posted ({userDetails.jobs?.length || 0})
-                          </h4>
-                          {userDetails.jobs && userDetails.jobs.length > 0 ? (
-                            <div style={styles.jobList}>
-                              {userDetails.jobs.slice(0, 5).map((job, i) => (
-                                <div key={i} style={styles.jobItem}>
-                                  <span style={styles.jobTitle}>{job.title}</span>
-                                  <span style={styles.jobStatus}>
-                                    {job.active ? '🟢 Active' : '🔴 Inactive'}
-                                  </span>
-                                  <span style={styles.jobApps}>
-                                    {job.totalApplications || 0} applications
-                                  </span>
-                                </div>
-                              ))}
-                              {userDetails.jobs.length > 5 && (
-                                <div style={styles.moreItems}>+{userDetails.jobs.length - 5} more</div>
-                              )}
-                            </div>
-                          ) : (
-                            <p style={styles.noItems}>No jobs posted</p>
-                          )}
-                        </div>
-                      )}
-
-                      {selectedUser.role === "student" && (
-                        <>
-                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                            <h4 style={styles.modalSectionTitle}>
-                              <Ticket size={14} /> Claimed Discounts ({userDetails.claimedOffers?.length || 0})
-                            </h4>
-                            {userDetails.claimedOffers && userDetails.claimedOffers.length > 0 ? (
-                              <div style={styles.claimedList}>
-                                {userDetails.claimedOffers.slice(0, 5).map((offer, i) => (
-                                  <div key={i} style={styles.claimedItem}>
-                                    <span style={styles.claimedTitle}>{offer.title}</span>
-                                    <span style={styles.claimedBrand}>{offer.brand?.name || 'Brand'}</span>
-                                    <span style={styles.claimedDiscount}>{offer.discountPercentage}% off</span>
-                                  </div>
-                                ))}
-                                {userDetails.claimedOffers.length > 5 && (
-                                  <div style={styles.moreItems}>+{userDetails.claimedOffers.length - 5} more</div>
-                                )}
-                              </div>
-                            ) : (
-                              <p style={styles.noItems}>No discounts claimed</p>
-                            )}
-                          </div>
-
-                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                            <h4 style={styles.modalSectionTitle}>
-                              <FileCheck size={14} /> Job Applications ({userDetails.applications?.length || 0})
-                            </h4>
-                            {userDetails.applications && userDetails.applications.length > 0 ? (
-                              <div style={styles.applicationList}>
-                                {userDetails.applications.slice(0, 5).map((app, i) => (
-                                  <div key={i} style={styles.applicationItem}>
-                                    <span style={styles.applicationJob}>{app.jobId?.title || 'Job'}</span>
-                                    <span style={{
-                                      ...styles.applicationStatus,
-                                      background: {
-                                        'pending': '#f59e0b20',
-                                        'reviewed': '#3b82f620',
-                                        'shortlisted': '#10b98120',
-                                        'interview': '#8b5cf620',
-                                        'rejected': '#ef444420',
-                                        'hired': '#05966920'
-                                      }[app.status] || '#94a3b820',
-                                      color: {
-                                        'pending': '#f59e0b',
-                                        'reviewed': '#3b82f6',
-                                        'shortlisted': '#10b981',
-                                        'interview': '#8b5cf6',
-                                        'rejected': '#ef4444',
-                                        'hired': '#059669'
-                                      }[app.status] || '#94a3b8'
-                                    }}>
-                                      {app.status || 'Pending'}
-                                    </span>
-                                  </div>
-                                ))}
-                                {userDetails.applications.length > 5 && (
-                                  <div style={styles.moreItems}>+{userDetails.applications.length - 5} more</div>
-                                )}
-                              </div>
-                            ) : (
-                              <p style={styles.noItems}>No job applications</p>
-                            )}
-                          </div>
-
-                          {/* Resume & Savings */}
-                          <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                            <h4 style={styles.modalSectionTitle}>
-                              <FileText size={14} /> Resume & Savings
-                            </h4>
-                            <div style={styles.modalDetails}>
-                              <div style={styles.modalDetailRow}>
-                                <span style={styles.modalDetailLabel}>Resume</span>
-                                <span style={styles.modalDetailValue}>
-                                  {userDetails.resume ? '✅ Uploaded' : '❌ Not uploaded'}
-                                </span>
-                              </div>
-                              <div style={styles.modalDetailRow}>
-                                <span style={styles.modalDetailLabel}>Total Savings</span>
-                                <span style={styles.modalDetailValue}>
-                                  PKR {userDetails.savings?.totalSaved?.toLocaleString() || 0}
-                                </span>
-                              </div>
-                              <div style={styles.modalDetailRow}>
-                                <span style={styles.modalDetailLabel}>Redemptions</span>
-                                <span style={styles.modalDetailValue}>
-                                  {userDetails.savings?.redemptionCount || 0}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                        </>
-                      )}
-
-                      {/* Referral Information */}
+                      {/* Referral Information - ALL ROLES */}
                       <div style={styles.modalSection}>
                         <h4 style={styles.modalSectionTitle}>
                           <UserPlus size={14} /> Referral Information
@@ -1220,78 +1526,180 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       </div>
 
-                      {/* Membership & Card */}
-                      <div style={styles.modalSection}>
-                        <h4 style={styles.modalSectionTitle}>
-                          <CreditCard size={14} /> Membership & Card
-                        </h4>
-                        <div style={styles.modalDetails}>
-                          <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>VIP Status</span>
-                            <span style={styles.modalDetailValue}>
-                              {selectedUser.isVip ? (
-                                <span style={styles.modalVipBadge}>⭐ Active</span>
-                              ) : '❌ Not Active'}
-                            </span>
-                          </div>
-                          {selectedUser.isVip && selectedUser.vipExpiry && (
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>VIP Expiry</span>
-                              <span style={styles.modalDetailValue}>
-                                {new Date(selectedUser.vipExpiry).toLocaleDateString()}
-                              </span>
-                            </div>
-                          )}
-                          <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>Card Status</span>
-                            <span style={styles.modalDetailValue}>
-                              <span style={{
-                                ...styles.modalCardStatus,
-                                backgroundColor: {
-                                  'Ordered': '#3b82f620',
-                                  'Printing': '#eab30820',
-                                  'Shipped': '#8b5cf620',
-                                  'Delivered': '#22c55e20',
-                                  'None': '#94a3b820'
-                                }[selectedUser.cardStatus] || '#94a3b820',
-                                color: {
-                                  'Ordered': '#3b82f6',
-                                  'Printing': '#eab308',
-                                  'Shipped': '#8b5cf6',
-                                  'Delivered': '#22c55e',
-                                  'None': '#94a3b8'
-                                }[selectedUser.cardStatus] || '#94a3b8'
-                              }}>
-                                {selectedUser.cardStatus || 'None'}
-                              </span>
-                            </span>
-                          </div>
-                          <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>Payment Status</span>
-                            <span style={styles.modalDetailValue}>
-                              <span style={{
-                                ...styles.modalPaymentStatus,
-                                backgroundColor: {
-                                  'Verified': '#22c55e20',
-                                  'Pending Verification': '#eab30820',
-                                  'Rejected': '#ef444420',
-                                  'None': '#94a3b820'
-                                }[selectedUser.paymentStatus] || '#94a3b820',
-                                color: {
-                                  'Verified': '#22c55e',
-                                  'Pending Verification': '#eab308',
-                                  'Rejected': '#ef4444',
-                                  'None': '#94a3b8'
-                                }[selectedUser.paymentStatus] || '#94a3b8'
-                              }}>
-                                {selectedUser.paymentStatus || 'None'}
-                              </span>
-                            </span>
+                      {/* BRAND OFFERS WITH QR GENERATION - ONLY FOR BRANDS */}
+                      {selectedUser.role === "brand" && userDetails.offers && userDetails.offers.length > 0 && (
+                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <Gift size={14} /> Brand Offers ({userDetails.offers.length})
+                          </h4>
+                          <div style={styles.offerList}>
+                            {userDetails.offers.slice(0, 5).map((offer, i) => (
+                              <div key={i} style={styles.offerItem}>
+                                <div style={styles.offerItemLeft}>
+                                  <span style={styles.offerTitle}>{offer.title}</span>
+                                  <span style={styles.offerDiscount}>{offer.discountPercentage}% off</span>
+                                  <span style={styles.offerStatus}>
+                                    {offer.claimedBy?.length || 0} claims
+                                  </span>
+                                </div>
+                                <div style={styles.offerItemRight}>
+                                  {offer.isOnline && offer.isInStore && (
+                                    <span style={{...styles.badgeSmall, background: '#8b5cf6'}}>Online & In-Store</span>
+                                  )}
+                                  {offer.isOnline && !offer.isInStore && (
+                                    <span style={{...styles.badgeSmall, background: '#3b82f6'}}>Online</span>
+                                  )}
+                                  {!offer.isOnline && offer.isInStore && (
+                                    <span style={{...styles.badgeSmall, background: '#10b981'}}>In-Store</span>
+                                  )}
+                                  <motion.button
+                                    className="qr-generate-btn"
+                                    onClick={(e) => generateQRForOffer(offer, selectedUser, e)}
+                                    style={styles.qrGenerateBtn}
+                                    whileHover={{ scale: 1.05 }}
+                                    whileTap={{ scale: 0.95 }}
+                                    disabled={generatingQR}
+                                    title="Generate QR Code for this offer"
+                                  >
+                                    {generatingQR && selectedOfferForQR?._id === offer._id ? (
+                                      <div style={styles.spinnerSmall}></div>
+                                    ) : (
+                                      <QrCode size={14} />
+                                    )}
+                                    <span style={styles.qrBtnText}>QR</span>
+                                  </motion.button>
+                                </div>
+                              </div>
+                            ))}
+                            {userDetails.offers.length > 5 && (
+                              <div style={styles.moreItems}>+{userDetails.offers.length - 5} more</div>
+                            )}
                           </div>
                         </div>
-                      </div>
+                      )}
 
-                      {/* Timestamps */}
+                      {/* Employee Jobs - ONLY EMPLOYEES */}
+                      {selectedUser.role === "employee" && userDetails.jobs && userDetails.jobs.length > 0 && (
+                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                          <h4 style={styles.modalSectionTitle}>
+                            <BriefcaseIcon size={14} /> Jobs Posted ({userDetails.jobs.length})
+                          </h4>
+                          <div style={styles.jobList}>
+                            {userDetails.jobs.slice(0, 5).map((job, i) => (
+                              <div key={i} style={styles.jobItem}>
+                                <span style={styles.jobTitle}>{job.title}</span>
+                                <span style={styles.jobStatus}>
+                                  {job.active ? '🟢 Active' : '🔴 Inactive'}
+                                </span>
+                                <span style={styles.jobApps}>
+                                  {job.totalApplications || 0} applications
+                                </span>
+                              </div>
+                            ))}
+                            {userDetails.jobs.length > 5 && (
+                              <div style={styles.moreItems}>+{userDetails.jobs.length - 5} more</div>
+                            )}
+                          </div>
+                        </div>
+                      )}
+
+                      {/* Student Discounts & Applications - ONLY STUDENTS */}
+                      {selectedUser.role === "student" && (
+                        <>
+                          {userDetails.claimedOffers && userDetails.claimedOffers.length > 0 && (
+                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                              <h4 style={styles.modalSectionTitle}>
+                                <Ticket size={14} /> Claimed Discounts ({userDetails.claimedOffers.length})
+                              </h4>
+                              <div style={styles.claimedList}>
+                                {userDetails.claimedOffers.slice(0, 5).map((offer, i) => (
+                                  <div key={i} style={styles.claimedItem}>
+                                    <span style={styles.claimedTitle}>{offer.title}</span>
+                                    <span style={styles.claimedBrand}>{offer.brand?.name || 'Brand'}</span>
+                                    <span style={styles.claimedDiscount}>{offer.discountPercentage}% off</span>
+                                  </div>
+                                ))}
+                                {userDetails.claimedOffers.length > 5 && (
+                                  <div style={styles.moreItems}>+{userDetails.claimedOffers.length - 5} more</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {userDetails.applications && userDetails.applications.length > 0 && (
+                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                              <h4 style={styles.modalSectionTitle}>
+                                <FileCheck size={14} /> Job Applications ({userDetails.applications.length})
+                              </h4>
+                              <div style={styles.applicationList}>
+                                {userDetails.applications.slice(0, 5).map((app, i) => (
+                                  <div key={i} style={styles.applicationItem}>
+                                    <span style={styles.applicationJob}>{app.jobId?.title || 'Job'}</span>
+                                    <span style={{
+                                      ...styles.applicationStatus,
+                                      background: {
+                                        'pending': '#f59e0b20',
+                                        'reviewed': '#3b82f620',
+                                        'shortlisted': '#10b98120',
+                                        'interview': '#8b5cf620',
+                                        'rejected': '#ef444420',
+                                        'hired': '#05966920'
+                                      }[app.status] || '#94a3b820',
+                                      color: {
+                                        'pending': '#f59e0b',
+                                        'reviewed': '#3b82f6',
+                                        'shortlisted': '#10b981',
+                                        'interview': '#8b5cf6',
+                                        'rejected': '#ef4444',
+                                        'hired': '#059669'
+                                      }[app.status] || '#94a3b8'
+                                    }}>
+                                      {app.status || 'Pending'}
+                                    </span>
+                                  </div>
+                                ))}
+                                {userDetails.applications.length > 5 && (
+                                  <div style={styles.moreItems}>+{userDetails.applications.length - 5} more</div>
+                                )}
+                              </div>
+                            </div>
+                          )}
+
+                          {(userDetails.resume || userDetails.savings?.totalSaved > 0) && (
+                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
+                              <h4 style={styles.modalSectionTitle}>
+                                <FileText size={14} /> Resume & Savings
+                              </h4>
+                              <div style={styles.modalDetails}>
+                                <div style={styles.modalDetailRow}>
+                                  <span style={styles.modalDetailLabel}>Resume</span>
+                                  <span style={styles.modalDetailValue}>
+                                    {userDetails.resume ? '✅ Uploaded' : '❌ Not uploaded'}
+                                  </span>
+                                </div>
+                                {userDetails.savings?.totalSaved > 0 && (
+                                  <>
+                                    <div style={styles.modalDetailRow}>
+                                      <span style={styles.modalDetailLabel}>Total Savings</span>
+                                      <span style={styles.modalDetailValue}>
+                                        PKR {userDetails.savings.totalSaved.toLocaleString()}
+                                      </span>
+                                    </div>
+                                    <div style={styles.modalDetailRow}>
+                                      <span style={styles.modalDetailLabel}>Redemptions</span>
+                                      <span style={styles.modalDetailValue}>
+                                        {userDetails.savings.redemptionCount || 0}
+                                      </span>
+                                    </div>
+                                  </>
+                                )}
+                              </div>
+                            </div>
+                          )}
+                        </>
+                      )}
+
+                      {/* Timestamps - ALL ROLES */}
                       <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
                         <h4 style={styles.modalSectionTitle}>
                           <Calendar size={14} /> Timestamps
@@ -1340,6 +1748,135 @@ export default function AdminUserList({ role, title }) {
         )}
       </AnimatePresence>
 
+      {/* QR Code Modal - Full Screen Display */}
+      <AnimatePresence>
+        {showQRModal && qrImage && selectedOfferForQR && (
+          <motion.div 
+            style={styles.qrModalOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeQRModal}
+          >
+            <motion.div 
+              style={styles.qrModalContent}
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 30, opacity: 0 }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={e => e.stopPropagation()}
+            >
+              <div style={styles.qrModalHeader}>
+                <div>
+                  <h3 style={styles.qrModalTitle}>
+                    <QrCode size={20} style={{ marginRight: '8px', color: '#ff961a' }} />
+                    QR Code - {selectedUser?.brandName || 'Brand'}
+                  </h3>
+                  <p style={styles.qrModalSubtitle}>
+                    {selectedOfferForQR.title} • {selectedOfferForQR.discountPercentage}% OFF
+                  </p>
+                </div>
+                <motion.button 
+                  onClick={closeQRModal}
+                  style={styles.qrModalCloseBtn}
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={20} />
+                </motion.button>
+              </div>
+
+              <div style={styles.qrModalBody}>
+                <div style={styles.qrImageContainer}>
+                  <img src={qrImage} alt="QR Code" style={styles.qrModalImage} />
+                </div>
+
+                <div style={styles.qrOfferDetails}>
+                  <div style={styles.qrOfferRow}>
+                    <span style={styles.qrOfferLabel}>Brand:</span>
+                    <span style={styles.qrOfferValue}>{selectedUser?.brandName || selectedUser?.name || 'Brand'}</span>
+                  </div>
+                  <div style={styles.qrOfferRow}>
+                    <span style={styles.qrOfferLabel}>Offer:</span>
+                    <span style={styles.qrOfferValue}>{selectedOfferForQR.title}</span>
+                  </div>
+                  <div style={styles.qrOfferRow}>
+                    <span style={styles.qrOfferLabel}>Discount:</span>
+                    <span style={{...styles.qrOfferValue, color: '#ff961a', fontWeight: 700}}>
+                      {selectedOfferForQR.discountPercentage}% OFF
+                    </span>
+                  </div>
+                  <div style={styles.qrOfferRow}>
+                    <span style={styles.qrOfferLabel}>Type:</span>
+                    <span style={styles.qrOfferValue}>
+                      {selectedOfferForQR.isOnline && selectedOfferForQR.isInStore ? (
+                        <span style={{...styles.badgeSmall, background: '#8b5cf6'}}>Online & In-Store</span>
+                      ) : selectedOfferForQR.isOnline ? (
+                        <span style={{...styles.badgeSmall, background: '#3b82f6'}}>Online Only</span>
+                      ) : selectedOfferForQR.isInStore ? (
+                        <span style={{...styles.badgeSmall, background: '#10b981'}}>In-Store Only</span>
+                      ) : (
+                        <span style={{...styles.badgeSmall, background: '#94a3b8'}}>Standard</span>
+                      )}
+                    </span>
+                  </div>
+                  {selectedOfferForQR.promoCode && (
+                    <div style={styles.qrOfferRow}>
+                      <span style={styles.qrOfferLabel}>Promo Code:</span>
+                      <span style={{...styles.qrOfferValue, fontFamily: 'monospace', fontWeight: 700, color: '#0369a1'}}>
+                        {selectedOfferForQR.promoCode}
+                      </span>
+                    </div>
+                  )}
+                  <div style={styles.qrOfferRow}>
+                    <span style={styles.qrOfferLabel}>Generated:</span>
+                    <span style={styles.qrOfferValue}>
+                      {new Date().toLocaleString()}
+                    </span>
+                  </div>
+                </div>
+
+                <div style={styles.qrModalActions}>
+                  <motion.button 
+                    style={{...styles.qrActionBtn, background: '#1e293b', color: '#fff'}}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={downloadQR}
+                  >
+                    <DownloadIcon size={16} /> Download
+                  </motion.button>
+                  <motion.button 
+                    style={{...styles.qrActionBtn, background: '#8b5cf6', color: '#fff'}}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={shareQR}
+                  >
+                    <Share2 size={16} /> Share
+                  </motion.button>
+                  <motion.button 
+                    style={{...styles.qrActionBtn, background: '#10b981', color: '#fff'}}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    onClick={copyQRData}
+                  >
+                    <Copy size={16} /> {copied ? 'Copied!' : 'Copy Data'}
+                  </motion.button>
+                </div>
+
+                <div style={styles.qrScanInstructions}>
+                  <p style={styles.qrScanText}>
+                    📱 Students can scan this QR code to claim this discount
+                  </p>
+                  <p style={styles.qrScanSubtext}>
+                    The QR code contains all necessary information for verification
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       <style>
         {`
           @keyframes slideUp {
@@ -1362,10 +1899,15 @@ export default function AdminUserList({ role, title }) {
             0%, 100% { opacity: 1; transform: scale(1); }
             50% { opacity: 0.7; transform: scale(1.05); }
           }
+          @keyframes qrModalIn {
+            from { opacity: 0; transform: scale(0.95) translateY(20px); }
+            to { opacity: 1; transform: scale(1) translateY(0); }
+          }
           
           .spinning { animation: spin 1s linear infinite; }
           
           .stat-card { transition: all 0.3s ease; }
+          .stat-card:hover { cursor: pointer; }
           
           .filter-btn { transition: all 0.2s ease; }
           .filter-btn.active {
@@ -1384,7 +1926,9 @@ export default function AdminUserList({ role, title }) {
           .sortable:hover { color: #0a0b0f; }
           
           .action-btn { transition: all 0.2s ease; }
+          .qr-generate-btn { transition: all 0.2s ease; }
 
+          /* Modal Styles */
           .modal-overlay {
             position: fixed !important;
             top: 0 !important;
@@ -1394,17 +1938,34 @@ export default function AdminUserList({ role, title }) {
             background: rgba(15, 23, 42, 0.75) !important;
             backdrop-filter: blur(8px) !important;
             display: flex !important;
-            align-items: center !important;
+            align-items: flex-start !important;
             justify-content: center !important;
             z-index: 9999 !important;
             padding: 20px !important;
+            overflow-y: auto !important;
+          }
+
+          .modal-content {
+            margin-top: 30px !important;
+            margin-bottom: 30px !important;
+            max-width: 820px !important;
+            width: 100% !important;
+            max-height: 90vh !important;
+            background: #fff !important;
+            border-radius: 24px !important;
+            overflow: hidden !important;
+            display: flex !important;
+            flex-direction: column !important;
+            box-shadow: 0 25px 50px -12px rgba(0,0,0,0.3) !important;
+            position: relative !important;
           }
 
           .modal-body {
             flex: 1 !important;
             overflow-y: auto !important;
-            padding: 24px 28px !important;
+            padding: 20px 24px !important;
             max-height: calc(90vh - 180px) !important;
+            -webkit-overflow-scrolling: touch !important;
           }
 
           .modal-body::-webkit-scrollbar { width: 6px; }
@@ -1428,8 +1989,17 @@ export default function AdminUserList({ role, title }) {
             .filterGroupWrapper { flex-direction: column !important; }
             .filterGroup { flex-wrap: wrap !important; }
             .modalGrid { grid-template-columns: 1fr !important; }
-            .modal-content { max-width: 98% !important; max-height: 95vh !important; }
-            .modal-body { max-height: calc(95vh - 180px) !important; }
+            .modal-content { max-width: 98% !important; max-height: 95vh !important; margin-top: 10px !important; margin-bottom: 10px !important; }
+            .modal-body { max-height: calc(95vh - 180px) !important; padding: 16px !important; }
+            .modal-overlay { padding: 10px !important; align-items: flex-start !important; }
+            .offerItem { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
+            .offerItemRight { width: 100% !important; justify-content: flex-start !important; flex-wrap: wrap !important; }
+            .qrModalContent { max-width: 98% !important; margin: 10px !important; }
+            .qrModalImage { width: 200px !important; height: 200px !important; }
+            .qrModalActions { flex-direction: column !important; }
+            .qrActionBtn { width: 100% !important; justify-content: center !important; }
+            .paginationWrapper { flex-direction: column !important; gap: 12px !important; align-items: center !important; }
+            .paginationControls { flex-wrap: wrap !important; justify-content: center !important; }
           }
         `}
       </style>
@@ -1438,169 +2008,6 @@ export default function AdminUserList({ role, title }) {
 }
 
 const styles = {
-  // ... (all the styles from the previous version, plus new ones)
-  // I'll include the additional styles needed for the new features
-  
-  logoThumb: {
-    width: '32px',
-    height: '32px',
-    borderRadius: '8px',
-    objectFit: 'cover',
-    border: '1px solid #e5e7eb',
-  },
-  logoIndicator: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '10px',
-    color: '#10b981',
-    marginTop: '2px',
-  },
-  modalLogoPreview: {
-    width: '60px',
-    height: '60px',
-    borderRadius: '8px',
-    objectFit: 'cover',
-    border: '1px solid #e5e7eb',
-  },
-  modalAvatarImg: {
-    width: '100%',
-    height: '100%',
-    borderRadius: '50%',
-    objectFit: 'cover',
-  },
-  offerList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  offerItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 12px',
-    background: '#f8fafc',
-    borderRadius: '8px',
-    fontSize: '12px',
-  },
-  offerTitle: {
-    fontWeight: '500',
-    color: '#0f172a',
-  },
-  offerDiscount: {
-    color: '#f59e0b',
-    fontWeight: '600',
-  },
-  offerStatus: {
-    color: '#64748b',
-    fontSize: '11px',
-  },
-  jobList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  jobItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 12px',
-    background: '#f8fafc',
-    borderRadius: '8px',
-    fontSize: '12px',
-  },
-  jobTitle: {
-    fontWeight: '500',
-    color: '#0f172a',
-  },
-  jobStatus: {
-    fontSize: '11px',
-  },
-  jobApps: {
-    color: '#64748b',
-    fontSize: '11px',
-  },
-  claimedList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  claimedItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 12px',
-    background: '#f8fafc',
-    borderRadius: '8px',
-    fontSize: '12px',
-  },
-  claimedTitle: {
-    fontWeight: '500',
-    color: '#0f172a',
-  },
-  claimedBrand: {
-    color: '#64748b',
-    fontSize: '11px',
-  },
-  claimedDiscount: {
-    color: '#10b981',
-    fontWeight: '600',
-  },
-  applicationList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-  },
-  applicationItem: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 12px',
-    background: '#f8fafc',
-    borderRadius: '8px',
-    fontSize: '12px',
-  },
-  applicationJob: {
-    fontWeight: '500',
-    color: '#0f172a',
-  },
-  applicationStatus: {
-    padding: '2px 8px',
-    borderRadius: '12px',
-    fontSize: '10px',
-    fontWeight: '600',
-  },
-  moreItems: {
-    textAlign: 'center',
-    fontSize: '11px',
-    color: '#94a3b8',
-    padding: '4px',
-  },
-  noItems: {
-    fontSize: '12px',
-    color: '#94a3b8',
-    textAlign: 'center',
-    padding: '8px',
-  },
-  loadingDetails: {
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    justifyContent: 'center',
-    padding: '40px',
-    gap: '12px',
-    color: '#64748b',
-  },
-  spinnerSmall: {
-    width: '16px',
-    height: '16px',
-    border: '2px solid #e2e8f0',
-    borderTopColor: '#ff961a',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite',
-  },
-  // ... (include all other styles from the previous version)
-
   pageWrapper: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
@@ -2106,19 +2513,27 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
+    background: 'rgba(15, 23, 42, 0.75)',
+    backdropFilter: 'blur(8px)',
     display: 'flex',
-    zIndex: 0,
+    alignItems: 'flex-start',
+    justifyContent: 'center',
+    zIndex: 9999,
+    padding: '20px',
+    overflowY: 'auto',
   },
   modalContent: {
     background: '#fff',
     borderRadius: '24px',
-    maxWidth: '700px',
+    maxWidth: '820px',
     width: '100%',
     maxHeight: '90vh',
     overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
     display: 'flex',
     flexDirection: 'column',
+    marginTop: '30px',
+    marginBottom: '30px',
   },
   modalHeader: {
     padding: '20px 28px',
@@ -2146,6 +2561,14 @@ const styles = {
     fontWeight: '700',
     color: '#fff',
     position: 'relative',
+    overflow: 'hidden',
+    flexShrink: 0,
+  },
+  modalAvatarImg: {
+    width: '100%',
+    height: '100%',
+    borderRadius: '50%',
+    objectFit: 'cover',
   },
   modalCrown: {
     position: 'absolute',
@@ -2180,10 +2603,11 @@ const styles = {
     flexShrink: 0,
   },
   modalBody: {
-    padding: '24px 28px',
+    padding: '20px 24px',
     overflowY: 'auto',
     flex: 1,
     maxHeight: 'calc(90vh - 180px)',
+    '-webkit-overflow-scrolling': 'touch',
   },
   modalStats: {
     display: 'flex',
@@ -2194,6 +2618,7 @@ const styles = {
     borderRadius: '12px',
     marginBottom: '20px',
     flexShrink: 0,
+    flexWrap: 'wrap',
   },
   modalStat: {
     display: 'flex',
@@ -2325,15 +2750,16 @@ const styles = {
     fontSize: '11px',
     fontWeight: '600',
   },
-  modalBioText: {
-    fontSize: '12px',
-    color: '#475569',
-    lineHeight: '1.6',
-    margin: 0,
+  modalEduList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+    width: '100%',
   },
   modalEduItem: {
     padding: '6px 0',
     borderBottom: '1px solid #f1f5f9',
+    width: '100%',
   },
   modalEduHeader: {
     display: 'flex',
@@ -2366,6 +2792,181 @@ const styles = {
     fontSize: '10px',
     color: '#475569',
     fontWeight: '500',
+  },
+  passwordDisplay: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  passwordToggleBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    padding: '2px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  modalReceiptPreview: {
+    maxWidth: '200px',
+    maxHeight: '150px',
+    borderRadius: '8px',
+    border: '1px solid #e5e7eb',
+    objectFit: 'cover',
+  },
+  modalLogoPreview: {
+    width: '60px',
+    height: '60px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    border: '1px solid #e5e7eb',
+  },
+  logoThumb: {
+    width: '32px',
+    height: '32px',
+    borderRadius: '8px',
+    objectFit: 'cover',
+    border: '1px solid #e5e7eb',
+  },
+  logoIndicator: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '10px',
+    color: '#10b981',
+    marginTop: '2px',
+  },
+  offerList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  offerItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  offerTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  offerDiscount: {
+    color: '#f59e0b',
+    fontWeight: '600',
+  },
+  offerStatus: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  jobList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  jobItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  jobTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  jobStatus: {
+    fontSize: '11px',
+  },
+  jobApps: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  claimedList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  claimedItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  claimedTitle: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  claimedBrand: {
+    color: '#64748b',
+    fontSize: '11px',
+  },
+  claimedDiscount: {
+    color: '#10b981',
+    fontWeight: '600',
+  },
+  applicationList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '6px',
+  },
+  applicationItem: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 12px',
+    background: '#f8fafc',
+    borderRadius: '8px',
+    fontSize: '12px',
+  },
+  applicationJob: {
+    fontWeight: '500',
+    color: '#0f172a',
+  },
+  applicationStatus: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '10px',
+    fontWeight: '600',
+  },
+  moreItems: {
+    textAlign: 'center',
+    fontSize: '11px',
+    color: '#94a3b8',
+    padding: '4px',
+  },
+  noItems: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    textAlign: 'center',
+    padding: '8px',
+  },
+  loadingDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    padding: '40px',
+    gap: '12px',
+    color: '#64748b',
+  },
+  spinnerSmall: {
+    width: '16px',
+    height: '16px',
+    border: '2px solid #e2e8f0',
+    borderTopColor: '#ff961a',
+    borderRadius: '50%',
+    animation: 'spin 0.8s linear infinite',
   },
   modalFooter: {
     padding: '16px 28px',
@@ -2441,13 +3042,6 @@ const styles = {
     borderTopColor: "#ff961a",
     borderRadius: "50%",
   },
-  spinnerSmall: {
-    width: "16px",
-    height: "16px",
-    border: "2px solid currentColor",
-    borderTopColor: "transparent",
-    borderRadius: "50%",
-  },
   loadingText: {
     marginTop: "16px",
     color: "#64748b",
@@ -2465,5 +3059,222 @@ const styles = {
     height: "100%",
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     borderRadius: "4px",
+  },
+  offerItemLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  offerItemRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  badgeSmall: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '9px',
+    fontWeight: '600',
+    color: '#fff',
+    whiteSpace: 'nowrap',
+  },
+  qrGenerateBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '11px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  qrBtnText: {
+    fontSize: '10px',
+    fontWeight: '600',
+  },
+  
+  // QR Modal Styles
+  qrModalOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(15, 23, 42, 0.85)',
+    backdropFilter: 'blur(12px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 99999,
+    padding: '20px',
+  },
+  qrModalContent: {
+    background: '#fff',
+    borderRadius: '28px',
+    maxWidth: '520px',
+    width: '100%',
+    maxHeight: '90vh',
+    overflow: 'auto',
+    boxShadow: '0 40px 80px -20px rgba(0,0,0,0.4)',
+    animation: 'qrModalIn 0.3s ease forwards',
+  },
+  qrModalHeader: {
+    padding: '20px 24px',
+    borderBottom: '1px solid #f1f5f9',
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  qrModalTitle: {
+    fontSize: '18px',
+    fontWeight: '700',
+    color: '#0f172a',
+    margin: 0,
+    display: 'flex',
+    alignItems: 'center',
+  },
+  qrModalSubtitle: {
+    fontSize: '13px',
+    color: '#64748b',
+    marginTop: '4px',
+  },
+  qrModalCloseBtn: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '50%',
+    border: 'none',
+    background: 'transparent',
+    color: '#64748b',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    transition: 'all 0.3s ease',
+  },
+  qrModalBody: {
+    padding: '24px',
+  },
+  qrImageContainer: {
+    display: 'flex',
+    justifyContent: 'center',
+    marginBottom: '24px',
+  },
+  qrModalImage: {
+    width: '280px',
+    height: '280px',
+    borderRadius: '16px',
+    border: '3px solid #f1f5f9',
+    boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+  },
+  qrOfferDetails: {
+    background: '#f8fafc',
+    padding: '16px',
+    borderRadius: '12px',
+    marginBottom: '20px',
+  },
+  qrOfferRow: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '6px 0',
+    borderBottom: '1px solid #f1f5f9',
+    fontSize: '13px',
+  },
+  qrOfferLabel: {
+    color: '#94a3b8',
+    fontWeight: '500',
+  },
+  qrOfferValue: {
+    color: '#0f172a',
+    fontWeight: '500',
+    textAlign: 'right',
+  },
+  qrModalActions: {
+    display: 'flex',
+    gap: '8px',
+    justifyContent: 'center',
+    flexWrap: 'wrap',
+    marginBottom: '16px',
+  },
+  qrActionBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+    padding: '8px 16px',
+    borderRadius: '10px',
+    border: 'none',
+    fontSize: '13px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    transition: 'all 0.3s ease',
+  },
+  qrScanInstructions: {
+    textAlign: 'center',
+    padding: '12px',
+    background: '#f0f9ff',
+    borderRadius: '12px',
+    border: '1px solid #bae6fd',
+  },
+  // Pagination Styles
+  paginationWrapper: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    padding: '16px 20px',
+    borderTop: '1px solid #f1f5f9',
+    flexWrap: 'wrap',
+    gap: '12px',
+    background: 'rgba(255,255,255,0.4)',
+    borderRadius: '0 0 16px 16px',
+  },
+  paginationInfo: {
+    fontSize: '13px',
+    color: '#64748b',
+    fontWeight: '500',
+  },
+  paginationControls: {
+    display: 'flex',
+    gap: '4px',
+    alignItems: 'center',
+  },
+  paginationBtn: {
+    padding: '6px 10px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    color: '#475569',
+    cursor: 'pointer',
+    fontSize: '13px',
+    fontWeight: '500',
+    transition: 'all 0.2s ease',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minWidth: '36px',
+    height: '36px',
+  },
+  paginationNumberBtn: {
+    minWidth: '36px',
+    height: '36px',
+  },
+  paginationActive: {
+    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
+    color: '#fff',
+    borderColor: '#ff961a',
+  },
+  paginationBtnDisabled: {
+    opacity: 0.4,
+    cursor: 'not-allowed',
+  },
+  paginationPageSize: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    fontWeight: '500',
   },
 };

@@ -209,9 +209,7 @@ export default function Signup() {
       <div className="signup-wrapper">
         <div className="signup-card">
           <div className="brand-section">
-            <div className="brand-icon">
-              <span className="logo-text">tdc<span className="logo-dot">.</span></span>
-            </div>
+            
             <h2 className="brand-title">The Deft <span className="brand-suffix">Crew</span></h2>
             <p className="brand-subtitle">Create your account and join the network</p>
           </div>

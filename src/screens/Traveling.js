@@ -3,10 +3,8 @@ import {
   Send, Image as ImageIcon, MapPin, Plus, Trash2, 
   Edit3, X, Search, Briefcase,  
   Sparkles, Globe, DollarSign,  
-  TrendingUp, Calendar, Users, Star, 
-  ChevronRight, Award, Clock, Shield,
-  Package, Plane, Hotel, Utensils, Bus,
-  Grid, List, Filter, SlidersHorizontal
+  TrendingUp,  
+  Grid, List,  SlidersHorizontal
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 

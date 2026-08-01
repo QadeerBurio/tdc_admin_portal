@@ -24,7 +24,12 @@ import {
   FaCheckCircle,
   FaClock as FaClockIcon,
   FaCalendarCheck,
-  FaChartLine,
+  FaRocket,
+  FaUserCheck,
+  FaBuilding,
+  FaUserTie,
+  FaThumbsUp,
+  FaRegClock,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -47,14 +52,25 @@ const InterviewsManager = ({ token }) => {
     pending: 0,
     completed: 0,
     upcoming: 0,
+    today: 0,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(8);
+  const [itemsPerPage] = useState(10);
+  const [showToast, setShowToast] = useState(false);
+  const [toastMessage, setToastMessage] = useState("");
+  const [toastType, setToastType] = useState("success");
 
   useEffect(() => {
     fetchInterviews();
     fetchApplicationsForScheduling();
   }, []);
+
+  const showNotification = (message, type = "success") => {
+    setToastMessage(message);
+    setToastType(type);
+    setShowToast(true);
+    setTimeout(() => setShowToast(false), 3000);
+  };
 
   const fetchInterviews = async () => {
     try {
@@ -75,15 +91,25 @@ const InterviewsManager = ({ token }) => {
 
   const calculateStats = (data) => {
     const now = new Date();
+    const today = new Date(now);
+    today.setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayInterviews = data.filter(i => {
+      const date = new Date(i.interviewDate);
+      return i.status === "interview" && date >= today && date < tomorrow;
+    });
+
     const pending = data.filter(i => i.status === "interview" && new Date(i.interviewDate) > now).length;
     const completed = data.filter(i => i.status === "completed" || i.status === "hired").length;
-    const upcoming = data.filter(i => i.status === "interview" && new Date(i.interviewDate) > now).length;
 
     setStats({
       total: data.length,
       pending,
       completed,
-      upcoming,
+      upcoming: data.filter(i => i.status === "interview" && new Date(i.interviewDate) > now).length,
+      today: todayInterviews.length,
     });
   };
 
@@ -100,12 +126,12 @@ const InterviewsManager = ({ token }) => {
 
   const scheduleInterview = async () => {
     if (!selectedApplication) {
-      alert("Please select a candidate");
+      showNotification("Please select a candidate", "error");
       return;
     }
     
     if (!interviewDate) {
-      alert("Please select an interview date and time");
+      showNotification("Please select an interview date and time", "error");
       return;
     }
 
@@ -127,7 +153,7 @@ const InterviewsManager = ({ token }) => {
         }
       );
       
-      alert("Interview scheduled successfully!");
+      showNotification("Interview scheduled successfully!", "success");
       setShowScheduleModal(false);
       resetForm();
       fetchInterviews();
@@ -135,7 +161,7 @@ const InterviewsManager = ({ token }) => {
     } catch (err) {
       console.error("Error scheduling interview:", err);
       const errorMsg = err.response?.data?.message || err.response?.data?.error || "Failed to schedule interview";
-      alert(errorMsg);
+      showNotification(errorMsg, "error");
     } finally {
       setSubmitting(false);
     }
@@ -150,7 +176,7 @@ const InterviewsManager = ({ token }) => {
       try {
         const formattedDate = new Date(newDate.replace(' ', 'T'));
         if (isNaN(formattedDate.getTime())) {
-          alert("Invalid date format. Please use YYYY-MM-DD HH:MM");
+          showNotification("Invalid date format. Please use YYYY-MM-DD HH:MM", "error");
           setActionInProgress(null);
           return;
         }
@@ -163,11 +189,11 @@ const InterviewsManager = ({ token }) => {
           },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        alert("Interview rescheduled successfully");
+        showNotification("Interview rescheduled successfully", "success");
         fetchInterviews();
       } catch (err) {
         console.error("Error rescheduling:", err);
-        alert(err.response?.data?.message || "Failed to reschedule interview");
+        showNotification(err.response?.data?.message || "Failed to reschedule interview", "error");
       } finally {
         setActionInProgress(null);
       }
@@ -182,11 +208,11 @@ const InterviewsManager = ({ token }) => {
           `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/cancel/${interviewId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        alert("Interview cancelled successfully");
+        showNotification("Interview cancelled successfully", "success");
         fetchInterviews();
       } catch (err) {
         console.error("Error cancelling:", err);
-        alert(err.response?.data?.message || "Failed to cancel interview");
+        showNotification(err.response?.data?.message || "Failed to cancel interview", "error");
       } finally {
         setActionInProgress(null);
       }
@@ -203,11 +229,11 @@ const InterviewsManager = ({ token }) => {
           { feedback },
           { headers: { Authorization: `Bearer ${token}` } }
         );
-        alert("Interview marked as completed");
+        showNotification("Interview marked as completed", "success");
         fetchInterviews();
       } catch (err) {
         console.error("Error completing interview:", err);
-        alert(err.response?.data?.message || "Failed to complete interview");
+        showNotification(err.response?.data?.message || "Failed to complete interview", "error");
       } finally {
         setActionInProgress(null);
       }
@@ -221,8 +247,8 @@ const InterviewsManager = ({ token }) => {
     setMeetingLink("");
   };
 
-  const getStatusBadge = (status) => {
-    const colors = {
+  const getStatusConfig = (status) => {
+    const configs = {
       pending: { bg: "#fef3c7", color: "#d97706", icon: "⏳", label: "Pending" },
       reviewed: { bg: "#dbeafe", color: "#2563eb", icon: "👀", label: "Reviewed" },
       shortlisted: { bg: "#d1fae5", color: "#059669", icon: "⭐", label: "Shortlisted" },
@@ -231,7 +257,46 @@ const InterviewsManager = ({ token }) => {
       hired: { bg: "#d1fae5", color: "#059669", icon: "🎉", label: "Hired" },
       rejected: { bg: "#fee2e2", color: "#dc2626", icon: "❌", label: "Rejected" }
     };
-    return colors[status] || colors.pending;
+    return configs[status] || configs.pending;
+  };
+
+  const isUpcoming = (date) => {
+    return new Date(date) > new Date();
+  };
+
+  const isToday = (date) => {
+    const today = new Date();
+    const interviewDate = new Date(date);
+    return interviewDate.getDate() === today.getDate() &&
+           interviewDate.getMonth() === today.getMonth() &&
+           interviewDate.getFullYear() === today.getFullYear();
+  };
+
+  const formatDate = (date) => {
+    return new Date(date).toLocaleDateString(undefined, { 
+      month: 'short', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+  };
+
+  const formatTime = (date) => {
+    return new Date(date).toLocaleTimeString(undefined, {
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  };
+
+  const getTimeRemaining = (date) => {
+    const now = new Date();
+    const interviewDate = new Date(date);
+    const diff = interviewDate - now;
+    if (diff < 0) return "Past";
+    const hours = Math.floor(diff / (1000 * 60 * 60));
+    const minutes = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+    if (hours > 24) return `${Math.floor(hours / 24)} days`;
+    if (hours > 0) return `${hours}h ${minutes}m`;
+    return `${minutes}m`;
   };
 
   // Filter and search
@@ -239,9 +304,11 @@ const InterviewsManager = ({ token }) => {
     .filter(i => 
       i.fullName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       i.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      i.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase())
+      i.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      i.jobId?.department?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter(i => statusFilter ? i.status === statusFilter : true);
+    .filter(i => statusFilter ? i.status === statusFilter : true)
+    .sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate));
 
   // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -269,8 +336,6 @@ const InterviewsManager = ({ token }) => {
     </div>
   );
 
-  if (error) return <div style={styles.error}>{error}</div>;
-
   return (
     <motion.div
       initial={{ opacity: 0 }}
@@ -278,6 +343,26 @@ const InterviewsManager = ({ token }) => {
       transition={{ duration: 0.5 }}
       style={styles.container}
     >
+      {/* Toast Notification */}
+      <AnimatePresence>
+        {showToast && (
+          <motion.div
+            initial={{ opacity: 0, y: -50, x: "-50%" }}
+            animate={{ opacity: 1, y: 0, x: "-50%" }}
+            exit={{ opacity: 0, y: -50, x: "-50%" }}
+            style={{
+              ...styles.toast,
+              borderLeft: `4px solid ${toastType === "success" ? "#10b981" : "#ef4444"}`
+            }}
+          >
+            <span style={styles.toastIcon}>
+              {toastType === "success" ? "✅" : "❌"}
+            </span>
+            <span style={styles.toastMessage}>{toastMessage}</span>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
@@ -286,67 +371,95 @@ const InterviewsManager = ({ token }) => {
         style={styles.header}
       >
         <div style={styles.headerLeft}>
-          <div style={styles.headerIcon}>
-            <FaCalendarCheck />
+          <div style={styles.headerIconWrapper}>
+            <FaCalendarCheck size={24} />
           </div>
           <div>
-            <h1 style={styles.title}>Interviews</h1>
-            <p style={styles.subtitle}>Schedule and manage candidate interviews</p>
+            <h1 style={styles.title}>Interview Management</h1>
+            <p style={styles.subtitle}>Schedule, track, and manage candidate interviews</p>
           </div>
         </div>
         <motion.button
-          whileHover={{ scale: 1.05, y: -2 }}
-          whileTap={{ scale: 0.95 }}
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
           style={styles.scheduleBtn}
           onClick={() => setShowScheduleModal(true)}
         >
-          <FaPlus /> Schedule Interview
+          <FaPlus size={14} /> Schedule Interview
         </motion.button>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - 5 in one row */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
         style={styles.statsGrid}
       >
-        <div style={{ ...styles.statCard, borderLeft: "4px solid #3b82f6" }}>
-          <div style={{ ...styles.statIcon, background: "#eff6ff", color: "#3b82f6" }}>
-            <FaCalendarCheck />
+        <motion.div 
+          whileHover={{ y: -2 }}
+          style={styles.statCard}
+        >
+          <div style={styles.statIconWrapper}>
+            <FaCalendarCheck size={18} />
           </div>
-          <div>
-            <h3 style={styles.statValue}>{stats.total}</h3>
-            <p style={styles.statLabel}>Total Interviews</p>
+          <div style={styles.statContent}>
+            <span style={styles.statValue}>{stats.total}</span>
+            <span style={styles.statLabel}>Total</span>
           </div>
-        </div>
-        <div style={{ ...styles.statCard, borderLeft: "4px solid #8b5cf6" }}>
-          <div style={{ ...styles.statIcon, background: "#f3e8ff", color: "#8b5cf6" }}>
-            <FaClockIcon />
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -2 }}
+          style={styles.statCard}
+        >
+          <div style={styles.statIconWrapper}>
+            <FaRocket size={18} />
           </div>
-          <div>
-            <h3 style={styles.statValue}>{stats.upcoming}</h3>
-            <p style={styles.statLabel}>Upcoming</p>
+          <div style={styles.statContent}>
+            <span style={styles.statValue}>{stats.upcoming}</span>
+            <span style={styles.statLabel}>Upcoming</span>
           </div>
-        </div>
-        <div style={{ ...styles.statCard, borderLeft: "4px solid #f59e0b" }}>
-          <div style={{ ...styles.statIcon, background: "#fef3c7", color: "#f59e0b" }}>
-            <FaClock />
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -2 }}
+          style={styles.statCard}
+        >
+          <div style={styles.statIconWrapper}>
+            <FaThumbsUp size={18} />
           </div>
-          <div>
-            <h3 style={styles.statValue}>{stats.pending}</h3>
-            <p style={styles.statLabel}>Pending</p>
+          <div style={styles.statContent}>
+            <span style={styles.statValue}>{stats.today}</span>
+            <span style={styles.statLabel}>Today</span>
           </div>
-        </div>
-        <div style={{ ...styles.statCard, borderLeft: "4px solid #10b981" }}>
-          <div style={{ ...styles.statIcon, background: "#d1fae5", color: "#10b981" }}>
-            <FaCheckCircle />
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -2 }}
+          style={styles.statCard}
+        >
+          <div style={styles.statIconWrapper}>
+            <FaRegClock size={18} />
           </div>
-          <div>
-            <h3 style={styles.statValue}>{stats.completed}</h3>
-            <p style={styles.statLabel}>Completed</p>
+          <div style={styles.statContent}>
+            <span style={styles.statValue}>{stats.pending}</span>
+            <span style={styles.statLabel}>Pending</span>
           </div>
-        </div>
+        </motion.div>
+
+        <motion.div 
+          whileHover={{ y: -2 }}
+          style={styles.statCard}
+        >
+          <div style={styles.statIconWrapper}>
+            <FaCheckCircle size={18} />
+          </div>
+          <div style={styles.statContent}>
+            <span style={styles.statValue}>{stats.completed}</span>
+            <span style={styles.statLabel}>Completed</span>
+          </div>
+        </motion.div>
       </motion.div>
 
       {/* Filter Bar */}
@@ -357,52 +470,67 @@ const InterviewsManager = ({ token }) => {
         style={styles.filterBar}
       >
         <div style={styles.searchBox}>
-          <FaSearch style={styles.searchIcon} />
+          <FaSearch size={14} style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search by candidate name, email, or job..."
+            placeholder="Search by candidate, email, or position..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={styles.searchInput}
           />
+          {searchTerm && (
+            <button style={styles.clearSearch} onClick={() => setSearchTerm("")}>
+              <FaTimes size={12} />
+            </button>
+          )}
         </div>
         <div style={styles.filterGroup}>
-          <FaFilter style={styles.filterIcon} />
+          <FaFilter size={14} style={styles.filterIcon} />
           <select
             style={styles.filterSelect}
             value={statusFilter}
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="interview">Scheduled</option>
-            <option value="completed">Completed</option>
-            <option value="hired">Hired</option>
-            <option value="rejected">Rejected</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="reviewed">👀 Reviewed</option>
+            <option value="shortlisted">⭐ Shortlisted</option>
+            <option value="interview">🎯 Scheduled</option>
+            <option value="completed">✅ Completed</option>
+            <option value="hired">🎉 Hired</option>
+            <option value="rejected">❌ Rejected</option>
           </select>
         </div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          style={styles.clearBtn}
+          onClick={() => { setSearchTerm(""); setStatusFilter(""); }}
+        >
+          <FaTimes size={12} /> Clear
+        </motion.button>
       </motion.div>
 
       {/* Table */}
       {interviews.length === 0 ? (
         <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5 }}
           style={styles.emptyState}
         >
-          <FaCalendarAlt size={60} color="#cbd5e1" />
+          <div style={styles.emptyIcon}>
+            <FaCalendarAlt size={48} />
+          </div>
           <h3 style={styles.emptyTitle}>No Interviews Scheduled</h3>
-          <p style={styles.emptyText}>Get started by scheduling your first interview with a shortlisted candidate</p>
+          <p style={styles.emptyText}>Get started by scheduling your first interview</p>
           <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            style={styles.emptyScheduleBtn}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={styles.emptyBtn}
             onClick={() => setShowScheduleModal(true)}
           >
-            <FaPlus /> Schedule Your First Interview
+            <FaPlus /> Schedule Interview
           </motion.button>
         </motion.div>
       ) : (
@@ -412,139 +540,166 @@ const InterviewsManager = ({ token }) => {
           transition={{ duration: 0.5, delay: 0.3 }}
           style={styles.tableContainer}
         >
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHeader}>
-                <th>Candidate</th>
-                <th>Position</th>
-                <th>Interview Date</th>
-                <th>Meeting Link</th>
-                <th>Status</th>
-                <th>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((interview, index) => (
-                <motion.tr
-                  key={interview._id}
-                  initial={{ opacity: 0, y: 20 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.3, delay: index * 0.05 }}
-                  style={styles.tableRow}
-                  whileHover={{ backgroundColor: "#fafafa" }}
-                >
-                  <td>
-                    <div style={styles.candidateCell}>
-                      <div style={styles.candidateAvatar}>
-                        {interview.fullName?.charAt(0)}
-                      </div>
-                      <div>
-                        <div style={styles.candidateName}>{interview.fullName}</div>
-                        <div style={styles.candidateEmail}>
-                          <FaEnvelope size={10} /> {interview.email}
+          <div style={styles.tableHeader}>
+            <div style={styles.tableTitle}>
+              <FaUsers size={16} style={styles.tableTitleIcon} />
+              <span>All Interviews</span>
+              <span style={styles.tableCount}>{filteredInterviews.length}</span>
+            </div>
+          </div>
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHead}>
+                  <th style={{ minWidth: "220px" }}>Candidate</th>
+                  <th style={{ minWidth: "160px" }}>Position</th>
+                  <th style={{ minWidth: "180px" }}>Interview Date</th>
+                  <th style={{ minWidth: "120px" }}>Meeting</th>
+                  <th style={{ minWidth: "110px" }}>Status</th>
+                  <th style={{ minWidth: "240px" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((interview, index) => {
+                  const statusConfig = getStatusConfig(interview.status);
+                  const upcoming = isUpcoming(interview.interviewDate);
+                  const today = isToday(interview.interviewDate);
+                  
+                  return (
+                    <motion.tr
+                      key={interview._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.03 }}
+                      whileHover={{ backgroundColor: "#fafafa" }}
+                      style={styles.tableRow}
+                    >
+                      <td>
+                        <div style={styles.candidateCell}>
+                          <div style={styles.candidateAvatar}>
+                            {interview.fullName?.charAt(0) || "A"}
+                            {today && upcoming && <span style={styles.todayBadge}>Today</span>}
+                          </div>
+                          <div>
+                            <div style={styles.candidateName}>{interview.fullName}</div>
+                            <div style={styles.candidateEmail}>
+                              <FaEnvelope size={10} /> {interview.email}
+                            </div>
+                          </div>
                         </div>
-                        <div style={styles.candidatePhone}>
-                          <FaPhone size={10} /> {interview.phone}
+                      </td>
+                      <td>
+                        <div style={styles.jobTitle}>{interview.jobId?.title || "N/A"}</div>
+                        <div style={styles.jobDept}>
+                          <FaBuilding size={10} /> {interview.jobId?.department || ""}
                         </div>
-                      </div>
-                    </div>
-                  </td>
-                  <td>
-                    <div style={styles.jobTitle}>{interview.jobId?.title}</div>
-                    <div style={styles.jobDept}>{interview.jobId?.department}</div>
-                  </td>
-                  <td>
-                    {interview.interviewDate ? (
-                      <>
-                        <div style={styles.interviewDate}>
-                          <FaCalendarAlt size={12} /> {new Date(interview.interviewDate).toLocaleDateString()}
+                      </td>
+                      <td>
+                        {interview.interviewDate ? (
+                          <div>
+                            <div style={styles.interviewDate}>
+                              <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
+                            </div>
+                            <div style={styles.interviewTime}>
+                              <FaClock size={12} /> {formatTime(interview.interviewDate)}
+                            </div>
+                            {upcoming && (
+                              <div style={styles.timeRemaining}>
+                                <span style={styles.timeDot} /> {getTimeRemaining(interview.interviewDate)}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <span style={{ color: "#94a3b8" }}>Not scheduled</span>
+                        )}
+                      </td>
+                      <td>
+                        {interview.meetingLink ? (
+                          <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.meetingLink}>
+                            <FaVideo size={12} /> Join
+                          </a>
+                        ) : (
+                          <span style={{ color: "#94a3b8", fontSize: "12px" }}>No link</span>
+                        )}
+                      </td>
+                      <td>
+                        <span style={{
+                          ...styles.statusBadge,
+                          background: statusConfig.bg,
+                          color: statusConfig.color,
+                        }}>
+                          {statusConfig.icon} {statusConfig.label}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={styles.actionButtons}>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={styles.actionBtn}
+                            onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
+                            disabled={actionInProgress === interview._id}
+                          >
+                            {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaEdit size={12} />}
+                            Reschedule
+                          </motion.button>
+                          {interview.status !== "completed" && interview.status !== "hired" && (
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              style={{ ...styles.actionBtn, background: "#10b981", color: "#fff" }}
+                              onClick={() => completeInterview(interview._id, interview.fullName)}
+                              disabled={actionInProgress === interview._id}
+                            >
+                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaCheck size={12} />}
+                              Complete
+                            </motion.button>
+                          )}
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={{ ...styles.actionBtn, background: "#ef4444", color: "#fff" }}
+                            onClick={() => cancelInterview(interview._id, interview.fullName)}
+                            disabled={actionInProgress === interview._id}
+                          >
+                            {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaTrash size={12} />}
+                            Cancel
+                          </motion.button>
                         </div>
-                        <div style={styles.interviewTime}>
-                          <FaClock size={12} /> {new Date(interview.interviewDate).toLocaleTimeString()}
-                        </div>
-                      </>
-                    ) : (
-                      <span style={{ color: "#94a3b8" }}>Not scheduled</span>
-                    )}
-                  </td>
-                  <td>
-                    {interview.meetingLink ? (
-                      <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.meetingLink}>
-                        <FaVideo /> Join Meeting
-                        <FaExternalLinkAlt size={10} style={styles.externalIcon} />
-                      </a>
-                    ) : (
-                      <span style={{ color: "#94a3b8" }}>No link</span>
-                    )}
-                  </td>
-                  <td>
-                    <span style={{
-                      ...styles.statusBadge,
-                      background: getStatusBadge(interview.status).bg,
-                      color: getStatusBadge(interview.status).color
-                    }}>
-                      {getStatusBadge(interview.status).icon} {getStatusBadge(interview.status).label}
-                    </span>
-                  </td>
-                  <td>
-                    <div style={styles.actionButtons}>
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        style={styles.rescheduleBtn}
-                        onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
-                        disabled={actionInProgress === interview._id}
-                      >
-                        {actionInProgress === interview._id ? <FaSpinner className="spinner" /> : <FaEdit />}
-                        Reschedule
-                      </motion.button>
-                      {interview.status !== "completed" && interview.status !== "hired" && (
-                        <motion.button
-                          whileHover={{ scale: 1.05 }}
-                          whileTap={{ scale: 0.95 }}
-                          style={styles.completeBtn}
-                          onClick={() => completeInterview(interview._id, interview.fullName)}
-                          disabled={actionInProgress === interview._id}
-                        >
-                          {actionInProgress === interview._id ? <FaSpinner className="spinner" /> : <FaCheck />}
-                          Complete
-                        </motion.button>
-                      )}
-                      <motion.button
-                        whileHover={{ scale: 1.05 }}
-                        whileTap={{ scale: 0.95 }}
-                        style={styles.cancelBtn}
-                        onClick={() => cancelInterview(interview._id, interview.fullName)}
-                        disabled={actionInProgress === interview._id}
-                      >
-                        {actionInProgress === interview._id ? <FaSpinner className="spinner" /> : <FaTrash />}
-                        Cancel
-                      </motion.button>
-                    </div>
-                  </td>
-                </motion.tr>
-              ))}
-            </tbody>
-          </table>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
 
           {/* Pagination */}
           {filteredInterviews.length > itemsPerPage && (
             <div style={styles.pagination}>
-              <button
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
               >
-                <FaArrowLeft /> Previous
-              </button>
-              <span style={styles.pageInfo}>{currentPage} / {totalPages}</span>
-              <button
+                <FaArrowLeft size={12} /> Previous
+              </motion.button>
+              <div style={styles.pageInfo}>
+                <span style={styles.pageCurrent}>{currentPage}</span>
+                <span style={styles.pageSeparator}>/</span>
+                <span style={styles.pageTotal}>{totalPages}</span>
+              </div>
+              <motion.button
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
                 style={{ ...styles.pageBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
               >
-                Next <FaArrowRight />
-              </button>
+                Next <FaArrowRight size={12} />
+              </motion.button>
             </div>
           )}
         </motion.div>
@@ -561,9 +716,10 @@ const InterviewsManager = ({ token }) => {
             onClick={() => setShowScheduleModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
               style={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
@@ -573,12 +729,12 @@ const InterviewsManager = ({ token }) => {
                   <p style={styles.modalSubtitle}>Select a candidate and set up interview details</p>
                 </div>
                 <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   style={styles.modalCloseBtn}
                   onClick={() => setShowScheduleModal(false)}
                 >
-                  <FaTimes />
+                  <FaTimes size={18} />
                 </motion.button>
               </div>
 
@@ -588,7 +744,7 @@ const InterviewsManager = ({ token }) => {
                   <select
                     value={selectedApplication || ""}
                     onChange={(e) => setSelectedApplication(e.target.value)}
-                    style={styles.select}
+                    style={styles.formSelect}
                   >
                     <option value="">Choose a shortlisted candidate...</option>
                     {applications.map(app => (
@@ -598,7 +754,7 @@ const InterviewsManager = ({ token }) => {
                     ))}
                   </select>
                   {applications.length === 0 && (
-                    <p style={styles.hint}>No shortlisted candidates available. Please shortlist candidates first.</p>
+                    <p style={styles.formHint}>No shortlisted candidates available.</p>
                   )}
                 </div>
 
@@ -608,30 +764,30 @@ const InterviewsManager = ({ token }) => {
                     type="datetime-local"
                     value={interviewDate}
                     onChange={(e) => setInterviewDate(e.target.value)}
-                    style={styles.input}
+                    style={styles.formInput}
                     min={new Date().toISOString().slice(0, 16)}
                   />
                 </div>
 
                 <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Meeting Link (Zoom/Google Meet)</label>
+                  <label style={styles.formLabel}>Meeting Link</label>
                   <input
                     type="url"
                     placeholder="https://meet.google.com/... or https://zoom.us/j/..."
                     value={meetingLink}
                     onChange={(e) => setMeetingLink(e.target.value)}
-                    style={styles.input}
+                    style={styles.formInput}
                   />
                 </div>
 
                 <div style={styles.formGroup}>
                   <label style={styles.formLabel}>Interview Notes</label>
                   <textarea
-                    rows="4"
-                    placeholder="Add any notes or instructions for the candidate..."
+                    rows="3"
+                    placeholder="Add any notes or instructions..."
                     value={interviewNotes}
                     onChange={(e) => setInterviewNotes(e.target.value)}
-                    style={styles.textarea}
+                    style={styles.formTextarea}
                   />
                 </div>
               </div>
@@ -648,17 +804,17 @@ const InterviewsManager = ({ token }) => {
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
-                  style={styles.submitBtn}
+                  style={styles.submitModalBtn}
                   onClick={scheduleInterview}
                   disabled={submitting || applications.length === 0}
                 >
                   {submitting ? (
                     <>
-                      <FaSpinner className="spinner" /> Scheduling...
+                      <FaSpinner className="spinner" size={14} /> Scheduling...
                     </>
                   ) : (
                     <>
-                      <FaCalendarCheck /> Schedule Interview
+                      <FaCalendarCheck size={14} /> Schedule Interview
                     </>
                   )}
                 </motion.button>
@@ -675,41 +831,33 @@ const InterviewsManager = ({ token }) => {
             to { transform: rotate(360deg); }
           }
           @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
           }
 
           .spinner {
             animation: spin 1s linear infinite;
-            margin-right: 8px;
           }
-
-          .stat-card {
-            animation: fadeInUp 0.6s ease forwards;
-            opacity: 0;
-          }
-          .stat-card:nth-child(1) { animation-delay: 0.05s; }
-          .stat-card:nth-child(2) { animation-delay: 0.1s; }
-          .stat-card:nth-child(3) { animation-delay: 0.15s; }
-          .stat-card:nth-child(4) { animation-delay: 0.2s; }
 
           ::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
           }
           ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f5f9;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: #f9c349;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #e8a800;
+          }
+
+          input:focus, select:focus, textarea:focus {
+            border-color: #f9c349 !important;
+            outline: none !important;
           }
         `}
       </style>
@@ -719,10 +867,34 @@ const InterviewsManager = ({ token }) => {
 
 const styles = {
   container: {
-    padding: "24px",
-    maxWidth: "1400px",
-    margin: "0 auto",
+    padding: "24px 32px",
+    width: "100%",
     minHeight: "100vh",
+    background: "#f8fafc",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+  },
+  toast: {
+    position: "fixed",
+    top: "20px",
+    left: "50%",
+    transform: "translateX(-50%)",
+    padding: "12px 24px",
+    background: "#fff",
+    borderRadius: "12px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    zIndex: 9999,
+    border: "1px solid #e5e7eb",
+  },
+  toastIcon: {
+    fontSize: "18px",
+  },
+  toastMessage: {
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#0f172a",
   },
   loadingContainer: {
     display: "flex",
@@ -730,15 +902,16 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     height: "400px",
-    gap: "20px",
+    gap: "16px",
   },
   loadingText: {
-    fontSize: "16px",
+    fontSize: "14px",
     color: "#64748b",
     margin: 0,
+    fontWeight: "500",
   },
   loadingBar: {
-    width: "200px",
+    width: "180px",
     height: "4px",
     background: "#e5e7eb",
     borderRadius: "4px",
@@ -746,207 +919,253 @@ const styles = {
   },
   loadingProgress: {
     height: "100%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#f9c349",
     borderRadius: "4px",
-  },
-  error: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    height: "400px",
-    fontSize: "16px",
-    color: "#ef4444",
-    textAlign: "center",
-    padding: "20px",
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "32px",
+    marginBottom: "24px",
     flexWrap: "wrap",
-    gap: "16px",
+    gap: "12px",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
   },
-  headerIcon: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "16px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+  headerIconWrapper: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "12px",
+    background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "24px",
     color: "#fff",
   },
   title: {
-    fontSize: "28px",
+    fontSize: "24px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
-    letterSpacing: "-0.5px",
+    letterSpacing: "-0.3px",
   },
   subtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
-    marginTop: "4px",
+    marginTop: "2px",
   },
   scheduleBtn: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
-    color: "#fff",
+    background: "#f9c349",
+    color: "#0f172a",
     border: "none",
-    padding: "12px 24px",
-    borderRadius: "12px",
+    padding: "10px 20px",
+    borderRadius: "10px",
     display: "flex",
     alignItems: "center",
     gap: "8px",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "14px",
-    boxShadow: "0 4px 15px rgba(255, 150, 26, 0.3)",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
-    marginBottom: "28px",
+    gridTemplateColumns: "repeat(5, 1fr)",
+    gap: "12px",
+    marginBottom: "24px",
   },
   statCard: {
     background: "#fff",
-    padding: "20px",
-    borderRadius: "16px",
+    padding: "16px 20px",
+    borderRadius: "10px",
     display: "flex",
     alignItems: "center",
-    gap: "16px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
+    gap: "14px",
     border: "1px solid #e5e7eb",
-    transition: "all 0.3s ease",
-    cursor: "pointer",
+    transition: "all 0.2s ease",
+    cursor: "default",
   },
-  statIcon: {
-    width: "50px",
-    height: "50px",
-    borderRadius: "12px",
+  statIconWrapper: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "#f8fafc",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
+    color: "#f9c349",
     flexShrink: 0,
   },
+  statContent: {
+    display: "flex",
+    flexDirection: "column",
+  },
   statValue: {
-    fontSize: "26px",
+    fontSize: "22px",
     fontWeight: "700",
-    margin: 0,
     color: "#0f172a",
-    letterSpacing: "-0.5px",
   },
   statLabel: {
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b",
-    margin: "4px 0 0 0",
+    fontWeight: "500",
   },
   filterBar: {
     display: "flex",
-    gap: "12px",
-    marginBottom: "24px",
+    gap: "10px",
+    marginBottom: "20px",
     flexWrap: "wrap",
+    alignItems: "center",
   },
   searchBox: {
     flex: 1,
+    minWidth: "220px",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "12px 16px",
+    gap: "10px",
+    padding: "8px 14px",
     border: "1px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     background: "#fff",
-    transition: "all 0.3s ease",
-    minWidth: "200px",
+    transition: "all 0.2s ease",
   },
   searchIcon: {
     color: "#94a3b8",
-    fontSize: "14px",
   },
   searchInput: {
     flex: 1,
     border: "none",
     outline: "none",
-    fontSize: "14px",
+    fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
+    padding: "4px 0",
+  },
+  clearSearch: {
+    background: "none",
+    border: "none",
+    color: "#94a3b8",
+    cursor: "pointer",
+    padding: "2px",
   },
   filterGroup: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "0 16px",
+    gap: "8px",
+    padding: "0 14px",
     border: "1px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     background: "#fff",
+    minWidth: "140px",
   },
   filterIcon: {
     color: "#94a3b8",
-    fontSize: "14px",
   },
   filterSelect: {
-    padding: "12px 4px",
+    padding: "10px 4px",
     border: "none",
     outline: "none",
-    fontSize: "14px",
+    fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
     cursor: "pointer",
-    minWidth: "140px",
+    minWidth: "120px",
+    fontFamily: "'Inter', sans-serif",
+  },
+  clearBtn: {
+    padding: "8px 16px",
+    background: "#f1f5f9",
+    color: "#475569",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "13px",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   tableContainer: {
-    overflowX: "auto",
     background: "#fff",
-    borderRadius: "16px",
+    borderRadius: "12px",
     border: "1px solid #e5e7eb",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+    overflow: "hidden",
+  },
+  tableHeader: {
+    padding: "14px 20px",
+    borderBottom: "1px solid #e5e7eb",
+    background: "#f8fafc",
+  },
+  tableTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  tableTitleIcon: {
+    color: "#f9c349",
+  },
+  tableCount: {
+    background: "#e5e7eb",
+    padding: "2px 10px",
+    borderRadius: "12px",
+    fontSize: "12px",
+    fontWeight: "500",
+    color: "#475569",
+  },
+  tableWrapper: {
+    overflowX: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "1000px",
+    minWidth: "900px",
   },
-  tableHeader: {
+  tableHead: {
     borderBottom: "1px solid #e5e7eb",
     background: "#f8fafc",
     textAlign: "left",
-    fontWeight: "600",
-    color: "#475569",
-    fontSize: "12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
   },
   tableRow: {
     borderBottom: "1px solid #f1f5f9",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   candidateCell: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    padding: "4px 0",
+    padding: "10px 0",
   },
   candidateAvatar: {
-    width: "44px",
-    height: "44px",
+    width: "38px",
+    height: "38px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#fff",
-    fontSize: "18px",
+    fontSize: "15px",
     flexShrink: 0,
+    position: "relative",
+  },
+  todayBadge: {
+    position: "absolute",
+    top: "-4px",
+    right: "-8px",
+    fontSize: "7px",
+    background: "#10b981",
+    color: "#fff",
+    padding: "1px 6px",
+    borderRadius: "8px",
+    fontWeight: "600",
   },
   candidateName: {
     fontWeight: "600",
@@ -956,15 +1175,6 @@ const styles = {
   candidateEmail: {
     fontSize: "12px",
     color: "#64748b",
-    marginTop: "2px",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  candidatePhone: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    marginTop: "2px",
     display: "flex",
     alignItems: "center",
     gap: "4px",
@@ -972,157 +1182,168 @@ const styles = {
   jobTitle: {
     fontWeight: "500",
     color: "#0f172a",
-    fontSize: "14px",
+    fontSize: "13px",
   },
   jobDept: {
     fontSize: "12px",
     color: "#94a3b8",
-    marginTop: "2px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
   },
   interviewDate: {
     fontSize: "13px",
     color: "#0f172a",
-    marginBottom: "4px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
   },
   interviewTime: {
     fontSize: "12px",
-    color: "#10b981",
+    color: "#64748b",
     display: "flex",
     alignItems: "center",
     gap: "6px",
+    marginTop: "2px",
+  },
+  timeRemaining: {
+    fontSize: "11px",
+    color: "#f59e0b",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    marginTop: "2px",
+  },
+  timeDot: {
+    width: "4px",
+    height: "4px",
+    borderRadius: "50%",
+    background: "#f59e0b",
+    display: "inline-block",
   },
   meetingLink: {
-    color: "#3b82f6",
+    color: "#f9c349",
     textDecoration: "none",
     fontSize: "13px",
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     fontWeight: "500",
-    transition: "all 0.3s ease",
-  },
-  externalIcon: {
-    marginLeft: "2px",
+    transition: "all 0.2s ease",
   },
   statusBadge: {
-    padding: "4px 14px",
-    borderRadius: "20px",
+    padding: "4px 12px",
+    borderRadius: "16px",
     fontSize: "12px",
     fontWeight: "600",
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
   },
   actionButtons: {
     display: "flex",
     gap: "6px",
     flexWrap: "wrap",
   },
-  rescheduleBtn: {
-    padding: "6px 12px",
-    background: "#fef3c7",
+  actionBtn: {
+    padding: "5px 12px",
+    background: "#f1f5f9",
     border: "none",
     borderRadius: "8px",
-    color: "#d97706",
+    color: "#475569",
     fontSize: "12px",
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
     fontWeight: "500",
-    transition: "all 0.3s ease",
-  },
-  completeBtn: {
-    padding: "6px 12px",
-    background: "#d1fae5",
-    border: "none",
-    borderRadius: "8px",
-    color: "#059669",
-    fontSize: "12px",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
-  },
-  cancelBtn: {
-    padding: "6px 12px",
-    background: "#fee2e2",
-    border: "none",
-    borderRadius: "8px",
-    color: "#dc2626",
-    fontSize: "12px",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   pagination: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     gap: "16px",
-    padding: "20px",
+    padding: "14px 20px",
     borderTop: "1px solid #e5e7eb",
   },
   pageBtn: {
-    padding: "8px 20px",
+    padding: "6px 16px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
+    gap: "6px",
+    fontSize: "13px",
     fontWeight: "500",
     color: "#475569",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   pageInfo: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
     fontWeight: "500",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  pageCurrent: {
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  pageSeparator: {
+    color: "#94a3b8",
+  },
+  pageTotal: {
+    color: "#94a3b8",
   },
   emptyState: {
     textAlign: "center",
-    padding: "80px 20px",
+    padding: "60px 20px",
     background: "#fff",
-    borderRadius: "16px",
+    borderRadius: "12px",
     border: "1px solid #e5e7eb",
   },
+  emptyIcon: {
+    width: "72px",
+    height: "72px",
+    borderRadius: "50%",
+    background: "#f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    margin: "0 auto 16px",
+    color: "#94a3b8",
+  },
   emptyTitle: {
-    fontSize: "24px",
+    fontSize: "20px",
     fontWeight: "700",
     color: "#0f172a",
-    marginTop: "20px",
-    marginBottom: "8px",
+    margin: 0,
+    marginBottom: "6px",
   },
   emptyText: {
-    fontSize: "16px",
+    fontSize: "14px",
     color: "#64748b",
-    marginBottom: "24px",
+    marginBottom: "20px",
   },
-  emptyScheduleBtn: {
-    padding: "12px 24px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
-    color: "#fff",
+  emptyBtn: {
+    padding: "10px 24px",
+    background: "#f9c349",
+    color: "#0f172a",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "14px",
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    boxShadow: "0 4px 15px rgba(255, 150, 26, 0.3)",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   modalOverlay: {
     position: "fixed",
@@ -1130,8 +1351,8 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.6)",
-    backdropFilter: "blur(8px)",
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(4px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1139,35 +1360,34 @@ const styles = {
   },
   modalContent: {
     background: "#fff",
-    borderRadius: "24px",
-    maxWidth: "520px",
+    borderRadius: "16px",
+    maxWidth: "480px",
     width: "95%",
     maxHeight: "90vh",
     overflow: "hidden",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
   },
   modalHeader: {
-    padding: "24px 32px",
+    padding: "20px 24px",
     borderBottom: "1px solid #e5e7eb",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    background: "linear-gradient(135deg, #f8fafc 0%, #fff 100%)",
+    alignItems: "flex-start",
   },
   modalTitle: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
   },
   modalSubtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
-    marginTop: "4px",
+    marginTop: "2px",
   },
   modalCloseBtn: {
-    width: "40px",
-    height: "40px",
+    width: "32px",
+    height: "32px",
     borderRadius: "50%",
     border: "none",
     background: "#f1f5f9",
@@ -1176,96 +1396,100 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    flexShrink: 0,
   },
   modalBody: {
-    padding: "32px",
+    padding: "24px",
     overflowY: "auto",
   },
   formGroup: {
-    marginBottom: "20px",
+    marginBottom: "18px",
   },
   formLabel: {
     display: "block",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "6px",
+    marginBottom: "4px",
   },
-  select: {
+  formSelect: {
     width: "100%",
-    padding: "12px 16px",
+    padding: "10px 14px",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
+    borderRadius: "8px",
+    fontSize: "13px",
     backgroundColor: "#fff",
     color: "#0f172a",
     cursor: "pointer",
     outline: "none",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
-  input: {
+  formInput: {
     width: "100%",
-    padding: "12px 16px",
+    padding: "10px 14px",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
+    borderRadius: "8px",
+    fontSize: "13px",
     color: "#0f172a",
     outline: "none",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
-  textarea: {
+  formTextarea: {
     width: "100%",
-    padding: "12px 16px",
+    padding: "10px 14px",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
-    minHeight: "100px",
+    borderRadius: "8px",
+    fontSize: "13px",
+    minHeight: "80px",
     resize: "vertical",
     color: "#0f172a",
     outline: "none",
-    transition: "all 0.3s ease",
-    fontFamily: "inherit",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
-  hint: {
+  formHint: {
     fontSize: "12px",
     color: "#ef4444",
-    marginTop: "8px",
+    marginTop: "4px",
   },
   modalFooter: {
-    padding: "20px 32px",
+    padding: "16px 24px",
     borderTop: "1px solid #e5e7eb",
     display: "flex",
-    gap: "12px",
+    gap: "10px",
   },
   cancelModalBtn: {
     flex: 1,
-    padding: "12px",
+    padding: "10px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#475569",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
-  submitBtn: {
+  submitModalBtn: {
     flex: 1,
-    padding: "12px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
-    color: "#fff",
+    padding: "10px",
+    background: "#f9c349",
+    color: "#0f172a",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
+    fontSize: "13px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    boxShadow: "0 4px 15px rgba(255, 150, 26, 0.3)",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
 };
 

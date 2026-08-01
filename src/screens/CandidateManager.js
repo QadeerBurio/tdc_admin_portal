@@ -27,11 +27,12 @@ import {
   FaLinkedin,
   FaGithub,
   FaFilePdf,
-  FaHeart,
-  FaHeartBroken,
   FaChartLine,
-  FaTrophy,
-  FaAward,
+  FaThumbsUp,
+  FaUserCheck,
+  FaClock as FaClockIcon,
+  FaSort,
+  FaBuilding,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -48,7 +49,6 @@ const CandidatesManager = ({ token }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
   const [sortBy, setSortBy] = useState("recent");
-  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchCandidates();
@@ -188,14 +188,13 @@ const CandidatesManager = ({ token }) => {
       return valB - valA;
     });
 
-  // Pagination
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentItems = filteredCandidates.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredCandidates.length / itemsPerPage);
 
-  const getStatusBadge = (status) => {
-    const colors = {
+  const getStatusConfig = (status) => {
+    const configs = {
       pending: { bg: "#fef3c7", color: "#d97706", icon: "⏳", label: "Pending" },
       reviewed: { bg: "#dbeafe", color: "#2563eb", icon: "👀", label: "Reviewed" },
       shortlisted: { bg: "#d1fae5", color: "#059669", icon: "⭐", label: "Shortlisted" },
@@ -203,7 +202,7 @@ const CandidatesManager = ({ token }) => {
       rejected: { bg: "#fee2e2", color: "#dc2626", icon: "❌", label: "Rejected" },
       hired: { bg: "#d1fae5", color: "#059669", icon: "✅", label: "Hired" }
     };
-    return colors[status] || colors.pending;
+    return configs[status] || configs.pending;
   };
 
   const getStatusStats = () => {
@@ -213,6 +212,20 @@ const CandidatesManager = ({ token }) => {
     });
     return stats;
   };
+
+  const totalStats = {
+    total: candidates.length,
+    ...getStatusStats()
+  };
+
+  const statItems = [
+    { key: 'total', icon: <FaUsers />, label: 'Total' },
+    { key: 'pending', icon: <FaClockIcon />, label: 'Pending' },
+    { key: 'reviewed', icon: <FaEye />, label: 'Reviewed' },
+    { key: 'shortlisted', icon: <FaStar />, label: 'Shortlisted' },
+    { key: 'interview', icon: <FaUserCheck />, label: 'Interview' },
+    { key: 'hired', icon: <FaCheckCircle />, label: 'Hired' },
+  ];
 
   if (loading) return (
     <div style={styles.loadingContainer}>
@@ -250,29 +263,31 @@ const CandidatesManager = ({ token }) => {
       >
         <div style={styles.headerLeft}>
           <div style={styles.headerIcon}>
-            <FaUsers />
+            <FaUsers size={24} />
           </div>
           <div>
             <h1 style={styles.title}>Candidates</h1>
-            <p style={styles.subtitle}>Review and manage job applicants</p>
+            <p style={styles.subtitle}>
+              {totalStats.total} candidates • {totalStats.pending || 0} pending review
+            </p>
           </div>
         </div>
         <div style={styles.headerActions}>
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             style={styles.exportBtn}
             onClick={exportCandidates}
           >
-            <FaDownload /> Export
+            <FaDownload size={14} /> Export
           </motion.button>
           <motion.button
-            whileHover={{ scale: 1.05, y: -2 }}
-            whileTap={{ scale: 0.95 }}
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
             style={styles.refreshBtn}
             onClick={fetchCandidates}
           >
-            <FaSpinner /> Refresh
+            <FaSpinner size={14} /> Refresh
           </motion.button>
           {selectedCandidates.length > 0 && (
             <motion.button
@@ -281,7 +296,7 @@ const CandidatesManager = ({ token }) => {
               style={styles.bulkBtn}
               onClick={() => setShowBulkActions(!showBulkActions)}
             >
-              Bulk Actions ({selectedCandidates.length})
+              <FaUsers size={14} /> {selectedCandidates.length} Selected
               <FaChevronDown size={12} />
             </motion.button>
           )}
@@ -293,19 +308,23 @@ const CandidatesManager = ({ token }) => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        style={styles.statsContainer}
+        style={styles.statsGrid}
       >
-        {Object.entries(getStatusStats()).map(([status, count]) => (
+        {statItems.map((stat, index) => (
           <motion.div
-            key={status}
-            whileHover={{ scale: 1.05, y: -5 }}
-            whileTap={{ scale: 0.95 }}
-            style={{ ...styles.statCard, ...styles[`stat${status.charAt(0).toUpperCase() + status.slice(1)}`] }}
+            key={stat.key}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.3, delay: 0.05 * (index + 1) }}
+            whileHover={{ y: -2 }}
+            style={styles.statCard}
           >
-            <div style={styles.statIcon}>{getStatusBadge(status).icon}</div>
-            <div style={styles.statInfo}>
-              <div style={styles.statCount}>{count}</div>
-              <div style={styles.statLabel}>{getStatusBadge(status).label}</div>
+            <div style={styles.statIcon}>
+              {stat.icon}
+            </div>
+            <div>
+              <div style={styles.statValue}>{totalStats[stat.key] || 0}</div>
+              <div style={styles.statLabel}>{stat.label}</div>
             </div>
           </motion.div>
         ))}
@@ -315,56 +334,36 @@ const CandidatesManager = ({ token }) => {
       <AnimatePresence>
         {showBulkActions && selectedCandidates.length > 0 && (
           <motion.div
-            initial={{ opacity: 0, height: 0, y: -20 }}
-            animate={{ opacity: 1, height: "auto", y: 0 }}
-            exit={{ opacity: 0, height: 0, y: -20 }}
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
             style={styles.bulkActions}
           >
+            <span style={styles.bulkTitle}>Update Selected: </span>
+            {['shortlisted', 'interview', 'rejected', 'hired'].map(status => (
+              <motion.button
+                key={status}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+                style={{ ...styles.bulkActionBtn }}
+                onClick={() => bulkUpdateStatus(status)}
+              >
+                {getStatusConfig(status).icon} {status.charAt(0).toUpperCase() + status.slice(1)}
+              </motion.button>
+            ))}
             <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ ...styles.bulkActionBtn, background: "#059669" }}
-              onClick={() => bulkUpdateStatus("shortlisted")}
-            >
-              <FaStar /> Shortlist
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ ...styles.bulkActionBtn, background: "#7c3aed" }}
-              onClick={() => bulkUpdateStatus("interview")}
-            >
-              <FaCalendarAlt /> Interview
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ ...styles.bulkActionBtn, background: "#dc2626" }}
-              onClick={() => bulkUpdateStatus("rejected")}
-            >
-              <FaTimes /> Reject
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ ...styles.bulkActionBtn, background: "#059669" }}
-              onClick={() => bulkUpdateStatus("hired")}
-            >
-              <FaCheckCircle /> Hire
-            </motion.button>
-            <motion.button
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-              style={{ ...styles.bulkActionBtn, background: "#64748b" }}
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ ...styles.bulkActionBtn, background: "#e5e7eb", color: "#475569" }}
               onClick={() => { setSelectedCandidates([]); setShowBulkActions(false); }}
             >
-              Cancel
+              <FaTimes size={12} /> Cancel
             </motion.button>
           </motion.div>
         )}
       </AnimatePresence>
 
-      {/* Filters */}
+      {/* Filter Bar */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -375,11 +374,16 @@ const CandidatesManager = ({ token }) => {
           <FaSearch style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search candidates by name, email, or job..."
+            placeholder="Search by name, email, or position..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={styles.searchInput}
           />
+          {search && (
+            <button style={styles.clearSearch} onClick={() => setSearch("")}>
+              <FaTimes size={12} />
+            </button>
+          )}
         </div>
         <div style={styles.filterGroup}>
           <FaFilter style={styles.filterIcon} />
@@ -389,27 +393,35 @@ const CandidatesManager = ({ token }) => {
             onChange={(e) => setStatusFilter(e.target.value)}
           >
             <option value="">All Status</option>
-            <option value="pending">Pending</option>
-            <option value="reviewed">Reviewed</option>
-            <option value="shortlisted">Shortlisted</option>
-            <option value="interview">Interview</option>
-            <option value="rejected">Rejected</option>
-            <option value="hired">Hired</option>
+            <option value="pending">⏳ Pending</option>
+            <option value="reviewed">👀 Reviewed</option>
+            <option value="shortlisted">⭐ Shortlisted</option>
+            <option value="interview">🎯 Interview</option>
+            <option value="rejected">❌ Rejected</option>
+            <option value="hired">✅ Hired</option>
           </select>
         </div>
         <div style={styles.filterGroup}>
-          <FaChartLine style={styles.filterIcon} />
+          <FaSort style={styles.filterIcon} />
           <select
             style={styles.filterSelect}
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
             <option value="recent">Most Recent</option>
-            <option value="oldest">Oldest</option>
+            <option value="oldest">Oldest First</option>
             <option value="name">By Name</option>
             <option value="experience">By Experience</option>
           </select>
         </div>
+        <motion.button
+          whileHover={{ scale: 1.02 }}
+          whileTap={{ scale: 0.98 }}
+          style={styles.clearBtn}
+          onClick={() => { setSearch(""); setStatusFilter(""); setSortBy("recent"); }}
+        >
+          <FaTimes size={12} /> Clear
+        </motion.button>
       </motion.div>
 
       {/* Table */}
@@ -419,148 +431,165 @@ const CandidatesManager = ({ token }) => {
         transition={{ duration: 0.5, delay: 0.3 }}
         style={styles.tableContainer}
       >
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={{ width: "40px", padding: "16px 12px" }}>
-                <input
-                  type="checkbox"
-                  checked={selectAll}
-                  onChange={handleSelectAll}
-                  style={styles.checkbox}
-                />
-              </th>
-              <th style={{ minWidth: "250px" }}>Candidate</th>
-              <th style={{ minWidth: "180px" }}>Position</th>
-              <th style={{ minWidth: "100px" }}>Experience</th>
-              <th style={{ minWidth: "120px" }}>Applied</th>
-              <th style={{ minWidth: "130px" }}>Status</th>
-              <th style={{ minWidth: "220px" }}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((candidate, index) => (
-              <motion.tr
-                key={candidate._id}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.3, delay: index * 0.05 }}
-                style={styles.tableRow}
-                whileHover={{ backgroundColor: "#fafafa", scale: 1.002 }}
-              >
-                <td style={{ padding: "12px" }}>
+        <div style={styles.tableHeader}>
+          <div style={styles.tableTitle}>
+            <FaUsers size={16} />
+            <span>All Candidates</span>
+            <span style={styles.tableCount}>{filteredCandidates.length}</span>
+          </div>
+        </div>
+        <div style={styles.tableWrapper}>
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.tableHead}>
+                <th style={{ width: "40px" }}>
                   <input
                     type="checkbox"
-                    checked={selectedCandidates.includes(candidate._id)}
-                    onChange={() => toggleSelectCandidate(candidate._id)}
+                    checked={selectAll}
+                    onChange={handleSelectAll}
                     style={styles.checkbox}
                   />
-                </td>
-                <td>
-                  <div style={styles.candidateCell}>
-                    <div style={styles.candidateAvatar}>
-                      {candidate.fullName?.charAt(0)}
-                    </div>
-                    <div>
-                      <div style={styles.candidateName}>{candidate.fullName}</div>
-                      <div style={styles.candidateEmail}>
-                        <FaEnvelope size={10} /> {candidate.email}
+                </th>
+                <th style={{ minWidth: "240px" }}>Candidate</th>
+                <th style={{ minWidth: "170px" }}>Position</th>
+                <th style={{ minWidth: "100px" }}>Experience</th>
+                <th style={{ minWidth: "110px" }}>Applied</th>
+                <th style={{ minWidth: "120px" }}>Status</th>
+                <th style={{ minWidth: "190px" }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {currentItems.map((candidate, index) => {
+                const statusConfig = getStatusConfig(candidate.status);
+                return (
+                  <motion.tr
+                    key={candidate._id}
+                    initial={{ opacity: 0, y: 10 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.3, delay: index * 0.03 }}
+                    whileHover={{ backgroundColor: "#fafafa" }}
+                    style={styles.tableRow}
+                  >
+                    <td>
+                      <input
+                        type="checkbox"
+                        checked={selectedCandidates.includes(candidate._id)}
+                        onChange={() => toggleSelectCandidate(candidate._id)}
+                        style={styles.checkbox}
+                      />
+                    </td>
+                    <td>
+                      <div style={styles.candidateCell}>
+                        <div style={styles.candidateAvatar}>
+                          {candidate.fullName?.charAt(0) || "A"}
+                        </div>
+                        <div>
+                          <div style={styles.candidateName}>{candidate.fullName}</div>
+                          <div style={styles.candidateEmail}>
+                            <FaEnvelope size={10} /> {candidate.email}
+                          </div>
+                        </div>
                       </div>
-                      <div style={styles.candidatePhone}>
-                        <FaPhone size={10} /> {candidate.phone}
+                    </td>
+                    <td>
+                      <div style={styles.jobTitle}>{candidate.jobId?.title || "N/A"}</div>
+                      <div style={styles.jobDept}>
+                        <FaBuilding size={10} /> {candidate.jobId?.department || ""}
                       </div>
-                    </div>
-                  </div>
-                </td>
-                <td>
-                  <div style={styles.jobTitle}>{candidate.jobId?.title}</div>
-                  <div style={styles.jobDept}>{candidate.jobId?.department}</div>
-                </td>
-                <td>
-                  <div style={styles.experienceBadge}>
-                    <FaBriefcase size={12} /> {candidate.yearsOfExperience} yrs
-                  </div>
-                </td>
-                <td>
-                  <div style={styles.dateBadge}>
-                    <FaCalendarAlt size={12} /> {new Date(candidate.appliedAt).toLocaleDateString()}
-                  </div>
-                </td>
-                <td>
-                  <span style={{
-                    ...styles.statusBadge,
-                    background: getStatusBadge(candidate.status).bg,
-                    color: getStatusBadge(candidate.status).color
-                  }}>
-                    {getStatusBadge(candidate.status).icon} {getStatusBadge(candidate.status).label}
-                  </span>
-                </td>
-                <td>
-                  <div style={styles.actionGroup}>
-                    <select
-                      style={styles.statusSelect}
-                      value={candidate.status}
-                      onChange={(e) => updateStatus(candidate._id, e.target.value)}
-                    >
-                      <option value="pending">Pending</option>
-                      <option value="reviewed">Reviewed</option>
-                      <option value="shortlisted">Shortlisted</option>
-                      <option value="interview">Interview</option>
-                      <option value="rejected">Rejected</option>
-                      <option value="hired">Hired</option>
-                    </select>
-                    <motion.button
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      style={styles.viewBtn}
-                      onClick={() => viewCandidateDetails(candidate._id)}
-                    >
-                      <FaEye /> View
-                    </motion.button>
-                  </div>
-                </td>
-              </motion.tr>
-            ))}
-          </tbody>
-        </table>
+                    </td>
+                    <td>
+                      <div style={styles.experienceBadge}>
+                        <FaBriefcase size={12} /> {candidate.yearsOfExperience || 0}y
+                      </div>
+                    </td>
+                    <td>
+                      <div style={styles.dateBadge}>
+                        <FaCalendarAlt size={12} /> {new Date(candidate.appliedAt).toLocaleDateString()}
+                      </div>
+                    </td>
+                    <td>
+                      <span style={{
+                        ...styles.statusBadge,
+                        background: statusConfig.bg,
+                        color: statusConfig.color,
+                      }}>
+                        {statusConfig.icon} {statusConfig.label}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={styles.actionGroup}>
+                        <select
+                          style={styles.statusSelect}
+                          value={candidate.status}
+                          onChange={(e) => updateStatus(candidate._id, e.target.value)}
+                        >
+                          <option value="pending">Pending</option>
+                          <option value="reviewed">Reviewed</option>
+                          <option value="shortlisted">Shortlisted</option>
+                          <option value="interview">Interview</option>
+                          <option value="rejected">Rejected</option>
+                          <option value="hired">Hired</option>
+                        </select>
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          style={styles.viewBtn}
+                          onClick={() => viewCandidateDetails(candidate._id)}
+                        >
+                          <FaEye size={12} /> View
+                        </motion.button>
+                      </div>
+                    </td>
+                  </motion.tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
         {filteredCandidates.length === 0 && (
-          <div style={styles.emptyState}>
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            style={styles.emptyState}
+          >
             <FaUsers size={50} color="#cbd5e1" />
-            <p style={styles.emptyText}>No candidates found matching your criteria</p>
+            <p style={styles.emptyText}>No candidates found</p>
+            <p style={styles.emptySubtext}>Try adjusting your search or filters</p>
             <button style={styles.emptyBtn} onClick={() => { setSearch(""); setStatusFilter(""); }}>
               Clear Filters
             </button>
+          </motion.div>
+        )}
+
+        {/* Pagination */}
+        {filteredCandidates.length > itemsPerPage && (
+          <div style={styles.pagination}>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
+              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
+              disabled={currentPage === 1}
+            >
+              <FaArrowLeft size={12} /> Previous
+            </motion.button>
+            <div style={styles.pageInfo}>
+              <span style={styles.pageCurrent}>{currentPage}</span>
+              <span style={styles.pageSeparator}>/</span>
+              <span style={styles.pageTotal}>{totalPages}</span>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={{ ...styles.pageBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
+              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
+              disabled={currentPage === totalPages}
+            >
+              Next <FaArrowRight size={12} />
+            </motion.button>
           </div>
         )}
       </motion.div>
-
-      {/* Pagination */}
-      {filteredCandidates.length > itemsPerPage && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.4 }}
-          style={styles.pagination}
-        >
-          <button
-            style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
-            onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-            disabled={currentPage === 1}
-          >
-            <FaArrowLeft /> Previous
-          </button>
-          <div style={styles.pageInfo}>
-            Page {currentPage} of {totalPages}
-          </div>
-          <button
-            style={{ ...styles.pageBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
-            onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-            disabled={currentPage === totalPages}
-          >
-            Next <FaArrowRight />
-          </button>
-        </motion.div>
-      )}
 
       {/* Candidate Details Modal */}
       <AnimatePresence>
@@ -573,54 +602,66 @@ const CandidatesManager = ({ token }) => {
             onClick={() => setShowDetailsModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
               style={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
                   <div style={styles.modalAvatar}>
-                    {selectedCandidate.fullName?.charAt(0)}
+                    {selectedCandidate.fullName?.charAt(0) || "A"}
                   </div>
                   <div>
                     <h2 style={styles.modalTitle}>{selectedCandidate.fullName}</h2>
                     <p style={styles.modalSubtitle}>
-                      {selectedCandidate.jobId?.title} • {selectedCandidate.jobId?.department}
+                      {selectedCandidate.jobId?.title || "Position"} • {selectedCandidate.jobId?.department || ""}
                     </p>
+                    <span style={{
+                      ...styles.modalStatusBadge,
+                      background: getStatusConfig(selectedCandidate.status).bg,
+                      color: getStatusConfig(selectedCandidate.status).color,
+                    }}>
+                      {getStatusConfig(selectedCandidate.status).icon} {getStatusConfig(selectedCandidate.status).label}
+                    </span>
                   </div>
                 </div>
                 <motion.button
-                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileHover={{ scale: 1.1 }}
                   whileTap={{ scale: 0.9 }}
                   style={styles.modalCloseBtn}
                   onClick={() => setShowDetailsModal(false)}
                 >
-                  <FaTimes />
+                  <FaTimes size={20} />
                 </motion.button>
               </div>
 
               <div style={styles.modalBody}>
                 <div style={styles.modalStats}>
                   <div style={styles.modalStat}>
-                    <FaBriefcase />
-                    <span>{selectedCandidate.yearsOfExperience} Years Experience</span>
+                    <FaBriefcase size={16} />
+                    <span>{selectedCandidate.yearsOfExperience || 0} Years Experience</span>
                   </div>
                   <div style={styles.modalStat}>
-                    <FaCalendarAlt />
+                    <FaCalendarAlt size={16} />
                     <span>Applied {new Date(selectedCandidate.appliedAt).toLocaleDateString()}</span>
                   </div>
                   <div style={styles.modalStat}>
-                    <FaMapMarkerAlt />
+                    <FaMapMarkerAlt size={16} />
                     <span>{selectedCandidate.address || "Location not specified"}</span>
+                  </div>
+                  <div style={styles.modalStat}>
+                    <FaMoneyBillWave size={16} />
+                    <span>{selectedCandidate.expectedSalary || "Salary not specified"}</span>
                   </div>
                 </div>
 
                 <div style={styles.modalGrid}>
                   <div style={styles.modalSection}>
                     <h3 style={styles.sectionTitle}>
-                      <FaUserCircle /> Personal Information
+                      <FaUserCircle size={16} /> Personal Information
                     </h3>
                     <div style={styles.infoGrid}>
                       <div style={styles.infoItem}>
@@ -640,19 +681,19 @@ const CandidatesManager = ({ token }) => {
                         <span>{selectedCandidate.currentPosition || "N/A"}</span>
                       </div>
                       <div style={styles.infoItem}>
-                        <label>Expected Salary</label>
-                        <span>{selectedCandidate.expectedSalary || "N/A"}</span>
-                      </div>
-                      <div style={styles.infoItem}>
                         <label>Notice Period</label>
                         <span>{selectedCandidate.noticePeriod || "N/A"}</span>
+                      </div>
+                      <div style={styles.infoItem}>
+                        <label>Work Authorization</label>
+                        <span>{selectedCandidate.workAuthorization || "N/A"}</span>
                       </div>
                     </div>
                   </div>
 
                   <div style={styles.modalSection}>
                     <h3 style={styles.sectionTitle}>
-                      <FaGraduationCap /> Education & Skills
+                      <FaGraduationCap size={16} /> Education & Skills
                     </h3>
                     <div style={styles.infoGrid}>
                       <div style={styles.infoItem}>
@@ -660,17 +701,18 @@ const CandidatesManager = ({ token }) => {
                         <span>{selectedCandidate.education || "N/A"}</span>
                       </div>
                       <div style={styles.infoItem}>
-                        <label>Work Authorization</label>
-                        <span>{selectedCandidate.workAuthorization || "N/A"}</span>
+                        <label>Skills</label>
+                        <div style={styles.skillsContainer}>
+                          {selectedCandidate.skills?.length > 0 ? (
+                            selectedCandidate.skills.map((skill, i) => (
+                              <span key={i} style={styles.skillTag}>{skill}</span>
+                            ))
+                          ) : (
+                            <span style={styles.noSkills}>No skills listed</span>
+                          )}
+                        </div>
                       </div>
                     </div>
-                    {selectedCandidate.skills && selectedCandidate.skills.length > 0 && (
-                      <div style={styles.skillsContainer}>
-                        {selectedCandidate.skills.map((skill, i) => (
-                          <span key={i} style={styles.skillTag}>{skill}</span>
-                        ))}
-                      </div>
-                    )}
                   </div>
                 </div>
 
@@ -686,22 +728,22 @@ const CandidatesManager = ({ token }) => {
                 <div style={styles.modalLinks}>
                   {selectedCandidate.portfolioUrl && (
                     <a href={selectedCandidate.portfolioUrl} target="_blank" style={styles.modalLink}>
-                      <FaGlobe /> Portfolio
+                      <FaGlobe size={14} /> Portfolio
                     </a>
                   )}
                   {selectedCandidate.linkedInUrl && (
                     <a href={selectedCandidate.linkedInUrl} target="_blank" style={styles.modalLink}>
-                      <FaLinkedin /> LinkedIn
+                      <FaLinkedin size={14} /> LinkedIn
                     </a>
                   )}
                   {selectedCandidate.githubUrl && (
                     <a href={selectedCandidate.githubUrl} target="_blank" style={styles.modalLink}>
-                      <FaGithub /> GitHub
+                      <FaGithub size={14} /> GitHub
                     </a>
                   )}
                   {selectedCandidate.resumeUrl && (
                     <a href={selectedCandidate.resumeUrl} target="_blank" style={styles.modalLink}>
-                      <FaFilePdf /> Resume
+                      <FaFilePdf size={14} /> Resume
                     </a>
                   )}
                 </div>
@@ -734,53 +776,34 @@ const CandidatesManager = ({ token }) => {
 
       <style>
         {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
           @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
+            from { opacity: 0; transform: translateY(10px); }
             to { opacity: 1; transform: translateY(0); }
           }
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0px); }
-          }
-
-          .stat-card {
-            animation: fadeInUp 0.6s ease forwards;
-            opacity: 0;
-          }
-          .stat-card:nth-child(1) { animation-delay: 0.05s; }
-          .stat-card:nth-child(2) { animation-delay: 0.1s; }
-          .stat-card:nth-child(3) { animation-delay: 0.15s; }
-          .stat-card:nth-child(4) { animation-delay: 0.2s; }
-          .stat-card:nth-child(5) { animation-delay: 0.25s; }
-          .stat-card:nth-child(6) { animation-delay: 0.3s; }
 
           ::-webkit-scrollbar {
             width: 6px;
+            height: 6px;
           }
           ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f5f9;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: #f9c349;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #e8a800;
+          }
+
+          input:focus, select:focus {
+            border-color: #f9c349 !important;
+            outline: none !important;
           }
         `}
       </style>
@@ -790,10 +813,11 @@ const CandidatesManager = ({ token }) => {
 
 const styles = {
   container: {
-    padding: "24px",
-    maxWidth: "1400px",
-    margin: "0 auto",
+    padding: "24px 32px",
+    width: "100%",
     minHeight: "100vh",
+    background: "#f8fafc",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
   },
   loadingContainer: {
     display: "flex",
@@ -801,15 +825,16 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     height: "400px",
-    gap: "20px",
+    gap: "16px",
   },
   loadingText: {
-    fontSize: "16px",
+    fontSize: "14px",
     color: "#64748b",
     margin: 0,
+    fontWeight: "500",
   },
   loadingBar: {
-    width: "200px",
+    width: "180px",
     height: "4px",
     background: "#e5e7eb",
     borderRadius: "4px",
@@ -817,48 +842,47 @@ const styles = {
   },
   loadingProgress: {
     height: "100%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#f9c349",
     borderRadius: "4px",
   },
   header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "32px",
+    marginBottom: "24px",
     flexWrap: "wrap",
-    gap: "16px",
+    gap: "12px",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
   },
   headerIcon: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "16px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    width: "48px",
+    height: "48px",
+    borderRadius: "12px",
+    background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "24px",
     color: "#fff",
   },
   title: {
-    fontSize: "28px",
+    fontSize: "24px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
-    letterSpacing: "-0.5px",
+    letterSpacing: "-0.3px",
   },
   subtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
-    marginTop: "4px",
+    marginTop: "2px",
   },
   headerActions: {
     display: "flex",
-    gap: "12px",
+    gap: "8px",
     alignItems: "center",
     flexWrap: "wrap",
   },
@@ -866,127 +890,131 @@ const styles = {
     background: "#0f172a",
     color: "#fff",
     border: "none",
-    padding: "10px 20px",
-    borderRadius: "12px",
+    padding: "8px 16px",
+    borderRadius: "8px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
-    transition: "all 0.3s ease",
+    fontSize: "13px",
+    transition: "all 0.2s ease",
   },
   refreshBtn: {
-    background: "#f1f5f9",
+    background: "#fff",
     color: "#475569",
     border: "1px solid #e5e7eb",
-    padding: "10px 20px",
-    borderRadius: "12px",
+    padding: "8px 16px",
+    borderRadius: "8px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "14px",
-    transition: "all 0.3s ease",
+    fontSize: "13px",
+    transition: "all 0.2s ease",
   },
   bulkBtn: {
     background: "#f9c349",
     color: "#0f172a",
     border: "none",
-    padding: "10px 20px",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 4px 12px rgba(249, 195, 73, 0.3)",
-  },
-  statsContainer: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
-    gap: "12px",
-    marginBottom: "28px",
-  },
-  statCard: {
-    background: "#fff",
-    padding: "16px",
-    borderRadius: "14px",
-    boxShadow: "0 2px 4px rgba(0,0,0,0.03)",
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    border: "1px solid #e5e7eb",
-    transition: "all 0.3s ease",
-    cursor: "pointer",
-  },
-  statPending: { borderLeft: "4px solid #d97706" },
-  statReviewed: { borderLeft: "4px solid #2563eb" },
-  statShortlisted: { borderLeft: "4px solid #059669" },
-  statInterview: { borderLeft: "4px solid #7c3aed" },
-  statRejected: { borderLeft: "4px solid #dc2626" },
-  statHired: { borderLeft: "4px solid #059669" },
-  statIcon: {
-    fontSize: "24px",
-  },
-  statInfo: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  statCount: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  statLabel: {
-    fontSize: "12px",
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  bulkActions: {
-    display: "flex",
-    gap: "12px",
-    padding: "16px",
-    background: "#fff",
-    borderRadius: "14px",
-    marginBottom: "24px",
-    flexWrap: "wrap",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
-    border: "1px solid #e5e7eb",
-  },
-  bulkActionBtn: {
-    padding: "8px 18px",
-    border: "none",
-    borderRadius: "10px",
-    color: "#fff",
+    padding: "8px 16px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "13px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
-  filterBar: {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "24px",
-    flexWrap: "wrap",
+  statsGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
+    gap: "10px",
+    marginBottom: "20px",
   },
-  searchBox: {
-    flex: 1,
+  statCard: {
+    background: "#fff",
+    padding: "14px 18px",
+    borderRadius: "10px",
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    padding: "12px 16px",
     border: "1px solid #e5e7eb",
-    borderRadius: "12px",
+    transition: "all 0.2s ease",
+    cursor: "default",
+  },
+  statIcon: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "8px",
+    background: "#f8fafc",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#f9c349",
+    fontSize: "16px",
+    flexShrink: 0,
+  },
+  statValue: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  statLabel: {
+    fontSize: "11px",
+    color: "#64748b",
+    fontWeight: "500",
+  },
+  bulkActions: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "12px 18px",
     background: "#fff",
-    transition: "all 0.3s ease",
+    borderRadius: "10px",
+    marginBottom: "16px",
+    flexWrap: "wrap",
+    border: "1px solid #e5e7eb",
+  },
+  bulkTitle: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  bulkActionBtn: {
+    padding: "5px 12px",
+    border: "none",
+    borderRadius: "6px",
+    background: "#f9c349",
+    color: "#0f172a",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "12px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    transition: "all 0.2s ease",
+  },
+  filterBar: {
+    display: "flex",
+    gap: "8px",
+    marginBottom: "16px",
+    flexWrap: "wrap",
+    alignItems: "center",
+  },
+  searchBox: {
+    flex: 1,
     minWidth: "200px",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "8px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    background: "#fff",
+    transition: "all 0.2s ease",
   },
   searchIcon: {
     color: "#94a3b8",
@@ -996,82 +1024,124 @@ const styles = {
     flex: 1,
     border: "none",
     outline: "none",
-    fontSize: "14px",
+    fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
+    padding: "2px 0",
+  },
+  clearSearch: {
+    background: "none",
+    border: "none",
+    color: "#94a3b8",
+    cursor: "pointer",
+    padding: "2px",
   },
   filterGroup: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "0 16px",
+    gap: "6px",
+    padding: "0 12px",
     border: "1px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "8px",
     background: "#fff",
+    minWidth: "130px",
   },
   filterIcon: {
     color: "#94a3b8",
     fontSize: "14px",
   },
   filterSelect: {
-    padding: "12px 4px",
+    padding: "8px 4px",
     border: "none",
     outline: "none",
-    fontSize: "14px",
+    fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
     cursor: "pointer",
-    minWidth: "130px",
+    minWidth: "110px",
+    fontFamily: "'Inter', sans-serif",
+  },
+  clearBtn: {
+    padding: "8px 14px",
+    background: "#f1f5f9",
+    color: "#475569",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    fontSize: "13px",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   tableContainer: {
-    overflowX: "auto",
     background: "#fff",
-    borderRadius: "16px",
+    borderRadius: "12px",
     border: "1px solid #e5e7eb",
-    boxShadow: "0 4px 6px rgba(0,0,0,0.02)",
+    overflow: "hidden",
+  },
+  tableHeader: {
+    padding: "12px 20px",
+    borderBottom: "1px solid #e5e7eb",
+    background: "#f8fafc",
+  },
+  tableTitle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  tableCount: {
+    background: "#e5e7eb",
+    padding: "2px 10px",
+    borderRadius: "12px",
+    fontSize: "12px",
+    fontWeight: "500",
+    color: "#475569",
+  },
+  tableWrapper: {
+    overflowX: "auto",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "900px",
+    minWidth: "850px",
   },
-  tableHeader: {
+  tableHead: {
     borderBottom: "1px solid #e5e7eb",
     background: "#f8fafc",
     textAlign: "left",
-    fontWeight: "600",
-    color: "#475569",
-    fontSize: "12px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
   },
   tableRow: {
     borderBottom: "1px solid #f1f5f9",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   checkbox: {
-    width: "18px",
-    height: "18px",
+    width: "16px",
+    height: "16px",
     cursor: "pointer",
     accentColor: "#f9c349",
   },
   candidateCell: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "4px 0",
+    gap: "10px",
+    padding: "8px 0",
   },
   candidateAvatar: {
-    width: "44px",
-    height: "44px",
+    width: "36px",
+    height: "36px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontWeight: "700",
+    fontWeight: "600",
     color: "#fff",
-    fontSize: "18px",
+    fontSize: "14px",
     flexShrink: 0,
   },
   candidateName: {
@@ -1082,15 +1152,6 @@ const styles = {
   candidateEmail: {
     fontSize: "12px",
     color: "#64748b",
-    marginTop: "2px",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  candidatePhone: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    marginTop: "2px",
     display: "flex",
     alignItems: "center",
     gap: "4px",
@@ -1098,120 +1159,145 @@ const styles = {
   jobTitle: {
     fontWeight: "500",
     color: "#0f172a",
-    fontSize: "14px",
+    fontSize: "13px",
   },
   jobDept: {
     fontSize: "12px",
     color: "#94a3b8",
-    marginTop: "2px",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
   },
   experienceBadge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
-    padding: "4px 12px",
+    gap: "4px",
+    padding: "3px 10px",
     background: "#f1f5f9",
-    borderRadius: "20px",
-    fontSize: "13px",
+    borderRadius: "12px",
+    fontSize: "12px",
     color: "#0f172a",
   },
   dateBadge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
+    gap: "4px",
+    fontSize: "12px",
     color: "#64748b",
   },
   statusBadge: {
-    padding: "6px 14px",
-    borderRadius: "20px",
+    padding: "3px 10px",
+    borderRadius: "12px",
     fontSize: "12px",
     fontWeight: "600",
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
   },
   actionGroup: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     flexWrap: "wrap",
   },
   statusSelect: {
-    padding: "6px 12px",
-    borderRadius: "8px",
+    padding: "4px 8px",
+    borderRadius: "6px",
     border: "1px solid #e5e7eb",
     fontSize: "12px",
     background: "#fff",
     color: "#0f172a",
     cursor: "pointer",
     outline: "none",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   viewBtn: {
-    padding: "6px 14px",
-    background: "#eff6ff",
+    padding: "4px 10px",
+    background: "#f9c349",
     border: "none",
-    borderRadius: "8px",
-    color: "#2563eb",
+    borderRadius: "6px",
+    color: "#0f172a",
     fontSize: "12px",
     cursor: "pointer",
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
     fontWeight: "500",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   emptyState: {
-    padding: "60px 20px",
+    padding: "40px 20px",
     textAlign: "center",
     color: "#94a3b8",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "16px",
+    gap: "8px",
   },
   emptyText: {
     fontSize: "16px",
+    fontWeight: "600",
+    color: "#475569",
+    margin: 0,
+  },
+  emptySubtext: {
+    fontSize: "14px",
+    color: "#94a3b8",
     margin: 0,
   },
   emptyBtn: {
-    padding: "10px 24px",
+    padding: "8px 18px",
     background: "#f9c349",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     color: "#0f172a",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    marginTop: "4px",
+    fontSize: "13px",
   },
   pagination: {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
     gap: "16px",
-    padding: "20px",
+    padding: "14px 20px",
     borderTop: "1px solid #e5e7eb",
-    marginTop: "0",
   },
   pageBtn: {
-    padding: "8px 20px",
+    padding: "6px 14px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "6px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
+    gap: "6px",
+    fontSize: "13px",
     fontWeight: "500",
     color: "#475569",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
   },
   pageInfo: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
     fontWeight: "500",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  pageCurrent: {
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  pageSeparator: {
+    color: "#94a3b8",
+  },
+  pageTotal: {
+    color: "#94a3b8",
   },
   modalOverlay: {
     position: "fixed",
@@ -1219,63 +1305,69 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.6)",
+    background: "rgba(0,0,0,0.5)",
+    backdropFilter: "blur(4px)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    backdropFilter: "blur(8px)",
   },
   modalContent: {
     background: "#fff",
-    borderRadius: "24px",
-    padding: "0",
-    maxWidth: "750px",
+    borderRadius: "16px",
+    maxWidth: "680px",
     width: "95%",
     maxHeight: "90vh",
     overflow: "hidden",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
   },
   modalHeader: {
-    padding: "24px 32px",
+    padding: "20px 24px",
     borderBottom: "1px solid #e5e7eb",
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "center",
-    background: "linear-gradient(135deg, #f8fafc 0%, #fff 100%)",
+    alignItems: "flex-start",
   },
   modalHeaderLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
   },
   modalAvatar: {
-    width: "56px",
-    height: "56px",
+    width: "48px",
+    height: "48px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: "700",
     color: "#fff",
-    fontSize: "24px",
+    fontSize: "20px",
     flexShrink: 0,
   },
   modalTitle: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
   },
   modalSubtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
     marginTop: "2px",
   },
+  modalStatusBadge: {
+    padding: "2px 10px",
+    borderRadius: "10px",
+    fontSize: "12px",
+    fontWeight: "600",
+    display: "inline-block",
+    marginTop: "4px",
+  },
   modalCloseBtn: {
-    width: "40px",
-    height: "40px",
+    width: "32px",
+    height: "32px",
     borderRadius: "50%",
     border: "none",
     background: "#f1f5f9",
@@ -1284,65 +1376,66 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
+    flexShrink: 0,
   },
   modalBody: {
-    padding: "32px",
+    padding: "24px",
     overflowY: "auto",
-    maxHeight: "calc(90vh - 160px)",
+    maxHeight: "calc(90vh - 140px)",
   },
   modalStats: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px",
-    marginBottom: "24px",
-    padding: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gap: "8px",
+    marginBottom: "20px",
+    padding: "12px 14px",
     background: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "8px",
   },
   modalStat: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     fontSize: "13px",
     color: "#475569",
   },
   modalGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "24px",
-    marginBottom: "24px",
+    gap: "20px",
+    marginBottom: "20px",
   },
   modalSection: {
-    marginBottom: "0",
+    marginBottom: 0,
   },
   sectionTitle: {
     fontSize: "14px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "12px",
+    marginBottom: "10px",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
   },
   infoGrid: {
     display: "grid",
     gridTemplateColumns: "1fr",
-    gap: "8px",
+    gap: "6px",
   },
   infoItem: {
     display: "flex",
     flexDirection: "column",
     gap: "2px",
   },
-  infoItem : {
+  infoItem: {
     fontSize: "11px",
     color: "#94a3b8",
     fontWeight: "500",
     textTransform: "uppercase",
-    letterSpacing: "0.5px",
+    letterSpacing: "0.3px",
   },
-  infoItem : {
+  infoItem: {
     fontSize: "14px",
     color: "#0f172a",
     fontWeight: "500",
@@ -1350,73 +1443,78 @@ const styles = {
   skillsContainer: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "6px",
-    marginTop: "12px",
+    gap: "4px",
+    marginTop: "4px",
   },
   skillTag: {
-    padding: "4px 12px",
+    padding: "2px 8px",
     background: "#f1f5f9",
-    borderRadius: "20px",
+    borderRadius: "12px",
     fontSize: "12px",
     color: "#475569",
     fontWeight: "500",
   },
+  noSkills: {
+    fontSize: "13px",
+    color: "#94a3b8",
+  },
   coverLetter: {
     background: "#f8fafc",
-    padding: "16px",
-    borderRadius: "12px",
+    padding: "14px",
+    borderRadius: "8px",
     fontSize: "14px",
     lineHeight: "1.8",
     color: "#0f172a",
     border: "1px solid #e5e7eb",
-    marginTop: "8px",
+    marginTop: "4px",
   },
   modalLinks: {
     display: "flex",
-    gap: "12px",
+    gap: "8px",
     flexWrap: "wrap",
-    marginTop: "16px",
-    paddingTop: "16px",
+    marginTop: "14px",
+    paddingTop: "14px",
     borderTop: "1px solid #e5e7eb",
   },
   modalLink: {
-    padding: "8px 16px",
+    padding: "4px 12px",
     background: "#f1f5f9",
-    borderRadius: "10px",
+    borderRadius: "6px",
     textDecoration: "none",
     color: "#475569",
     fontSize: "13px",
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
   },
   modalActions: {
-    marginTop: "20px",
-    paddingTop: "20px",
+    marginTop: "16px",
+    paddingTop: "14px",
     borderTop: "1px solid #e5e7eb",
   },
   modalActionGroup: {
     display: "flex",
     flexDirection: "column",
-    gap: "8px",
+    gap: "4px",
   },
-  modalActionGroup : {
+  modalActionGroup: {
     fontSize: "13px",
     fontWeight: "600",
     color: "#0f172a",
   },
   modalStatusSelect: {
-    padding: "10px 16px",
-    borderRadius: "10px",
+    padding: "6px 12px",
+    borderRadius: "6px",
     border: "1px solid #e5e7eb",
     fontSize: "14px",
     background: "#fff",
     color: "#0f172a",
     cursor: "pointer",
     outline: "none",
-    transition: "all 0.3s ease",
+    transition: "all 0.2s ease",
     maxWidth: "200px",
+    fontFamily: "'Inter', sans-serif",
   },
 };
 

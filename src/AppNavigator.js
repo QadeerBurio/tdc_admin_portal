@@ -39,6 +39,7 @@ import CreateOffer from "./screens/CreateOffer";
 import OfferImagesGallery from "./screens/OfferImagesGallery";
 import AppStoreReviews from "./screens/roles/AppStoreReviews";
 import EventManagement from "./screens/EventManagement";
+import Discount from "./screens/Discount";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -114,6 +115,7 @@ export default function AppNavigator() {
       
       <Route path="/home" element={<Home />} />
       <Route path="/create-offer" element={<CreateOffer />} />
+      <Route path="/discount" element={<Discount />} />
       <Route path="/claimedUsers" element={<ClaimedUsers />} />
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />

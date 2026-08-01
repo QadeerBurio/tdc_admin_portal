@@ -33,13 +33,18 @@ import {
   FaUserCircle,
   FaChevronDown,
   FaTimes,
-  FaEdit,
   FaLock,
   FaShieldAlt,
   FaGlobe,
   FaBuilding,
   FaImage,
+  FaSpinner,
+  FaGripLines,
+  FaRocket,
+  FaThumbsUp,
+  FaChartLine,
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 const CompanyDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -69,6 +74,7 @@ const CompanyDashboard = () => {
     interviewsScheduled: 0,
     offersMade: 0,
   });
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
   const userMenuRef = useRef(null);
 
   useEffect(() => {
@@ -108,7 +114,6 @@ const CompanyDashboard = () => {
         }
       );
       
-      // Set employee data with proper fallbacks
       setEmployeeData({
         ...res.data,
         logo: res.data.logo || "",
@@ -116,11 +121,8 @@ const CompanyDashboard = () => {
         brandName: res.data.brandName || "",
         name: res.data.name || user?.name || "",
       });
-      
-      console.log("✅ Employee Data loaded:", res.data);
     } catch (err) {
-      console.error("❌ Error fetching employee data", err);
-      // Fallback to user data from context
+      console.error("Error fetching employee data", err);
       setEmployeeData({
         name: user?.name || "",
         email: user?.email || "",
@@ -146,7 +148,6 @@ const CompanyDashboard = () => {
       });
     } catch (err) {
       console.error("Error fetching employee stats", err);
-      // Use fallback
       setEmployeeStats({
         totalApplications: stats.totalApplications || 0,
         pendingReviews: stats.pendingApplications || 0,
@@ -216,7 +217,6 @@ const CompanyDashboard = () => {
     navigate("/login", { replace: true });
   };
 
-  // Get company name from employee data or user data
   const getCompanyName = () => {
     return employeeData?.companyName || 
            employeeData?.brandName || 
@@ -225,12 +225,10 @@ const CompanyDashboard = () => {
            "Employer";
   };
 
-  // Get user display name
   const getDisplayName = () => {
     return employeeData?.name || user?.name || "User";
   };
 
-  // Get logo URL
   const getLogoUrl = () => {
     return employeeData?.logo || user?.logo || "";
   };
@@ -287,91 +285,37 @@ const CompanyDashboard = () => {
     }
   };
 
+  const getTabTitle = () => {
+    const tab = navItems.find(item => item.id === activeTab);
+    return tab ? tab.label : "Dashboard";
+  };
+
+  const getTabDescription = () => {
+    const tab = navItems.find(item => item.id === activeTab);
+    return tab ? tab.description : "Overview & Analytics";
+  };
+
   const renderDashboard = () => {
     const companyName = getCompanyName();
     const displayName = getDisplayName();
     const logoUrl = getLogoUrl();
 
     return (
-      <div style={styles.dashboardContainer}>
-        {/* Welcome Banner with Employee Info */}
-        <div style={styles.welcomeBanner}>
-          <div style={styles.welcomeContent}>
-            <div style={styles.welcomeText}>
-              <h1 style={styles.welcomeTitle}>
-                Welcome back, {displayName}! 👋
-              </h1>
-              <p style={styles.welcomeSubtitle}>
-                {companyName ? (
-                  <>Managing <strong>{companyName}</strong></>
-                ) : (
-                  "Here's your recruitment overview"
-                )}
-              </p>
-            </div>
-            <div style={styles.welcomeStats}>
-              <div style={styles.welcomeStat}>
-                <span style={styles.welcomeStatValue}>{employeeStats.totalApplications}</span>
-                <span style={styles.welcomeStatLabel}>Applications</span>
-              </div>
-              <div style={styles.welcomeStatDivider} />
-              <div style={styles.welcomeStat}>
-                <span style={styles.welcomeStatValue}>{employeeStats.pendingReviews}</span>
-                <span style={styles.welcomeStatLabel}>Pending</span>
-              </div>
-              <div style={styles.welcomeStatDivider} />
-              <div style={styles.welcomeStat}>
-                <span style={styles.welcomeStatValue}>{employeeStats.interviewsScheduled}</span>
-                <span style={styles.welcomeStatLabel}>Interviews</span>
-              </div>
-              <div style={styles.welcomeStatDivider} />
-              <div style={styles.welcomeStat}>
-                <span style={styles.welcomeStatValue}>{employeeStats.offersMade}</span>
-                <span style={styles.welcomeStatLabel}>Offers</span>
-              </div>
-            </div>
-          </div>
-          {logoUrl && (
-            <div style={styles.companyLogoContainer}>
-              <img 
-                src={logoUrl} 
-                alt="Company Logo" 
-                style={styles.companyLogo}
-                onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = `
-                    <div style="${styles.companyLogoFallback}">
-                      <FaBuilding size={40} color="#94a3b8" />
-                    </div>
-                  `;
-                }}
-              />
-            </div>
-          )}
-        </div>
-
-        {/* Rest of the dashboard content remains the same */}
-        <div style={styles.dashboardHeader}>
-          <div style={styles.headerLeft}>
-            <p style={styles.pageSubtitle}>Your recruitment dashboard at a glance</p>
-          </div>
-          <div style={styles.headerRight}>
-            <div style={styles.searchBar}>
-              <FaSearch style={styles.searchIcon} />
-              <input type="text" placeholder="Search..." style={styles.searchInput} />
-            </div>
-            <button style={styles.notificationBtn}>
-              <FaBell />
-              <span style={styles.notificationBadge}>3</span>
-            </button>
-            <button style={styles.settingsBtn}>
-              <FaCog />
-            </button>
-          </div>
-        </div>
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.5 }}
+        style={styles.dashboardContainer}
+      >
+        
 
         {/* Stats Grid */}
-        <div style={styles.statsGrid}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.1 }}
+          style={styles.statsGrid}
+        >
           <div style={styles.statCard} className="stat-card">
             <div style={styles.statIconWrapper}>
               <FaBriefcase style={styles.statIcon} />
@@ -436,10 +380,15 @@ const CompanyDashboard = () => {
               <span style={styles.statTrend}>Last 30 days</span>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        {/* Two Column Grid - Recent Applications & Upcoming Interviews */}
-        <div style={styles.twoColumnGrid}>
+        {/* Two Column Grid */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.2 }}
+          style={styles.twoColumnGrid}
+        >
           <div style={styles.sectionCard} className="section-card">
             <div style={styles.sectionHeader}>
               <div>
@@ -552,10 +501,15 @@ const CompanyDashboard = () => {
               )}
             </div>
           </div>
-        </div>
+        </motion.div>
 
         {/* Quick Actions */}
-        <div style={styles.quickActions}>
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          style={styles.quickActions}
+        >
           <h3 style={styles.sectionTitle}>Quick Actions</h3>
           <div style={styles.actionsGrid}>
             <button
@@ -599,8 +553,8 @@ const CompanyDashboard = () => {
               <span>Download Report</span>
             </button>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
     );
   };
 
@@ -627,7 +581,10 @@ const CompanyDashboard = () => {
 
   return (
     <div style={styles.container}>
-      <nav style={styles.sidebar}>
+      {/* Modern Sidebar */}
+      <nav style={{...styles.sidebar, width: isSidebarCollapsed ? '80px' : '260px'}}>
+        <div style={styles.sidebarGradient} />
+        
         <div style={styles.brandSection}>
           <div style={styles.logoBadge}>
             {logoUrl ? (
@@ -641,291 +598,354 @@ const CompanyDashboard = () => {
                 }}
               />
             ) : (
-              <span style={styles.logoIcon}>J</span>
+              <span style={styles.logoIcon}>tdc</span>
             )}
           </div>
-          <div>
-            <h2 style={styles.logoText}>Job<span style={styles.logoHighlight}>Portal</span></h2>
-            <p style={styles.logoSubtext}>Recruitment Dashboard</p>
-          </div>
+          {!isSidebarCollapsed && (
+            <div>
+              <h2 style={styles.logoText}>Company<span style={styles.logoHighlight}> Dashboard</span></h2>
+              
+            </div>
+          )}
         </div>
 
         <div style={styles.navGroup}>
-          <p style={styles.navGroupLabel}>MENU</p>
+          {!isSidebarCollapsed && <p style={styles.navGroupLabel}>Main Menu</p>}
           {navItems.map((item) => (
             <div
               key={item.id}
               className="nav-link"
               style={{
                 ...styles.navItem,
-                backgroundColor:
-                  activeTab === item.id ? "rgba(249, 195, 73, 0.15)" : "transparent",
+                background:
+                  activeTab === item.id ? "rgba(249, 195, 73, 0.12)" : "transparent",
+                justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+                padding: isSidebarCollapsed ? '14px' : '12px 18px',
+                borderRight: activeTab === item.id ? '3px solid #f9c349' : '3px solid transparent',
               }}
               onClick={() => setActiveTab(item.id)}
+              title={isSidebarCollapsed ? item.label : ''}
             >
               <span style={{ 
                 ...styles.icon, 
-                color: activeTab === item.id ? "#f9c349" : "#94a3b8" 
+                color: activeTab === item.id ? "#f9c349" : "#94a3b8",
+                fontSize: isSidebarCollapsed ? '22px' : '18px',
               }}>
                 {item.icon}
               </span>
-              <div style={styles.navText}>
-                <span style={{ 
-                  ...styles.navLabel,
-                  color: activeTab === item.id ? "#f9c349" : "#e2e8f0"
-                }}>
-                  {item.label}
-                </span>
-                <span style={styles.navDesc}>{item.description}</span>
-              </div>
-              {activeTab === item.id && (
+              {!isSidebarCollapsed && (
+                <div style={styles.navText}>
+                  <span style={{ 
+                    ...styles.navLabel,
+                    color: activeTab === item.id ? "#f9c349" : "#e2e8f0"
+                  }}>
+                    {item.label}
+                  </span>
+                  <span style={styles.navDesc}>{item.description}</span>
+                </div>
+              )}
+              {activeTab === item.id && !isSidebarCollapsed && (
                 <span style={styles.activeIndicator} />
               )}
             </div>
           ))}
         </div>
 
-        <div style={styles.userSection} ref={userMenuRef}>
-          <div 
-            style={styles.userInfo} 
-            onClick={() => setShowUserMenu(!showUserMenu)}
-            className="user-info-clickable"
-          >
-            <div style={styles.userAvatar}>
-              {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt="Company Logo" 
-                  style={styles.userAvatarImg}
-                  onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.parentElement.textContent = displayName?.charAt(0) || "E";
-                  }}
-                />
-              ) : (
-                displayName?.charAt(0) || "E"
-              )}
-            </div>
-            <div style={styles.userInfoText}>
-              <div style={styles.userName}>{displayName}</div>
-              <div style={styles.userRole}>
-                {companyName || "Employer"}
-              </div>
-            </div>
-            <FaChevronDown style={{ 
-              ...styles.userChevron, 
-              transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)'
-            }} />
-          </div>
-          
-          {showUserMenu && (
-            <div style={styles.userDropdown}>
-              <div 
-                style={styles.dropdownItem}
-                onClick={() => {
-                  setShowUserMenu(false);
-                  setShowProfileModal(true);
-                }}
-              >
-                <FaUserCircle size={18} />
-                <span>My Profile</span>
-              </div>
-              <div 
-                style={styles.dropdownItem}
-                onClick={() => {
-                  setShowUserMenu(false);
-                  setShowSettingsModal(true);
-                }}
-              >
-                <FaCog size={18} />
-                <span>Settings</span>
-              </div>
-              <div style={styles.dropdownDivider} />
-              <div 
-                style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
-                onClick={() => {
-                  setShowUserMenu(false);
-                  handleLogout();
-                }}
-              >
-                <FaSignOutAlt size={18} />
-                <span>Logout</span>
-              </div>
-            </div>
-          )}
-        </div>
-      </nav>
-
-      <main style={styles.mainContent}>
-        <div style={styles.contentWrapper}>{renderContent()}</div>
-      </main>
-
-      {/* Profile Modal */}
-      {showProfileModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowProfileModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                <FaUser size={20} style={{ marginRight: '12px', color: '#f9c349' }} />
-                My Profile
-              </h2>
-              <button style={styles.modalCloseBtn} onClick={() => setShowProfileModal(false)}>
-                <FaTimes />
-              </button>
-            </div>
-            <div style={styles.profileContent}>
-              <div style={styles.profileAvatarContainer}>
+        <div style={styles.sidebarFooter}>
+          <div style={styles.userSection} ref={userMenuRef}>
+            <div 
+              style={{
+                ...styles.userInfo,
+                justifyContent: isSidebarCollapsed ? 'center' : 'flex-start',
+                padding: isSidebarCollapsed ? '10px' : '10px',
+              }} 
+              onClick={() => setShowUserMenu(!showUserMenu)}
+              className="user-info-clickable"
+            >
+              <div style={styles.userAvatar}>
                 {logoUrl ? (
                   <img 
                     src={logoUrl} 
                     alt="Company Logo" 
-                    style={styles.profileAvatarImg}
+                    style={styles.userAvatarImg}
                     onError={(e) => {
                       e.target.style.display = 'none';
-                      e.target.parentElement.innerHTML = `
-                        <div style="${styles.profileAvatar}">
-                          ${displayName?.charAt(0) || "E"}
-                        </div>
-                      `;
+                      e.target.parentElement.textContent = displayName?.charAt(0) || "E";
                     }}
                   />
                 ) : (
-                  <div style={styles.profileAvatar}>
-                    {displayName?.charAt(0) || "E"}
-                  </div>
+                  displayName?.charAt(0) || "E"
                 )}
               </div>
-              <div style={styles.profileInfo}>
-                <div style={styles.profileName}>{displayName}</div>
-                <div style={styles.profileEmail}>{user?.email || "employer@example.com"}</div>
-                <div style={styles.profileRole}>
-                  {companyName || "Employer"}
-                </div>
-                {logoUrl && (
-                  <div style={styles.profileLogoInfo}>
-                    <FaImage size={14} style={{ marginRight: '6px' }} />
-                    Logo uploaded
-                  </div>
-                )}
-              </div>
-              <div style={styles.profileDivider} />
-              <div style={styles.profileDetails}>
-                <div style={styles.profileDetailItem}>
-                  <span style={styles.profileDetailLabel}>Member Since</span>
-                  <span style={styles.profileDetailValue}>
-                    {employeeData?.createdAt ? 
-                      new Date(employeeData.createdAt).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        year: 'numeric' 
-                      }) : 
-                      'January 2025'
-                    }
-                  </span>
-                </div>
-                <div style={styles.profileDetailItem}>
-                  <span style={styles.profileDetailLabel}>Company</span>
-                  <span style={styles.profileDetailValue}>
-                    {companyName || 'Not specified'}
-                  </span>
-                </div>
-                <div style={styles.profileDetailItem}>
-                  <span style={styles.profileDetailLabel}>Total Jobs Posted</span>
-                  <span style={styles.profileDetailValue}>{stats.totalJobs}</span>
-                </div>
-                <div style={styles.profileDetailItem}>
-                  <span style={styles.profileDetailLabel}>Total Hires</span>
-                  <span style={styles.profileDetailValue}>{stats.hiredCandidates}</span>
-                </div>
-              </div>
-            </div>
-            <button style={styles.modalCloseBtnBottom} onClick={() => setShowProfileModal(false)}>
-              Close
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* Settings Modal */}
-      {showSettingsModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowSettingsModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>
-                <FaCog size={20} style={{ marginRight: '12px', color: '#f9c349' }} />
-                Settings
-              </h2>
-              <button style={styles.modalCloseBtn} onClick={() => setShowSettingsModal(false)}>
-                <FaTimes />
-              </button>
-            </div>
-            <div style={styles.settingsContent}>
-              <div style={styles.settingsGroup}>
-                <h3 style={styles.settingsGroupTitle}>Account Settings</h3>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaUser /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Profile Information</div>
-                    <div style={styles.settingsItemDesc}>Update your personal information</div>
-                  </div>
-                  <button style={styles.settingsItemBtn}>Edit</button>
-                </div>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaBuilding /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Company Details</div>
-                    <div style={styles.settingsItemDesc}>
-                      {companyName || 'Update company information'}
+              {!isSidebarCollapsed && (
+                <>
+                  <div style={styles.userInfoText}>
+                    <div style={styles.userName}>{displayName}</div>
+                    <div style={styles.userRole}>
+                      {companyName || "Employer"}
                     </div>
                   </div>
-                  <button style={styles.settingsItemBtn}>Update</button>
-                </div>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaEnvelope /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Email Preferences</div>
-                    <div style={styles.settingsItemDesc}>Manage notification settings</div>
-                  </div>
-                  <button style={styles.settingsItemBtn}>Configure</button>
-                </div>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaLock /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Security</div>
-                    <div style={styles.settingsItemDesc}>Change password and security settings</div>
-                  </div>
-                  <button style={styles.settingsItemBtn}>Update</button>
-                </div>
-              </div>
-              <div style={styles.settingsGroup}>
-                <h3 style={styles.settingsGroupTitle}>Preferences</h3>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaGlobe /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Language</div>
-                    <div style={styles.settingsItemDesc}>Choose your preferred language</div>
-                  </div>
-                  <select style={styles.settingsSelect}>
-                    <option>English</option>
-                    <option>Spanish</option>
-                    <option>French</option>
-                  </select>
-                </div>
-                <div style={styles.settingsItem}>
-                  <div style={styles.settingsItemIcon}><FaShieldAlt /></div>
-                  <div style={styles.settingsItemContent}>
-                    <div style={styles.settingsItemLabel}>Privacy</div>
-                    <div style={styles.settingsItemDesc}>Control your privacy settings</div>
-                  </div>
-                  <button style={styles.settingsItemBtn}>Manage</button>
-                </div>
-              </div>
+                  <FaChevronDown style={{ 
+                    ...styles.userChevron, 
+                    transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }} />
+                </>
+              )}
             </div>
-            <button style={styles.modalCloseBtnBottom} onClick={() => setShowSettingsModal(false)}>
-              Close
-            </button>
+            
+            {showUserMenu && !isSidebarCollapsed && (
+              <div style={styles.userDropdown}>
+                <div 
+                  style={styles.dropdownItem}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setShowProfileModal(true);
+                  }}
+                >
+                  <FaUserCircle size={18} />
+                  <span>My Profile</span>
+                </div>
+                <div 
+                  style={styles.dropdownItem}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setShowSettingsModal(true);
+                  }}
+                >
+                  <FaCog size={18} />
+                  <span>Settings</span>
+                </div>
+                <div style={styles.dropdownDivider} />
+                <div 
+                  style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                >
+                  <FaSignOutAlt size={18} />
+                  <span>Logout</span>
+                </div>
+              </div>
+            )}
           </div>
+
+        
         </div>
-      )}
+      </nav>
+
+      <main style={styles.mainContent}>
+        <div style={styles.contentWrapper}>
+          {/* Modern Header - Shows on all tabs */}
+          <div style={styles.modernHeader}>
+            <div style={styles.headerLeft}>
+              <div style={styles.headerBreadcrumb}>
+                <span style={styles.breadcrumbHome}>
+                  <FaHome size={14} color="#f9c349" />
+                </span>
+                <span style={styles.breadcrumbSeparator}>/</span>
+                <span style={styles.breadcrumbCurrent}>{getTabTitle()}</span>
+              </div>
+              <h1 style={styles.headerTitle}>{getTabTitle()}</h1>
+              <p style={styles.headerDescription}>{getTabDescription()}</p>
+            </div>
+          </div>
+
+          {renderContent()}
+        </div>
+      </main>
+
+      {/* Profile Modal */}
+      <AnimatePresence>
+        {showProfileModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={() => setShowProfileModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              style={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>
+                  <FaUser size={20} style={{ marginRight: '12px', color: '#f9c349' }} />
+                  My Profile
+                </h2>
+                <button style={styles.modalCloseBtn} onClick={() => setShowProfileModal(false)}>
+                  <FaTimes />
+                </button>
+              </div>
+              <div style={styles.profileContent}>
+                <div style={styles.profileAvatarContainer}>
+                  {logoUrl ? (
+                    <img 
+                      src={logoUrl} 
+                      alt="Company Logo" 
+                      style={styles.profileAvatarImg}
+                      onError={(e) => {
+                        e.target.style.display = 'none';
+                      }}
+                    />
+                  ) : (
+                    <div style={styles.profileAvatar}>
+                      {displayName?.charAt(0) || "E"}
+                    </div>
+                  )}
+                </div>
+                <div style={styles.profileInfo}>
+                  <div style={styles.profileName}>{displayName}</div>
+                  <div style={styles.profileEmail}>{user?.email || "employer@example.com"}</div>
+                  <div style={styles.profileRole}>
+                    {companyName || "Employer"}
+                  </div>
+                  {logoUrl && (
+                    <div style={styles.profileLogoInfo}>
+                      <FaImage size={14} style={{ marginRight: '6px' }} />
+                      Logo uploaded
+                    </div>
+                  )}
+                </div>
+                <div style={styles.profileDivider} />
+                <div style={styles.profileDetails}>
+                  <div style={styles.profileDetailItem}>
+                    <span style={styles.profileDetailLabel}>Member Since</span>
+                    <span style={styles.profileDetailValue}>
+                      {employeeData?.createdAt ? 
+                        new Date(employeeData.createdAt).toLocaleDateString('en-US', { 
+                          month: 'long', 
+                          year: 'numeric' 
+                        }) : 
+                        'January 2025'
+                      }
+                    </span>
+                  </div>
+                  <div style={styles.profileDetailItem}>
+                    <span style={styles.profileDetailLabel}>Company</span>
+                    <span style={styles.profileDetailValue}>
+                      {companyName || 'Not specified'}
+                    </span>
+                  </div>
+                  <div style={styles.profileDetailItem}>
+                    <span style={styles.profileDetailLabel}>Total Jobs Posted</span>
+                    <span style={styles.profileDetailValue}>{stats.totalJobs}</span>
+                  </div>
+                  <div style={styles.profileDetailItem}>
+                    <span style={styles.profileDetailLabel}>Total Hires</span>
+                    <span style={styles.profileDetailValue}>{stats.hiredCandidates}</span>
+                  </div>
+                </div>
+              </div>
+              <button style={styles.modalCloseBtnBottom} onClick={() => setShowProfileModal(false)}>
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Settings Modal */}
+      <AnimatePresence>
+        {showSettingsModal && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.modalOverlay}
+            onClick={() => setShowSettingsModal(false)}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 20 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 20 }}
+              transition={{ type: "spring", damping: 25 }}
+              style={styles.modalContent}
+              onClick={(e) => e.stopPropagation()}
+            >
+              <div style={styles.modalHeader}>
+                <h2 style={styles.modalTitle}>
+                  <FaCog size={20} style={{ marginRight: '12px', color: '#f9c349' }} />
+                  Settings
+                </h2>
+                <button style={styles.modalCloseBtn} onClick={() => setShowSettingsModal(false)}>
+                  <FaTimes />
+                </button>
+              </div>
+              <div style={styles.settingsContent}>
+                <div style={styles.settingsGroup}>
+                  <h3 style={styles.settingsGroupTitle}>Account Settings</h3>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaUser /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Profile Information</div>
+                      <div style={styles.settingsItemDesc}>Update your personal information</div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Edit</button>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaBuilding /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Company Details</div>
+                      <div style={styles.settingsItemDesc}>
+                        {companyName || 'Update company information'}
+                      </div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Update</button>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaEnvelope /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Email Preferences</div>
+                      <div style={styles.settingsItemDesc}>Manage notification settings</div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Configure</button>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaLock /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Security</div>
+                      <div style={styles.settingsItemDesc}>Change password and security settings</div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Update</button>
+                  </div>
+                </div>
+                <div style={styles.settingsGroup}>
+                  <h3 style={styles.settingsGroupTitle}>Preferences</h3>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaGlobe /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Language</div>
+                      <div style={styles.settingsItemDesc}>Choose your preferred language</div>
+                    </div>
+                    <select style={styles.settingsSelect}>
+                      <option>English</option>
+                      <option>Spanish</option>
+                      <option>French</option>
+                    </select>
+                  </div>
+                  <div style={styles.settingsItem}>
+                    <div style={styles.settingsItemIcon}><FaShieldAlt /></div>
+                    <div style={styles.settingsItemContent}>
+                      <div style={styles.settingsItemLabel}>Privacy</div>
+                      <div style={styles.settingsItemDesc}>Control your privacy settings</div>
+                    </div>
+                    <button style={styles.settingsItemBtn}>Manage</button>
+                  </div>
+                </div>
+              </div>
+              <button style={styles.modalCloseBtnBottom} onClick={() => setShowSettingsModal(false)}>
+                Close
+              </button>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
       <style>
         {`
@@ -959,12 +979,17 @@ const CompanyDashboard = () => {
             from { opacity: 0; transform: translateY(-10px); }
             to { opacity: 1; transform: translateY(0); }
           }
+          @keyframes gradientMove {
+            0% { background-position: 0% 50%; }
+            50% { background-position: 100% 50%; }
+            100% { background-position: 0% 50%; }
+          }
 
           .nav-link {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
             margin: 2px 0;
             position: relative;
-            border-radius: 12px;
+            border-radius: 10px;
           }
           .nav-link:hover {
             background-color: rgba(255,255,255,0.05) !important;
@@ -975,10 +1000,25 @@ const CompanyDashboard = () => {
             animation: fadeInUp 0.6s ease forwards;
             opacity: 0;
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #f9c349, transparent);
+            transition: left 0.5s ease;
+          }
+          .stat-card:hover::before {
+            left: 100%;
           }
           .stat-card:hover {
             transform: translateY(-5px) scale(1.01);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
             border-color: #f9c349;
           }
           .stat-card:nth-child(1) { animation-delay: 0.05s; }
@@ -995,34 +1035,65 @@ const CompanyDashboard = () => {
             transition: all 0.3s ease;
           }
           .section-card:hover {
-            box-shadow: 0 8px 30px rgba(0,0,0,0.06);
+            box-shadow: 0 8px 30px rgba(0,0,0,0.05);
           }
 
           .quick-action {
             transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          .quick-action::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(135deg, rgba(249, 195, 73, 0.08), transparent);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+          }
+          .quick-action:hover::after {
+            opacity: 1;
           }
           .quick-action:hover {
             transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 12px 40px rgba(249, 195, 73, 0.25);
+            box-shadow: 0 12px 40px rgba(249, 195, 73, 0.2);
             border-color: #f9c349;
           }
 
           .user-info-clickable {
             cursor: pointer;
             transition: all 0.3s ease;
+            border-radius: 12px;
           }
           .user-info-clickable:hover {
             background: rgba(255,255,255,0.05);
-            border-radius: 12px;
-            padding: 8px;
-            margin: -8px;
           }
 
+          .join-btn {
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+          }
+          .join-btn::before {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+            transform: translateX(-100%);
+            transition: transform 0.5s ease;
+          }
+          .join-btn:hover::before {
+            transform: translateX(100%);
+          }
           .join-btn:hover {
             transform: scale(1.05);
             box-shadow: 0 4px 15px rgba(249, 195, 73, 0.3);
           }
 
+          .view-all-btn {
+            transition: all 0.3s ease;
+            position: relative;
+          }
           .view-all-btn:hover {
             color: #e08500;
             transform: translateX(3px);
@@ -1032,15 +1103,15 @@ const CompanyDashboard = () => {
             width: 6px;
           }
           ::-webkit-scrollbar-track {
-            background: #f1f1f1;
+            background: #f1f5f9;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: #f9c349;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #e8a800;
           }
 
           .status-badge {
@@ -1049,6 +1120,8 @@ const CompanyDashboard = () => {
 
           .welcome-banner {
             animation: fadeInUp 0.5s ease;
+            background-size: 200% 200%;
+            animation: gradientMove 10s ease infinite;
           }
 
           .notification-badge {
@@ -1059,26 +1132,38 @@ const CompanyDashboard = () => {
             animation: float 3s ease-in-out infinite;
           }
 
-          .join-btn {
-            transition: all 0.3s ease;
-          }
-
           .user-dropdown {
             animation: slideDown 0.2s ease forwards;
           }
 
-          .company-logo {
+          .modal-content {
+            animation: scaleIn 0.3s ease;
+          }
+
+          .settings-item:hover {
+            background: #f1f5f9;
+            transform: translateX(4px);
+          }
+
+          .profile-avatar-img {
             transition: all 0.3s ease;
           }
-          .company-logo:hover {
-            transform: scale(1.05);
+          .profile-avatar-img:hover {
+            transform: scale(1.05) rotate(-5deg);
+          }
+
+          .application-item, .interview-item {
+            transition: all 0.3s ease;
+          }
+          .application-item:hover, .interview-item:hover {
+            background: #f8fafc;
+            transform: translateX(4px);
           }
         `}
       </style>
     </div>
   );
 };
-
 
 const styles = {
   container: {
@@ -1089,38 +1174,50 @@ const styles = {
     overflow: "hidden",
   },
   sidebar: {
-    width: "250px",
-    background: "#0f172a",
-    padding: "28px 16px",
+    background: "linear-gradient(180deg, #0f172a 0%, #1a2332 50%, #0f172a 100%)",
+    padding: "24px 16px",
     display: "flex",
     flexDirection: "column",
     color: "#fff",
-    borderRadius: "0px",
-    margin: "0px",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.3)",
+    boxShadow: "4px 0 30px rgba(0,0,0,0.15)",
     position: "relative",
     overflow: "hidden",
+    transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    flexShrink: 0,
+    borderRight: "1px solid rgba(255,255,255,0.05)",
+  },
+  sidebarGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "radial-gradient(ellipse at 50% 0%, rgba(249, 195, 73, 0.03) 0%, transparent 70%)",
+    pointerEvents: "none",
   },
   brandSection: {
     display: "flex",
     alignItems: "center",
     gap: "14px",
-    marginBottom: "40px",
+    marginBottom: "36px",
     padding: "0 8px",
+    position: "relative",
+    zIndex: 1,
   },
   logoBadge: {
     width: "48px",
     height: "48px",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "24px",
     fontWeight: "800",
     color: "#0f172a",
-    boxShadow: "0 8px 25px rgba(249, 195, 73, 0.3)",
+    boxShadow: "0 8px 25px rgba(249, 195, 73, 0.25)",
     overflow: "hidden",
+    flexShrink: 0,
   },
   sidebarLogo: {
     width: "100%",
@@ -1128,7 +1225,7 @@ const styles = {
     objectFit: "cover",
   },
   logoIcon: {
-    transform: "rotate(-5deg)",
+    // transform: "rotate(-5deg)",
   },
   logoText: {
     margin: 0,
@@ -1143,24 +1240,26 @@ const styles = {
   logoSubtext: {
     margin: 0,
     fontSize: "10px",
-    opacity: 0.5,
+    opacity: 0.4,
     letterSpacing: "1px",
     textTransform: "uppercase",
   },
   navGroup: {
     flex: 1,
+    position: "relative",
+    zIndex: 1,
   },
   navGroupLabel: {
     fontSize: "10px",
-    opacity: 0.4,
+    opacity: 0.3,
     letterSpacing: "1.5px",
     textTransform: "uppercase",
     padding: "0 16px",
     marginBottom: "12px",
   },
   navItem: {
-    padding: "10px 16px",
-    borderRadius: "12px",
+    padding: "12px 18px",
+    borderRadius: "10px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -1198,28 +1297,34 @@ const styles = {
     borderRadius: "50%",
     animation: "pulse 2s infinite",
   },
-  userSection: {
+  sidebarFooter: {
     marginTop: "auto",
     paddingTop: "16px",
     borderTop: "1px solid rgba(255,255,255,0.06)",
     position: "relative",
+    zIndex: 1,
+  },
+  userSection: {
+    position: "relative",
+    marginBottom: "12px",
   },
   userInfo: {
     display: "flex",
     alignItems: "center",
     gap: "12px",
-    padding: "8px",
+    padding: "10px",
     borderRadius: "12px",
     transition: "all 0.3s ease",
   },
   userInfoText: {
     flex: 1,
+    minWidth: 0,
   },
   userAvatar: {
     width: "40px",
     height: "40px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1242,6 +1347,9 @@ const styles = {
   userRole: {
     fontSize: "11px",
     opacity: 0.5,
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   userChevron: {
     fontSize: "12px",
@@ -1280,6 +1388,21 @@ const styles = {
   dropdownLogout: {
     color: "#ef4444",
   },
+  collapseBtn: {
+    width: "100%",
+    padding: "8px",
+    borderRadius: "8px",
+    border: "1px solid rgba(255,255,255,0.06)",
+    background: "rgba(255,255,255,0.03)",
+    color: "#94a3b8",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    transition: "all 0.3s ease",
+    zIndex: 10,
+  },
   mainContent: {
     flex: 1,
     padding: "12px",
@@ -1293,12 +1416,57 @@ const styles = {
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
     padding: "28px",
     overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+  },
+  modernHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "28px",
+    paddingBottom: "20px",
+    borderBottom: "1px solid #f1f5f9",
+    flexShrink: 0,
+  },
+  headerLeft: {
+    flex: 1,
+  },
+  headerBreadcrumb: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    marginBottom: "8px",
+  },
+  breadcrumbHome: {
+    display: "flex",
+    alignItems: "center",
+  },
+  breadcrumbSeparator: {
+    color: "#94a3b8",
+    fontSize: "12px",
+  },
+  breadcrumbCurrent: {
+    color: "#f9c349",
+    fontSize: "13px",
+    fontWeight: "600",
+  },
+  headerTitle: {
+    fontSize: "28px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+    letterSpacing: "-0.5px",
+  },
+  headerDescription: {
+    fontSize: "14px",
+    color: "#64748b",
+    margin: "4px 0 0 0",
   },
   dashboardContainer: {
-    animation: "fadeInUp 0.5s ease",
+    flex: 1,
   },
   welcomeBanner: {
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
     borderRadius: "16px",
     padding: "24px 32px",
     marginBottom: "24px",
@@ -1306,6 +1474,7 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     color: "#fff",
+    backgroundSize: "200% 200%",
   },
   welcomeContent: {
     display: "flex",
@@ -1373,104 +1542,6 @@ const styles = {
     height: "100%",
     objectFit: "contain",
     padding: "8px",
-  },
-  companyLogoFallback: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: "100%",
-  },
-  dashboardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "28px",
-    paddingBottom: "20px",
-    borderBottom: "1px solid #f1f5f9",
-  },
-  headerLeft: {
-    flex: 1,
-  },
-  pageTitle: {
-    fontSize: "28px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-    letterSpacing: "-0.5px",
-  },
-  pageSubtitle: {
-    fontSize: "14px",
-    color: "#64748b",
-    margin: "4px 0 0 0",
-  },
-  headerRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  searchBar: {
-    display: "flex",
-    alignItems: "center",
-    background: "#f1f5f9",
-    padding: "8px 16px",
-    borderRadius: "12px",
-    gap: "10px",
-    transition: "all 0.3s ease",
-  },
-  searchIcon: {
-    color: "#94a3b8",
-    fontSize: "14px",
-  },
-  searchInput: {
-    border: "none",
-    background: "transparent",
-    outline: "none",
-    fontSize: "14px",
-    color: "#0f172a",
-    width: "180px",
-  },
-  notificationBtn: {
-    position: "relative",
-    width: "40px",
-    height: "40px",
-    borderRadius: "12px",
-    border: "none",
-    background: "#f1f5f9",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#64748b",
-    transition: "all 0.3s ease",
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: "-4px",
-    right: "-4px",
-    background: "#ef4444",
-    color: "#fff",
-    fontSize: "10px",
-    width: "18px",
-    height: "18px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-  },
-  settingsBtn: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "12px",
-    border: "none",
-    background: "#f1f5f9",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#64748b",
-    transition: "all 0.3s ease",
   },
   statsGrid: {
     display: "grid",
@@ -1588,7 +1659,7 @@ const styles = {
     width: "44px",
     height: "44px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1686,7 +1757,7 @@ const styles = {
     gap: "4px",
   },
   joinBtn: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     border: "none",
     padding: "6px 14px",
     borderRadius: "8px",
@@ -1725,7 +1796,7 @@ const styles = {
     width: "48px",
     height: "48px",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1748,7 +1819,6 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
-    animation: "fadeInUp 0.3s ease",
   },
   modalContent: {
     background: "#fff",
@@ -1758,7 +1828,6 @@ const styles = {
     maxHeight: "90vh",
     overflow: "hidden",
     boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
-    animation: "scaleIn 0.3s ease",
   },
   modalHeader: {
     padding: "24px 32px",
@@ -1815,7 +1884,7 @@ const styles = {
     width: "80px",
     height: "80px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",

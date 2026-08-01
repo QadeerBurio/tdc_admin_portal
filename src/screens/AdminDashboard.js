@@ -31,7 +31,6 @@ import ManageExchange from "./ManageExchange";
 import AdminPackageScreen from "./Traveling";
 import CardManager from "./CardManager";
 import AdminPackage from "./AdminPackage";
-import AdminCoursePortal from "./AdminCourse";
 import EventManagement from "./EventManagement";
 
 export default function AdminDashboard() {
@@ -128,8 +127,6 @@ export default function AdminDashboard() {
         `${adminAPI}/packages/all`,
         `${adminAPI}/card-stats`,
         `${adminAPI}/bookings/stats`,
-        `${adminAPI}/courses`,
-        `${adminAPI}/events/stats`
       ];
 
       const responses = await Promise.all(
@@ -498,85 +495,7 @@ export default function AdminDashboard() {
               </div>
             </motion.div>
 
-            {/* Recent Events Section */}
-            <motion.div 
-              style={styles.recentEventsSection}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5, delay: 0.7 }}
-            >
-              <div style={styles.recentEventsHeader}>
-                <div style={styles.recentEventsTitle}>
-                  <CalendarCheck size={20} color="#ff961a" />
-                  <h2 style={styles.recentEventsHeading}>Recent Events</h2>
-                </div>
-                <button 
-                  style={styles.viewAllBtn}
-                  onClick={() => setActivePage("events")}
-                >
-                  View All <ArrowUpRight size={16} />
-                </button>
-              </div>
-
-              <div style={styles.recentEventsGrid}>
-                {recentEvents.length === 0 ? (
-                  <div style={styles.emptyEvents}>
-                    <Calendar size={40} color="#cbd5e1" />
-                    <p>No recent events</p>
-                    <span>Create your first event to get started</span>
-                  </div>
-                ) : (
-                  recentEvents.map((event, index) => (
-                    <motion.div 
-                      key={event._id || index}
-                      style={styles.eventCard}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.1 + 0.7 }}
-                      whileHover={{ y: -4, boxShadow: "0 8px 25px rgba(0,0,0,0.08)" }}
-                      onClick={() => setActivePage("events")}
-                    >
-                      <div style={styles.eventCardImage}>
-                        <img 
-                          src={event.image || "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=800"} 
-                          alt={event.title}
-                          style={styles.eventImage}
-                          onError={(e) => {
-                            e.target.src = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=800";
-                          }}
-                        />
-                        <div style={styles.eventCardBadge}>
-                          {event.type || "Event"}
-                        </div>
-                      </div>
-                      <div style={styles.eventCardContent}>
-                        <h3 style={styles.eventCardTitle}>{event.title}</h3>
-                        <div style={styles.eventCardMeta}>
-                          <span style={styles.eventCardMetaItem}>
-                            <MapPin size={14} />
-                            {event.city || "TBD"}
-                          </span>
-                          <span style={styles.eventCardMetaItem}>
-                            <Calendar size={14} />
-                            {event.date || "TBA"}
-                          </span>
-                        </div>
-                        <div style={styles.eventCardFooter}>
-                          <span style={styles.eventCardRegistrations}>
-                            <UsersIcon size={14} />
-                            {event.registrations?.length || 0} Registered
-                          </span>
-                          <span style={styles.eventCardStatus}>
-                            <CheckCircle size={14} color="#10b981" />
-                            Active
-                          </span>
-                        </div>
-                      </div>
-                    </motion.div>
-                  ))
-                )}
-              </div>
-            </motion.div>
+           
           </div>
         );
       

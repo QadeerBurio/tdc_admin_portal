@@ -50,7 +50,7 @@ export default function SignIn() {
       if (user.role === "admin") {
         navigate("/admin");
       } else if (user.role === "brand") {
-        navigate("/home");
+        navigate("/discount");
       } else if (user.role === "employee") {
         navigate("/employee-dashboard");
       } else if (user.role === "traveler") {

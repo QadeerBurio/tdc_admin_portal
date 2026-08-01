@@ -3,18 +3,16 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import { 
   FaMoneyBillWave, 
-  FaUniversity, 
   FaTag, 
   FaDownload, 
-   
   FaWallet,
-  FaChartLine,
   FaCalendarAlt,
-  FaArrowUp,
   FaArrowDown,
   FaTrophy,
   FaShoppingBag,
-  FaTimes
+  FaTimes,
+  FaPercent,
+  FaCoins,
 } from "react-icons/fa";
 
 const SavingsHistory = () => {
@@ -26,6 +24,13 @@ const SavingsHistory = () => {
   const [sortField, setSortField] = useState("date");
   const [sortDirection, setSortDirection] = useState("desc");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [brandStats, setBrandStats] = useState({
+    totalRevenue: 0,
+    totalSavings: 0,
+    totalTransactions: 0,
+    averageDiscount: 0,
+    topPerformingOffer: "",
+  });
 
   useEffect(() => {
     fetchHistory();
@@ -34,18 +39,14 @@ const SavingsHistory = () => {
   useEffect(() => {
     let results = [...history];
     
-    // Search filter
     if (searchTerm) {
       const term = searchTerm.toLowerCase();
       results = results.filter(item =>
         item.name?.toLowerCase().includes(term) ||
-        item.rollNo?.toLowerCase().includes(term) ||
-        item.university?.toLowerCase().includes(term) ||
         item.brand?.toLowerCase().includes(term)
       );
     }
     
-    // Date range filter
     if (dateRange.start) {
       results = results.filter(item => new Date(item.date) >= new Date(dateRange.start));
     }
@@ -53,7 +54,6 @@ const SavingsHistory = () => {
       results = results.filter(item => new Date(item.date) <= new Date(dateRange.end));
     }
     
-    // Sort
     results.sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
@@ -69,6 +69,7 @@ const SavingsHistory = () => {
     });
     
     setFilteredHistory(results);
+    calculateBrandStats(results);
   }, [searchTerm, dateRange, sortField, sortDirection, history]);
 
   const fetchHistory = async () => {
@@ -78,6 +79,7 @@ const SavingsHistory = () => {
       });
       setHistory(res.data);
       setFilteredHistory(res.data);
+      calculateBrandStats(res.data);
     } catch (err) {
       console.error("Error fetching history", err);
     } finally {
@@ -85,16 +87,52 @@ const SavingsHistory = () => {
     }
   };
 
+  const calculateBrandStats = (data) => {
+    if (!data || data.length === 0) {
+      setBrandStats({
+        totalRevenue: 0,
+        totalSavings: 0,
+        totalTransactions: 0,
+        averageDiscount: 0,
+        topPerformingOffer: "No data",
+      });
+      return;
+    }
+
+    const totalRevenue = data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
+    const totalSavings = data.reduce((acc, curr) => acc + curr.saved, 0);
+    const totalTransactions = data.length;
+    const averageDiscount = totalTransactions > 0 ? (totalSavings / totalTransactions) : 0;
+
+    const offerCounts = {};
+    data.forEach(item => {
+      offerCounts[item.brand] = (offerCounts[item.brand] || 0) + 1;
+    });
+    let topOffer = "N/A";
+    let topCount = 0;
+    Object.entries(offerCounts).forEach(([offer, count]) => {
+      if (count > topCount) {
+        topCount = count;
+        topOffer = offer;
+      }
+    });
+
+    setBrandStats({
+      totalRevenue,
+      totalSavings,
+      totalTransactions,
+      averageDiscount,
+      topPerformingOffer: topOffer,
+    });
+  };
+
   const downloadCSV = () => {
-    const headers = ["Student Name", "Roll No", "University", "Brand/Offer", "Bill Amount (PKR)", "Saved Amount (PKR)", "Final Paid (PKR)", "Date"];
+    const headers = ["Student Name", "Brand/Offer", "Bill Amount (PKR)", "Saved Amount (PKR)", "Date"];
     const rows = filteredHistory.map(item => [
       item.name,
-      item.rollNo,
-      item.university,
       item.brand,
       item.bill.toFixed(2),
       item.saved.toFixed(2),
-      (item.bill - item.saved).toFixed(2),
       new Date(item.date).toLocaleDateString()
     ]);
 
@@ -125,13 +163,8 @@ const SavingsHistory = () => {
     setDateRange({ start: "", end: "" });
   };
 
-  const totalSaved = history.reduce((acc, curr) => acc + curr.saved, 0);
-  const totalTransactions = history.length;
-  const averageSaved = totalTransactions > 0 ? totalSaved / totalTransactions : 0;
-
   return (
     <div style={styles.container}>
-      {/* Decorative Background */}
       <div style={styles.bgDecoration}></div>
 
       <div style={styles.header}>
@@ -152,14 +185,20 @@ const SavingsHistory = () => {
       <div style={styles.statsRow}>
         <div className="stat-card" style={styles.statCard}>
           <div style={{...styles.statIcon, background: '#f0fdf4'}}>
-            <FaWallet color="#10b981" size={24} />
+            <FaCoins color="#10b981" size={24} />
           </div>
           <div>
-            <span style={styles.statLabel}>Total Student Savings</span>
-            <h3 style={styles.statValue}>₨ {totalSaved.toLocaleString()}</h3>
-            <span style={{...styles.statTrend, color: '#10b981'}}>
-              <FaArrowUp size={10} /> +12% from last month
-            </span>
+            <span style={styles.statLabel}>Total Revenue</span>
+            <h3 style={{...styles.statValue, color: '#10b981'}}>₨ {brandStats.totalRevenue.toLocaleString()}</h3>
+          </div>
+        </div>
+        <div className="stat-card" style={styles.statCard}>
+          <div style={{...styles.statIcon, background: '#fef3c7'}}>
+            <FaWallet color="#f59e0b" size={24} />
+          </div>
+          <div>
+            <span style={styles.statLabel}>Total Savings</span>
+            <h3 style={{...styles.statValue, color: '#f59e0b'}}>₨ {brandStats.totalSavings.toLocaleString()}</h3>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
@@ -167,23 +206,26 @@ const SavingsHistory = () => {
             <FaShoppingBag color="#3b82f6" size={24} />
           </div>
           <div>
-            <span style={styles.statLabel}>Total Redemptions</span>
-            <h3 style={styles.statValue}>{totalTransactions}</h3>
-            <span style={{...styles.statTrend, color: '#3b82f6'}}>
-              Completed transactions
-            </span>
+            <span style={styles.statLabel}>Redemptions</span>
+            <h3 style={{...styles.statValue, color: '#3b82f6'}}>{brandStats.totalTransactions}</h3>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#fff7ed'}}>
-            <FaChartLine color="#ff961a" size={24} />
+          <div style={{...styles.statIcon, background: '#f3e8ff'}}>
+            <FaPercent color="#8b5cf6" size={24} />
           </div>
           <div>
-            <span style={styles.statLabel}>Average Savings per Student</span>
-            <h3 style={styles.statValue}>₨ {averageSaved.toLocaleString()}</h3>
-            <span style={{...styles.statTrend, color: '#ff961a'}}>
-              Per redemption
-            </span>
+            <span style={styles.statLabel}>Avg Discount</span>
+            <h3 style={{...styles.statValue, color: '#8b5cf6'}}>₨ {brandStats.averageDiscount.toFixed(0)}</h3>
+          </div>
+        </div>
+        <div className="stat-card" style={styles.statCard}>
+          <div style={{...styles.statIcon, background: '#fce4ec'}}>
+            <FaTrophy color="#e11d48" size={24} />
+          </div>
+          <div>
+            <span style={styles.statLabel}>Top Offer</span>
+            <h3 style={{...styles.statValue, color: '#e11d48', fontSize: '16px'}}>{brandStats.topPerformingOffer}</h3>
           </div>
         </div>
       </div>
@@ -193,7 +235,7 @@ const SavingsHistory = () => {
         <div style={styles.searchWrapper}>
           <input 
             style={styles.searchInput}
-            placeholder="Search by name, roll no, university or brand..."
+            placeholder="Search by name or brand..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
@@ -209,7 +251,6 @@ const SavingsHistory = () => {
             style={styles.dateInput}
             value={dateRange.start}
             onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-            placeholder="Start Date"
           />
           <span style={styles.dateSeparator}>to</span>
           <input 
@@ -217,27 +258,23 @@ const SavingsHistory = () => {
             style={styles.dateInput}
             value={dateRange.end}
             onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-            placeholder="End Date"
           />
         </div>
       </div>
 
-      {/* Transactions Table */}
+      {/* Transactions Table - Only 5 columns */}
       <div className="table-container" style={styles.tableWrapper}>
         <table style={styles.table}>
           <thead>
             <tr style={styles.theadRow}>
               <th style={styles.th} onClick={() => handleSort("name")}>
-                Student {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("university")}>
-                University {sortField === "university" && (sortDirection === "asc" ? "↑" : "↓")}
+                Name {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
               </th>
               <th style={styles.th} onClick={() => handleSort("brand")}>
                 Offer {sortField === "brand" && (sortDirection === "asc" ? "↑" : "↓")}
               </th>
               <th style={styles.th} onClick={() => handleSort("bill")}>
-                Bill Amount {sortField === "bill" && (sortDirection === "asc" ? "↑" : "↓")}
+                Bill {sortField === "bill" && (sortDirection === "asc" ? "↑" : "↓")}
               </th>
               <th style={styles.th} onClick={() => handleSort("saved")}>
                 Saved {sortField === "saved" && (sortDirection === "asc" ? "↑" : "↓")}
@@ -250,14 +287,14 @@ const SavingsHistory = () => {
           <tbody>
             {loading ? (
               <tr>
-                <td colSpan="6" style={styles.loadingCell}>
+                <td colSpan="5" style={styles.loadingCell}>
                   <div className="loader" style={styles.loader}></div>
                   <span>Loading transaction records...</span>
                 </td>
               </tr>
             ) : filteredHistory.length === 0 ? (
               <tr>
-                <td colSpan="6" style={styles.emptyCell}>
+                <td colSpan="5" style={styles.emptyCell}>
                   <div style={styles.emptyState}>
                     <div style={styles.emptyIcon}>💰</div>
                     <p>No transactions found</p>
@@ -275,15 +312,8 @@ const SavingsHistory = () => {
                       </div>
                       <div>
                         <div style={styles.studentName}>{item.name}</div>
-                        <div style={styles.studentRoll}>Roll: {item.rollNo}</div>
                       </div>
                     </div>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={styles.universityBadge}>
-                      <FaUniversity size={10} style={{marginRight: '6px', opacity: 0.7}} />
-                      {item.university?.length > 35 ? item.university.substring(0, 32) + '...' : item.university}
-                    </span>
                   </td>
                   <td style={styles.td}>
                     <div style={styles.offerCell}>
@@ -321,7 +351,9 @@ const SavingsHistory = () => {
             <span>Showing {filteredHistory.length} of {history.length} transactions</span>
           </div>
           <div style={styles.footerRight}>
-            <span>Total Savings: <strong>₨ {filteredHistory.reduce((acc, curr) => acc + curr.saved, 0).toLocaleString()}</strong></span>
+            <span>Revenue: <strong style={{color: '#10b981'}}>₨ {filteredHistory.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0).toLocaleString()}</strong></span>
+            <span style={styles.footerDivider}>|</span>
+            <span>Savings: <strong style={{color: '#f59e0b'}}>₨ {filteredHistory.reduce((acc, curr) => acc + curr.saved, 0).toLocaleString()}</strong></span>
           </div>
         </div>
       )}
@@ -339,18 +371,16 @@ const SavingsHistory = () => {
           0%, 100% { opacity: 1; }
           50% { opacity: 0.6; }
         }
-        @keyframes slideInRight {
-          from { opacity: 0; transform: translateX(30px); }
-          to { opacity: 1; transform: translateX(0); }
-        }
         
         .stat-card {
           animation: slideUp 0.5s ease forwards;
           opacity: 0;
         }
-        .stat-card:nth-child(1) { animation-delay: 0.1s; }
-        .stat-card:nth-child(2) { animation-delay: 0.2s; }
-        .stat-card:nth-child(3) { animation-delay: 0.3s; }
+        .stat-card:nth-child(1) { animation-delay: 0.05s; }
+        .stat-card:nth-child(2) { animation-delay: 0.1s; }
+        .stat-card:nth-child(3) { animation-delay: 0.15s; }
+        .stat-card:nth-child(4) { animation-delay: 0.2s; }
+        .stat-card:nth-child(5) { animation-delay: 0.25s; }
         
         .table-row {
           transition: all 0.2s ease;
@@ -398,11 +428,17 @@ const SavingsHistory = () => {
         
         input:focus {
           outline: none;
+          border-color: #ff961a !important;
         }
         
         input[type="date"]::-webkit-calendar-picker-indicator {
           cursor: pointer;
           opacity: 0.6;
+        }
+        
+        .download-btn:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
         }
       `}</style>
     </div>
@@ -433,7 +469,7 @@ const styles = {
     display: "flex", 
     justifyContent: "space-between", 
     alignItems: "flex-start", 
-    marginBottom: "32px", 
+    marginBottom: "28px", 
     flexWrap: "wrap", 
     gap: "20px",
     position: "relative",
@@ -452,7 +488,7 @@ const styles = {
     fontSize: "13px",
     fontWeight: "600",
     color: "#ff961a",
-    marginBottom: "16px"
+    marginBottom: "14px"
   },
   title: { 
     margin: 0, 
@@ -478,62 +514,57 @@ const styles = {
     fontWeight: "600", 
     transition: "all 0.3s ease", 
     color: "#fff", 
-    fontSize: "14px"
+    fontSize: "14px",
+    whiteSpace: "nowrap"
   },
   statsRow: { 
-    display: "flex", 
-    gap: "20px", 
-    marginBottom: "28px",
+    display: "grid", 
+    gridTemplateColumns: "repeat(5, 1fr)", 
+    gap: "16px", 
+    marginBottom: "24px",
     position: "relative",
     zIndex: 1
   },
   statCard: { 
-    flex: 1, 
     background: "#fff", 
-    padding: "20px 24px", 
-    borderRadius: "24px", 
+    padding: "18px 20px", 
+    borderRadius: "20px", 
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
     display: "flex", 
     alignItems: "center", 
-    gap: "16px",
-    border: "1px solid rgba(255,150,26,0.1)",
+    gap: "14px",
+    border: "1px solid rgba(255,150,26,0.08)",
     transition: "transform 0.3s ease, box-shadow 0.3s ease"
   },
   statIcon: {
-    width: "52px",
-    height: "52px",
-    borderRadius: "18px",
+    width: "46px",
+    height: "46px",
+    borderRadius: "14px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
+    flexShrink: 0
   },
   statLabel: { 
     display: "block", 
     color: "#64748b", 
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: "0.5px"
+    letterSpacing: "0.3px"
   },
   statValue: { 
     margin: "4px 0 0", 
-    fontSize: "28px", 
+    fontSize: "22px", 
     color: "#1e293b",
-    fontWeight: "800"
-  },
-  statTrend: {
-    fontSize: "11px",
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",
-    gap: "3px",
-    marginTop: "6px"
+    fontWeight: "800",
+    lineHeight: 1.2
   },
   filterBar: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "24px",
+    marginBottom: "20px",
     gap: "16px",
     flexWrap: "wrap",
     position: "relative",
@@ -547,7 +578,7 @@ const styles = {
   searchInput: {
     flex: 1,
     padding: "12px 18px",
-    borderRadius: "16px",
+    borderRadius: "14px",
     border: "2px solid #e2e8f0",
     fontSize: "14px",
     backgroundColor: "#fff",
@@ -589,8 +620,8 @@ const styles = {
   },
   tableWrapper: { 
     background: "#fff", 
-    borderRadius: "24px", 
-    boxShadow: "0 8px 30px rgba(0,0,0,0.05)", 
+    borderRadius: "20px", 
+    boxShadow: "0 8px 30px rgba(0,0,0,0.04)", 
     overflow: "hidden",
     border: "1px solid #f1f5f9",
     position: "relative",
@@ -605,9 +636,9 @@ const styles = {
     background: "#f8fafc"
   },
   th: { 
-    padding: "16px 20px", 
+    padding: "14px 18px", 
     color: "#475569", 
-    fontSize: "12px", 
+    fontSize: "11px", 
     textTransform: "uppercase", 
     fontWeight: "700", 
     letterSpacing: "0.5px",
@@ -615,7 +646,7 @@ const styles = {
     transition: "background 0.2s"
   },
   td: { 
-    padding: "16px 20px", 
+    padding: "14px 18px", 
     borderBottom: "1px solid #f1f5f9", 
     fontSize: "14px", 
     color: "#334155"
@@ -655,31 +686,21 @@ const styles = {
     gap: "12px"
   },
   avatar: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "12px",
+    width: "38px",
+    height: "38px",
+    borderRadius: "10px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "16px",
+    fontSize: "15px",
     fontWeight: "700",
-    color: "#fff"
+    color: "#fff",
+    flexShrink: 0
   },
   studentName: {
     fontWeight: "700",
     color: "#1e293b",
-    marginBottom: "4px"
-  },
-  studentRoll: {
-    fontSize: "11px",
-    color: "#94a3b8"
-  },
-  universityBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    fontSize: "13px",
-    color: "#475569",
-    maxWidth: "200px"
+    fontSize: "14px"
   },
   offerCell: {
     display: "flex",
@@ -700,8 +721,8 @@ const styles = {
     gap: "6px",
     background: "#f0fdf4",
     color: "#10b981",
-    padding: "6px 12px",
-    borderRadius: "10px",
+    padding: "4px 12px",
+    borderRadius: "8px",
     fontSize: "13px",
     fontWeight: "700"
   },
@@ -713,16 +734,18 @@ const styles = {
     color: "#64748b"
   },
   footer: {
-    marginTop: "20px",
+    marginTop: "16px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "16px 20px",
+    padding: "14px 20px",
     background: "#fff",
-    borderRadius: "16px",
+    borderRadius: "14px",
     border: "1px solid #f1f5f9",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
+    flexWrap: "wrap",
+    gap: "12px"
   },
   footerLeft: {
     display: "flex",
@@ -732,8 +755,15 @@ const styles = {
     color: "#64748b"
   },
   footerRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
     fontSize: "14px",
     color: "#1e293b"
+  },
+  footerDivider: {
+    color: "#e2e8f0",
+    fontSize: "18px"
   }
 };
 

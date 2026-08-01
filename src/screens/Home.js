@@ -1,59 +1,81 @@
-import React, { useState, useContext, useEffect, useRef } from "react";
+// Home.jsx
+import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
+import { 
+  FaGift, 
+  FaUsers, 
+  FaSignOutAlt, 
+  FaShieldAlt, 
+  FaChartLine, 
+  FaHome, 
+  FaArrowUp, 
+  FaCheckCircle, 
+  FaTicketAlt, 
+  FaBell, 
+  FaSearch, 
+  FaCog, 
+  FaBars, 
+  FaTimes, 
+  FaStar, 
+  FaLongArrowAltUp, 
+  FaUserCircle, 
+  FaChevronDown, 
+  FaPlus, 
+  FaEdit, 
+  FaLock, 
+  FaEnvelope, 
+  FaPhone, 
+  FaCalendarAlt, 
+  FaUser, 
+  FaImage, 
+  FaStore, 
+  FaGlobe,
+  FaRocket,
+  FaArrowRight,
+  FaThLarge,
+  FaLayerGroup,
+  FaPalette,
+  FaSun,
+  FaMoon,
+  FaUserTie,
+  FaBuilding,
+  FaMailBulk,
+  FaPhoneAlt,
+  FaClipboardList,
+  FaWallet,
+  FaCreditCard,
+  FaTag,
+  FaPercent,
+  FaBullhorn,
+  FaChartBar,
+  FaTrophy,
+  FaMedal,
+  FaCoins,
+} from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
+import { IoSettingsOutline, IoNotificationsOutline } from "react-icons/io5";
+import { MdOutlineDashboard, MdOutlineAnalytics } from "react-icons/md";
 
-// Components
+// Import components for each tab
+import Discount from "./Discount";
+import MyOffers from "./MyOffers";
 import CreateOffer from "./CreateOffer";
 import ClaimedUsers from "./ClaimedUsers";
 import VerifyClaim from "./VerifyClaim";
 import SavingsHistory from "./SavingsHistory";
-import MyOffers from "./MyOffers";
 
-// Icons
-import {
-  FaGift,
-  FaUsers,
-  FaSignOutAlt,
-  FaShieldAlt,
-  FaChartLine,
-  FaHome,
-  FaArrowUp,
-  FaCheckCircle,
-  FaTicketAlt,
-  FaBell,
-  FaSearch,
-  FaCog,
-  FaBars,
-  FaTimes,
-  FaStar,
-  FaLongArrowAltUp,
-  FaUserCircle,
-  FaChevronDown,
-  FaPlus,
-  FaFileAlt,
-  FaEdit,
-  FaLock,
-  FaEnvelope,
-  FaPhone,
-  FaBuilding,
-  FaCalendarAlt,
-  FaUser,
-  FaImage,
-  FaStore,
-  FaGlobe
-} from "react-icons/fa";
-// Add FaGlobe import if not already imported
-import { motion, AnimatePresence } from "framer-motion";
-
-const BrandDashboard = () => {
+export default function Home() {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
+
   const [activeTab, setActiveTab] = useState("home");
   const [stats, setStats] = useState({
     totalLeads: 0,
     completedRedemptions: 0,
     totalSavings: 0,
+    totalRevenue: 0,
   });
   const [showUserMenu, setShowUserMenu] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
@@ -61,19 +83,37 @@ const BrandDashboard = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [brandData, setBrandData] = useState(null);
-  const userMenuRef = useRef(null);
+  const [offers, setOffers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [showDiscountModal, setShowDiscountModal] = useState(false);
+  const [hasOffers, setHasOffers] = useState(false);
+  const [showNotification, setShowNotification] = useState(false);
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [offerCreated, setOfferCreated] = useState(false);
+  const [hoveredNav, setHoveredNav] = useState(null);
+  const [notifications, setNotifications] = useState([
+    { id: 1, message: "New claim received from student!", time: "2 min ago", read: false },
+    { id: 2, message: "Offer 'Summer Sale' expiring in 3 days", time: "1 hour ago", read: false },
+    { id: 3, message: "5 new students viewed your offers today", time: "3 hours ago", read: true },
+  ]);
+  const [showNotifications, setShowNotifications] = useState(false);
+  
+  const userMenuRef = React.useRef(null);
+  const notificationRef = React.useRef(null);
 
   useEffect(() => {
     if (token) {
       fetchStats();
       fetchBrandData();
+      fetchOffers();
     }
   }, [token]);
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
         setIsMobileMenuOpen(false);
       }
     };
@@ -86,10 +126,42 @@ const BrandDashboard = () => {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
+      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+        setShowNotifications(false);
+      }
     };
     document.addEventListener('mousedown', handleClickOutside);
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
+
+  const fetchOffers = async () => {
+    try {
+      const res = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      
+      if (res.data && res.data.length > 0) {
+        setHasOffers(true);
+        setOffers(res.data);
+        setShowDiscountModal(false);
+        setOfferCreated(true);
+      } else {
+        setHasOffers(false);
+        setShowDiscountModal(true);
+        setOfferCreated(false);
+      }
+    } catch (err) {
+      console.error("Error fetching offers:", err);
+      setHasOffers(false);
+      setShowDiscountModal(true);
+      setOfferCreated(false);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const fetchBrandData = async () => {
     try {
@@ -106,10 +178,8 @@ const BrandDashboard = () => {
         brandName: res.data.brandName || res.data.companyName || "",
         name: res.data.name || user?.name || "",
       });
-      
-      console.log("✅ Brand Data loaded:", res.data);
     } catch (err) {
-      console.error("❌ Error fetching brand data", err);
+      console.error("Error fetching brand data", err);
       setBrandData({
         name: user?.name || "",
         email: user?.email || "",
@@ -135,10 +205,13 @@ const BrandDashboard = () => {
       );
 
       const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
+      const revenue = savingRes.data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
+      
       setStats({
         totalLeads: leadRes.data.length,
         completedRedemptions: savingRes.data.length,
-        totalSavings: savings
+        totalSavings: savings,
+        totalRevenue: revenue,
       });
     } catch (err) {
       console.error("Error fetching dashboard stats", err);
@@ -151,99 +224,102 @@ const BrandDashboard = () => {
   };
 
   const handleCreateOfferNavigation = () => {
+    setShowDiscountModal(false);
     setActiveTab("createOffer");
     if (isMobile) setIsMobileMenuOpen(false);
   };
 
-  // Get brand name
+  const handleCloseDiscountModal = () => {
+    if (!hasOffers) {
+      setNotificationMessage("Please create your first offer to get started!");
+      setShowNotification(true);
+      setTimeout(() => setShowNotification(false), 4000);
+      return;
+    }
+    setShowDiscountModal(false);
+  };
+
+  const handleTabChange = (tabId) => {
+    setActiveTab(tabId);
+    if (isMobile) {
+      setIsMobileMenuOpen(false);
+    }
+  };
+
+  const refreshOffers = () => {
+    fetchOffers();
+  };
+
+  const handleOfferCreated = () => {
+    setShowDiscountModal(false);
+    setHasOffers(true);
+    setOfferCreated(true);
+    fetchOffers();
+    setActiveTab("myOffers");
+  };
+
   const getBrandName = () => {
     return brandData?.brandName || brandData?.companyName || user?.brandName || user?.companyName || "Brand";
   };
 
-  // Get display name
   const getDisplayName = () => {
     return brandData?.name || user?.name || "Brand Partner";
   };
 
-  // Get logo URL
   const getLogoUrl = () => {
     return brandData?.logo || user?.logo || "";
   };
-
-  const navItems = [
-    { id: "home", label: "Dashboard", icon: <FaHome />, description: "Overview" },
-    { id: "createOffer", label: "Create Discount", icon: <FaGift />, description: "New Offer" },
-    { id: "myOffers", label: "My Offers", icon: <FaTicketAlt />, description: "Manage" },
-    { id: "claimedUsers", label: "Claimed Leads", icon: <FaUsers />, description: "Leads" },
-    { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
-    { id: "savingsHistory", label: "Redemptions", icon: <FaChartLine />, description: "History" },
-  ];
 
   const brandName = getBrandName();
   const displayName = getDisplayName();
   const logoUrl = getLogoUrl();
 
-  const renderHome = () => (
-    <div style={styles.homeContainer}>
-      {/* Welcome Banner */}
-      <div style={styles.welcomeHero}>
-        <div style={styles.heroContent}>
-          <div>
-            <div style={styles.heroBadge}>
-              <FaStar /> Brand Dashboard
-            </div>
-            <h2 style={styles.heroTitle}>
-              Welcome back, {displayName}! 👋
-            </h2>
-            <p style={styles.heroSubtitle}>
-              {brandName ? (
-                <>Managing <strong>{brandName}</strong> offers</>
-              ) : (
-                "Here's what's happening with your offers today."
-              )}
-            </p>
-          </div>
-          <div style={styles.heroStats}>
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatValue}>{stats.totalLeads}</span>
-              <span style={styles.heroStatLabel}>Total Claims</span>
-            </div>
-            <div style={styles.heroStatDivider} />
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatValue}>{stats.completedRedemptions}</span>
-              <span style={styles.heroStatLabel}>Redemptions</span>
-            </div>
-            <div style={styles.heroStatDivider} />
-            <div style={styles.heroStat}>
-              <span style={styles.heroStatValue}>PKR {stats.totalSavings.toLocaleString()}</span>
-              <span style={styles.heroStatLabel}>Savings Impact</span>
-            </div>
-          </div>
-        </div>
-        {logoUrl && (
-          <div style={styles.brandLogoContainer}>
-            <img 
-              src={logoUrl} 
-              alt="Brand Logo" 
-              style={styles.brandLogo}
-              onError={(e) => {
-                e.target.style.display = 'none';
-                e.target.parentElement.innerHTML = `
-                  <div style="${styles.brandLogoFallback}">
-                    <FaStore size={40} color="#94a3b8" />
-                  </div>
-                `;
-              }}
-            />
-          </div>
-        )}
-      </div>
+  const unreadCount = notifications.filter(n => !n.read).length;
 
-      {/* Stats Grid */}
-      <div style={styles.statsGrid}>
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#fff7ed" }}>
-            <FaTicketAlt style={{ ...styles.statIcon, color: "#f97316" }} />
+  const navItems = [
+    { id: "home", label: "Dashboard", icon: <MdOutlineDashboard />, description: "Overview" },
+    { id: "myOffers", label: "My Offers", icon: <FaTicketAlt />, description: "Manage" },
+    { id: "createOffer", label: "Create Discount", icon: <FaGift />, description: "New Offer" },
+    { id: "claimedUsers", label: "Claimed Leads", icon: <FaUsers />, description: "Leads" },
+    { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
+    { id: "savingsHistory", label: "Redemptions", icon: <FaChartLine />, description: "History" },
+  ];
+
+  const renderContent = () => {
+    switch(activeTab) {
+      case "home":
+        return renderHome();
+      case "myOffers":
+        return <MyOffers />;
+      case "createOffer":
+        return <CreateOffer onOfferCreated={refreshOffers} />;
+      case "claimedUsers":
+        return <ClaimedUsers />;
+      case "verifyClaim":
+        return <VerifyClaim />;
+      case "savingsHistory":
+        return <SavingsHistory />;
+      default:
+        return renderHome();
+    }
+  };
+
+  const renderHome = () => (
+    <motion.div 
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.5 }}
+      style={styles.homeContainer}
+    >
+      <motion.div style={styles.statsGrid}>
+        <motion.div 
+          style={styles.statCard} 
+          className="stat-card"
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #fef3c7, #fde68a)" }}>
+            <FaTicketAlt style={{ ...styles.statIcon, color: "#d97706" }} />
           </div>
           <div style={styles.statContent}>
             <h3 style={styles.statValue}>{stats.totalLeads}</h3>
@@ -252,11 +328,16 @@ const BrandDashboard = () => {
               <FaLongArrowAltUp size={12} /> 12% this month
             </span>
           </div>
-        </div>
+        </motion.div>
 
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#f0fdf4" }}>
-            <FaCheckCircle style={{ ...styles.statIcon, color: "#10b981" }} />
+        <motion.div 
+          style={styles.statCard} 
+          className="stat-card"
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #d1fae5, #a7f3d0)" }}>
+            <FaCheckCircle style={{ ...styles.statIcon, color: "#059669" }} />
           </div>
           <div style={styles.statContent}>
             <h3 style={styles.statValue}>{stats.completedRedemptions}</h3>
@@ -265,122 +346,135 @@ const BrandDashboard = () => {
               <FaArrowUp size={12} /> 5% conversion
             </span>
           </div>
-        </div>
+        </motion.div>
 
-        <div style={styles.statCard} className="stat-card">
-          <div style={{ ...styles.statIconWrapper, background: "#eff6ff" }}>
-            <FaChartLine style={{ ...styles.statIcon, color: "#3b82f6" }} />
+        <motion.div 
+          style={styles.statCard} 
+          className="stat-card"
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #dbeafe, #93c5fd)" }}>
+            <FaCoins style={{ ...styles.statIcon, color: "#2563eb" }} />
+          </div>
+          <div style={styles.statContent}>
+            <h3 style={styles.statValue}>PKR {stats.totalRevenue.toLocaleString()}</h3>
+            <p style={styles.statLabel}>Total Revenue</p>
+            <span style={styles.statTrend}>
+              <FaLongArrowAltUp size={12} /> From Sales
+            </span>
+          </div>
+        </motion.div>
+
+        <motion.div 
+          style={styles.statCard} 
+          className="stat-card"
+          whileHover={{ y: -4 }}
+          transition={{ type: "spring", stiffness: 300 }}
+        >
+          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #fce4ec, #fecdd3)" }}>
+            <FaChartLine style={{ ...styles.statIcon, color: "#e11d48" }} />
           </div>
           <div style={styles.statContent}>
             <h3 style={styles.statValue}>PKR {stats.totalSavings.toLocaleString()}</h3>
-            <p style={styles.statLabel}>Total Savings</p>
+            <p style={styles.statLabel}>Total Savings Given</p>
             <span style={styles.statTrend}>
               <FaLongArrowAltUp size={12} /> Social Impact
             </span>
           </div>
-        </div>
-      </div>
+        </motion.div>
+      </motion.div>
 
-      {/* Quick Actions */}
-      <div style={styles.quickActions}>
+      <motion.div 
+        style={styles.quickActions}
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2, duration: 0.5 }}
+      >
         <h3 style={styles.sectionTitle}>Quick Actions</h3>
         <div style={styles.actionsGrid}>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={handleCreateOfferNavigation}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaPlus size={24} />
-            </div>
-            <span>Create New Offer</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => {
-              setActiveTab("myOffers");
-              if (isMobile) setIsMobileMenuOpen(false);
-            }}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaFileAlt size={24} />
-            </div>
-            <span>View My Offers</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => {
-              setActiveTab("claimedUsers");
-              if (isMobile) setIsMobileMenuOpen(false);
-            }}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaUsers size={24} />
-            </div>
-            <span>View Leads</span>
-          </button>
-          <button
-            style={styles.actionBtn}
-            className="quick-action"
-            onClick={() => {
-              setActiveTab("verifyClaim");
-              if (isMobile) setIsMobileMenuOpen(false);
-            }}
-          >
-            <div style={styles.actionIconWrapper}>
-              <FaShieldAlt size={24} />
-            </div>
-            <span>Verify Student</span>
-          </button>
+          {[
+            { icon: <FaPlus />, label: "Create New Offer", onClick: handleCreateOfferNavigation },
+            { icon: <FaUsers />, label: "View Leads", onClick: () => handleTabChange("claimedUsers") },
+            { icon: <FaShieldAlt />, label: "Verify Student", onClick: () => handleTabChange("verifyClaim") },
+            { icon: <FaChartLine />, label: "View History", onClick: () => handleTabChange("savingsHistory") },
+          ].map((action, index) => (
+            <motion.button
+              key={index}
+              style={styles.actionBtn}
+              className="quick-action"
+              onClick={action.onClick}
+              whileHover={{ y: -4 }}
+              whileTap={{ scale: 0.95 }}
+              transition={{ type: "spring", stiffness: 400 }}
+            >
+              <div style={styles.actionIconWrapper}>
+                {action.icon}
+              </div>
+              <span>{action.label}</span>
+            </motion.button>
+          ))}
         </div>
-      </div>
-    </div>
+      </motion.div>
+    </motion.div>
   );
-
-  const renderContent = () => {
-    let content;
-    switch (activeTab) {
-      case "home":
-        content = renderHome();
-        break;
-      case "createOffer":
-        content = <CreateOffer />;
-        break;
-      case "myOffers":
-        content = <MyOffers />;
-        break;
-      case "claimedUsers":
-        content = <ClaimedUsers />;
-        break;
-      case "verifyClaim":
-        content = <VerifyClaim />;
-        break;
-      case "savingsHistory":
-        content = <SavingsHistory />;
-        break;
-      default:
-        content = renderHome();
-    }
-
-    return <div className="animated-content">{content}</div>;
-  };
 
   return (
     <div style={styles.container}>
+      {/* Notification Toast */}
+      <AnimatePresence>
+        {showNotification && (
+          <motion.div
+            initial={{ opacity: 0, x: 50 }}
+            animate={{ opacity: 1, x: 0 }}
+            exit={{ opacity: 0, x: 50 }}
+            style={styles.notificationToast}
+          >
+            <div style={styles.notificationContent}>
+              <span style={styles.notificationIcon}>⚠️</span>
+              <span style={styles.notificationText}>{notificationMessage}</span>
+              <button 
+                style={styles.notificationClose}
+                onClick={() => setShowNotification(false)}
+              >
+                <FaTimes />
+              </button>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
-        <div style={styles.mobileOverlay} onClick={() => setIsMobileMenuOpen(false)} />
+        <motion.div 
+          style={styles.mobileOverlay} 
+          onClick={() => setIsMobileMenuOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
       )}
 
-      {/* Sidebar */}
-      <nav style={{
-        ...styles.sidebar,
-        transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
-      }}>
+      {/* Modern Sidebar */}
+      <motion.nav 
+        style={{
+          ...styles.sidebar,
+          transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
+        }}
+        initial={false}
+        animate={{ 
+          x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
+          transition: { type: "spring", stiffness: 300, damping: 30 }
+        }}
+      >
+        <div style={styles.sidebarGradient} />
+        
         <div style={styles.brandSection}>
-          <div style={styles.logoBadge}>
+          <motion.div 
+            style={styles.logoBadge}
+            whileHover={{ rotate: [0, -10, 10, -5, 5, 0] }}
+            transition={{ duration: 0.5 }}
+          >
             {logoUrl ? (
               <img 
                 src={logoUrl} 
@@ -394,10 +488,24 @@ const BrandDashboard = () => {
             ) : (
               <span style={styles.logoIcon}>B</span>
             )}
-          </div>
+          </motion.div>
           <div style={styles.brandText}>
-            <h2 style={styles.logoText}>Brand<span style={styles.logoHighlight}>Portal</span></h2>
-            <p style={styles.logoSubtext}>{brandName || "Brand Partner"}</p>
+            <motion.h2 
+              style={styles.logoText}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.2 }}
+            >
+              Brand<span style={styles.logoHighlight}>Portal</span>
+            </motion.h2>
+            <motion.p 
+              style={styles.logoSubtext}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 0.3 }}
+            >
+              {brandName || "Brand Partner"}
+            </motion.p>
           </div>
           {isMobile && (
             <button style={styles.mobileCloseBtn} onClick={() => setIsMobileMenuOpen(false)}>
@@ -407,26 +515,31 @@ const BrandDashboard = () => {
         </div>
 
         <div style={styles.navGroup}>
-          <p style={styles.navGroupLabel}>MENU</p>
-          {navItems.map((item) => (
-            <div
+          <p style={styles.navGroupLabel}>Main Menu</p>
+          {navItems.map((item, index) => (
+            <motion.div
               key={item.id}
               className="nav-link"
               style={{
                 ...styles.navItem,
-                backgroundColor: activeTab === item.id ? "rgba(249, 195, 73, 0.15)" : "transparent",
+                backgroundColor: activeTab === item.id ? "rgba(249, 195, 73, 0.12)" : "transparent",
+                borderRight: activeTab === item.id ? "3px solid #f9c349" : "3px solid transparent",
               }}
-              onClick={() => {
-                setActiveTab(item.id);
-                if (isMobile) setIsMobileMenuOpen(false);
-              }}
+              onClick={() => handleTabChange(item.id)}
+              onMouseEnter={() => setHoveredNav(index)}
+              onMouseLeave={() => setHoveredNav(null)}
+              whileHover={{ x: 4 }}
+              transition={{ type: "spring", stiffness: 400 }}
             >
-              <span style={{
-                ...styles.icon,
-                color: activeTab === item.id ? "#f9c349" : "#94a3b8"
-              }}>
+              <motion.span 
+                style={{
+                  ...styles.icon,
+                  color: activeTab === item.id ? "#f9c349" : "#94a3b8"
+                }}
+                whileHover={{ scale: 1.15 }}
+              >
                 {item.icon}
-              </span>
+              </motion.span>
               <div style={styles.navText}>
                 <span style={{
                   ...styles.navLabel,
@@ -437,14 +550,28 @@ const BrandDashboard = () => {
                 <span style={styles.navDesc}>{item.description}</span>
               </div>
               {activeTab === item.id && (
-                <span style={styles.activeIndicator} />
+                <motion.span 
+                  style={styles.activeIndicator}
+                  layoutId="activeIndicator"
+                  transition={{ type: "spring", stiffness: 500, damping: 30 }}
+                />
               )}
-            </div>
+            </motion.div>
           ))}
         </div>
 
-        <div style={styles.userSection} ref={userMenuRef}>
-          <div style={styles.userInfo} onClick={() => setShowUserMenu(!showUserMenu)}>
+        <motion.div 
+          style={styles.userSection} 
+          ref={userMenuRef}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.3 }}
+        >
+          <motion.div 
+            style={styles.userInfo} 
+            onClick={() => setShowUserMenu(!showUserMenu)}
+            whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
+          >
             <div style={styles.userAvatar}>
               {logoUrl ? (
                 <img 
@@ -464,92 +591,127 @@ const BrandDashboard = () => {
               <div style={styles.userName}>{displayName}</div>
               <div style={styles.userRole}>{brandName || "Brand"}</div>
             </div>
-            <FaChevronDown style={{
-              ...styles.userChevron,
-              transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)'
-            }} />
-          </div>
+            <motion.div 
+              animate={{ rotate: showUserMenu ? 180 : 0 }}
+              transition={{ duration: 0.3 }}
+            >
+              <FaChevronDown style={styles.userChevron} />
+            </motion.div>
+          </motion.div>
 
-          {showUserMenu && (
-            <div style={styles.userDropdown}>
-              <div 
-                style={styles.dropdownItem}
-                onClick={() => {
-                  setShowUserMenu(false);
-                  setShowProfileModal(true);
-                }}
+          <AnimatePresence>
+            {showUserMenu && (
+              <motion.div 
+                style={styles.userDropdown}
+                initial={{ opacity: 0, y: -10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: -10, scale: 0.95 }}
+                transition={{ duration: 0.2 }}
               >
-                <FaUserCircle size={18} />
-                <span>My Profile</span>
-              </div>
-              <div 
-                style={styles.dropdownItem}
-                onClick={() => {
-                  setShowUserMenu(false);
-                  setShowSettingsModal(true);
-                }}
-              >
-                <FaCog size={18} />
-                <span>Settings</span>
-              </div>
-              <div style={styles.dropdownDivider} />
-              <div 
-                style={{ ...styles.dropdownItem, ...styles.dropdownLogout }} 
-                onClick={() => {
-                  setShowUserMenu(false);
-                  handleLogout();
-                }}
-              >
-                <FaSignOutAlt size={18} />
-                <span>Logout</span>
-              </div>
+                <motion.div 
+                  style={styles.dropdownItem}
+                  whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setShowProfileModal(true);
+                  }}
+                >
+                  <FaUserCircle size={18} />
+                  <span>My Profile</span>
+                </motion.div>
+                <motion.div 
+                  style={styles.dropdownItem}
+                  whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    setShowSettingsModal(true);
+                  }}
+                >
+                  <FaCog size={18} />
+                  <span>Settings</span>
+                </motion.div>
+                <div style={styles.dropdownDivider} />
+                <motion.div 
+                  style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
+                  whileHover={{ x: 5, backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                  onClick={() => {
+                    setShowUserMenu(false);
+                    handleLogout();
+                  }}
+                >
+                  <FaSignOutAlt size={18} />
+                  <span>Logout</span>
+                </motion.div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+
+        <div style={styles.sidebarFooter}>
+          <motion.div 
+            style={styles.footerBadge}
+            whileHover={{ scale: 1.02 }}
+          >
+            <FaMedal style={styles.footerBadgeIcon} />
+            <div>
+              <span style={styles.footerBadgeTitle}>Brand Partner</span>
+              <span style={styles.footerBadgeSub}>Verified Account</span>
             </div>
-          )}
+          </motion.div>
         </div>
-      </nav>
+      </motion.nav>
 
       {/* Main Content */}
       <main style={styles.mainContent}>
-        <div style={styles.contentWrapper}>
-          {/* Professional Header */}
+        <motion.div 
+          style={styles.contentWrapper}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3 }}
+        >
+          {/* Page Header */}
           <div style={styles.pageHeader}>
             <div style={styles.headerLeft}>
-              <div style={styles.headerIconWrapper}>
+              <motion.div 
+                style={styles.headerIconWrapper}
+                whileHover={{ rotate: [0, -10, 10, 0] }}
+                transition={{ duration: 0.3 }}
+              >
                 {activeTab === "home" && <FaHome style={styles.headerIcon} />}
-                {activeTab === "createOffer" && <FaGift style={styles.headerIcon} />}
                 {activeTab === "myOffers" && <FaTicketAlt style={styles.headerIcon} />}
+                {activeTab === "createOffer" && <FaGift style={styles.headerIcon} />}
                 {activeTab === "claimedUsers" && <FaUsers style={styles.headerIcon} />}
                 {activeTab === "verifyClaim" && <FaShieldAlt style={styles.headerIcon} />}
                 {activeTab === "savingsHistory" && <FaChartLine style={styles.headerIcon} />}
-              </div>
+              </motion.div>
               <div>
-                <h1 style={styles.pageTitle}>
+                <motion.h1 
+                  style={styles.pageTitle}
+                  key={activeTab}
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  transition={{ duration: 0.3 }}
+                >
                   {navItems.find(item => item.id === activeTab)?.label || "Dashboard"}
-                </h1>
-                <p style={styles.pageSubtitle}>
+                </motion.h1>
+                <motion.p 
+                  style={styles.pageSubtitle}
+                  key={`sub-${activeTab}`}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  transition={{ delay: 0.1 }}
+                >
                   {navItems.find(item => item.id === activeTab)?.description || "Overview"}
-                </p>
+                </motion.p>
               </div>
-            </div>
-            <div style={styles.headerRight}>
-              <div style={styles.searchBar}>
-                <FaSearch style={styles.searchIcon} />
-                <input type="text" placeholder="Search..." style={styles.searchInput} />
-              </div>
-              <button style={styles.notificationBtn}>
-                <FaBell />
-                <span style={styles.notificationBadge}>3</span>
-              </button>
-              {isMobile && (
-                <button style={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                  <FaBars />
-                </button>
-              )}
             </div>
           </div>
 
-          {renderContent()}
-        </div>
+          {/* Dynamic Content */}
+          <div className="animated-content">
+            {renderContent()}
+          </div>
+        </motion.div>
       </main>
 
       {/* Profile Modal */}
@@ -563,15 +725,19 @@ const BrandDashboard = () => {
             onClick={() => setShowProfileModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              exit={{ scale: 0.9, opacity: 0, y: 30 }}
+              transition={{ type: "spring", damping: 25 }}
               style={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
-                  <div style={styles.modalAvatar}>
+                  <motion.div 
+                    style={styles.modalAvatar}
+                    whileHover={{ scale: 1.05 }}
+                  >
                     {logoUrl ? (
                       <img 
                         src={logoUrl} 
@@ -585,7 +751,7 @@ const BrandDashboard = () => {
                     ) : (
                       displayName?.charAt(0) || "B"
                     )}
-                  </div>
+                  </motion.div>
                   <div>
                     <h2 style={styles.modalTitle}>{displayName}</h2>
                     <p style={styles.modalSubtitle}>{brandName || "Brand Partner"}</p>
@@ -599,21 +765,28 @@ const BrandDashboard = () => {
               <div style={styles.modalBody}>
                 <div style={styles.profileStats}>
                   <div style={styles.profileStat}>
-                    <FaTicketAlt size={18} color="#f97316" />
+                    <FaTicketAlt size={18} color="#d97706" />
                     <div>
                       <span style={styles.profileStatValue}>{stats.totalLeads}</span>
                       <span style={styles.profileStatLabel}>Total Leads</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <FaCheckCircle size={18} color="#10b981" />
+                    <FaCheckCircle size={18} color="#059669" />
                     <div>
                       <span style={styles.profileStatValue}>{stats.completedRedemptions}</span>
                       <span style={styles.profileStatLabel}>Redemptions</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <FaChartLine size={18} color="#3b82f6" />
+                    <FaCoins size={18} color="#2563eb" />
+                    <div>
+                      <span style={styles.profileStatValue}>PKR {stats.totalRevenue.toLocaleString()}</span>
+                      <span style={styles.profileStatLabel}>Total Revenue</span>
+                    </div>
+                  </div>
+                  <div style={styles.profileStat}>
+                    <FaChartLine size={18} color="#e11d48" />
                     <div>
                       <span style={styles.profileStatValue}>PKR {stats.totalSavings.toLocaleString()}</span>
                       <span style={styles.profileStatLabel}>Savings Impact</span>
@@ -624,76 +797,35 @@ const BrandDashboard = () => {
                 <div style={styles.profileDivider} />
 
                 <div style={styles.profileDetails}>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaUser size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Full Name</span>
-                      <span style={styles.profileDetailValue}>{displayName}</span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaStore size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Brand Name</span>
-                      <span style={styles.profileDetailValue}>{brandName || "Not specified"}</span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaEnvelope size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Email</span>
-                      <span style={styles.profileDetailValue}>{user?.email || "brand@example.com"}</span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaPhone size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Phone</span>
-                      <span style={styles.profileDetailValue}>{user?.phone || "+92 300 1234567"}</span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaCalendarAlt size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Member Since</span>
-                      <span style={styles.profileDetailValue}>
-                        {brandData?.createdAt ? 
-                          new Date(brandData.createdAt).toLocaleDateString('en-US', { 
-                            month: 'long', 
-                            year: 'numeric' 
-                          }) : 
-                          'January 2025'
-                        }
-                      </span>
-                    </div>
-                  </div>
-                  <div style={styles.profileDetailItem}>
-                    <div style={styles.profileDetailIcon}>
-                      <FaShieldAlt size={16} color="#ff961a" />
-                    </div>
-                    <div>
-                      <span style={styles.profileDetailLabel}>Role</span>
-                      <span style={styles.profileDetailValue}>Brand Partner</span>
-                    </div>
-                  </div>
+                  {[
+                    { icon: <FaUser />, label: "Full Name", value: displayName },
+                    { icon: <FaStore />, label: "Brand Name", value: brandName || "Not specified" },
+                    { icon: <FaEnvelope />, label: "Email", value: user?.email || "brand@example.com" },
+                    { icon: <FaPhone />, label: "Phone", value: user?.phone || "+92 300 1234567" },
+                    { icon: <FaCalendarAlt />, label: "Member Since", value: brandData?.createdAt ? 
+                      new Date(brandData.createdAt).toLocaleDateString('en-US', { 
+                        month: 'long', 
+                        year: 'numeric' 
+                      }) : 'January 2025' 
+                    },
+                    { icon: <FaShieldAlt />, label: "Role", value: "Brand Partner" },
+                  ].map((item, index) => (
+                    <motion.div 
+                      key={index}
+                      style={styles.profileDetailItem}
+                      whileHover={{ scale: 1.02 }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      <div style={styles.profileDetailIcon}>
+                        {item.icon}
+                      </div>
+                      <div>
+                        <span style={styles.profileDetailLabel}>{item.label}</span>
+                        <span style={styles.profileDetailValue}>{item.value}</span>
+                      </div>
+                    </motion.div>
+                  ))}
                 </div>
-
-                {logoUrl && (
-                  <div style={styles.profileLogoInfo}>
-                    <FaImage size={14} style={{ marginRight: '6px' }} />
-                    Brand logo uploaded
-                  </div>
-                )}
               </div>
 
               <button style={styles.modalCloseBtnBottom} onClick={() => setShowProfileModal(false)}>
@@ -715,16 +847,17 @@ const BrandDashboard = () => {
             onClick={() => setShowSettingsModal(false)}
           >
             <motion.div
-              initial={{ scale: 0.8, opacity: 0, y: 50 }}
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.8, opacity: 0, y: 50 }}
+              exit={{ scale: 0.9, opacity: 0, y: 30 }}
+              transition={{ type: "spring", damping: 25 }}
               style={styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
                   <div style={styles.settingsIconWrapper}>
-                    <FaCog size={24} color="#ff961a" />
+                    <IoSettingsOutline size={24} color="#d97706" />
                   </div>
                   <div>
                     <h2 style={styles.modalTitle}>Settings</h2>
@@ -739,69 +872,41 @@ const BrandDashboard = () => {
               <div style={styles.modalBody}>
                 <div style={styles.settingsGroup}>
                   <h3 style={styles.settingsGroupTitle}>Account Settings</h3>
-                  <div style={styles.settingsItem}>
-                    <div style={styles.settingsItemIcon}>
-                      <FaUser size={18} color="#3b82f6" />
-                    </div>
-                    <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Profile Information</div>
-                      <div style={styles.settingsItemDesc}>Update your personal information</div>
-                    </div>
-                    <button style={styles.settingsItemBtn}>
-                      <FaEdit size={12} /> Edit
-                    </button>
-                  </div>
-                  <div style={styles.settingsItem}>
-                    <div style={styles.settingsItemIcon}>
-                      <FaStore size={18} color="#8b5cf6" />
-                    </div>
-                    <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Brand Details</div>
-                      <div style={styles.settingsItemDesc}>
-                        {brandName || 'Update brand information'}
+                  {[
+                    { icon: <FaUser />, label: "Profile Information", desc: "Update your personal information", action: "Edit" },
+                    { icon: <FaStore />, label: "Brand Details", desc: brandName || 'Update brand information', action: "Update" },
+                    { icon: <FaImage />, label: "Brand Logo", desc: "Upload or update your brand logo", action: "Upload" },
+                    { icon: <FaEnvelope />, label: "Email Preferences", desc: "Manage notification settings", action: "Configure" },
+                    { icon: <FaLock />, label: "Security", desc: "Change password and security settings", action: "Update" },
+                  ].map((item, index) => (
+                    <motion.div 
+                      key={index}
+                      style={styles.settingsItem}
+                      whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
+                      transition={{ type: "spring", stiffness: 400 }}
+                    >
+                      <div style={styles.settingsItemIcon}>
+                        {item.icon}
                       </div>
-                    </div>
-                    <button style={styles.settingsItemBtn}>Update</button>
-                  </div>
-                  <div style={styles.settingsItem}>
-                    <div style={styles.settingsItemIcon}>
-                      <FaImage size={18} color="#f59e0b" />
-                    </div>
-                    <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Brand Logo</div>
-                      <div style={styles.settingsItemDesc}>Upload or update your brand logo</div>
-                    </div>
-                    <button style={styles.settingsItemBtn}>Upload</button>
-                  </div>
-                  <div style={styles.settingsItem}>
-                    <div style={styles.settingsItemIcon}>
-                      <FaEnvelope size={18} color="#3b82f6" />
-                    </div>
-                    <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Email Preferences</div>
-                      <div style={styles.settingsItemDesc}>Manage notification settings</div>
-                    </div>
-                    <button style={styles.settingsItemBtn}>Configure</button>
-                  </div>
-                  <div style={styles.settingsItem}>
-                    <div style={styles.settingsItemIcon}>
-                      <FaLock size={18} color="#ef4444" />
-                    </div>
-                    <div style={styles.settingsItemContent}>
-                      <div style={styles.settingsItemLabel}>Security</div>
-                      <div style={styles.settingsItemDesc}>Change password and security settings</div>
-                    </div>
-                    <button style={styles.settingsItemBtn}>Update</button>
-                  </div>
+                      <div style={styles.settingsItemContent}>
+                        <div style={styles.settingsItemLabel}>{item.label}</div>
+                        <div style={styles.settingsItemDesc}>{item.desc}</div>
+                      </div>
+                      <button style={styles.settingsItemBtn}>{item.action}</button>
+                    </motion.div>
+                  ))}
                 </div>
 
                 <div style={styles.settingsDivider} />
 
                 <div style={styles.settingsGroup}>
                   <h3 style={styles.settingsGroupTitle}>Preferences</h3>
-                  <div style={styles.settingsItem}>
+                  <motion.div 
+                    style={styles.settingsItem}
+                    whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
+                  >
                     <div style={styles.settingsItemIcon}>
-                      <FaGlobe size={18} color="#10b981" />
+                      <FaGlobe size={18} color="#059669" />
                     </div>
                     <div style={styles.settingsItemContent}>
                       <div style={styles.settingsItemLabel}>Language</div>
@@ -812,17 +917,20 @@ const BrandDashboard = () => {
                       <option>Spanish</option>
                       <option>French</option>
                     </select>
-                  </div>
-                  <div style={styles.settingsItem}>
+                  </motion.div>
+                  <motion.div 
+                    style={styles.settingsItem}
+                    whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
+                  >
                     <div style={styles.settingsItemIcon}>
-                      <FaShieldAlt size={18} color="#f59e0b" />
+                      <FaShieldAlt size={18} color="#d97706" />
                     </div>
                     <div style={styles.settingsItemContent}>
                       <div style={styles.settingsItemLabel}>Privacy</div>
                       <div style={styles.settingsItemDesc}>Control your privacy settings</div>
                     </div>
                     <button style={styles.settingsItemBtn}>Manage</button>
-                  </div>
+                  </motion.div>
                 </div>
               </div>
 
@@ -834,141 +942,186 @@ const BrandDashboard = () => {
         )}
       </AnimatePresence>
 
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes slideInLeft {
-            from { opacity: 0; transform: translateX(-30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes slideInRight {
-            from { opacity: 0; transform: translateX(30px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-5px); }
-            100% { transform: translateY(0px); }
-          }
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes glow {
-            0% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.3); }
-            50% { box-shadow: 0 0 20px rgba(249, 195, 73, 0.5); }
-            100% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.3); }
-          }
+      {/* Discount Modal */}
+      <AnimatePresence>
+        {showDiscountModal && !loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            style={styles.discountModalOverlay}
+            onClick={handleCloseDiscountModal}
+          >
+            <motion.div
+              initial={{ scale: 0.9, opacity: 0, y: 30 }}
+              animate={{ scale: 1, opacity: 1, y: 0 }}
+              exit={{ scale: 0.9, opacity: 0, y: 30 }}
+              style={styles.discountModalContent}
+              onClick={(e) => e.stopPropagation()}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+            >
+              <div style={styles.discountModalHeader}>
+                <div style={styles.discountModalHeaderLeft}>
+                  <div style={styles.discountModalIcon}>
+                    <FaRocket size={24} color="#d97706" />
+                  </div>
+                  <div>
+                    <h2 style={styles.discountModalTitle}>Create Your First Offer! 🎯</h2>
+                    <p style={styles.discountModalSubtitle}>You haven't created any offers yet</p>
+                  </div>
+                </div>
+                <button style={styles.discountModalClose} onClick={handleCloseDiscountModal}>
+                  <FaTimes />
+                </button>
+              </div>
 
-          .nav-link {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            margin: 2px 0;
-            position: relative;
-            border-radius: 12px;
-          }
-          .nav-link:hover {
-            background-color: rgba(255,255,255,0.05) !important;
-            transform: translateX(5px);
-          }
+              <div style={styles.discountModalBody}>
+                <Discount onOfferCreated={handleOfferCreated} />
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
 
+      <style>{`
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes slideUp {
+          from { opacity: 0; transform: translateY(30px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .nav-link {
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          margin: 2px 0;
+          position: relative;
+          border-radius: 10px;
+          cursor: pointer;
+        }
+        .nav-link:hover {
+          background-color: rgba(255,255,255,0.05) !important;
+        }
+
+        .stat-card {
+          transition: all 0.3s ease;
+          cursor: pointer;
+        }
+        .stat-card:hover {
+          border-color: #f9c349;
+          box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+        }
+
+        .quick-action {
+          transition: all 0.3s ease;
+        }
+        .quick-action:hover {
+          border-color: #f9c349;
+          box-shadow: 0 12px 40px rgba(249, 195, 73, 0.2);
+        }
+
+        .animated-content {
+          animation: fadeIn 0.5s ease forwards;
+        }
+
+        ::-webkit-scrollbar {
+          width: 0px;
+          height: 0px;
+          background: transparent;
+        }
+        
+        * {
+          scrollbar-width: none;
+        }
+        
+        * {
+          -ms-overflow-style: none;
+        }
+
+        .search-input::placeholder {
+          color: #94a3b8;
+          font-weight: 400;
+        }
+        .search-input:focus {
+          outline: none;
+        }
+
+        @media (max-width: 768px) {
           .stat-card {
-            animation: slideInRight 0.6s ease forwards;
-            opacity: 0;
-            transition: all 0.3s ease;
+            animation: fadeIn 0.5s ease forwards !important;
           }
-          .stat-card:hover {
-            transform: translateY(-5px) scale(1.01);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.08);
-            border-color: #f9c349;
+          .search-input {
+            width: 100px !important;
           }
-          .stat-card:nth-child(1) { animation-delay: 0.05s; }
-          .stat-card:nth-child(2) { animation-delay: 0.1s; }
-          .stat-card:nth-child(3) { animation-delay: 0.15s; }
-
-          .quick-action {
-            transition: all 0.3s ease;
+          .mobileMenuBtn {
+            display: flex !important;
           }
-          .quick-action:hover {
-            transform: translateY(-6px) scale(1.02);
-            box-shadow: 0 12px 40px rgba(249, 195, 73, 0.25);
-            border-color: #f9c349;
+          .searchBar {
+            display: none !important;
           }
-
-          .animated-content {
-            animation: fadeIn 0.5s ease forwards;
+          .statsGrid {
+            grid-template-columns: 1fr !important;
           }
-
-          .animated-content > div {
-            animation: scaleIn 0.4s ease forwards;
+          .actionsGrid {
+            grid-template-columns: 1fr 1fr !important;
           }
-
-          .animated-content .stat-card {
-            opacity: 0;
-            animation: slideInRight 0.5s ease forwards;
+          .profileDetails {
+            grid-template-columns: 1fr !important;
           }
-          .animated-content .stat-card:nth-child(1) { animation-delay: 0.05s; }
-          .animated-content .stat-card:nth-child(2) { animation-delay: 0.1s; }
-          .animated-content .stat-card:nth-child(3) { animation-delay: 0.15s; }
-
-          .notification-badge {
-            animation: pulse 2s infinite;
+          .profileStats {
+            grid-template-columns: 1fr 1fr !important;
           }
-
-          .user-info:hover {
-            background: rgba(255,255,255,0.05);
-            border-radius: 12px;
+          .contentWrapper {
+            padding: 16px !important;
           }
-
-          ::-webkit-scrollbar {
-            width: 6px;
+          .notificationDropdown {
+            width: 280px !important;
+            right: -60px !important;
           }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
+        }
+        @media (max-width: 480px) {
+          .actionsGrid {
+            grid-template-columns: 1fr !important;
           }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
-            border-radius: 10px;
+          .profileStats {
+            grid-template-columns: 1fr !important;
           }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+          .discountModalContent {
+            max-width: 98% !important;
+            border-radius: 16px !important;
           }
-
-          @media (max-width: 768px) {
-            .stat-card {
-              animation: fadeIn 0.5s ease forwards !important;
-            }
+          .discountModalBody {
+            padding: 16px !important;
           }
-        `}
-      </style>
+          .discountModalHeader {
+            padding: 16px 20px !important;
+          }
+          .sidebar {
+            width: 280px !important;
+          }
+          .notificationDropdown {
+            width: 260px !important;
+            right: -80px !important;
+          }
+        }
+      `}</style>
     </div>
   );
-};
+}
 
 const styles = {
   container: {
     display: "flex",
     height: "100vh",
     backgroundColor: "#f1f5f9",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     overflow: "hidden",
     position: "relative",
   },
   sidebar: {
-    width: "250px",
-    background: "linear-gradient(195deg, #0f172a 0%, #1e293b 100%)",
+    width: "280px",
+    background: "linear-gradient(180deg, #0f172a 0%, #1a2332 50%, #0f172a 100%)",
     padding: "24px 16px",
     display: "flex",
     flexDirection: "column",
@@ -978,6 +1131,16 @@ const styles = {
     zIndex: 100,
     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     flexShrink: 0,
+    borderRight: "1px solid rgba(255,255,255,0.05)",
+  },
+  sidebarGradient: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "radial-gradient(ellipse at 50% 0%, rgba(249, 195, 73, 0.03) 0%, transparent 70%)",
+    pointerEvents: "none",
   },
   mobileOverlay: {
     position: "fixed",
@@ -985,7 +1148,8 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "rgba(0,0,0,0.5)",
+    background: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(4px)",
     zIndex: 99,
     animation: "fadeIn 0.3s ease",
   },
@@ -993,9 +1157,10 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "14px",
-    marginBottom: "40px",
+    marginBottom: "36px",
     padding: "0 8px",
     position: "relative",
+    zIndex: 1,
   },
   brandText: {
     flex: 1,
@@ -1004,14 +1169,14 @@ const styles = {
     width: "48px",
     height: "48px",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontSize: "24px",
     fontWeight: "800",
     color: "#0f172a",
-    boxShadow: "0 8px 25px rgba(249, 195, 73, 0.3)",
+    boxShadow: "0 8px 25px rgba(249, 195, 73, 0.25)",
     flexShrink: 0,
     overflow: "hidden",
   },
@@ -1050,18 +1215,22 @@ const styles = {
   },
   navGroup: {
     flex: 1,
+    overflowY: "auto",
+    position: "relative",
+    zIndex: 1,
   },
   navGroupLabel: {
     fontSize: "10px",
-    opacity: 0.4,
+    opacity: 0.3,
     letterSpacing: "1.5px",
     textTransform: "uppercase",
     padding: "0 16px",
     marginBottom: "12px",
+    fontWeight: "600",
   },
   navItem: {
     padding: "10px 16px",
-    borderRadius: "12px",
+    borderRadius: "10px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -1097,13 +1266,13 @@ const styles = {
     height: "6px",
     background: "#f9c349",
     borderRadius: "50%",
-    animation: "pulse 2s infinite",
   },
   userSection: {
     marginTop: "auto",
     paddingTop: "16px",
     borderTop: "1px solid rgba(255,255,255,0.06)",
     position: "relative",
+    zIndex: 1,
   },
   userInfo: {
     display: "flex",
@@ -1121,7 +1290,7 @@ const styles = {
     width: "40px",
     height: "40px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1148,7 +1317,6 @@ const styles = {
   userChevron: {
     fontSize: "12px",
     color: "#94a3b8",
-    transition: "transform 0.3s ease",
   },
   userDropdown: {
     position: "absolute",
@@ -1161,7 +1329,6 @@ const styles = {
     boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
     zIndex: 100,
     border: "1px solid rgba(255,255,255,0.05)",
-    animation: "slideDown 0.2s ease forwards",
   },
   dropdownItem: {
     display: "flex",
@@ -1183,18 +1350,49 @@ const styles = {
   dropdownLogout: {
     color: "#ef4444",
   },
+  sidebarFooter: {
+    marginTop: "12px",
+    paddingTop: "12px",
+    borderTop: "1px solid rgba(255,255,255,0.04)",
+    position: "relative",
+    zIndex: 1,
+  },
+  footerBadge: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "10px 14px",
+    background: "rgba(255,255,255,0.03)",
+    borderRadius: "10px",
+    border: "1px solid rgba(255,255,255,0.04)",
+    cursor: "default",
+  },
+  footerBadgeIcon: {
+    fontSize: "18px",
+    color: "#f9c349",
+  },
+  footerBadgeTitle: {
+    display: "block",
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#fff",
+  },
+  footerBadgeSub: {
+    display: "block",
+    fontSize: "10px",
+    opacity: 0.4,
+  },
   mainContent: {
     flex: 1,
-    padding: "12px",
+    padding: "16px",
     overflow: "hidden",
-    paddingBottom: 50,
   },
   contentWrapper: {
     height: "100%",
     background: "#ffffff",
     borderRadius: "24px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-    padding: "24px",
+    padding: "24px 28px",
     overflowY: "auto",
   },
   pageHeader: {
@@ -1216,13 +1414,14 @@ const styles = {
     width: "48px",
     height: "48px",
     borderRadius: "14px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#fff",
     fontSize: "20px",
     flexShrink: 0,
+    boxShadow: "0 4px 15px rgba(249, 195, 73, 0.25)",
   },
   headerIcon: {
     fontSize: "20px",
@@ -1247,12 +1446,12 @@ const styles = {
   searchBar: {
     display: "flex",
     alignItems: "center",
-    background: "#f1f5f9",
+    background: "#f8fafc",
     padding: "8px 16px",
-    borderRadius: "12px",
+    borderRadius: "10px",
     gap: "10px",
     transition: "all 0.3s ease",
-    border: "1px solid transparent",
+    border: "1px solid #e2e8f0",
   },
   searchIcon: {
     color: "#94a3b8",
@@ -1262,17 +1461,20 @@ const styles = {
     border: "none",
     background: "transparent",
     outline: "none",
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#0f172a",
     width: "150px",
+  },
+  notificationWrapper: {
+    position: "relative",
   },
   notificationBtn: {
     position: "relative",
     width: "40px",
     height: "40px",
-    borderRadius: "12px",
-    border: "none",
-    background: "#f1f5f9",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -1295,13 +1497,90 @@ const styles = {
     justifyContent: "center",
     fontWeight: "700",
   },
+  notificationDropdown: {
+    position: "absolute",
+    top: "calc(100% + 10px)",
+    right: "0",
+    width: "340px",
+    background: "#fff",
+    borderRadius: "14px",
+    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
+    border: "1px solid #e2e8f0",
+    zIndex: 1000,
+    overflow: "hidden",
+  },
+  notificationHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    padding: "14px 20px",
+    borderBottom: "1px solid #e2e8f0",
+  },
+  notificationTitle: {
+    fontSize: "14px",
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  notificationMarkAll: {
+    fontSize: "12px",
+    color: "#f9c349",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
+  notificationItem: {
+    display: "flex",
+    alignItems: "flex-start",
+    gap: "12px",
+    padding: "12px 20px",
+    borderBottom: "1px solid #f1f5f9",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
+  notificationDot: {
+    width: "8px",
+    height: "8px",
+    borderRadius: "50%",
+    background: "#f9c349",
+    marginTop: "6px",
+    flexShrink: 0,
+  },
+  notificationItemContent: {
+    flex: 1,
+  },
+  notificationItemText: {
+    display: "block",
+    fontSize: "13px",
+    color: "#1e293b",
+    fontWeight: "500",
+  },
+  notificationItemTime: {
+    display: "block",
+    fontSize: "11px",
+    color: "#94a3b8",
+    marginTop: "4px",
+  },
+  notificationFooter: {
+    padding: "12px 20px",
+    textAlign: "center",
+    borderTop: "1px solid #e2e8f0",
+  },
+  notificationViewAll: {
+    fontSize: "13px",
+    color: "#f5a623",
+    background: "transparent",
+    border: "none",
+    cursor: "pointer",
+    fontWeight: "600",
+  },
   mobileMenuBtn: {
     display: "none",
     width: "40px",
     height: "40px",
-    borderRadius: "12px",
-    border: "none",
-    background: "#f1f5f9",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
     cursor: "pointer",
     alignItems: "center",
     justifyContent: "center",
@@ -1311,127 +1590,27 @@ const styles = {
   homeContainer: {
     animation: "fadeIn 0.5s ease",
   },
-  welcomeHero: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
-    borderRadius: "20px",
-    padding: "32px",
-    marginBottom: "28px",
-    color: "#fff",
-    boxShadow: "0 10px 40px rgba(255, 150, 26, 0.2)",
-    position: "relative",
-    overflow: "hidden",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "20px",
-  },
-  heroContent: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "20px",
-    flex: 1,
-    position: "relative",
-    zIndex: 2,
-  },
-  heroBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    background: "rgba(255,255,255,0.2)",
-    padding: "4px 12px",
-    borderRadius: "20px",
-    fontSize: "12px",
-    fontWeight: "600",
-    marginBottom: "8px",
-  },
-  heroTitle: {
-    fontSize: "26px",
-    fontWeight: "700",
-    margin: 0,
-  },
-  heroSubtitle: {
-    fontSize: "14px",
-    opacity: 0.9,
-    marginTop: "8px",
-  },
-  heroStats: {
-    display: "flex",
-    alignItems: "center",
-    gap: "24px",
-    background: "rgba(255,255,255,0.15)",
-    padding: "16px 24px",
-    borderRadius: "16px",
-    backdropFilter: "blur(10px)",
-    border: "1px solid rgba(255,255,255,0.1)",
-  },
-  heroStat: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-  },
-  heroStatValue: {
-    fontSize: "24px",
-    fontWeight: "700",
-  },
-  heroStatLabel: {
-    fontSize: "11px",
-    opacity: 0.8,
-    marginTop: "2px",
-  },
-  heroStatDivider: {
-    width: "1px",
-    height: "40px",
-    background: "rgba(255,255,255,0.2)",
-  },
-  brandLogoContainer: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.15)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    overflow: "hidden",
-    flexShrink: 0,
-    border: "2px solid rgba(255,255,255,0.2)",
-  },
-  brandLogo: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-    padding: "8px",
-  },
-  brandLogoFallback: {
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    width: "100%",
-    height: "100%",
-  },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
     gap: "16px",
     marginBottom: "28px",
   },
   statCard: {
     background: "#fff",
     padding: "20px",
-    borderRadius: "16px",
+    borderRadius: "14px",
     display: "flex",
     alignItems: "center",
     gap: "16px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e2e8f0",
     transition: "all 0.3s ease",
     cursor: "pointer",
   },
   statIconWrapper: {
     width: "52px",
     height: "52px",
-    borderRadius: "14px",
+    borderRadius: "12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1444,7 +1623,7 @@ const styles = {
     flex: 1,
   },
   statValue: {
-    fontSize: "26px",
+    fontSize: "22px",
     fontWeight: "800",
     margin: 0,
     color: "#0f172a",
@@ -1457,7 +1636,7 @@ const styles = {
   },
   statTrend: {
     fontSize: "11px",
-    color: "#10b981",
+    color: "#059669",
     display: "flex",
     alignItems: "center",
     gap: "4px",
@@ -1478,9 +1657,9 @@ const styles = {
   },
   actionBtn: {
     background: "#f8fafc",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e2e8f0",
     padding: "20px",
-    borderRadius: "16px",
+    borderRadius: "14px",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -1494,12 +1673,13 @@ const styles = {
   actionIconWrapper: {
     width: "48px",
     height: "48px",
-    borderRadius: "14px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    borderRadius: "12px",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#fff",
+    fontSize: "20px",
     transition: "all 0.3s ease",
   },
   modalOverlay: {
@@ -1517,20 +1697,20 @@ const styles = {
   },
   modalContent: {
     background: "#fff",
-    borderRadius: "24px",
-    maxWidth: "550px",
+    borderRadius: "20px",
+    maxWidth: "580px",
     width: "95%",
     maxHeight: "90vh",
     overflow: "hidden",
     boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
   },
   modalHeader: {
-    padding: "24px 32px",
-    borderBottom: "1px solid #e5e7eb",
+    padding: "24px 28px",
+    borderBottom: "1px solid #e2e8f0",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "linear-gradient(135deg, #f8fafc 0%, #fff 100%)",
+    background: "linear-gradient(135deg, #fafbfc 0%, #fff 100%)",
   },
   modalHeaderLeft: {
     display: "flex",
@@ -1541,7 +1721,7 @@ const styles = {
     width: "56px",
     height: "56px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1572,7 +1752,7 @@ const styles = {
     height: "36px",
     borderRadius: "50%",
     border: "none",
-    background: "transparent",
+    background: "#f1f5f9",
     color: "#64748b",
     cursor: "pointer",
     display: "flex",
@@ -1582,24 +1762,24 @@ const styles = {
     fontSize: "18px",
   },
   modalBody: {
-    padding: "32px",
+    padding: "28px",
     overflowY: "auto",
   },
   modalCloseBtnBottom: {
     padding: "14px 32px",
-    background: "#f1f5f9",
+    background: "#f8fafc",
     border: "none",
+    borderTop: "1px solid #e2e8f0",
     color: "#475569",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "14px",
     width: "100%",
     transition: "all 0.3s ease",
-    borderTop: "1px solid #e5e7eb",
   },
   profileStats: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr 1fr",
+    gridTemplateColumns: "1fr 1fr 1fr 1fr",
     gap: "12px",
     marginBottom: "24px",
   },
@@ -1609,7 +1789,7 @@ const styles = {
     gap: "10px",
     padding: "12px",
     background: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "10px",
   },
   profileStatValue: {
     display: "block",
@@ -1624,13 +1804,13 @@ const styles = {
   },
   profileDivider: {
     height: "1px",
-    background: "#e5e7eb",
+    background: "#e2e8f0",
     marginBottom: "24px",
   },
   profileDetails: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
+    gap: "12px",
   },
   profileDetailItem: {
     display: "flex",
@@ -1638,7 +1818,7 @@ const styles = {
     gap: "12px",
     padding: "12px",
     background: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "10px",
     transition: "all 0.3s ease",
   },
   profileDetailIcon: {
@@ -1649,13 +1829,16 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+    color: "#f5a623",
     flexShrink: 0,
   },
   profileDetailLabel: {
     display: "block",
-    fontSize: "11px",
+    fontSize: "10px",
     color: "#94a3b8",
     fontWeight: "500",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
   },
   profileDetailValue: {
     display: "block",
@@ -1663,18 +1846,10 @@ const styles = {
     fontWeight: "600",
     color: "#0f172a",
   },
-  profileLogoInfo: {
-    fontSize: "12px",
-    color: "#10b981",
-    marginTop: "16px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-  },
   settingsIconWrapper: {
     width: "48px",
     height: "48px",
-    borderRadius: "14px",
+    borderRadius: "12px",
     background: "#fff7ed",
     display: "flex",
     alignItems: "center",
@@ -1695,7 +1870,7 @@ const styles = {
     gap: "14px",
     padding: "12px 16px",
     background: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "10px",
     marginBottom: "8px",
     transition: "all 0.3s ease",
   },
@@ -1708,6 +1883,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
   },
   settingsItemContent: {
     flex: 1,
@@ -1725,19 +1901,17 @@ const styles = {
     padding: "4px 14px",
     border: "none",
     borderRadius: "8px",
-    background: "#f9c349",
-    color: "#0f172a",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
+    color: "#fff",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "12px",
     transition: "all 0.3s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
+    whiteSpace: "nowrap",
   },
   settingsSelect: {
     padding: "6px 12px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #e2e8f0",
     borderRadius: "8px",
     fontSize: "12px",
     background: "#fff",
@@ -1745,11 +1919,118 @@ const styles = {
   },
   settingsDivider: {
     height: "1px",
-    background: "#e5e7eb",
+    background: "#e2e8f0",
     marginBottom: "24px",
   },
+  discountModalOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.7)",
+    backdropFilter: "blur(12px)",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    zIndex: 2000,
+  },
+  discountModalContent: {
+    background: "#fff",
+    borderRadius: "24px",
+    maxWidth: "750px",
+    width: "95%",
+    maxHeight: "92vh",
+    overflow: "hidden",
+    boxShadow: "0 30px 80px rgba(0,0,0,0.4)",
+    display: "flex",
+    flexDirection: "column",
+  },
+  discountModalHeader: {
+    padding: "20px 28px",
+    borderBottom: "2px solid #f1f5f9",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    background: "linear-gradient(135deg, #fafbfc 0%, #fff 100%)",
+    flexShrink: 0,
+  },
+  discountModalHeaderLeft: {
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
+  },
+  discountModalIcon: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "12px",
+    background: "#fff7ed",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  discountModalTitle: {
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+  },
+  discountModalSubtitle: {
+    fontSize: "13px",
+    color: "#64748b",
+    marginTop: "2px",
+  },
+  discountModalClose: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    border: "none",
+    background: "#f1f5f9",
+    color: "#64748b",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    transition: "all 0.3s ease",
+    fontSize: "18px",
+  },
+  discountModalBody: {
+    padding: "24px 28px",
+    overflowY: "auto",
+    flex: 1,
+  },
+  notificationToast: {
+    position: "fixed",
+    top: "20px",
+    right: "20px",
+    zIndex: 9999,
+    maxWidth: "400px",
+  },
+  notificationContent: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
+    padding: "14px 20px",
+    borderRadius: "14px",
+    boxShadow: "0 10px 40px rgba(245, 158, 11, 0.3)",
+    border: "1px solid #f59e0b",
+  },
+  notificationIcon: {
+    fontSize: "20px",
+  },
+  notificationText: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#92400e",
+    flex: 1,
+  },
+  notificationClose: {
+    background: "transparent",
+    border: "none",
+    color: "#92400e",
+    cursor: "pointer",
+    fontSize: "16px",
+    padding: "4px",
+  },
 };
-
-
-
-export default BrandDashboard;

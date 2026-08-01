@@ -13,17 +13,18 @@ import {
   FaCheckCircle, 
   FaImage, 
   FaInfoCircle, 
-  // FaStar,
   FaTimes,
-  // FaPlus,
-  // FaMinus,
-  // FaClock,
-  // FaBuilding,
-  // FaUsers,
   FaRocket,
   FaSpinner,
   FaShieldAlt,
-  // FaCalendarAlt,
+  FaBullhorn,
+  FaClock,
+  FaCalendarAlt,
+  FaWhatsapp,
+  FaInstagram,
+  FaFacebook,
+  FaTwitter,
+  FaExclamationTriangle,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -52,7 +53,6 @@ const CATEGORIES = [
   "Others"
 ];
 
-// Default redemption instructions with the 7 steps
 const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the Offers section.
 2. Browse Brand and select the offer you want.
 3. Save the discount offer in the app.
@@ -71,6 +71,7 @@ export default function CreateOffer() {
     location: "",
     isOnline: false,
     isInStore: false,
+    validUntil: "",
   });
 
   const [image, setImage] = useState(null);
@@ -79,16 +80,60 @@ export default function CreateOffer() {
   const [focusedField, setFocusedField] = useState(null);
   const [showSuccess, setShowSuccess] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
+  const [discountError, setDiscountError] = useState("");
+
+  const validateDiscount = (value) => {
+    const num = parseInt(value);
+    if (!value) {
+      setDiscountError("Discount percentage is required");
+      return false;
+    }
+    if (isNaN(num) || num < 15) {
+      setDiscountError("Discount must be at least 15%");
+      return false;
+    }
+    if (num > 50) {
+      setDiscountError("Discount cannot exceed 50%");
+      return false;
+    }
+    setDiscountError("");
+    return true;
+  };
+
+  const handleDiscountChange = (e) => {
+    const value = e.target.value;
+    setForm({ ...form, discountPercentage: value });
+    if (value) {
+      validateDiscount(value);
+    } else {
+      setDiscountError("");
+    }
+  };
 
   const createOffer = async () => {
-    if (!form.title || !form.discountPercentage || !form.category || !image || !form.description) {
-      return alert("Please fill Title, Description, Discount, Category, and Image!");
+    // Validate all required fields
+    if (!form.title) {
+      return alert("Please enter the brand name");
     }
-
-    const confirmUpload = window.confirm(
-      "Creating this offer will remove your previous one. Do you want to proceed?"
-    );
-    if (!confirmUpload) return;
+    if (!form.description) {
+      return alert("Please enter a description");
+    }
+    if (!form.category) {
+      return alert("Please select a category");
+    }
+    if (!form.discountPercentage) {
+      return alert("Please enter the discount percentage");
+    }
+    
+    // Validate discount range
+    const discountNum = parseInt(form.discountPercentage);
+    if (isNaN(discountNum) || discountNum < 15 || discountNum > 50) {
+      return alert("Discount must be between 15% and 50%");
+    }
+    
+    if (!image) {
+      return alert("Please upload an offer image");
+    }
 
     const formData = new FormData();
     formData.append("title", form.title);
@@ -99,6 +144,7 @@ export default function CreateOffer() {
     formData.append("location", form.location);
     formData.append("isOnline", String(form.isOnline));
     formData.append("isInStore", String(form.isInStore));
+    formData.append("validUntil", form.validUntil);
     formData.append("image", image);
 
     try {
@@ -116,12 +162,14 @@ export default function CreateOffer() {
         });
       }, 200);
       
-      await axios.post(API_BASE_URL, formData, {
+      const response = await axios.post(API_BASE_URL, formData, {
         headers: {
           Authorization: `Bearer ${token}`,
           "Content-Type": "multipart/form-data",
         },
       });
+
+      console.log("✅ Offer created:", response.data);
 
       clearInterval(interval);
       setUploadProgress(100);
@@ -131,16 +179,17 @@ export default function CreateOffer() {
         setForm({
           title: "", description: "", discountPercentage: "", category: "",
           redeemInstructions: DEFAULT_REDEMPTION_INSTRUCTIONS,
-          location: "", isOnline: false, isInStore: false
+          location: "", isOnline: false, isInStore: false, validUntil: ""
         });
         setPreview(null);
         setImage(null);
         setShowSuccess(false);
         setUploadProgress(0);
+        setDiscountError("");
       }, 3000);
       
     } catch (error) {
-      console.error("Upload Error:", error.response?.data);
+      console.error("❌ Upload Error:", error.response?.data || error.message);
       alert(error.response?.data?.message || "❌ Error creating offer. Check console for details.");
     } finally {
       setLoading(false);
@@ -164,10 +213,10 @@ export default function CreateOffer() {
         transition={{ duration: 0.4 }}
         style={styles.inputGroup}
       >
-        <label style={{...styles.label, color: isFocused ? '#ff961a' : '#64748b'}}>
+        <label style={{...styles.label, color: isFocused ? '#f9c349' : '#64748b'}}>
           {label} {required && <span style={styles.required}>*</span>}
         </label>
-        <div style={{...styles.inputWrapper, borderColor: isFocused ? '#ff961a' : '#e2e8f0', boxShadow: isFocused ? '0 0 0 3px rgba(255,150,26,0.1)' : 'none'}}>
+        <div style={{...styles.inputWrapper, borderColor: isFocused ? '#f9c349' : '#e2e8f0', boxShadow: isFocused ? '0 0 0 3px rgba(249, 195, 73, 0.1)' : 'none'}}>
           {icon && <span style={styles.fieldIcon}>{icon}</span>}
           <input
             style={styles.input}
@@ -199,23 +248,32 @@ export default function CreateOffer() {
             style={styles.successOverlay}
           >
             <div style={styles.successContent}>
-              <FaCheckCircle size={60} color="#10b981" />
+              <motion.div
+                initial={{ scale: 0 }}
+                animate={{ scale: 1 }}
+                transition={{ type: "spring", stiffness: 300, damping: 20 }}
+              >
+                <FaCheckCircle size={64} color="#10b981" />
+              </motion.div>
               <h3 style={styles.successTitle}>Offer Created Successfully! 🎉</h3>
               <p style={styles.successText}>Your students have been notified via the app</p>
+              <div style={styles.successStats}>
+                <div style={styles.successStat}>
+                  <span style={styles.successStatValue}>1K+</span>
+                  <span style={styles.successStatLabel}>Students Reached</span>
+                </div>
+                <div style={styles.successStatDivider} />
+                <div style={styles.successStat}>
+                  <span style={styles.successStatValue}>24hrs</span>
+                  <span style={styles.successStatLabel}>Avg Response</span>
+                </div>
+              </div>
             </div>
           </motion.div>
         )}
       </AnimatePresence>
 
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={styles.header}
-      >
-        <h2 style={styles.mainTitle}>Students <span style={{color: '#ff961a'}}>Discount Offer</span></h2>
-        <p style={styles.subTitle}>Launch your discount and connect with thousands of students instantly</p>
-      </motion.div>
+      
 
       {loading && (
         <motion.div
@@ -223,6 +281,10 @@ export default function CreateOffer() {
           animate={{ opacity: 1, height: 'auto' }}
           style={styles.progressContainer}
         >
+          <div style={styles.progressHeader}>
+            <span style={styles.progressLabel}>Uploading your offer</span>
+            <span style={styles.progressPercent}>{uploadProgress}%</span>
+          </div>
           <div style={styles.progressBar}>
             <motion.div
               initial={{ width: 0 }}
@@ -231,12 +293,17 @@ export default function CreateOffer() {
               style={{...styles.progressFill, width: `${uploadProgress}%`}}
             />
           </div>
-          <p style={styles.progressText}>{uploadProgress}% Uploading...</p>
+          <p style={styles.progressText}>Please wait while we publish your offer...</p>
         </motion.div>
       )}
 
       <div style={styles.formGrid}>
         <div style={styles.inputSection}>
+          <div style={styles.sectionHeader}>
+            <span style={styles.sectionNumber}>01</span>
+            <h4 style={styles.sectionTitle}>Offer Details</h4>
+          </div>
+
           {renderField("title", "Brand Name", <FaTag />, "text", true)}
           {renderField("description", "Description", <FaAlignLeft />, "text", true)}
 
@@ -271,18 +338,54 @@ export default function CreateOffer() {
               transition={{ duration: 0.4, delay: 0.15 }}
               style={{...styles.inputGroup, flex: 1}}
             >
-              <label style={styles.label}>Discount % <span style={styles.required}>*</span></label>
-              <div style={{...styles.inputWrapper, background: 'linear-gradient(135deg, #fff7ed 0%, #fff 100%)'}}>
-                <FaPercent style={{...styles.fieldIcon, color: '#ff961a'}} />
+              <label style={{...styles.label, color: discountError ? '#ef4444' : '#64748b'}}>
+                Discount % <span style={styles.required}>*</span>
+                <span style={styles.discountRange}>(15% - 50%)</span>
+              </label>
+              <div style={{
+                ...styles.inputWrapper, 
+                background: discountError ? '#fef2f2' : 'linear-gradient(135deg, #fef9ef 0%, #fff 100%)',
+                borderColor: discountError ? '#ef4444' : '#e2e8f0',
+              }}>
+                <FaPercent style={{...styles.fieldIcon, color: discountError ? '#ef4444' : '#f9c349'}} />
                 <input
                   type="number"
                   style={styles.input}
-                  placeholder="0"
+                  placeholder="25"
                   value={form.discountPercentage}
-                  onChange={(e) => setForm({ ...form, discountPercentage: e.target.value })}
+                  onChange={handleDiscountChange}
+                  min="15"
+                  max="50"
+                  step="1"
                 />
+                <span style={styles.discountBadge}>%</span>
               </div>
+              {discountError && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={styles.errorMessage}
+                >
+                  <FaExclamationTriangle size={12} />
+                  <span>{discountError}</span>
+                </motion.div>
+              )}
+              {!discountError && form.discountPercentage && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  style={styles.successMessage}
+                >
+                  <FaCheckCircle size={12} />
+                  <span>Valid discount percentage</span>
+                </motion.div>
+              )}
             </motion.div>
+          </div>
+
+          <div style={styles.sectionHeader}>
+            <span style={styles.sectionNumber}>02</span>
+            <h4 style={styles.sectionTitle}>Availability & Location</h4>
           </div>
 
           <motion.div 
@@ -292,18 +395,15 @@ export default function CreateOffer() {
             transition={{ duration: 0.4, delay: 0.2 }}
             style={styles.inputGroup}
           >
-            <label style={styles.label}>Availability</label>
-            <div style={styles.checkboxContainer}>
-              <label style={{...styles.checkboxLabel, background: form.isOnline ? '#fff7ed' : '#f8fafc', borderColor: form.isOnline ? '#ff961a' : '#e2e8f0'}}>
-                <input type="checkbox" checked={form.isOnline} onChange={(e) => setForm({...form, isOnline: e.target.checked})} />
-                <FaGlobe style={{color: form.isOnline ? '#ff961a' : '#94a3b8'}} />
-                Online
-              </label>
-              <label style={{...styles.checkboxLabel, background: form.isInStore ? '#fff7ed' : '#f8fafc', borderColor: form.isInStore ? '#ff961a' : '#e2e8f0'}}>
-                <input type="checkbox" checked={form.isInStore} onChange={(e) => setForm({...form, isInStore: e.target.checked})} />
-                <FaStore style={{color: form.isInStore ? '#ff961a' : '#94a3b8'}} />
-                In-Store
-              </label>
+            <label style={styles.label}>Valid Until</label>
+            <div style={styles.inputWrapper}>
+              <FaCalendarAlt style={styles.fieldIcon} />
+              <input
+                type="date"
+                style={styles.input}
+                value={form.validUntil}
+                onChange={(e) => setForm({ ...form, validUntil: e.target.value })}
+              />
             </div>
           </motion.div>
 
@@ -311,7 +411,7 @@ export default function CreateOffer() {
             className="animate-field"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.4, delay: 0.25 }}
+            transition={{ duration: 0.4, delay: 0.2 }}
             style={styles.inputGroup}
           >
             <label style={styles.label}>Store Location</label>
@@ -330,17 +430,52 @@ export default function CreateOffer() {
             className="animate-field"
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.25 }}
+            style={styles.inputGroup}
+          >
+            <label style={styles.label}>Availability</label>
+            <div style={styles.checkboxContainer}>
+              <motion.label 
+                style={{...styles.checkboxLabel, background: form.isOnline ? '#fef9ef' : '#f8fafc', borderColor: form.isOnline ? '#f9c349' : '#e2e8f0'}}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <input type="checkbox" checked={form.isOnline} onChange={(e) => setForm({...form, isOnline: e.target.checked})} />
+                <FaGlobe style={{color: form.isOnline ? '#f9c349' : '#94a3b8'}} />
+                Online
+              </motion.label>
+              <motion.label 
+                style={{...styles.checkboxLabel, background: form.isInStore ? '#fef9ef' : '#f8fafc', borderColor: form.isInStore ? '#f9c349' : '#e2e8f0'}}
+                whileHover={{ scale: 1.02 }}
+                whileTap={{ scale: 0.98 }}
+              >
+                <input type="checkbox" checked={form.isInStore} onChange={(e) => setForm({...form, isInStore: e.target.checked})} />
+                <FaStore style={{color: form.isInStore ? '#f9c349' : '#94a3b8'}} />
+                In-Store
+              </motion.label>
+            </div>
+          </motion.div>
+
+          <div style={styles.sectionHeader}>
+            <span style={styles.sectionNumber}>03</span>
+            <h4 style={styles.sectionTitle}>Redemption Instructions</h4>
+          </div>
+
+          <motion.div 
+            className="animate-field"
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 0.3 }}
             style={styles.inputGroup}
           >
             <label style={{...styles.label, display: 'flex', alignItems: 'center'}}>
               <FaInfoCircle style={{marginRight: '6px', fontSize: '14px'}} />
-              Redemption Instructions
+              Instructions
             </label>
-            <div style={{...styles.textareaWrapper, borderColor: focusedField === 'redeemInstructions' ? '#ff961a' : '#e2e8f0'}}>
+            <div style={{...styles.textareaWrapper, borderColor: focusedField === 'redeemInstructions' ? '#f9c349' : '#e2e8f0'}}>
               <textarea
                 style={styles.textarea}
-                placeholder="How can students claim this? (e.g., Show student ID at counter, use code STUDENT20)"
+                placeholder="How can students claim this?"
                 value={form.redeemInstructions}
                 onChange={(e) => setForm({ ...form, redeemInstructions: e.target.value })}
                 onFocus={() => setFocusedField('redeemInstructions')}
@@ -352,6 +487,11 @@ export default function CreateOffer() {
         </div>
 
         <div style={styles.uploadSection}>
+          <div style={styles.sectionHeader}>
+            <span style={styles.sectionNumber}>04</span>
+            <h4 style={styles.sectionTitle}>Media & Preview</h4>
+          </div>
+
           <motion.div 
             className="animate-field"
             initial={{ opacity: 0, x: 20 }}
@@ -360,29 +500,39 @@ export default function CreateOffer() {
             style={styles.imageCard}
           >
             <div style={styles.imageHeader}>
-              <FaImage style={{color: '#ff961a'}} />
-              <span style={styles.imageLabel}>Logo <span style={styles.required}>*</span></span>
+              <FaImage style={{color: '#f9c349'}} />
+              <span style={styles.imageLabel}>Offer Image <span style={styles.required}>*</span></span>
             </div>
             {preview ? (
-              <div style={styles.previewContainer}>
+              <motion.div 
+                style={styles.previewContainer}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+              >
                 <img src={preview} alt="Preview" style={styles.previewImage} />
-                <button 
+                <motion.button 
                   style={styles.changeImageBtn}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={() => {
                     setPreview(null);
                     setImage(null);
                   }}
                 >
                   <FaTimes /> Change
-                </button>
-              </div>
+                </motion.button>
+              </motion.div>
             ) : (
-              <label style={styles.uploadArea}>
+              <motion.label 
+                style={styles.uploadArea}
+                whileHover={{ backgroundColor: '#fef9ef' }}
+                whileTap={{ scale: 0.98 }}
+              >
                 <input type="file" style={{ display: "none" }} onChange={(e) => handleImageChange(e.target.files[0])} />
-                <FaCloudUploadAlt size={48} color="#ff961a" />
+                <FaCloudUploadAlt size={48} color="#f9c349" />
                 <p style={styles.uploadText}>Click to upload banner</p>
                 <p style={styles.uploadHint}>PNG, JPG up to 5MB (16:9 recommended)</p>
-              </label>
+              </motion.label>
             )}
           </motion.div>
 
@@ -398,7 +548,7 @@ export default function CreateOffer() {
             </p>
             <div style={styles.previewContent}>
               <div style={styles.previewDiscountBadge}>
-                {form.discountPercentage || '0'}% OFF
+                {form.discountPercentage ? `${form.discountPercentage}% OFF` : '0% OFF'}
               </div>
               <p style={styles.previewOfferTitle}>
                 {form.title || 'Your Offer Title'}
@@ -409,6 +559,7 @@ export default function CreateOffer() {
               <div style={styles.previewTags}>
                 {form.isOnline && <span style={styles.previewTag}><FaGlobe size={10} /> Online</span>}
                 {form.isInStore && <span style={styles.previewTag}><FaStore size={10} /> In-Store</span>}
+                {form.validUntil && <span style={styles.previewTag}><FaClock size={10} /> Valid until {new Date(form.validUntil).toLocaleDateString()}</span>}
               </div>
             </div>
           </motion.div>
@@ -426,6 +577,13 @@ export default function CreateOffer() {
               <li style={styles.tipItem}>High-quality images attract more students</li>
               <li style={styles.tipItem}>Clear instructions increase redemption rate</li>
             </ul>
+            <div style={styles.tipsSocial}>
+              <span style={styles.tipsSocialLabel}>Share with:</span>
+              <FaWhatsapp style={styles.tipsSocialIcon} />
+              <FaInstagram style={styles.tipsSocialIcon} />
+              <FaFacebook style={styles.tipsSocialIcon} />
+              <FaTwitter style={styles.tipsSocialIcon} />
+            </div>
           </motion.div>
         </div>
       </div>
@@ -436,11 +594,18 @@ export default function CreateOffer() {
         transition={{ duration: 0.5, delay: 0.3 }}
         style={styles.footer}
       >
-        <button 
-          style={{...styles.submitBtn, opacity: loading ? 0.7 : 1}} 
+        <motion.button 
+          style={{
+            ...styles.submitBtn, 
+            opacity: loading ? 0.7 : 1,
+            background: discountError ? '#94a3b8' : 'linear-gradient(135deg, #f9c349 0%, #f5a623 100%)',
+            cursor: discountError ? 'not-allowed' : 'pointer',
+          }} 
           onClick={createOffer} 
-          disabled={loading}
+          disabled={loading || !!discountError}
           className="submit-btn"
+          whileHover={{ scale: discountError ? 1 : 1.02 }}
+          whileTap={{ scale: discountError ? 1 : 0.98 }}
         >
           {loading ? (
             <>
@@ -453,7 +618,13 @@ export default function CreateOffer() {
               <FaArrowRight style={{marginLeft: '10px', fontSize: '14px'}} />
             </>
           )}
-        </button>
+        </motion.button>
+        {discountError && (
+          <p style={styles.discountFooterError}>
+            <FaExclamationTriangle size={12} />
+            Please fix the discount percentage before publishing
+          </p>
+        )}
         <p style={styles.footerNote}>
           <FaShieldAlt size={12} style={{marginRight: '4px'}} />
           Your offer will be visible to all students instantly
@@ -466,21 +637,14 @@ export default function CreateOffer() {
             from { opacity: 0; transform: translateY(30px); }
             to { opacity: 1; transform: translateY(0); }
           }
-          @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.6; }
-          }
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
+          @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
           }
           
           .spinner {
@@ -498,7 +662,7 @@ export default function CreateOffer() {
           }
           .submit-btn:hover:not(:disabled) {
             transform: translateY(-2px);
-            box-shadow: 0 20px 25px -12px rgba(255, 150, 26, 0.4);
+            box-shadow: 0 20px 25px -12px rgba(249, 195, 73, 0.4);
           }
           .submit-btn:disabled {
             cursor: not-allowed;
@@ -512,22 +676,11 @@ export default function CreateOffer() {
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: #ff961a;
+            accent-color: #f9c349;
           }
           
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+          input[type="number"]::-webkit-inner-spin-button {
+            opacity: 0.5;
           }
         `}
       </style>
@@ -539,41 +692,42 @@ const styles = {
   container: { 
     maxWidth: "1100px", 
     margin: "20px auto", 
-    padding: "20px 30px 40px", 
+    padding: "24px 32px 40px", 
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     position: "relative",
-    background: "#fff",
-    borderRadius: "40px",
+    background: "#ffffff",
+    borderRadius: "28px",
     overflow: "hidden",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
+    boxShadow: "0 4px 24px rgba(0,0,0,0.04)",
+    border: "1px solid #f1f5f9",
   },
   decorCircle1: {
     position: "absolute",
-    top: "-100px",
-    right: "-100px",
-    width: "300px",
-    height: "300px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.08) 0%, rgba(255,150,26,0) 70%)",
+    top: "-120px",
+    right: "-120px",
+    width: "350px",
+    height: "350px",
+    background: "radial-gradient(circle, rgba(249, 195, 73, 0.06) 0%, rgba(249, 195, 73, 0) 70%)",
     borderRadius: "50%",
     pointerEvents: "none"
   },
   decorCircle2: {
     position: "absolute",
-    bottom: "-80px",
-    left: "-80px",
-    width: "250px",
-    height: "250px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.05) 0%, rgba(255,150,26,0) 70%)",
+    bottom: "-100px",
+    left: "-100px",
+    width: "300px",
+    height: "300px",
+    background: "radial-gradient(circle, rgba(249, 195, 73, 0.04) 0%, rgba(249, 195, 73, 0) 70%)",
     borderRadius: "50%",
     pointerEvents: "none"
   },
   decorCircle3: {
     position: "absolute",
     top: "50%",
-    right: "-50px",
-    width: "150px",
-    height: "150px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)",
+    right: "-60px",
+    width: "180px",
+    height: "180px",
+    background: "radial-gradient(circle, rgba(249, 195, 73, 0.03) 0%, rgba(249, 195, 73, 0) 70%)",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -592,13 +746,14 @@ const styles = {
   },
   successContent: {
     background: "#fff",
-    padding: "40px 60px",
+    padding: "48px 60px",
     borderRadius: "24px",
     textAlign: "center",
     boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
+    maxWidth: "440px",
   },
   successTitle: {
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "700",
     color: "#0f172a",
     margin: "16px 0 8px",
@@ -606,13 +761,58 @@ const styles = {
   successText: {
     fontSize: "14px",
     color: "#64748b",
-    margin: 0,
+    margin: "0 0 20px 0",
+  },
+  successStats: {
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    gap: "16px",
+    paddingTop: "16px",
+    borderTop: "1px solid #e5e7eb",
+  },
+  successStat: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+  },
+  successStatValue: {
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "#0f172a",
+  },
+  successStatLabel: {
+    fontSize: "11px",
+    color: "#94a3b8",
+    fontWeight: "500",
+  },
+  successStatDivider: {
+    width: "1px",
+    height: "30px",
+    background: "#e5e7eb",
   },
   progressContainer: {
     marginBottom: "24px",
-    padding: "16px",
+    padding: "20px 24px",
     background: "#f8fafc",
-    borderRadius: "12px",
+    borderRadius: "14px",
+    border: "1px solid #e5e7eb",
+  },
+  progressHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px",
+  },
+  progressLabel: {
+    fontSize: "13px",
+    fontWeight: "600",
+    color: "#0f172a",
+  },
+  progressPercent: {
+    fontSize: "13px",
+    fontWeight: "700",
+    color: "#f9c349",
   },
   progressBar: {
     height: "6px",
@@ -622,31 +822,43 @@ const styles = {
   },
   progressFill: {
     height: "100%",
-    background: "linear-gradient(90deg, #f9c349 0%, #ff961a 100%)",
+    background: "linear-gradient(90deg, #f9c349 0%, #f5a623 100%)",
     borderRadius: "3px",
     transition: "width 0.5s ease",
   },
   progressText: {
     fontSize: "12px",
-    color: "#64748b",
+    color: "#94a3b8",
     marginTop: "8px",
     textAlign: "center",
   },
   header: { 
-    marginBottom: "40px", 
+    marginBottom: "36px", 
     textAlign: "center",
     position: "relative",
     zIndex: 1
   },
+  headerBadge: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "8px",
+    background: "#fef9ef",
+    color: "#f9c349",
+    padding: "4px 16px",
+    borderRadius: "20px",
+    fontSize: "12px",
+    fontWeight: "600",
+    marginBottom: "12px",
+  },
   mainTitle: { 
     margin: 0, 
     fontSize: "32px", 
-    color: "#1e293b", 
+    color: "#0f172a", 
     fontWeight: "800",
     letterSpacing: "-0.5px"
   },
   subTitle: { 
-    margin: "12px 0 0", 
+    margin: "10px 0 0", 
     fontSize: "15px", 
     color: "#64748b",
     maxWidth: "450px",
@@ -668,9 +880,34 @@ const styles = {
     display: "flex",
     flexDirection: "column",
   },
+  sectionHeader: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "16px",
+    marginTop: "8px",
+  },
+  sectionNumber: {
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    width: "28px",
+    height: "28px",
+    borderRadius: "50%",
+    background: "#fef9ef",
+    color: "#f9c349",
+    fontSize: "12px",
+    fontWeight: "700",
+  },
+  sectionTitle: {
+    fontSize: "14px",
+    fontWeight: "600",
+    color: "#0f172a",
+    margin: 0,
+  },
   row: { 
     display: "flex", 
-    gap: "20px" 
+    gap: "16px" 
   },
   label: { 
     display: "block", 
@@ -681,18 +918,24 @@ const styles = {
     transition: "color 0.2s ease"
   },
   required: {
-    color: "#ff961a",
+    color: "#f9c349",
     fontSize: "14px"
   },
+  discountRange: {
+    color: "#94a3b8",
+    fontSize: "11px",
+    fontWeight: "400",
+    marginLeft: "6px"
+  },
   inputGroup: { 
-    marginBottom: "20px" 
+    marginBottom: "18px" 
   },
   inputWrapper: { 
     display: "flex", 
     alignItems: "center", 
     backgroundColor: "#f8fafc", 
     border: "2px solid #e2e8f0", 
-    borderRadius: "14px", 
+    borderRadius: "12px", 
     padding: "0 16px",
     transition: "all 0.2s ease"
   },
@@ -705,33 +948,57 @@ const styles = {
   },
   input: { 
     width: "100%", 
-    padding: "14px 0", 
+    padding: "13px 0", 
     border: "none", 
     backgroundColor: "transparent", 
     outline: "none", 
     fontSize: "14px", 
-    color: "#1e293b",
+    color: "#0f172a",
     fontWeight: "500"
+  },
+  discountBadge: {
+    color: "#94a3b8",
+    fontSize: "14px",
+    fontWeight: "600",
+    paddingLeft: "4px"
+  },
+  errorMessage: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "6px",
+    fontSize: "12px",
+    color: "#ef4444",
+    fontWeight: "500",
+  },
+  successMessage: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "6px",
+    fontSize: "12px",
+    color: "#10b981",
+    fontWeight: "500",
   },
   textareaWrapper: {
     border: "2px solid #e2e8f0",
-    borderRadius: "14px",
+    borderRadius: "12px",
     backgroundColor: "#f8fafc",
     transition: "all 0.2s ease",
     overflow: "hidden"
   },
   textarea: { 
     width: "100%", 
-    padding: "14px 16px", 
+    padding: "13px 16px", 
     border: "none", 
     backgroundColor: "transparent", 
     outline: "none", 
     fontSize: "14px", 
     fontFamily: "inherit",
     resize: "vertical",
-    minHeight: "180px",
+    minHeight: "160px",
     maxHeight: "350px",
-    color: "#1e293b",
+    color: "#0f172a",
     boxSizing: "border-box",
     lineHeight: "1.8",
     whiteSpace: "pre-wrap"
@@ -754,17 +1021,17 @@ const styles = {
     transition: "all 0.2s ease"
   },
   imageCard: { 
-    borderRadius: "20px", 
+    borderRadius: "16px", 
     backgroundColor: "#f8fafc",
     border: "2px dashed #e2e8f0",
     overflow: "hidden",
-    marginBottom: "20px"
+    marginBottom: "18px"
   },
   imageHeader: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    padding: "16px 20px 0",
+    padding: "14px 20px 0",
     fontSize: "13px",
     fontWeight: "600",
     color: "#475569"
@@ -778,15 +1045,16 @@ const styles = {
     flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    padding: "40px 20px",
+    padding: "36px 20px",
     cursor: "pointer",
-    transition: "background 0.2s ease"
+    transition: "background 0.2s ease",
+    borderRadius: "16px",
   },
   uploadText: {
     marginTop: "12px",
     fontSize: "14px",
     fontWeight: "500",
-    color: "#ff961a"
+    color: "#f9c349"
   },
   uploadHint: {
     fontSize: "11px",
@@ -798,7 +1066,7 @@ const styles = {
   },
   previewImage: { 
     width: "100%", 
-    height: "200px", 
+    height: "180px", 
     objectFit: "cover"
   },
   changeImageBtn: {
@@ -808,7 +1076,7 @@ const styles = {
     background: "rgba(0,0,0,0.75)",
     color: "#fff",
     border: "none",
-    padding: "8px 16px",
+    padding: "6px 14px",
     borderRadius: "20px",
     fontSize: "12px",
     cursor: "pointer",
@@ -818,10 +1086,11 @@ const styles = {
     transition: "all 0.3s ease",
   },
   previewCard: {
-    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-    borderRadius: "20px",
+    background: "linear-gradient(135deg, #0f172a 0%, #1a2332 100%)",
+    borderRadius: "16px",
     padding: "20px",
-    marginBottom: "16px"
+    marginBottom: "16px",
+    border: "1px solid rgba(255,255,255,0.05)",
   },
   previewTitle: {
     fontSize: "11px",
@@ -829,7 +1098,7 @@ const styles = {
     color: "#94a3b8",
     textTransform: "uppercase",
     letterSpacing: "1px",
-    marginBottom: "16px",
+    marginBottom: "14px",
     display: "flex",
     alignItems: "center",
   },
@@ -838,19 +1107,19 @@ const styles = {
   },
   previewDiscountBadge: {
     display: "inline-block",
-    background: "#ff961a",
-    color: "#fff",
+    background: "#f9c349",
+    color: "#0f172a",
     padding: "4px 14px",
     borderRadius: "20px",
     fontSize: "14px",
     fontWeight: "800",
-    marginBottom: "12px"
+    marginBottom: "10px"
   },
   previewOfferTitle: {
     color: "#fff",
     fontSize: "18px",
     fontWeight: "600",
-    margin: "0 0 6px 0"
+    margin: "0 0 4px 0"
   },
   previewCategory: {
     color: "#94a3b8",
@@ -860,24 +1129,24 @@ const styles = {
   previewTags: {
     display: "flex",
     gap: "8px",
-    marginTop: "12px",
+    marginTop: "10px",
     flexWrap: "wrap"
   },
   previewTag: {
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    background: "rgba(255,255,255,0.1)",
-    color: "#94a3b8",
+    background: "rgba(255,255,255,0.08)",
+    color: "#cbd5e1",
     padding: "4px 12px",
     borderRadius: "20px",
     fontSize: "11px"
   },
   tipsCard: {
-    background: "#fff7ed",
-    borderRadius: "16px",
+    background: "#fef9ef",
+    borderRadius: "14px",
     padding: "16px 20px",
-    border: "1px solid #fef3c7",
+    border: "1px solid #fde68a",
   },
   tipsTitle: {
     fontSize: "13px",
@@ -894,6 +1163,25 @@ const styles = {
   tipItem: {
     marginBottom: "4px"
   },
+  tipsSocial: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    marginTop: "12px",
+    paddingTop: "12px",
+    borderTop: "1px solid #fde68a",
+  },
+  tipsSocialLabel: {
+    fontSize: "12px",
+    color: "#92400e",
+    fontWeight: "500",
+  },
+  tipsSocialIcon: {
+    fontSize: "18px",
+    color: "#92400e",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+  },
   footer: { 
     marginTop: "32px", 
     paddingTop: "24px", 
@@ -903,9 +1191,9 @@ const styles = {
     zIndex: 1
   },
   submitBtn: { 
-    padding: "16px 40px", 
-    background: "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
-    color: "#fff", 
+    padding: "16px 44px", 
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
+    color: "#0f172a", 
     border: "none", 
     borderRadius: "40px", 
     fontSize: "16px", 
@@ -915,7 +1203,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "8px",
-    boxShadow: "0 10px 20px -8px rgba(255, 150, 26, 0.4)",
+    boxShadow: "0 10px 20px -8px rgba(249, 195, 73, 0.4)",
     transition: "all 0.3s ease"
   },
   spinnerIcon: {
@@ -928,5 +1216,15 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
+  },
+  discountFooterError: {
+    marginTop: "10px",
+    fontSize: "13px",
+    color: "#ef4444",
+    fontWeight: "500",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
   }
 };

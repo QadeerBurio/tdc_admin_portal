@@ -9,7 +9,7 @@ import Traveling from './Traveling'
 // Icons
 import {
   FaPlane, FaTicketAlt, FaSignOutAlt, FaSearch, 
-  FaMapMarkedAlt, FaHome, FaArrowUp, FaCheckCircle, FaWallet
+  FaMapMarkedAlt, FaHome,  FaCheckCircle, FaWallet
 } from "react-icons/fa";
 
 const TravelDashboard = () => {
