@@ -57,9 +57,9 @@ const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the
 2. Browse Brand and select the offer you want.
 3. Save the discount offer in the app.
 4. Visit the participating brand/store offering the discount.
-5. Show your TDC Card or Student ID Card to the staff before making the payment.
-6. The store staff will verify your eligibility for the offer.
-7. Once verified, the discount will be applied, and you can redeem the offer successfully.`;
+5. Ask the staff to scan your TDC QR code to verify your discount.
+6. Staff will verify your eligibility
+7. Discount will be applied to your purchase`;
 
 export default function Discount({ onOfferCreated }) {
   const navigate = useNavigate();
@@ -126,7 +126,7 @@ export default function Discount({ onOfferCreated }) {
 
     // Image validation
     if (!image) {
-      newErrors.image = "Offer image is required";
+      newErrors.image = "Brand Logo is required";
       hasError = true;
     }
 
@@ -303,7 +303,7 @@ export default function Discount({ onOfferCreated }) {
               <div style={styles.successIconWrapper}>
                 <FaCheckCircle size={48} color="#059669" />
               </div>
-              <h3 style={styles.successTitle}>Offer Published!</h3>
+              <h3 style={styles.successTitle}>Discount Published!</h3>
               <p style={styles.successDesc}>Your discount offer is now live and visible to students.</p>
               <div style={styles.successBadge}>✓ Ready to go</div>
             </motion.div>
@@ -344,7 +344,7 @@ export default function Discount({ onOfferCreated }) {
             <FaRocket size={18} />
           </div>
           <div>
-            <h1 style={styles.mainTitle}>New Offer</h1>
+            <h1 style={styles.mainTitle}>Discount</h1>
             <p style={styles.subTitle}>Launch a student discount in minutes</p>
           </div>
         </div>
@@ -381,7 +381,7 @@ export default function Discount({ onOfferCreated }) {
           {/* Image Upload */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
-              Offer Image <span style={styles.required}>*</span>
+              Brand Logo <span style={styles.required}>*</span>
             </label>
             {preview ? (
               <div style={{ ...styles.imagePreviewWrapper, borderColor: errors.image ? '#ef4444' : '#e2e8f0' }}>
@@ -394,7 +394,7 @@ export default function Discount({ onOfferCreated }) {
               <label style={{ ...styles.uploadBox, borderColor: errors.image ? '#ef4444' : '#e2e8f0' }}>
                 <input type="file" style={{ display: "none" }} onChange={(e) => handleImageChange(e.target.files[0])} />
                 <FaCloudUploadAlt size={28} color={errors.image ? '#ef4444' : '#94a3b8'} />
-                <p style={styles.uploadText}>Upload offer image</p>
+                <p style={styles.uploadText}>Upload Brand image</p>
                 <p style={styles.uploadHint}>PNG, JPG up to 5MB</p>
               </label>
             )}

@@ -144,8 +144,8 @@ const BrandsProfile = () => {
       <nav className="brands-nav">
         <div className="nav-container">
           <div className="nav-logo">
-            <span className="logo-text">The Deft</span>
-            <span className="logo-suffix">Crew</span>
+            <span className="logo-text">tdc</span>
+            <span className="logo-suffix">.</span>
           </div>
           <div className="nav-actions">
             <button className="nav-login-btn" onClick={handleLogin}>

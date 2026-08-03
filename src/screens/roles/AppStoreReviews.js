@@ -387,37 +387,7 @@ const AppStoreReviews = () => {
           <div className="header-spacer"></div>
         </motion.div>
 
-        {/* Stats Section */}
-        <motion.div 
-          className="reviews-stats"
-          initial="hidden"
-          animate="visible"
-          variants={containerVariants}
-        >
-          {[
-            { value: stats.total, label: 'Total Reviews', icon: '📊' },
-            { value: stats.average, label: 'Average Rating', stars: true },
-            { value: stats.apple, label: 'App Store', icon: '🍎' },
-            { value: stats.google, label: 'Google Play', icon: '▶️' },
-          ].map((stat, index) => (
-            <motion.div
-              key={index}
-              className="stat-item"
-              variants={statsVariants}
-              custom={index}
-              whileHover={{ y: -4, boxShadow: '0 8px 24px rgba(0,0,0,0.06)' }}
-            >
-              <span className="stat-value">
-                {stat.icon && <span className="stat-icon">{stat.icon}</span>}
-                {stat.value}
-              </span>
-              <span className="stat-label">{stat.label}</span>
-              {stat.stars && (
-                <div className="stat-stars">{renderStars(parseFloat(stats.average))}</div>
-              )}
-            </motion.div>
-          ))}
-        </motion.div>
+      
 
         {/* Filters */}
         <motion.div 

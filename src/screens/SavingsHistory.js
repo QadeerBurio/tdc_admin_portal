@@ -13,6 +13,10 @@ import {
   FaTimes,
   FaPercent,
   FaCoins,
+  FaSearch,
+  FaFilter,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
 
 const SavingsHistory = () => {
@@ -24,6 +28,7 @@ const SavingsHistory = () => {
   const [sortField, setSortField] = useState("date");
   const [sortDirection, setSortDirection] = useState("desc");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
+  const [showFilters, setShowFilters] = useState(false);
   const [brandStats, setBrandStats] = useState({
     totalRevenue: 0,
     totalSavings: 0,
@@ -43,7 +48,8 @@ const SavingsHistory = () => {
       const term = searchTerm.toLowerCase();
       results = results.filter(item =>
         item.name?.toLowerCase().includes(term) ||
-        item.brand?.toLowerCase().includes(term)
+        item.brand?.toLowerCase().includes(term) ||
+        item.rollNo?.toLowerCase().includes(searchTerm.toLowerCase().trim())
       );
     }
     
@@ -129,7 +135,7 @@ const SavingsHistory = () => {
   const downloadCSV = () => {
     const headers = ["Student Name", "Brand/Offer", "Bill Amount (PKR)", "Saved Amount (PKR)", "Date"];
     const rows = filteredHistory.map(item => [
-      item.name,
+      item.rollNo,
       item.brand,
       item.bill.toFixed(2),
       item.saved.toFixed(2),
@@ -161,12 +167,19 @@ const SavingsHistory = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setDateRange({ start: "", end: "" });
+    setShowFilters(false);
+  };
+
+  const getSortIcon = (field) => {
+    if (sortField !== field) return null;
+    return sortDirection === "asc" ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />;
   };
 
   return (
     <div style={styles.container}>
       <div style={styles.bgDecoration}></div>
 
+      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.headerBadge}>
@@ -176,18 +189,23 @@ const SavingsHistory = () => {
           <h2 style={styles.title}>Savings Impact Dashboard</h2>
           <p style={styles.subtitle}>Track student redemptions and total savings generated through your offers</p>
         </div>
-        <button className="download-btn" style={styles.downloadBtn} onClick={downloadCSV} disabled={filteredHistory.length === 0}>
-          <FaDownload /> Export Report
+        <button 
+          className="download-btn" 
+          style={styles.downloadBtn} 
+          onClick={downloadCSV} 
+          disabled={filteredHistory.length === 0}
+        >
+          <FaDownload /> <span style={styles.btnText}>Export Report</span>
         </button>
       </div>
 
-      {/* Stats Overview Section */}
+      {/* Stats Overview Section - Responsive Grid */}
       <div style={styles.statsRow}>
         <div className="stat-card" style={styles.statCard}>
           <div style={{...styles.statIcon, background: '#f0fdf4'}}>
             <FaCoins color="#10b981" size={24} />
           </div>
-          <div>
+          <div style={styles.statContent}>
             <span style={styles.statLabel}>Total Revenue</span>
             <h3 style={{...styles.statValue, color: '#10b981'}}>₨ {brandStats.totalRevenue.toLocaleString()}</h3>
           </div>
@@ -196,7 +214,7 @@ const SavingsHistory = () => {
           <div style={{...styles.statIcon, background: '#fef3c7'}}>
             <FaWallet color="#f59e0b" size={24} />
           </div>
-          <div>
+          <div style={styles.statContent}>
             <span style={styles.statLabel}>Total Savings</span>
             <h3 style={{...styles.statValue, color: '#f59e0b'}}>₨ {brandStats.totalSavings.toLocaleString()}</h3>
           </div>
@@ -205,7 +223,7 @@ const SavingsHistory = () => {
           <div style={{...styles.statIcon, background: '#eff6ff'}}>
             <FaShoppingBag color="#3b82f6" size={24} />
           </div>
-          <div>
+          <div style={styles.statContent}>
             <span style={styles.statLabel}>Redemptions</span>
             <h3 style={{...styles.statValue, color: '#3b82f6'}}>{brandStats.totalTransactions}</h3>
           </div>
@@ -214,7 +232,7 @@ const SavingsHistory = () => {
           <div style={{...styles.statIcon, background: '#f3e8ff'}}>
             <FaPercent color="#8b5cf6" size={24} />
           </div>
-          <div>
+          <div style={styles.statContent}>
             <span style={styles.statLabel}>Avg Discount</span>
             <h3 style={{...styles.statValue, color: '#8b5cf6'}}>₨ {brandStats.averageDiscount.toFixed(0)}</h3>
           </div>
@@ -223,124 +241,145 @@ const SavingsHistory = () => {
           <div style={{...styles.statIcon, background: '#fce4ec'}}>
             <FaTrophy color="#e11d48" size={24} />
           </div>
-          <div>
+          <div style={styles.statContent}>
             <span style={styles.statLabel}>Top Offer</span>
-            <h3 style={{...styles.statValue, color: '#e11d48', fontSize: '16px'}}>{brandStats.topPerformingOffer}</h3>
+            <h3 style={{...styles.statValue, color: '#e11d48', fontSize: 'clamp(14px, 1.5vw, 18px)'}}>{brandStats.topPerformingOffer}</h3>
           </div>
         </div>
       </div>
 
-      {/* Filter Bar */}
+      {/* Filter Bar - Responsive */}
       <div style={styles.filterBar}>
         <div style={styles.searchWrapper}>
-          <input 
-            style={styles.searchInput}
-            placeholder="Search by name or brand..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-          />
+          <div style={styles.searchInputWrapper}>
+            <FaSearch style={styles.searchIcon} />
+            <input 
+              style={styles.searchInput}
+              placeholder="Search by name or brand..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+            />
+          </div>
+          <button 
+            style={styles.filterToggleBtn}
+            onClick={() => setShowFilters(!showFilters)}
+          >
+            <FaFilter /> <span style={styles.btnText}>Filters</span>
+          </button>
           {(searchTerm || dateRange.start || dateRange.end) && (
             <button style={styles.clearBtn} onClick={clearFilters}>
-              <FaTimes /> Clear
+              <FaTimes /> <span style={styles.btnText}>Clear</span>
             </button>
           )}
         </div>
-        <div style={styles.dateFilters}>
-          <input 
-            type="date" 
-            style={styles.dateInput}
-            value={dateRange.start}
-            onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-          />
-          <span style={styles.dateSeparator}>to</span>
-          <input 
-            type="date" 
-            style={styles.dateInput}
-            value={dateRange.end}
-            onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-          />
-        </div>
+        
+        {showFilters && (
+          <div style={styles.dateFilters}>
+            <input 
+              type="date" 
+              style={styles.dateInput}
+              value={dateRange.start}
+              onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+            />
+            <span style={styles.dateSeparator}>to</span>
+            <input 
+              type="date" 
+              style={styles.dateInput}
+              value={dateRange.end}
+              onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+            />
+          </div>
+        )}
       </div>
 
-      {/* Transactions Table - Only 5 columns */}
+      {/* Transactions Table - Responsive */}
       <div className="table-container" style={styles.tableWrapper}>
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.theadRow}>
-              <th style={styles.th} onClick={() => handleSort("name")}>
-                Name {sortField === "name" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("brand")}>
-                Offer {sortField === "brand" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("bill")}>
-                Bill {sortField === "bill" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("saved")}>
-                Saved {sortField === "saved" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-              <th style={styles.th} onClick={() => handleSort("date")}>
-                Date {sortField === "date" && (sortDirection === "asc" ? "↑" : "↓")}
-              </th>
-            </tr>
-          </thead>
-          <tbody>
-            {loading ? (
-              <tr>
-                <td colSpan="5" style={styles.loadingCell}>
-                  <div className="loader" style={styles.loader}></div>
-                  <span>Loading transaction records...</span>
-                </td>
+        <div style={styles.tableScrollContainer}>
+          <table style={styles.table}>
+            <thead>
+              <tr style={styles.theadRow}>
+                <th style={styles.th} onClick={() => handleSort("rollNo")}>
+                  <span style={styles.thContent}>
+                    Name {getSortIcon("rollNo")}
+                  </span>
+                </th>
+                <th style={styles.th} onClick={() => handleSort("brand")}>
+                  <span style={styles.thContent}>
+                    Offer {getSortIcon("brand")}
+                  </span>
+                </th>
+                <th style={styles.th} onClick={() => handleSort("bill")}>
+                  <span style={styles.thContent}>
+                    Bill {getSortIcon("bill")}
+                  </span>
+                </th>
+                <th style={styles.th} onClick={() => handleSort("saved")}>
+                  <span style={styles.thContent}>
+                    Saved {getSortIcon("saved")}
+                  </span>
+                </th>
+                <th style={styles.th} onClick={() => handleSort("date")}>
+                  <span style={styles.thContent}>
+                    Date {getSortIcon("date")}
+                  </span>
+                </th>
               </tr>
-            ) : filteredHistory.length === 0 ? (
-              <tr>
-                <td colSpan="5" style={styles.emptyCell}>
-                  <div style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>💰</div>
-                    <p>No transactions found</p>
-                    <span>Try adjusting your search or date filters</span>
-                  </div>
-                </td>
-              </tr>
-            ) : (
-              filteredHistory.map((item, index) => (
-                <tr key={index} className="table-row" style={styles.tr}>
-                  <td style={styles.td}>
-                    <div style={styles.studentCell}>
-                      <div style={{...styles.avatar, background: `hsl(${item.name?.length * 40 % 360}, 70%, 55%)`}}>
-                        {item.name?.charAt(0).toUpperCase()}
-                      </div>
-                      <div>
-                        <div style={styles.studentName}>{item.name}</div>
-                      </div>
-                    </div>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr>
+                  <td colSpan="5" style={styles.loadingCell}>
+                    <div className="loader" style={styles.loader}></div>
+                    <span>Loading transaction records...</span>
                   </td>
-                  <td style={styles.td}>
-                    <div style={styles.offerCell}>
-                      <FaTag size={12} color="#ff961a" />
-                      <span style={styles.offerName}>{item.brand}</span>
-                    </div>
-                  </td>
-                  <td style={styles.td}>
-                    <span style={styles.billAmount}>₨ {item.bill.toLocaleString()}</span>
-                  </td>
-                  <td style={styles.td}>
-                    <div style={styles.savedBadge}>
-                      <FaArrowDown size={10} />
-                      ₨ {item.saved.toLocaleString()}
-                    </div>
-                  </td>
-                  <td style={styles.td}>
-                    <div style={styles.dateCell}>
-                      <FaCalendarAlt size={12} color="#94a3b8" />
-                      <span>{new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                </tr>
+              ) : filteredHistory.length === 0 ? (
+                <tr>
+                  <td colSpan="5" style={styles.emptyCell}>
+                    <div style={styles.emptyState}>
+                      <div style={styles.emptyIcon}>💰</div>
+                      <p style={styles.emptyText}>No transactions found</p>
+                      <span style={styles.emptySubtext}>Try adjusting your search or date filters</span>
                     </div>
                   </td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : (
+                filteredHistory.map((item, index) => (
+                  <tr key={index} className="table-row" style={styles.tr}>
+                    <td style={styles.td} data-label="Name">
+                      <div style={styles.studentCell}>
+                        <div>
+                          <div style={styles.studentName}>{item.rollNo}</div>
+                        </div>
+                      </div>
+                    </td>
+                    <td style={styles.td} data-label="Offer">
+                      <div style={styles.offerCell}>
+                        <FaTag size={12} color="#ff961a" />
+                        <span style={styles.offerName}>{item.brand}</span>
+                      </div>
+                    </td>
+                    <td style={styles.td} data-label="Bill">
+                      <span style={styles.billAmount}>₨ {item.bill.toLocaleString()}</span>
+                    </td>
+                    <td style={styles.td} data-label="Saved">
+                      <div style={styles.savedBadge}>
+                        <FaArrowDown size={10} />
+                        ₨ {item.saved.toLocaleString()}
+                      </div>
+                    </td>
+                    <td style={styles.td} data-label="Date">
+                      <div style={styles.dateCell}>
+                        <FaCalendarAlt size={12} color="#94a3b8" />
+                        <span>{new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
       </div>
 
       {/* Footer Summary */}
@@ -440,6 +479,274 @@ const SavingsHistory = () => {
           opacity: 0.5;
           cursor: not-allowed;
         }
+
+        /* Mobile First Responsive Styles */
+        * {
+          box-sizing: border-box;
+        }
+
+        /* Small screens - Stack everything */
+        @media (max-width: 768px) {
+          /* Stats become 2 columns */
+          .stat-card {
+            padding: 12px 14px !important;
+          }
+          
+          .statIcon {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          
+          .statIcon svg {
+            width: 18px !important;
+            height: 18px !important;
+          }
+          
+          .statValue {
+            font-size: 16px !important;
+          }
+          
+          .statLabel {
+            font-size: 9px !important;
+          }
+
+          /* Table becomes card view */
+          table, thead, tbody, th, td, tr {
+            display: block;
+          }
+          
+          thead tr {
+            display: none;
+          }
+          
+          .table-row {
+            margin-bottom: 16px;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            background: white;
+            animation: slideUp 0.4s ease forwards;
+            opacity: 0;
+          }
+          
+          td {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 4px !important;
+            border: none !important;
+            border-bottom: 1px solid #f1f5f9 !important;
+            width: 100% !important;
+          }
+          
+          td:last-child {
+            border-bottom: none !important;
+          }
+          
+          td:before {
+            content: attr(data-label);
+            font-weight: 600;
+            color: #475569;
+            font-size: 11px;
+            text-transform: uppercase;
+            letter-spacing: 0.3px;
+            flex-shrink: 0;
+            margin-right: 12px;
+          }
+          
+          td > div, td > span {
+            flex-shrink: 0;
+          }
+          
+          td > div {
+            justify-content: flex-end !important;
+          }
+          
+          .studentCell, .offerCell, .dateCell {
+            justify-content: flex-end !important;
+          }
+          
+          .savedBadge {
+            justify-content: flex-end !important;
+          }
+
+          /* Filter bar mobile */
+          .searchWrapper {
+            flex-wrap: wrap;
+          }
+          
+          .searchInputWrapper {
+            min-width: 100% !important;
+          }
+          
+          .filterToggleBtn, .clearBtn {
+            flex: 1;
+            justify-content: center;
+          }
+          
+          .dateFilters {
+            flex-direction: column;
+            align-items: stretch;
+          }
+          
+          .dateInput {
+            min-width: 100% !important;
+          }
+          
+          .dateSeparator {
+            text-align: center;
+          }
+
+          /* Footer mobile */
+          .footer {
+            flex-direction: column;
+            align-items: flex-start;
+          }
+          
+          .footerRight {
+            flex-wrap: wrap;
+          }
+        }
+
+        /* Extra small screens */
+        @media (max-width: 480px) {
+          .container {
+            padding: 12px !important;
+            border-radius: 16px !important;
+          }
+          
+          .header {
+            flex-direction: column;
+          }
+          
+          .downloadBtn {
+            width: 100%;
+            justify-content: center;
+          }
+          
+          .statsRow {
+            grid-template-columns: repeat(2, 1fr) !important;
+            gap: 8px !important;
+          }
+          
+          .statCard {
+            padding: 10px !important;
+            gap: 8px !important;
+          }
+          
+          .statIcon {
+            width: 30px !important;
+            height: 30px !important;
+          }
+          
+          .statIcon svg {
+            width: 14px !important;
+            height: 14px !important;
+          }
+          
+          .statValue {
+            font-size: 14px !important;
+          }
+          
+          .statLabel {
+            font-size: 8px !important;
+          }
+          
+          .statContent {
+            min-width: 0;
+          }
+          
+          .title {
+            font-size: 20px !important;
+          }
+          
+          .table-row {
+            padding: 10px !important;
+          }
+          
+          td {
+            font-size: 12px !important;
+            padding: 6px 2px !important;
+          }
+          
+          td:before {
+            font-size: 10px !important;
+          }
+          
+          .studentName {
+            font-size: 12px !important;
+          }
+          
+          .offerName {
+            font-size: 12px !important;
+          }
+          
+          .billAmount {
+            font-size: 12px !important;
+          }
+          
+          .savedBadge {
+            font-size: 11px !important;
+            padding: 2px 8px !important;
+          }
+          
+          .dateCell {
+            font-size: 11px !important;
+          }
+          
+          .footer {
+            padding: 12px !important;
+          }
+          
+          .footerLeft, .footerRight {
+            font-size: 11px !important;
+          }
+        }
+
+        /* Medium screens - keep table but make it scrollable */
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .tableScrollContainer {
+            overflow-x: auto;
+          }
+          
+          .table {
+            min-width: 600px;
+          }
+          
+          th, td {
+            padding: 10px 12px !important;
+            font-size: 12px !important;
+          }
+        }
+
+        /* Fix for very small phones */
+        @media (max-width: 360px) {
+          .statsRow {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          
+          .statCard {
+            padding: 8px !important;
+          }
+          
+          .statValue {
+            font-size: 12px !important;
+          }
+          
+          .statLabel {
+            font-size: 7px !important;
+          }
+          
+          .statIcon {
+            width: 24px !important;
+            height: 24px !important;
+          }
+          
+          .statIcon svg {
+            width: 12px !important;
+            height: 12px !important;
+          }
+        }
       `}</style>
     </div>
   );
@@ -447,13 +754,15 @@ const SavingsHistory = () => {
 
 const styles = {
   container: { 
-    padding: "30px 35px", 
+    padding: "clamp(12px, 3vw, 35px)", 
     background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
     minHeight: "85vh", 
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     position: "relative",
-    borderRadius: "32px",
-    overflow: "hidden"
+    borderRadius: "clamp(16px, 3vw, 32px)",
+    overflow: "hidden",
+    maxWidth: "100%",
+    width: "100%"
   },
   bgDecoration: {
     position: "absolute",
@@ -463,307 +772,378 @@ const styles = {
     height: "300px",
     background: "radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    display: "none"
   },
   header: { 
     display: "flex", 
     justifyContent: "space-between", 
     alignItems: "flex-start", 
-    marginBottom: "28px", 
+    marginBottom: "clamp(16px, 3vw, 28px)", 
     flexWrap: "wrap", 
-    gap: "20px",
+    gap: "12px",
     position: "relative",
     zIndex: 1
   },
   headerLeft: {
-    flex: 1
+    flex: 1,
+    minWidth: "150px"
   },
   headerBadge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     background: "#fff7ed",
-    padding: "6px 16px",
+    padding: "4px 12px",
     borderRadius: "40px",
-    fontSize: "13px",
+    fontSize: "clamp(10px, 1vw, 13px)",
     fontWeight: "600",
     color: "#ff961a",
-    marginBottom: "14px"
+    marginBottom: "8px"
   },
   title: { 
     margin: 0, 
     color: "#1e293b", 
-    fontSize: "28px", 
+    fontSize: "clamp(18px, 3vw, 28px)", 
     fontWeight: "800",
-    letterSpacing: "-0.5px"
+    letterSpacing: "-0.5px",
+    wordBreak: "break-word"
   },
   subtitle: { 
-    margin: "8px 0 0 0", 
+    margin: "4px 0 0 0", 
     color: "#64748b", 
-    fontSize: "14px" 
+    fontSize: "clamp(11px, 1vw, 14px)" 
   },
   downloadBtn: { 
     display: "flex", 
     alignItems: "center", 
-    gap: "8px", 
-    padding: "12px 24px", 
+    gap: "6px", 
+    padding: "clamp(8px, 1.2vw, 12px) clamp(14px, 2vw, 24px)", 
     background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
     border: "none", 
-    borderRadius: "16px", 
+    borderRadius: "clamp(10px, 1.5vw, 16px)", 
     cursor: "pointer", 
     fontWeight: "600", 
     transition: "all 0.3s ease", 
     color: "#fff", 
-    fontSize: "14px",
-    whiteSpace: "nowrap"
+    fontSize: "clamp(11px, 1vw, 14px)",
+    whiteSpace: "nowrap",
+    flexShrink: 0
   },
   statsRow: { 
     display: "grid", 
-    gridTemplateColumns: "repeat(5, 1fr)", 
-    gap: "16px", 
-    marginBottom: "24px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", 
+    gap: "clamp(8px, 1.5vw, 16px)", 
+    marginBottom: "clamp(16px, 2.5vw, 24px)",
     position: "relative",
     zIndex: 1
   },
   statCard: { 
     background: "#fff", 
-    padding: "18px 20px", 
-    borderRadius: "20px", 
+    padding: "clamp(10px, 1.8vw, 18px) clamp(10px, 1.8vw, 20px)", 
+    borderRadius: "clamp(12px, 2vw, 20px)", 
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
     display: "flex", 
     alignItems: "center", 
-    gap: "14px",
+    gap: "clamp(8px, 1.2vw, 14px)",
     border: "1px solid rgba(255,150,26,0.08)",
-    transition: "transform 0.3s ease, box-shadow 0.3s ease"
+    transition: "transform 0.3s ease, box-shadow 0.3s ease",
+    minWidth: "0",
+    overflow: "hidden"
   },
   statIcon: {
-    width: "46px",
-    height: "46px",
-    borderRadius: "14px",
+    width: "clamp(30px, 4.5vw, 46px)",
+    height: "clamp(30px, 4.5vw, 46px)",
+    borderRadius: "12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0
   },
+  statContent: {
+    minWidth: "0",
+    flex: 1,
+    overflow: "hidden"
+  },
   statLabel: { 
     display: "block", 
     color: "#64748b", 
-    fontSize: "11px",
+    fontSize: "clamp(7px, 1vw, 11px)",
     fontWeight: "600",
     textTransform: "uppercase",
-    letterSpacing: "0.3px"
+    letterSpacing: "0.3px",
+    whiteSpace: "nowrap"
   },
   statValue: { 
-    margin: "4px 0 0", 
-    fontSize: "22px", 
+    margin: "2px 0 0", 
+    fontSize: "clamp(12px, 2.2vw, 22px)", 
     color: "#1e293b",
     fontWeight: "800",
-    lineHeight: 1.2
+    lineHeight: 1.2,
+    wordBreak: "break-word",
+    overflow: "hidden",
+    textOverflow: "ellipsis"
   },
   filterBar: {
     display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    gap: "16px",
-    flexWrap: "wrap",
+    flexDirection: "column",
+    gap: "10px",
+    marginBottom: "clamp(14px, 2vw, 20px)",
     position: "relative",
     zIndex: 1
   },
   searchWrapper: {
     display: "flex",
-    gap: "12px",
-    flex: 2
+    gap: "8px",
+    flexWrap: "wrap",
+    width: "100%"
+  },
+  searchInputWrapper: {
+    flex: 1,
+    position: "relative",
+    minWidth: "120px"
+  },
+  searchIcon: {
+    position: "absolute",
+    left: "12px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    color: "#94a3b8",
+    fontSize: "13px"
   },
   searchInput: {
-    flex: 1,
-    padding: "12px 18px",
-    borderRadius: "14px",
+    width: "100%",
+    padding: "clamp(8px, 1.2vw, 12px) 14px clamp(8px, 1.2vw, 12px) 34px",
+    borderRadius: "12px",
     border: "2px solid #e2e8f0",
-    fontSize: "14px",
+    fontSize: "clamp(12px, 1vw, 14px)",
     backgroundColor: "#fff",
     transition: "all 0.2s ease",
     fontFamily: "inherit"
   },
+  filterToggleBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    padding: "clamp(8px, 1.2vw, 12px) 12px",
+    borderRadius: "12px",
+    border: "2px solid #e2e8f0",
+    backgroundColor: "#fff",
+    cursor: "pointer",
+    fontSize: "clamp(11px, 1vw, 13px)",
+    fontWeight: "500",
+    color: "#64748b",
+    transition: "all 0.2s",
+    whiteSpace: "nowrap"
+  },
   clearBtn: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    padding: "0 16px",
+    gap: "4px",
+    padding: "clamp(8px, 1.2vw, 12px) 12px",
     borderRadius: "12px",
-    border: "1px solid #e2e8f0",
+    border: "2px solid #e2e8f0",
     backgroundColor: "#fff",
     cursor: "pointer",
-    fontSize: "13px",
+    fontSize: "clamp(11px, 1vw, 13px)",
     fontWeight: "500",
     color: "#64748b",
-    transition: "all 0.2s"
+    transition: "all 0.2s",
+    whiteSpace: "nowrap"
   },
   dateFilters: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    flex: 1
+    gap: "8px",
+    flexWrap: "wrap",
+    padding: "10px 14px",
+    background: "#fff",
+    borderRadius: "12px",
+    border: "2px solid #e2e8f0"
   },
   dateInput: {
-    padding: "12px 16px",
-    borderRadius: "12px",
+    padding: "clamp(6px, 1vw, 10px) clamp(10px, 1.2vw, 14px)",
+    borderRadius: "8px",
     border: "2px solid #e2e8f0",
-    fontSize: "13px",
+    fontSize: "clamp(11px, 1vw, 13px)",
     backgroundColor: "#fff",
     fontFamily: "inherit",
-    cursor: "pointer"
+    cursor: "pointer",
+    flex: 1,
+    minWidth: "100px"
   },
   dateSeparator: {
     color: "#94a3b8",
-    fontSize: "13px"
+    fontSize: "clamp(11px, 1vw, 13px)"
   },
   tableWrapper: { 
     background: "#fff", 
-    borderRadius: "20px", 
+    borderRadius: "16px", 
     boxShadow: "0 8px 30px rgba(0,0,0,0.04)", 
     overflow: "hidden",
     border: "1px solid #f1f5f9",
     position: "relative",
     zIndex: 1
   },
+  tableScrollContainer: {
+    overflowX: "auto",
+    WebkitOverflowScrolling: "touch",
+    width: "100%"
+  },
   table: { 
     width: "100%", 
     borderCollapse: "collapse", 
-    textAlign: "left" 
+    textAlign: "left",
+    minWidth: "300px",
+    maxWidth: "100%"
   },
   theadRow: {
     background: "#f8fafc"
   },
   th: { 
-    padding: "14px 18px", 
+    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)", 
     color: "#475569", 
-    fontSize: "11px", 
+    fontSize: "clamp(9px, 0.8vw, 11px)", 
     textTransform: "uppercase", 
     fontWeight: "700", 
     letterSpacing: "0.5px",
     borderBottom: "2px solid #e2e8f0",
-    transition: "background 0.2s"
+    transition: "background 0.2s",
+    whiteSpace: "nowrap"
+  },
+  thContent: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px"
   },
   td: { 
-    padding: "14px 18px", 
+    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)", 
     borderBottom: "1px solid #f1f5f9", 
-    fontSize: "14px", 
-    color: "#334155"
+    fontSize: "clamp(12px, 1vw, 14px)", 
+    color: "#334155",
+    wordBreak: "break-word",
+    maxWidth: "200px"
   },
   tr: { 
     transition: "all 0.2s ease", 
     cursor: "pointer" 
   },
   loadingCell: {
-    padding: "60px",
+    padding: "clamp(30px, 8vw, 60px)",
     textAlign: "center",
     color: "#64748b"
   },
   loader: {
-    width: "24px",
-    height: "24px",
+    width: "20px",
+    height: "20px",
     border: "3px solid #e2e8f0",
     borderTop: "3px solid #ff961a",
     borderRadius: "50%",
-    margin: "0 auto 12px"
+    margin: "0 auto 10px"
   },
   emptyCell: {
-    padding: "60px",
+    padding: "clamp(30px, 8vw, 60px)",
     textAlign: "center"
   },
   emptyState: {
     textAlign: "center"
   },
   emptyIcon: {
-    fontSize: "48px",
-    marginBottom: "12px",
+    fontSize: "clamp(30px, 6vw, 48px)",
+    marginBottom: "10px",
     opacity: 0.5
+  },
+  emptyText: {
+    margin: "0 0 4px 0",
+    fontSize: "clamp(14px, 1.5vw, 18px)",
+    fontWeight: "600",
+    color: "#1e293b"
+  },
+  emptySubtext: {
+    fontSize: "clamp(12px, 1vw, 14px)",
+    color: "#64748b"
   },
   studentCell: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
-  },
-  avatar: {
-    width: "38px",
-    height: "38px",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "15px",
-    fontWeight: "700",
-    color: "#fff",
-    flexShrink: 0
+    gap: "8px"
   },
   studentName: {
     fontWeight: "700",
     color: "#1e293b",
-    fontSize: "14px"
+    fontSize: "clamp(12px, 1vw, 14px)",
+    wordBreak: "break-word"
   },
   offerCell: {
     display: "flex",
     alignItems: "center",
-    gap: "8px"
+    gap: "6px"
   },
   offerName: {
     fontWeight: "500",
-    color: "#1e293b"
+    color: "#1e293b",
+    wordBreak: "break-word"
   },
   billAmount: {
     fontWeight: "600",
-    color: "#1e293b"
+    color: "#1e293b",
+    whiteSpace: "nowrap"
   },
   savedBadge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     background: "#f0fdf4",
     color: "#10b981",
-    padding: "4px 12px",
-    borderRadius: "8px",
-    fontSize: "13px",
-    fontWeight: "700"
+    padding: "2px 10px",
+    borderRadius: "6px",
+    fontSize: "clamp(11px, 0.9vw, 13px)",
+    fontWeight: "700",
+    whiteSpace: "nowrap"
   },
   dateCell: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    fontSize: "13px",
-    color: "#64748b"
+    gap: "6px",
+    fontSize: "clamp(11px, 0.9vw, 13px)",
+    color: "#64748b",
+    whiteSpace: "nowrap"
   },
   footer: {
-    marginTop: "16px",
+    marginTop: "clamp(10px, 1.5vw, 16px)",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    padding: "14px 20px",
+    padding: "clamp(10px, 1.5vw, 14px) clamp(12px, 2vw, 20px)",
     background: "#fff",
-    borderRadius: "14px",
+    borderRadius: "12px",
     border: "1px solid #f1f5f9",
     position: "relative",
     zIndex: 1,
     flexWrap: "wrap",
-    gap: "12px"
+    gap: "clamp(6px, 1vw, 12px)"
   },
   footerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    fontSize: "13px",
+    gap: "8px",
+    fontSize: "clamp(11px, 0.9vw, 13px)",
     color: "#64748b"
   },
   footerRight: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    fontSize: "14px",
-    color: "#1e293b"
+    gap: "clamp(6px, 1vw, 12px)",
+    fontSize: "clamp(11px, 0.9vw, 14px)",
+    color: "#1e293b",
+    flexWrap: "wrap"
   },
   footerDivider: {
     color: "#e2e8f0",
-    fontSize: "18px"
+    fontSize: "clamp(14px, 1.5vw, 18px)"
+  },
+  btnText: {
+    display: "inline"
   }
 };
 

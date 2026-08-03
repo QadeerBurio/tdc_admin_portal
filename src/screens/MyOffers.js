@@ -4,19 +4,17 @@ import axios from "axios";
 import { 
   FaEdit, FaMapMarkerAlt, FaCloudUploadAlt, 
   FaTimes, FaCalendarAlt, FaTicketAlt, FaCheckCircle,
-  FaTrashAlt, FaStore, FaPlus,
+  FaStore, FaPlus,
   FaArrowRight, FaPercent, FaSpinner, FaEye,
-  FaChartLine, FaTag, FaClock, FaUserCheck,
-  FaExternalLinkAlt, FaFilter, FaSearch
+  FaSearch, FaGlobe, FaInfoCircle, FaThList, FaThLarge,
+  FaChartLine, FaUsers, FaClock, FaGift, FaStar, FaTag,
+  FaArrowUp, FaFilter, FaChevronDown, FaCrown
 } from "react-icons/fa";
-import { MdVerified, MdOutlineAnalytics, MdOutlineStorefront } from "react-icons/md";
-import { BiTrendingUp, BiTimeFive } from "react-icons/bi";
-import { HiOutlineDotsVertical } from "react-icons/hi";
+import { MdVerified, MdOutlineDashboard } from "react-icons/md";
+import { HiOutlineTrendingUp, HiOutlineSparkles } from "react-icons/hi";
 
 const BASE_URL = "https://the-deft-crew-production.up.railway.app"; 
 const API_URL = `${BASE_URL}/api/offers`;
-
-// Cloudinary configuration
 const CLOUDINARY_NAME = "decaxpera";
 
 export default function MyOffers() {
@@ -27,24 +25,33 @@ export default function MyOffers() {
   const [currentOffer, setCurrentOffer] = useState(null);
   const [preview, setPreview] = useState(null);
   const [imageFile, setImageFile] = useState(null);
-  const [deleteConfirm, setDeleteConfirm] = useState(null);
   const [updating, setUpdating] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [sortBy, setSortBy] = useState("recent");
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [showStats, setShowStats] = useState(false);
+  const [discountError, setDiscountError] = useState("");
+  const [viewMode, setViewMode] = useState("grid");
+  const [showFilters, setShowFilters] = useState(false);
 
   useEffect(() => {
     fetchOffers();
   }, []);
+
+  useEffect(() => {
+    const handleResize = () => {
+      const width = window.innerWidth;
+      if (width < 480) setViewMode("list");
+      else if (width >= 768 && viewMode === "list") setViewMode("grid");
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, [viewMode]);
 
   const fetchOffers = async () => {
     try {
       const res = await axios.get(`${API_URL}/my-offers`, {
         headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
       });
-      console.log("📦 Fetched offers:", res.data);
       setOffers(res.data);
     } catch (err) {
       console.error("Fetch failed", err);
@@ -54,40 +61,62 @@ export default function MyOffers() {
   };
 
   const getImageUrl = (imagePath) => {
-    if (!imagePath) {
-      return "https://via.placeholder.com/400x200?text=No+Image";
-    }
-    
-    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) {
-      return imagePath;
-    }
-    
+    if (!imagePath) return "https://via.placeholder.com/400x200?text=No+Image";
+    if (imagePath.startsWith("http://") || imagePath.startsWith("https://")) return imagePath;
     if (imagePath.includes("TDC_") || imagePath.includes("/")) {
       return `https://res.cloudinary.com/${CLOUDINARY_NAME}/image/upload/${imagePath}`;
     }
-    
     return `${BASE_URL}/uploads/offers/${imagePath}`;
   };
 
   const openEditModal = (offer) => {
-    setCurrentOffer({ ...offer });
+    setCurrentOffer({ ...offer, isOnline: offer.isOnline || false, isInStore: offer.isInStore || false });
     setPreview(getImageUrl(offer.image));
     setIsEditing(true);
+    setDiscountError("");
+  };
+
+  const validateDiscount = (value) => {
+    const num = parseInt(value);
+    if (!value || value === "") { setDiscountError("Discount percentage is required"); return false; }
+    if (isNaN(num)) { setDiscountError("Please enter a valid number"); return false; }
+    if (num < 15) { setDiscountError("Discount must be at least 15%"); return false; }
+    if (num > 50) { setDiscountError("Discount cannot exceed 50%"); return false; }
+    setDiscountError("");
+    return true;
+  };
+
+  const handleDiscountChange = (e) => {
+    const value = e.target.value;
+    setCurrentOffer({ ...currentOffer, discountPercentage: value });
+    if (value && value !== "") validateDiscount(value);
+    else setDiscountError("Discount percentage is required");
   };
 
   const handleUpdate = async () => {
+    const discountValue = currentOffer.discountPercentage;
+    if (!discountValue || discountValue === "") {
+      alert("Please enter a discount percentage (minimum 15%)");
+      return;
+    }
+    const isValid = validateDiscount(discountValue);
+    if (!isValid) {
+      alert("Please fix the discount percentage before updating. Minimum discount is 15%.");
+      return;
+    }
+
     const formData = new FormData();
-    
     Object.keys(currentOffer).forEach((key) => {
       const forbiddenKeys = ["image", "brand", "claimedBy", "redemptions", "__v", "createdAt", "updatedAt"];
       if (!forbiddenKeys.includes(key) && currentOffer[key] !== undefined && currentOffer[key] !== null) {
-        formData.append(key, currentOffer[key]);
+        if (key === "isOnline" || key === "isInStore") {
+          formData.append(key, currentOffer[key] ? "true" : "false");
+        } else {
+          formData.append(key, currentOffer[key]);
+        }
       }
     });
-
-    if (imageFile) {
-      formData.append("image", imageFile);
-    }
+    if (imageFile) formData.append("image", imageFile);
 
     setUpdating(true);
     try {
@@ -109,32 +138,16 @@ export default function MyOffers() {
     }
   };
 
-  const handleDelete = async (offerId) => {
-    try {
-      await axios.delete(`${API_URL}/${offerId}`, {
-        headers: { Authorization: `Bearer ${localStorage.getItem("token")}` }
-      });
-      alert("🗑️ Offer deleted successfully");
-      setDeleteConfirm(null);
-      fetchOffers();
-    } catch (err) {
-      alert(err.response?.data?.message || "Delete failed");
-    }
-  };
-
   const getClaimRate = (offer) => {
     if (!offer.claimedBy || offer.claimedBy.length === 0) return 0;
     const views = offer.views || 100;
     return Math.min(Math.round((offer.claimedBy.length / views) * 100), 100);
   };
 
-  const handleCreateOffer = () => {
-    navigate("/create-offer");
-  };
+  const handleCreateOffer = () => navigate("/create-offer");
 
   const filteredAndSortedOffers = () => {
     let filtered = offers;
-    
     if (searchTerm) {
       filtered = filtered.filter(offer => 
         offer.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
@@ -142,13 +155,11 @@ export default function MyOffers() {
         offer.location?.toLowerCase().includes(searchTerm.toLowerCase())
       );
     }
-    
     if (filterStatus === "active") {
       filtered = filtered.filter(offer => offer.status !== "expired");
     } else if (filterStatus === "expired") {
       filtered = filtered.filter(offer => offer.status === "expired");
     }
-    
     if (sortBy === "recent") {
       filtered.sort((a, b) => new Date(b.createdAt) - new Date(a.createdAt));
     } else if (sortBy === "popular") {
@@ -156,7 +167,6 @@ export default function MyOffers() {
     } else if (sortBy === "discount") {
       filtered.sort((a, b) => (b.discountPercentage || 0) - (a.discountPercentage || 0));
     }
-    
     return filtered;
   };
 
@@ -166,9 +176,10 @@ export default function MyOffers() {
     return (
       <div style={styles.loaderContainer}>
         <div style={styles.loaderWrapper}>
+          <div style={styles.loaderLogo}>📦</div>
           <div className="loader" style={styles.loader}></div>
           <p style={styles.loaderText}>Loading your campaigns...</p>
-          <span style={styles.loaderSubtext}>Please wait while we fetch your offers</span>
+          <span style={styles.loaderSubtext}>We're getting your offers ready</span>
         </div>
       </div>
     );
@@ -177,179 +188,199 @@ export default function MyOffers() {
   return (
     <div style={styles.container}>
       {/* Background Decorations */}
-      <div style={styles.bgCircle1}></div>
-      <div style={styles.bgCircle2}></div>
-      <div style={styles.bgCircle3}></div>
+      <div style={styles.gradientBg}></div>
+      <div style={styles.glowOrb1}></div>
+      <div style={styles.glowOrb2}></div>
+      <div style={styles.glowOrb3}></div>
 
-      {/* Dashboard Header */}
-      <div style={styles.dashboardHeader}>
+      {/* Header */}
+      <div style={styles.header}>
         <div style={styles.headerLeft}>
-          
-         
+          <div style={styles.brandBadge}>
+            <MdVerified size={14} color="#f9c349" />
+            <span>Brand Dashboard</span>
+          </div>
+          <h1 style={styles.mainTitle}>
+            <HiOutlineSparkles style={styles.titleIcon} />
+            Discount
+          </h1>
+          <p style={styles.subTitle}>Manage and optimize your promotional offers</p>
         </div>
        
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div style={styles.statsGrid}>
-        <div className="stat-card" style={styles.statCard}>
-          <div style={styles.statIconWrapper1}>
-            <FaTicketAlt size={20} />
+        <div style={styles.statCard}>
+          <div style={styles.statIcon1}>
+            <FaGift size={18} />
           </div>
-          <div style={styles.statContent}>
-            <span style={styles.statNumber}>{offers.length}</span>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>{offers.length}</span>
             <span style={styles.statLabel}>Total Offers</span>
           </div>
           <div style={styles.statTrend}>
-            <BiTrendingUp size={16} color="#10b981" />
-            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>+12%</span>
+            <FaArrowUp size={10} />
+            <span>12%</span>
           </div>
         </div>
-        <div className="stat-card" style={styles.statCard}>
-          <div style={styles.statIconWrapper2}>
-            <FaUserCheck size={20} />
+        <div style={styles.statCard}>
+          <div style={styles.statIcon2}>
+            <FaUsers size={18} />
           </div>
-          <div style={styles.statContent}>
-            <span style={styles.statNumber}>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>
               {offers.reduce((acc, curr) => acc + (curr.claimedBy?.length || 0), 0)}
             </span>
             <span style={styles.statLabel}>Total Claims</span>
           </div>
           <div style={styles.statTrend}>
-            <BiTrendingUp size={16} color="#10b981" />
-            <span style={{ color: '#10b981', fontSize: '12px', fontWeight: '600' }}>+8%</span>
+            <FaArrowUp size={10} />
+            <span>8%</span>
           </div>
         </div>
-        <div className="stat-card" style={styles.statCard}>
-          <div style={styles.statIconWrapper3}>
-            <BiTimeFive size={20} />
+        <div style={styles.statCard}>
+          <div style={styles.statIcon3}>
+            <FaClock size={18} />
           </div>
-          <div style={styles.statContent}>
-            <span style={styles.statNumber}>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>
               {offers.filter(o => o.status !== "expired").length}
             </span>
-            <span style={styles.statLabel}>Active Offers</span>
+            <span style={styles.statLabel}>Active Now</span>
           </div>
           <div style={styles.statTrend}>
-            <BiTimeFive size={16} color="#f59e0b" />
-            <span style={{ color: '#f59e0b', fontSize: '12px', fontWeight: '600' }}>Active</span>
+            <FaArrowUp size={10} />
+            <span>5%</span>
           </div>
         </div>
-        <div className="stat-card" style={styles.statCard}>
-          <div style={styles.statIconWrapper4}>
-            <FaPercent size={20} />
+        <div style={styles.statCard}>
+          <div style={styles.statIcon4}>
+            <HiOutlineTrendingUp size={18} />
           </div>
-          <div style={styles.statContent}>
-            <span style={styles.statNumber}>
+          <div style={styles.statInfo}>
+            <span style={styles.statValue}>
               {offers.length > 0 ? Math.round(offers.reduce((acc, curr) => acc + (curr.discountPercentage || 0), 0) / offers.length) : 0}%
             </span>
             <span style={styles.statLabel}>Avg Discount</span>
           </div>
           <div style={styles.statTrend}>
-            <FaPercent size={16} color="#8b5cf6" />
-            <span style={{ color: '#8b5cf6', fontSize: '12px', fontWeight: '600' }}>Average</span>
+            <FaArrowUp size={10} />
+            <span>3%</span>
           </div>
         </div>
       </div>
 
-      {/* Controls Section */}
-      <div style={styles.controlsSection}>
-        <div style={styles.searchWrapper}>
+      {/* Controls */}
+      <div style={styles.controlsContainer}>
+        <div style={styles.searchBox}>
           <FaSearch style={styles.searchIcon} />
           <input
             style={styles.searchInput}
-            placeholder="Search offers..."
+            placeholder="Search campaigns..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
+          {searchTerm && (
+            <button style={styles.clearBtn} onClick={() => setSearchTerm("")}>
+              <FaTimes size={12} />
+            </button>
+          )}
         </div>
-        <div style={styles.filterWrapper}>
-          <select 
-            style={styles.filterSelect}
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">All Status</option>
-            <option value="active">Active</option>
-            <option value="expired">Expired</option>
-          </select>
-          <select 
-            style={styles.filterSelect}
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="recent">Most Recent</option>
-            <option value="popular">Most Popular</option>
-            <option value="discount">Highest Discount</option>
-          </select>
+        <div style={styles.controlsRight}>
+          <button style={styles.filterToggle} onClick={() => setShowFilters(!showFilters)}>
+            <FaFilter size={13} />
+            <span>Filter</span>
+            <FaChevronDown size={10} style={{...styles.chevron, transform: showFilters ? 'rotate(180deg)' : 'rotate(0)'}} />
+          </button>
+          <div style={styles.viewToggle}>
+            <button style={{...styles.viewBtn, ...(viewMode === "list" ? styles.viewBtnActive : {})}} 
+              onClick={() => setViewMode("list")}>
+              <FaThList size={14} />
+            </button>
+            <button style={{...styles.viewBtn, ...(viewMode === "grid" ? styles.viewBtnActive : {})}} 
+              onClick={() => setViewMode("grid")}>
+              <FaThLarge size={14} />
+            </button>
+          </div>
         </div>
       </div>
 
-      {/* Offer Cards - Full Width */}
+      {/* Filters Dropdown */}
+      {showFilters && (
+        <div style={styles.filtersDropdown}>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Status</label>
+            <select style={styles.filterSelect} value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
+              <option value="all">All Status</option>
+              <option value="active">Active</option>
+              <option value="expired">Expired</option>
+            </select>
+          </div>
+          <div style={styles.filterGroup}>
+            <label style={styles.filterLabel}>Sort By</label>
+            <select style={styles.filterSelect} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+              <option value="recent">Most Recent</option>
+              <option value="popular">Most Popular</option>
+              <option value="discount">Highest Discount</option>
+            </select>
+          </div>
+        </div>
+      )}
+
+      {/* Offer Cards */}
       {displayedOffers.length > 0 ? (
-        <div style={styles.listContainer}>
+        <div style={viewMode === "grid" ? styles.gridContainer : styles.listContainer}>
           {displayedOffers.map((offer) => (
-            <div key={offer._id} className="offer-card-modern" style={styles.offerCard}>
+            <div key={offer._id} style={viewMode === "grid" ? styles.offerCard : styles.offerCardList}>
               <div style={styles.cardImageWrapper}>
-                <img 
-                  src={getImageUrl(offer.image)} 
-                  style={styles.cardImage} 
-                  alt={offer.title || "Offer"} 
-                  onError={(e) => {
-                    e.target.src = "https://via.placeholder.com/400x200?text=Image+Error";
-                  }}
-                />
-                <div style={styles.discountBadge}>
-                  <span style={styles.discountNumber}>{offer.discountPercentage}%</span>
-                  <span style={styles.discountLabel}>OFF</span>
+                <img src={getImageUrl(offer.image)} style={styles.cardImage} alt={offer.title || "Offer"} 
+                  onError={(e) => e.target.src = "https://via.placeholder.com/400x200?text=Image+Error"} />
+                <div style={styles.discountPill}>
+                  <FaPercent size={10} />
+                  <span>{offer.discountPercentage}% OFF</span>
                 </div>
-                <div style={styles.statusBadge}>
-                  <FaCheckCircle size={10} color="#10b981" />
+                <div style={styles.statusPill}>
+                  <span style={styles.statusDot}></span>
                   <span>Active</span>
                 </div>
               </div>
-              <div style={styles.cardContent}>
-                <div style={styles.cardHeader}>
-                  <div style={styles.cardTitleSection}>
+              <div style={styles.cardBody}>
+                <div style={styles.cardTop}>
+                  <div style={styles.cardHeader}>
                     <h3 style={styles.cardTitle}>{offer.title}</h3>
-                    <p style={styles.cardDescription}>{offer.description?.substring(0, 120)}...</p>
+                    <p style={styles.cardDesc}>{offer.description?.substring(0, 80)}...</p>
                   </div>
-                  <div style={styles.cardActionButtons}>
-                    <button style={styles.cardActionBtn} onClick={() => openEditModal(offer)}>
-                      <FaEdit size={14} />
-                      Edit
-                    </button>
-                    <button style={styles.cardActionBtnDanger} onClick={() => setDeleteConfirm(offer._id)}>
-                      <FaTrashAlt size={14} />
-                      Delete
-                    </button>
-                  </div>
+                  <button style={styles.editBtn} onClick={() => openEditModal(offer)}>
+                    <FaEdit size={12} />
+                    Edit
+                  </button>
                 </div>
                 <div style={styles.cardMeta}>
-                  <div style={styles.metaItem}>
-                    <FaMapMarkerAlt size={14} color="#64748b" />
-                    <span>{offer.location || "Online Only"}</span>
-                  </div>
-                  <div style={styles.metaItem}>
-                    <FaCalendarAlt size={14} color="#64748b" />
-                    <span>{new Date(offer.createdAt).toLocaleDateString()}</span>
-                  </div>
-                  <div style={styles.metaItem}>
-                    <FaTicketAlt size={14} color="#ff961a" />
-                    <span>{offer.claimedBy?.length || 0} claims</span>
-                  </div>
-                  <div style={styles.metaItem}>
-                    <FaEye size={14} color="#64748b" />
-                    <span>{offer.views || 0} views</span>
-                  </div>
+                  <span style={styles.metaItem}>
+                    <FaMapMarkerAlt size={12} />
+                    {offer.location || "Online"}
+                  </span>
+                  <span style={styles.metaItem}>
+                    <FaCalendarAlt size={12} />
+                    {new Date(offer.createdAt).toLocaleDateString()}
+                  </span>
+                  <span style={styles.metaItem}>
+                    <FaTicketAlt size={12} />
+                    {offer.claimedBy?.length || 0} claims
+                  </span>
+                  <span style={styles.metaItem}>
+                    <FaEye size={12} />
+                    {offer.views || 0} views
+                  </span>
                 </div>
-                <div style={styles.cardFooter}>
-                  <div style={styles.claimRateWrapper}>
-                    <span style={styles.claimRateLabel}>Claim Rate</span>
-                    <div style={styles.claimRateBar}>
-                      <div style={{...styles.claimRateFill, width: `${getClaimRate(offer)}%`}}></div>
+                <div style={styles.cardBottom}>
+                  <div style={styles.rateBar}>
+                    <span style={styles.rateLabel}>Conversion</span>
+                    <div style={styles.rateTrack}>
+                      <div style={{...styles.rateFill, width: `${getClaimRate(offer)}%`}}></div>
                     </div>
-                    <span style={styles.claimRateText}>{getClaimRate(offer)}%</span>
+                    <span style={styles.rateValue}>{getClaimRate(offer)}%</span>
                   </div>
                 </div>
               </div>
@@ -358,126 +389,111 @@ export default function MyOffers() {
         </div>
       ) : (
         <div style={styles.emptyState}>
-          <div style={styles.emptyIcon}>🎯</div>
-          <h3 style={styles.emptyTitle}>No active campaigns</h3>
-          <p style={styles.emptyText}>Create your first offer to start engaging with students</p>
-          <button 
-            style={styles.emptyCreateBtn}
-            onClick={handleCreateOffer}
-            className="empty-btn"
-          >
-            <FaPlus /> Create New Offer
+          <div style={styles.emptyIcon}>🚀</div>
+          <h3 style={styles.emptyTitle}>Launch Your First Campaign</h3>
+          <p style={styles.emptyText}>Create an offer and start connecting with customers today</p>
+          <button style={styles.emptyBtn} onClick={handleCreateOffer}>
+            <FaPlus size={14} />
+            Get Started
           </button>
-        </div>
-      )}
-
-      {/* Delete Confirmation Modal */}
-      {deleteConfirm && (
-        <div style={styles.modalOverlay} onClick={() => setDeleteConfirm(null)}>
-          <div style={styles.deleteModal} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.deleteIconWrapper}>
-              <FaTrashAlt size={32} color="#ef4444" />
-            </div>
-            <h3 style={styles.deleteTitle}>Delete Offer?</h3>
-            <p style={styles.deleteText}>This action cannot be undone. All claims data and analytics will be permanently removed.</p>
-            <div style={styles.deleteActions}>
-              <button style={styles.cancelDeleteBtn} onClick={() => setDeleteConfirm(null)}>Cancel</button>
-              <button style={styles.confirmDeleteBtn} onClick={() => handleDelete(deleteConfirm)}>Delete</button>
-            </div>
-          </div>
         </div>
       )}
 
       {/* Edit Modal */}
       {isEditing && currentOffer && (
         <div style={styles.modalOverlay} onClick={() => setIsEditing(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={styles.modal} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <div style={styles.modalHeaderLeft}>
-                <div style={styles.modalIcon}>
-                  <FaEdit size={18} color="#ff961a" />
+              <div style={styles.modalTitleGroup}>
+                <div style={styles.modalIconBox}>
+                  <FaEdit size={16} color="#6366f1" />
                 </div>
                 <div>
                   <h3 style={styles.modalTitle}>Edit Campaign</h3>
-                  <p style={styles.modalSubtitle}>Update your offer details and settings</p>
+                  <p style={styles.modalSub}>Update your offer details</p>
                 </div>
               </div>
-              <button style={styles.closeBtn} onClick={() => setIsEditing(false)}>
-                <FaTimes />
+              <button style={styles.modalClose} onClick={() => setIsEditing(false)}>
+                <FaTimes size={16} />
               </button>
             </div>
             
             <div style={styles.modalBody}>
-              <div style={styles.inputGroup}>
-                <div style={styles.inputWrapper}>
-                  <label style={styles.label}>Offer Title</label>
-                  <input 
-                    style={styles.input} 
-                    value={currentOffer.title} 
+              <div style={styles.modalGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Campaign Title</label>
+                  <input style={styles.formInput} value={currentOffer.title} 
                     onChange={(e) => setCurrentOffer({...currentOffer, title: e.target.value})} 
-                    placeholder="Enter offer title"
-                  />
+                    placeholder="Enter title" />
                 </div>
-                <div style={styles.inputWrapper}>
-                  <label style={styles.label}>Discount Percentage</label>
-                  <div style={styles.discountInput}>
-                    <FaPercent size={14} color="#ff961a" style={styles.inputIcon} />
-                    <input 
-                      type="number" 
-                      style={{...styles.input, paddingLeft: '40px'}} 
-                      value={currentOffer.discountPercentage} 
-                      onChange={(e) => setCurrentOffer({...currentOffer, discountPercentage: e.target.value})} 
-                      placeholder="e.g. 20"
-                    />
+                <div style={styles.formGroup}>
+                  <label style={{...styles.formLabel, color: discountError ? '#ef4444' : '#64748b'}}>
+                    Discount %
+                    <span style={styles.discountHint}>(15-50%)</span>
+                  </label>
+                  <div style={{...styles.discountInputWrapper, borderColor: discountError ? '#ef4444' : '#e2e8f0',
+                    background: discountError ? '#fef2f2' : '#fafafa'}}>
+                    <FaPercent size={13} color={discountError ? '#ef4444' : '#6366f1'} />
+                    <input type="number" style={styles.discountInputField} 
+                      value={currentOffer.discountPercentage || ""} onChange={handleDiscountChange}
+                      placeholder="20" min="15" max="50" />
+                  </div>
+                  {discountError && (
+                    <div style={styles.errorMsg}>
+                      <FaInfoCircle size={11} />
+                      <span>{discountError}</span>
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Description</label>
+                <textarea style={styles.formTextarea} value={currentOffer.description} 
+                  onChange={(e) => setCurrentOffer({...currentOffer, description: e.target.value})} 
+                  rows={2} placeholder="Describe your offer..." />
+              </div>
+
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Redeem Instructions</label>
+                <textarea style={styles.formTextarea} value={currentOffer.redeemInstructions || ""} 
+                  onChange={(e) => setCurrentOffer({...currentOffer, redeemInstructions: e.target.value})} 
+                  rows={2} placeholder="How to redeem..." />
+              </div>
+
+              <div style={styles.modalGrid}>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Location</label>
+                  <input style={styles.formInput} value={currentOffer.location || ""} 
+                    onChange={(e) => setCurrentOffer({...currentOffer, location: e.target.value})} 
+                    placeholder="Store location" />
+                </div>
+                <div style={styles.formGroup}>
+                  <label style={styles.formLabel}>Availability</label>
+                  <div style={styles.checkboxGroup}>
+                    <label style={styles.checkboxLabel}>
+                      <input type="checkbox" checked={currentOffer.isOnline || false} 
+                        onChange={(e) => setCurrentOffer({...currentOffer, isOnline: e.target.checked})} />
+                      <FaGlobe size={13} />
+                      Online
+                    </label>
+                    <label style={styles.checkboxLabel}>
+                      <input type="checkbox" checked={currentOffer.isInStore || false} 
+                        onChange={(e) => setCurrentOffer({...currentOffer, isInStore: e.target.checked})} />
+                      <FaStore size={13} />
+                      In-Store
+                    </label>
                   </div>
                 </div>
               </div>
 
-              <div style={styles.inputWrapper}>
-                <label style={styles.label}>Description</label>
-                <textarea 
-                  style={styles.textarea} 
-                  value={currentOffer.description} 
-                  onChange={(e) => setCurrentOffer({...currentOffer, description: e.target.value})} 
-                  rows={3}
-                  placeholder="Describe your offer..."
-                />
-              </div>
-
-              <div style={styles.inputWrapper}>
-                <label style={styles.label}>Redeem Instructions</label>
-                <textarea 
-                  style={styles.textarea} 
-                  value={currentOffer.redeemInstructions || ""} 
-                  onChange={(e) => setCurrentOffer({...currentOffer, redeemInstructions: e.target.value})} 
-                  rows={2}
-                  placeholder="How to redeem this offer..."
-                />
-              </div>
-
-              <div style={styles.inputWrapper}>
-                <label style={styles.label}>Location</label>
-                <input 
-                  style={styles.input} 
-                  value={currentOffer.location || ""} 
-                  onChange={(e) => setCurrentOffer({...currentOffer, location: e.target.value})} 
-                  placeholder="Online or physical location"
-                />
-              </div>
-
-              <div style={styles.uploadSection}>
-                <label style={styles.label}>Offer Banner</label>
-                <div style={styles.imagePreviewContainer}>
-                  <img 
-                    src={preview} 
-                    style={styles.imagePreview} 
-                    alt="preview" 
-                    onError={(e) => {
-                      e.target.src = "https://via.placeholder.com/400x200?text=No+Image";
-                    }}
-                  />
-                  <label style={styles.uploadOverlay}>
-                    <FaCloudUploadAlt size={20} />
+              <div style={styles.formGroup}>
+                <label style={styles.formLabel}>Banner Image</label>
+                <div style={styles.imageUpload}>
+                  <img src={preview} style={styles.imagePreview} alt="preview" 
+                    onError={(e) => e.target.src = "https://via.placeholder.com/400x200?text=No+Image"} />
+                  <label style={styles.uploadBtn}>
+                    <FaCloudUploadAlt size={16} />
                     <span>Change Image</span>
                     <input type="file" hidden accept="image/*" onChange={(e) => {
                       if(e.target.files[0]) {
@@ -492,16 +508,13 @@ export default function MyOffers() {
 
             <div style={styles.modalFooter}>
               <button style={styles.cancelBtn} onClick={() => setIsEditing(false)}>Cancel</button>
-              <button style={styles.saveBtn} onClick={handleUpdate} disabled={updating}>
+              <button style={{...styles.updateBtn, opacity: discountError ? 0.5 : 1,
+                cursor: discountError ? 'not-allowed' : 'pointer'}} 
+                onClick={handleUpdate} disabled={updating || !!discountError}>
                 {updating ? (
-                  <>
-                    <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
-                    Updating...
-                  </>
+                  <><FaSpinner style={{animation: 'spin 1s linear infinite'}} /> Updating...</>
                 ) : (
-                  <>
-                    Update Offer <FaArrowRight />
-                  </>
+                  <>Update Campaign <FaArrowRight size={12} /></>
                 )}
               </button>
             </div>
@@ -511,29 +524,37 @@ export default function MyOffers() {
 
       <style>{`
         @keyframes slideUp {
-          from { opacity: 0; transform: translateY(30px); }
+          from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }
         }
-        @keyframes pulse {
-          0%, 100% { opacity: 1; }
-          50% { opacity: 0.6; }
+        @keyframes fadeIn {
+          from { opacity: 0; }
+          to { opacity: 1; }
         }
         @keyframes spin {
           from { transform: rotate(0deg); }
           to { transform: rotate(360deg); }
         }
-        @keyframes bounceIn {
-          0% { transform: scale(0.8); opacity: 0; }
-          60% { transform: scale(1.05); opacity: 1; }
-          100% { transform: scale(1); opacity: 1; }
-        }
-        @keyframes modalFadeIn {
-          from { opacity: 0; transform: scale(0.95) translateY(20px); }
+        @keyframes modalFade {
+          from { opacity: 0; transform: scale(0.95) translateY(10px); }
           to { opacity: 1; transform: scale(1) translateY(0); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 1; }
+          50% { opacity: 0.5; }
+        }
+        
+        .loader {
+          width: 40px;
+          height: 40px;
+          border: 3px solid #e2e8f0;
+          border-top: 3px solid #6366f1;
+          border-radius: 50%;
+          animation: spin 0.8s linear infinite;
         }
         
         .stat-card {
-          animation: slideUp 0.5s ease forwards;
+          animation: slideUp 0.4s ease forwards;
           opacity: 0;
         }
         .stat-card:nth-child(1) { animation-delay: 0.05s; }
@@ -541,46 +562,34 @@ export default function MyOffers() {
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.2s; }
         
-        .offer-card-modern {
+        .offer-card {
           animation: slideUp 0.4s ease forwards;
           opacity: 0;
-          transition: all 0.3s ease;
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
         }
-        .offer-card-modern:nth-child(1) { animation-delay: 0.05s; }
-        .offer-card-modern:nth-child(2) { animation-delay: 0.1s; }
-        .offer-card-modern:nth-child(3) { animation-delay: 0.15s; }
-        .offer-card-modern:nth-child(4) { animation-delay: 0.2s; }
-        .offer-card-modern:nth-child(5) { animation-delay: 0.25s; }
-        .offer-card-modern:nth-child(6) { animation-delay: 0.3s; }
+        .offer-card:nth-child(1) { animation-delay: 0.05s; }
+        .offer-card:nth-child(2) { animation-delay: 0.1s; }
+        .offer-card:nth-child(3) { animation-delay: 0.15s; }
+        .offer-card:nth-child(4) { animation-delay: 0.2s; }
+        .offer-card:nth-child(5) { animation-delay: 0.25s; }
+        .offer-card:nth-child(6) { animation-delay: 0.3s; }
         
-        .offer-card-modern:hover {
-          transform: translateX(4px);
-          box-shadow: 0 8px 30px rgba(0,0,0,0.08);
-        }
-        
-        .create-btn {
-          transition: all 0.3s ease;
-        }
-        .create-btn:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 30px rgba(249, 195, 73, 0.4);
+        .offer-card:hover {
+          transform: translateY(-6px);
+          box-shadow: 0 20px 40px rgba(99, 102, 241, 0.1);
+          border-color: #6366f1;
         }
         
-        .empty-btn {
-          transition: all 0.3s ease;
-        }
-        .empty-btn:hover {
-          transform: translateY(-2px) scale(1.02);
-          box-shadow: 0 8px 30px rgba(249, 195, 73, 0.4);
+        input[type="checkbox"] {
+          accent-color: #6366f1;
+          width: 16px;
+          height: 16px;
+          cursor: pointer;
         }
         
-        .loader {
-          width: 50px;
-          height: 50px;
-          border: 3px solid #e2e8f0;
-          border-top: 3px solid #ff961a;
-          border-radius: 50%;
-          animation: pulse 0.8s linear infinite;
+        @media (max-width: 480px) {
+          .offer-card { animation-delay: 0s !important; }
+          .stat-card { animation-delay: 0s !important; }
         }
       `}</style>
     </div>
@@ -588,192 +597,223 @@ export default function MyOffers() {
 }
 
 const styles = {
-  container: { 
-    padding: "24px 32px", 
+  container: {
+    padding: "20px",
     background: "#f8fafc",
-    minHeight: "100vh", 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    minHeight: "100vh",
+    fontFamily: "'Inter', -apple-system, sans-serif",
     position: "relative",
     overflowX: "hidden",
     maxWidth: "100%",
     boxSizing: "border-box"
   },
-  bgCircle1: {
-    position: "absolute",
-    top: "-150px",
-    right: "-100px",
+  gradientBg: {
+    position: "fixed",
+    top: "-50%",
+    right: "-30%",
+    width: "600px",
+    height: "600px",
+    background: "radial-gradient(circle, rgba(99,102,241,0.04) 0%, transparent 70%)",
+    borderRadius: "50%",
+    pointerEvents: "none",
+    zIndex: 0
+  },
+  glowOrb1: {
+    position: "fixed",
+    bottom: "-20%",
+    left: "-10%",
     width: "400px",
     height: "400px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.05) 0%, rgba(255,150,26,0) 70%)",
+    background: "radial-gradient(circle, rgba(236,72,153,0.04) 0%, transparent 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0
   },
-  bgCircle2: {
-    position: "absolute",
-    bottom: "-100px",
-    left: "-80px",
+  glowOrb2: {
+    position: "fixed",
+    top: "30%",
+    right: "-10%",
     width: "300px",
     height: "300px",
-    background: "radial-gradient(circle, rgba(139,92,246,0.05) 0%, rgba(139,92,246,0) 70%)",
+    background: "radial-gradient(circle, rgba(251,191,36,0.04) 0%, transparent 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0
   },
-  bgCircle3: {
-    position: "absolute",
-    top: "50%",
-    right: "30%",
+  glowOrb3: {
+    position: "fixed",
+    bottom: "40%",
+    left: "50%",
     width: "200px",
     height: "200px",
-    background: "radial-gradient(circle, rgba(16,185,129,0.03) 0%, rgba(16,185,129,0) 70%)",
+    background: "radial-gradient(circle, rgba(52,211,153,0.03) 0%, transparent 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0
   },
-  dashboardHeader: {
+  header: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "32px",
+    marginBottom: "24px",
     position: "relative",
     zIndex: 1,
     flexWrap: "wrap",
-    gap: "16px"
+    gap: "12px"
   },
   headerLeft: {
     flex: 1
   },
-  headerBadge: {
+  brandBadge: {
     display: "inline-flex",
     alignItems: "center",
-    gap: "8px",
-    background: "rgba(255,150,26,0.1)",
+    gap: "6px",
+    background: "rgba(99,102,241,0.1)",
     padding: "4px 14px",
     borderRadius: "20px",
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: "600",
-    color: "#ff961a",
-    marginBottom: "12px"
+    color: "#6366f1",
+    marginBottom: "8px"
   },
-  mainTitle: { 
-    margin: 0, 
-    fontSize: "28px", 
+  mainTitle: {
+    margin: 0,
+    fontSize: "28px",
     fontWeight: "700",
     color: "#0f172a",
-    letterSpacing: "-0.5px"
-  },
-  mainSubtitle: { 
-    margin: "6px 0 0", 
-    fontSize: "14px", 
-    color: "#64748b"
-  },
-  createOfferBtn: {
-    display: "inline-flex",
+    letterSpacing: "-0.5px",
+    display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "10px 24px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    gap: "10px"
+  },
+  titleIcon: {
+    color: "#f9c349",
+    fontSize: "24px"
+  },
+  subTitle: {
+    margin: "4px 0 0",
+    fontSize: "14px",
+    color: "#64748b",
+    fontWeight: "400"
+  },
+  createBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 22px",
+    background: "#0f172a",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     fontSize: "13px",
     fontWeight: "600",
     cursor: "pointer",
     transition: "all 0.3s ease",
-    boxShadow: "0 4px 16px rgba(249, 195, 73, 0.3)",
-    whiteSpace: "nowrap",
-    marginTop: "4px"
+    boxShadow: "0 4px 16px rgba(15,23,42,0.2)",
+    whiteSpace: "nowrap"
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "14px",
     marginBottom: "24px",
     position: "relative",
     zIndex: 1
   },
   statCard: {
-    display: "flex",
-    alignItems: "center",
     background: "#ffffff",
-    padding: "16px 20px",
-    borderRadius: "16px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+    padding: "16px 18px",
+    borderRadius: "14px",
+    border: "1px solid #f1f5f9",
+    display: "flex",
+    alignItems: "center",
+    gap: "14px",
     transition: "all 0.3s ease",
-    gap: "16px"
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
   },
-  statIconWrapper1: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#fff7ed",
+  statIcon1: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#ff961a"
+    color: "#6366f1",
+    flexShrink: 0
   },
-  statIconWrapper2: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#ecfdf5",
+  statIcon2: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#10b981"
+    color: "#10b981",
+    flexShrink: 0
   },
-  statIconWrapper3: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#fef3c7",
+  statIcon3: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#f59e0b"
+    color: "#d97706",
+    flexShrink: 0
   },
-  statIconWrapper4: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#f3e8ff",
+  statIcon4: {
+    width: "40px",
+    height: "40px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #fce4ec 0%, #f3e5f5 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    color: "#8b5cf6"
+    color: "#ec4899",
+    flexShrink: 0
   },
-  statContent: {
-    flex: 1
+  statInfo: {
+    flex: 1,
+    minWidth: 0
   },
-  statNumber: {
+  statValue: {
     display: "block",
-    fontSize: "22px",
+    fontSize: "20px",
     fontWeight: "700",
     color: "#0f172a",
     lineHeight: "1.2"
   },
   statLabel: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#94a3b8",
     fontWeight: "500"
   },
   statTrend: {
     display: "flex",
     alignItems: "center",
-    gap: "4px"
+    gap: "4px",
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#10b981",
+    background: "#ecfdf5",
+    padding: "2px 10px",
+    borderRadius: "12px"
   },
-  controlsSection: {
+  controlsContainer: {
     display: "flex",
-    gap: "16px",
-    marginBottom: "24px",
+    gap: "12px",
+    marginBottom: "16px",
     position: "relative",
     zIndex: 1,
     flexWrap: "wrap"
   },
-  searchWrapper: {
+  searchBox: {
     flex: 1,
     position: "relative",
-    minWidth: "200px",
-    maxWidth: "400px"
+    minWidth: "200px"
   },
   searchIcon: {
     position: "absolute",
@@ -785,55 +825,149 @@ const styles = {
   },
   searchInput: {
     width: "100%",
-    padding: "10px 16px 10px 42px",
-    borderRadius: "12px",
-    border: "1px solid #e2e8f0",
-    background: "#ffffff",
-    fontSize: "14px",
-    color: "#1e293b",
-    outline: "none",
-    transition: "all 0.2s",
-    boxSizing: "border-box"
-  },
-  filterWrapper: {
-    display: "flex",
-    gap: "12px",
-    flexWrap: "wrap"
-  },
-  filterSelect: {
-    padding: "10px 16px",
-    borderRadius: "12px",
+    padding: "10px 14px 10px 42px",
+    borderRadius: "10px",
     border: "1px solid #e2e8f0",
     background: "#ffffff",
     fontSize: "13px",
     color: "#1e293b",
     outline: "none",
+    transition: "all 0.3s ease",
+    boxSizing: "border-box"
+  },
+  clearBtn: {
+    position: "absolute",
+    right: "10px",
+    top: "50%",
+    transform: "translateY(-50%)",
+    background: "#f1f5f9",
+    border: "none",
+    borderRadius: "50%",
+    width: "24px",
+    height: "24px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
     cursor: "pointer",
-    transition: "all 0.2s",
-    minWidth: "130px"
+    color: "#64748b"
+  },
+  controlsRight: {
+    display: "flex",
+    gap: "10px",
+    alignItems: "center"
+  },
+  filterToggle: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "8px 16px",
+    borderRadius: "10px",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#475569",
+    cursor: "pointer",
+    transition: "all 0.3s ease"
+  },
+  chevron: {
+    transition: "transform 0.3s ease"
+  },
+  viewToggle: {
+    display: "flex",
+    gap: "4px",
+    background: "#f1f5f9",
+    padding: "3px",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0"
+  },
+  viewBtn: {
+    padding: "6px 12px",
+    borderRadius: "6px",
+    border: "none",
+    background: "transparent",
+    color: "#94a3b8",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center"
+  },
+  viewBtnActive: {
+    background: "#ffffff",
+    color: "#0f172a",
+    boxShadow: "0 2px 8px rgba(0,0,0,0.06)"
+  },
+  filtersDropdown: {
+    display: "flex",
+    gap: "16px",
+    padding: "16px",
+    background: "#ffffff",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    marginBottom: "16px",
+    position: "relative",
+    zIndex: 1,
+    flexWrap: "wrap",
+    animation: "fadeIn 0.2s ease"
+  },
+  filterGroup: {
+    flex: 1,
+    minWidth: "120px"
+  },
+  filterLabel: {
+    display: "block",
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#94a3b8",
+    textTransform: "uppercase",
+    letterSpacing: "0.5px",
+    marginBottom: "4px"
+  },
+  filterSelect: {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    background: "#fafafa",
+    fontSize: "13px",
+    color: "#1e293b",
+    outline: "none",
+    cursor: "pointer"
+  },
+  gridContainer: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fill, minmax(320px, 1fr))",
+    gap: "18px",
+    position: "relative",
+    zIndex: 1
   },
   listContainer: {
     display: "flex",
     flexDirection: "column",
-    gap: "16px",
+    gap: "14px",
     position: "relative",
-    zIndex: 1,
-    width: "100%"
+    zIndex: 1
   },
   offerCard: {
-    display: "flex",
     background: "#ffffff",
-    borderRadius: "16px",
-    border: "1px solid #e2e8f0",
+    borderRadius: "14px",
+    border: "1px solid #f1f5f9",
     overflow: "hidden",
-    transition: "all 0.3s ease",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-    width: "100%"
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
+  },
+  offerCardList: {
+    background: "#ffffff",
+    borderRadius: "14px",
+    border: "1px solid #f1f5f9",
+    overflow: "hidden",
+    display: "flex",
+    transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.02)"
   },
   cardImageWrapper: {
     position: "relative",
-    width: "220px",
-    minWidth: "220px",
     height: "180px",
     overflow: "hidden",
     flexShrink: 0
@@ -843,176 +977,148 @@ const styles = {
     height: "100%",
     objectFit: "cover"
   },
-  discountBadge: {
+  discountPill: {
     position: "absolute",
     top: "12px",
     left: "12px",
-    background: "linear-gradient(135deg, #ff961a 0%, #f9c349 100%)",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
     color: "#fff",
-    borderRadius: "10px",
-    padding: "6px 12px",
+    padding: "4px 14px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "700",
     display: "flex",
-    flexDirection: "column",
     alignItems: "center",
-    lineHeight: "1.2",
-    boxShadow: "0 4px 12px rgba(255,150,26,0.3)"
+    gap: "6px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)"
   },
-  discountNumber: {
-    fontSize: "20px",
-    fontWeight: "800"
-  },
-  discountLabel: {
-    fontSize: "8px",
-    fontWeight: "600",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px"
-  },
-  statusBadge: {
+  statusPill: {
     position: "absolute",
     top: "12px",
     right: "12px",
     background: "rgba(16, 185, 129, 0.95)",
     color: "#fff",
-    padding: "4px 12px",
-    borderRadius: "8px",
+    padding: "4px 14px",
+    borderRadius: "20px",
+    fontSize: "11px",
+    fontWeight: "600",
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    fontSize: "11px",
-    fontWeight: "600",
-    backdropFilter: "blur(4px)"
+    backdropFilter: "blur(8px)"
   },
-  cardContent: {
+  statusDot: {
+    width: "6px",
+    height: "6px",
+    borderRadius: "50%",
+    background: "#fff",
+    animation: "pulse 2s ease-in-out infinite"
+  },
+  cardBody: {
+    padding: "16px",
     flex: 1,
-    padding: "18px 24px",
     display: "flex",
     flexDirection: "column",
-    justifyContent: "space-between",
-    minWidth: 0
+    justifyContent: "space-between"
   },
-  cardHeader: {
+  cardTop: {
     display: "flex",
     justifyContent: "space-between",
-    alignItems: "flex-start",
-    gap: "16px",
-    marginBottom: "12px"
+    gap: "12px",
+    marginBottom: "10px"
   },
-  cardTitleSection: {
+  cardHeader: {
     flex: 1,
     minWidth: 0
   },
   cardTitle: {
-    margin: "0 0 6px 0",
-    fontSize: "18px",
+    margin: "0 0 4px 0",
+    fontSize: "16px",
     fontWeight: "600",
     color: "#0f172a"
   },
-  cardDescription: {
+  cardDesc: {
     margin: 0,
     fontSize: "13px",
     color: "#64748b",
-    lineHeight: "1.4",
-    overflow: "hidden",
-    textOverflow: "ellipsis",
-    display: "-webkit-box",
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: "vertical"
+    lineHeight: "1.4"
   },
-  cardActionButtons: {
+  editBtn: {
     display: "flex",
-    gap: "8px",
-    flexShrink: 0
-  },
-  cardActionBtn: {
-    padding: "8px 16px",
-    borderRadius: "10px",
+    alignItems: "center",
+    gap: "4px",
+    padding: "4px 14px",
+    borderRadius: "8px",
     border: "1px solid #e2e8f0",
     background: "#ffffff",
-    color: "#1e293b",
+    color: "#475569",
     cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    transition: "all 0.2s",
     fontSize: "12px",
-    fontWeight: "600"
-  },
-  cardActionBtnDanger: {
-    padding: "8px 16px",
-    borderRadius: "10px",
-    border: "1px solid #fee2e2",
-    background: "#ffffff",
-    color: "#ef4444",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    transition: "all 0.2s",
-    fontSize: "12px",
-    fontWeight: "600"
+    fontWeight: "600",
+    transition: "all 0.3s ease",
+    whiteSpace: "nowrap",
+    height: "fit-content"
   },
   cardMeta: {
     display: "flex",
-    gap: "20px",
     flexWrap: "wrap",
+    gap: "12px",
     marginBottom: "12px"
   },
   metaItem: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
+    gap: "4px",
+    fontSize: "12px",
     color: "#64748b"
   },
-  cardFooter: {
+  cardBottom: {
     borderTop: "1px solid #f1f5f9",
     paddingTop: "12px"
   },
-  claimRateWrapper: {
+  rateBar: {
     display: "flex",
     alignItems: "center",
-    gap: "12px"
+    gap: "10px"
   },
-  claimRateLabel: {
-    fontSize: "12px",
+  rateLabel: {
+    fontSize: "11px",
     fontWeight: "600",
     color: "#475569"
   },
-  claimRateBar: {
+  rateTrack: {
     flex: 1,
-    height: "6px",
+    height: "4px",
     background: "#f1f5f9",
-    borderRadius: "3px",
+    borderRadius: "2px",
     overflow: "hidden",
-    minWidth: "100px"
+    minWidth: "60px"
   },
-  claimRateFill: {
+  rateFill: {
     height: "100%",
-    background: "linear-gradient(90deg, #10b981 0%, #34d399 100%)",
-    borderRadius: "3px",
-    transition: "width 0.6s ease"
+    background: "linear-gradient(90deg, #6366f1 0%, #8b5cf6 100%)",
+    borderRadius: "2px",
+    transition: "width 0.8s ease"
   },
-  claimRateText: {
-    fontSize: "13px",
+  rateValue: {
+    fontSize: "12px",
     fontWeight: "700",
-    color: "#10b981",
-    minWidth: "40px",
+    color: "#6366f1",
+    minWidth: "36px",
     textAlign: "right"
   },
   emptyState: {
-    padding: "60px 20px",
+    padding: "48px 20px",
     textAlign: "center",
     background: "#ffffff",
     borderRadius: "16px",
     border: "2px dashed #e2e8f0",
     position: "relative",
-    zIndex: 1,
-    width: "100%"
+    zIndex: 1
   },
   emptyIcon: {
-    fontSize: "64px",
-    marginBottom: "16px",
-    opacity: 0.6
+    fontSize: "48px",
+    marginBottom: "16px"
   },
   emptyTitle: {
     fontSize: "20px",
@@ -1023,269 +1129,260 @@ const styles = {
   emptyText: {
     fontSize: "14px",
     color: "#64748b",
-    margin: "0 0 20px 0"
+    margin: "0 0 24px 0"
   },
-  emptyCreateBtn: {
+  emptyBtn: {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
     padding: "10px 28px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#0f172a",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     fontSize: "14px",
     fontWeight: "600",
     cursor: "pointer",
-    transition: "all 0.3s ease",
-    boxShadow: "0 4px 16px rgba(249, 195, 73, 0.3)"
+    transition: "all 0.3s ease"
   },
-  modalOverlay: { 
-    position: "fixed", 
-    inset: 0, 
-    backgroundColor: "rgba(15, 23, 42, 0.6)", 
-    backdropFilter: "blur(8px)", 
-    display: "flex", 
-    justifyContent: "center", 
-    alignItems: "center", 
+  modalOverlay: {
+    position: "fixed",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.6)",
+    backdropFilter: "blur(12px)",
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 1000,
     padding: "16px"
   },
-  modalContent: { 
-    backgroundColor: "#fff", 
-    width: "560px", 
-    maxHeight: "90vh", 
-    borderRadius: "20px", 
-    display: "flex", 
-    flexDirection: "column", 
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)", 
+  modal: {
+    background: "#ffffff",
+    width: "100%",
+    maxWidth: "560px",
+    maxHeight: "95vh",
+    borderRadius: "16px",
+    display: "flex",
+    flexDirection: "column",
+    boxShadow: "0 32px 64px rgba(0,0,0,0.2)",
     overflow: "hidden",
-    animation: "modalFadeIn 0.3s ease"
+    animation: "modalFade 0.3s ease"
   },
-  modalHeader: { 
-    padding: "20px 24px", 
-    borderBottom: "1px solid #f1f5f9", 
-    display: "flex", 
-    justifyContent: "space-between", 
-    alignItems: "center" 
+  modalHeader: {
+    padding: "16px 20px",
+    borderBottom: "1px solid #f1f5f9",
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center"
   },
-  modalHeaderLeft: {
+  modalTitleGroup: {
     display: "flex",
     alignItems: "center",
     gap: "12px"
   },
-  modalIcon: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "12px",
-    background: "#fff7ed",
+  modalIconBox: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "10px",
+    background: "linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center"
   },
-  modalTitle: { 
-    margin: 0, 
-    fontSize: "18px", 
-    fontWeight: "600", 
+  modalTitle: {
+    margin: 0,
+    fontSize: "16px",
+    fontWeight: "600",
     color: "#0f172a"
   },
-  modalSubtitle: {
+  modalSub: {
     margin: "2px 0 0",
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b"
   },
-  closeBtn: { 
-    width: "36px", 
-    height: "36px", 
-    borderRadius: "50%", 
-    border: "1px solid #e2e8f0", 
-    background: "#f8fafc", 
-    cursor: "pointer", 
-    display: "flex", 
-    alignItems: "center", 
+  modalClose: {
+    width: "32px",
+    height: "32px",
+    borderRadius: "50%",
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
     justifyContent: "center",
-    transition: "all 0.2s"
+    transition: "all 0.3s ease",
+    flexShrink: 0
   },
-  modalBody: { 
-    padding: "24px", 
-    overflowY: "auto", 
-    flex: 1 
+  modalBody: {
+    padding: "20px",
+    overflowY: "auto",
+    flex: 1
   },
-  inputGroup: {
+  modalGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "16px",
-    marginBottom: "16px"
+    gap: "14px"
   },
-  inputWrapper: {
-    marginBottom: "16px"
+  formGroup: {
+    marginBottom: "14px"
   },
-  label: { 
-    display: "block", 
-    fontSize: "12px", 
-    fontWeight: "600", 
-    color: "#475569", 
-    textTransform: "uppercase", 
-    marginBottom: "6px", 
-    letterSpacing: "0.3px" 
+  formLabel: {
+    display: "block",
+    fontSize: "11px",
+    fontWeight: "600",
+    color: "#64748b",
+    textTransform: "uppercase",
+    letterSpacing: "0.3px",
+    marginBottom: "4px"
   },
-  input: { 
-    width: "100%", 
-    padding: "10px 14px", 
-    borderRadius: "10px", 
-    border: "1px solid #e2e8f0", 
-    fontSize: "14px", 
-    color: "#1e293b", 
+  discountHint: {
+    color: "#94a3b8",
+    fontSize: "10px",
+    fontWeight: "400",
+    marginLeft: "4px",
+    textTransform: "none"
+  },
+  formInput: {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    fontSize: "13px",
+    color: "#1e293b",
     outline: "none",
-    transition: "border-color 0.2s",
+    transition: "all 0.3s ease",
     boxSizing: "border-box",
-    background: "#ffffff"
+    background: "#fafafa"
   },
-  discountInput: {
-    position: "relative"
+  discountInputWrapper: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    padding: "0 12px",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    background: "#fafafa",
+    transition: "all 0.3s ease"
   },
-  inputIcon: {
-    position: "absolute",
-    left: "14px",
-    top: "50%",
-    transform: "translateY(-50%)"
+  discountInputField: {
+    width: "100%",
+    padding: "8px 0",
+    border: "none",
+    fontSize: "13px",
+    color: "#1e293b",
+    outline: "none",
+    background: "transparent"
   },
-  textarea: { 
-    width: "100%", 
-    padding: "10px 14px", 
-    borderRadius: "10px", 
-    border: "1px solid #e2e8f0", 
-    fontSize: "14px", 
-    fontFamily: "inherit", 
+  errorMsg: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    marginTop: "4px",
+    fontSize: "11px",
+    color: "#ef4444",
+    fontWeight: "500"
+  },
+  formTextarea: {
+    width: "100%",
+    padding: "8px 12px",
+    borderRadius: "8px",
+    border: "1px solid #e2e8f0",
+    fontSize: "13px",
+    fontFamily: "inherit",
     outline: "none",
     resize: "vertical",
     boxSizing: "border-box",
-    minHeight: "80px"
+    minHeight: "60px",
+    background: "#fafafa"
   },
-  uploadSection: {
-    marginTop: "8px"
+  checkboxGroup: {
+    display: "flex",
+    gap: "10px",
+    marginTop: "2px",
+    flexWrap: "wrap"
   },
-  imagePreviewContainer: { 
-    position: "relative", 
-    borderRadius: "12px", 
-    overflow: "hidden", 
-    border: "1px solid #e2e8f0" 
-  },
-  imagePreview: { 
-    width: "100%", 
-    height: "140px", 
-    objectFit: "cover" 
-  },
-  uploadOverlay: { 
-    position: "absolute", 
-    inset: 0, 
-    backgroundColor: "rgba(0,0,0,0.5)", 
-    color: "#fff", 
-    display: "flex", 
-    flexDirection: "column",
-    alignItems: "center", 
-    justifyContent: "center", 
-    gap: "6px", 
-    cursor: "pointer", 
-    opacity: 0, 
-    transition: "opacity 0.3s",
-    fontWeight: "500",
-    fontSize: "13px"
-  },
-  modalFooter: { 
-    padding: "16px 24px", 
-    borderTop: "1px solid #f1f5f9", 
-    display: "flex", 
-    justifyContent: "flex-end", 
-    gap: "12px", 
-    backgroundColor: "#f8fafc" 
-  },
-  cancelBtn: { 
-    padding: "10px 20px", 
-    borderRadius: "10px", 
-    border: "1px solid #e2e8f0", 
-    background: "#fff", 
-    fontWeight: "600", 
-    cursor: "pointer", 
-    color: "#475569",
-    transition: "all 0.2s",
-    fontSize: "13px"
-  },
-  saveBtn: { 
-    padding: "10px 24px", 
-    borderRadius: "10px", 
-    border: "none", 
-    background: "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)", 
-    color: "#fff", 
-    fontWeight: "600", 
-    cursor: "pointer", 
+  checkboxLabel: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s",
-    fontSize: "13px"
-  },
-  deleteModal: {
-    background: "#fff",
-    padding: "36px 40px",
+    gap: "6px",
+    fontSize: "12px",
+    fontWeight: "500",
+    color: "#475569",
+    cursor: "pointer",
+    padding: "4px 12px",
     borderRadius: "20px",
-    textAlign: "center",
-    width: "400px",
-    maxWidth: "90%",
-    animation: "modalFadeIn 0.3s ease"
+    border: "1px solid #e2e8f0",
+    background: "#fafafa"
   },
-  deleteIconWrapper: {
-    width: "64px",
-    height: "64px",
-    borderRadius: "50%",
-    background: "#fef2f2",
+  imageUpload: {
+    position: "relative",
+    borderRadius: "10px",
+    overflow: "hidden",
+    border: "1px solid #e2e8f0"
+  },
+  imagePreview: {
+    width: "100%",
+    height: "120px",
+    objectFit: "cover"
+  },
+  uploadBtn: {
+    position: "absolute",
+    inset: 0,
+    background: "rgba(15, 23, 42, 0.6)",
+    color: "#fff",
     display: "flex",
+    flexDirection: "column",
     alignItems: "center",
     justifyContent: "center",
-    margin: "0 auto 16px"
+    gap: "4px",
+    cursor: "pointer",
+    opacity: 0,
+    transition: "opacity 0.3s ease",
+    fontWeight: "500",
+    fontSize: "12px"
   },
-  deleteTitle: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: "0 0 8px 0"
-  },
-  deleteText: {
-    fontSize: "14px",
-    color: "#64748b",
-    margin: "0 0 24px 0",
-    lineHeight: "1.5"
-  },
-  deleteActions: {
+  modalFooter: {
+    padding: "14px 20px",
+    borderTop: "1px solid #f1f5f9",
     display: "flex",
-    gap: "12px",
-    justifyContent: "center"
+    flexDirection: "row",
+    gap: "10px",
+    backgroundColor: "#f8fafc"
   },
-  cancelDeleteBtn: {
-    padding: "10px 24px",
-    borderRadius: "10px",
+  cancelBtn: {
+    flex: 1,
+    padding: "9px 16px",
+    borderRadius: "8px",
     border: "1px solid #e2e8f0",
     background: "#fff",
     fontWeight: "600",
     cursor: "pointer",
-    color: "#64748b",
-    fontSize: "13px"
+    color: "#475569",
+    fontSize: "12px",
+    transition: "all 0.3s ease"
   },
-  confirmDeleteBtn: {
-    padding: "10px 24px",
-    borderRadius: "10px",
+  updateBtn: {
+    flex: 1,
+    padding: "9px 16px",
+    borderRadius: "8px",
     border: "none",
-    background: "#ef4444",
+    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 100%)",
     color: "#fff",
     fontWeight: "600",
     cursor: "pointer",
-    fontSize: "13px"
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "6px",
+    fontSize: "12px",
+    transition: "all 0.3s ease"
   },
   loaderContainer: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    minHeight: "100vh"
+    minHeight: "100vh",
+    padding: "20px"
   },
   loaderWrapper: {
     display: "flex",
@@ -1293,22 +1390,25 @@ const styles = {
     alignItems: "center",
     gap: "12px"
   },
+  loaderLogo: {
+    fontSize: "32px"
+  },
   loader: {
-    width: "44px",
-    height: "44px",
+    width: "40px",
+    height: "40px",
     border: "3px solid #e2e8f0",
-    borderTop: "3px solid #ff961a",
+    borderTop: "3px solid #6366f1",
     borderRadius: "50%"
   },
   loaderText: {
     color: "#0f172a",
-    fontSize: "16px",
+    fontSize: "15px",
     fontWeight: "600",
     margin: 0
   },
   loaderSubtext: {
     color: "#94a3b8",
-    fontSize: "13px",
+    fontSize: "12px",
     margin: 0
   }
 };

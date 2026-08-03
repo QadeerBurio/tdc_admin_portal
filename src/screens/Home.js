@@ -3,34 +3,34 @@ import React, { useState, useEffect, useContext } from "react";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
-import { 
-  FaGift, 
-  FaUsers, 
-  FaSignOutAlt, 
-  FaShieldAlt, 
-  FaChartLine, 
-  FaHome, 
-  FaArrowUp, 
-  FaCheckCircle, 
-  FaTicketAlt, 
-  FaBell, 
-  FaSearch, 
-  FaCog, 
-  FaBars, 
-  FaTimes, 
-  FaStar, 
-  FaLongArrowAltUp, 
-  FaUserCircle, 
-  FaChevronDown, 
-  FaPlus, 
-  FaEdit, 
-  FaLock, 
-  FaEnvelope, 
-  FaPhone, 
-  FaCalendarAlt, 
-  FaUser, 
-  FaImage, 
-  FaStore, 
+import {
+  FaGift,
+  FaUsers,
+  FaSignOutAlt,
+  FaShieldAlt,
+  FaChartLine,
+  FaHome,
+  FaArrowUp,
+  FaCheckCircle,
+  FaTicketAlt,
+  FaBell,
+  FaSearch,
+  FaCog,
+  FaBars,
+  FaTimes,
+  FaStar,
+  FaLongArrowAltUp,
+  FaUserCircle,
+  FaChevronDown,
+  FaPlus,
+  FaEdit,
+  FaLock,
+  FaEnvelope,
+  FaPhone,
+  FaCalendarAlt,
+  FaUser,
+  FaImage,
+  FaStore,
   FaGlobe,
   FaRocket,
   FaArrowRight,
@@ -97,7 +97,7 @@ export default function Home() {
     { id: 3, message: "5 new students viewed your offers today", time: "3 hours ago", read: true },
   ]);
   const [showNotifications, setShowNotifications] = useState(false);
-  
+
   const userMenuRef = React.useRef(null);
   const notificationRef = React.useRef(null);
 
@@ -142,7 +142,7 @@ export default function Home() {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
-      
+
       if (res.data && res.data.length > 0) {
         setHasOffers(true);
         setOffers(res.data);
@@ -171,7 +171,7 @@ export default function Home() {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
-      
+
       setBrandData({
         ...res.data,
         logo: res.data.logo || "",
@@ -206,7 +206,7 @@ export default function Home() {
 
       const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
       const revenue = savingRes.data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
-      
+
       setStats({
         totalLeads: leadRes.data.length,
         completedRedemptions: savingRes.data.length,
@@ -278,15 +278,13 @@ export default function Home() {
 
   const navItems = [
     { id: "home", label: "Dashboard", icon: <MdOutlineDashboard />, description: "Overview" },
-    { id: "myOffers", label: "My Offers", icon: <FaTicketAlt />, description: "Manage" },
-    { id: "createOffer", label: "Create Discount", icon: <FaGift />, description: "New Offer" },
-    { id: "claimedUsers", label: "Claimed Leads", icon: <FaUsers />, description: "Leads" },
+    { id: "myOffers", label: "Discount", icon: <FaTicketAlt />, description: "Manage" },
     { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
-    { id: "savingsHistory", label: "Redemptions", icon: <FaChartLine />, description: "History" },
+    { id: "savingsHistory", label: "Redemption", icon: <FaShieldAlt />, description: "Verify" },
   ];
 
   const renderContent = () => {
-    switch(activeTab) {
+    switch (activeTab) {
       case "home":
         return renderHome();
       case "myOffers":
@@ -305,15 +303,15 @@ export default function Home() {
   };
 
   const renderHome = () => (
-    <motion.div 
+    <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.5 }}
       style={styles.homeContainer}
     >
       <motion.div style={styles.statsGrid}>
-        <motion.div 
-          style={styles.statCard} 
+        <motion.div
+          style={styles.statCard}
           className="stat-card"
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -330,8 +328,8 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div 
-          style={styles.statCard} 
+        <motion.div
+          style={styles.statCard}
           className="stat-card"
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -348,8 +346,8 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div 
-          style={styles.statCard} 
+        <motion.div
+          style={styles.statCard}
           className="stat-card"
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -366,8 +364,8 @@ export default function Home() {
           </div>
         </motion.div>
 
-        <motion.div 
-          style={styles.statCard} 
+        <motion.div
+          style={styles.statCard}
           className="stat-card"
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
@@ -383,38 +381,6 @@ export default function Home() {
             </span>
           </div>
         </motion.div>
-      </motion.div>
-
-      <motion.div 
-        style={styles.quickActions}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2, duration: 0.5 }}
-      >
-        <h3 style={styles.sectionTitle}>Quick Actions</h3>
-        <div style={styles.actionsGrid}>
-          {[
-            { icon: <FaPlus />, label: "Create New Offer", onClick: handleCreateOfferNavigation },
-            { icon: <FaUsers />, label: "View Leads", onClick: () => handleTabChange("claimedUsers") },
-            { icon: <FaShieldAlt />, label: "Verify Student", onClick: () => handleTabChange("verifyClaim") },
-            { icon: <FaChartLine />, label: "View History", onClick: () => handleTabChange("savingsHistory") },
-          ].map((action, index) => (
-            <motion.button
-              key={index}
-              style={styles.actionBtn}
-              className="quick-action"
-              onClick={action.onClick}
-              whileHover={{ y: -4 }}
-              whileTap={{ scale: 0.95 }}
-              transition={{ type: "spring", stiffness: 400 }}
-            >
-              <div style={styles.actionIconWrapper}>
-                {action.icon}
-              </div>
-              <span>{action.label}</span>
-            </motion.button>
-          ))}
-        </div>
       </motion.div>
     </motion.div>
   );
@@ -433,7 +399,7 @@ export default function Home() {
             <div style={styles.notificationContent}>
               <span style={styles.notificationIcon}>⚠️</span>
               <span style={styles.notificationText}>{notificationMessage}</span>
-              <button 
+              <button
                 style={styles.notificationClose}
                 onClick={() => setShowNotification(false)}
               >
@@ -446,8 +412,8 @@ export default function Home() {
 
       {/* Mobile Overlay */}
       {isMobile && isMobileMenuOpen && (
-        <motion.div 
-          style={styles.mobileOverlay} 
+        <motion.div
+          style={styles.mobileOverlay}
           onClick={() => setIsMobileMenuOpen(false)}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -455,30 +421,45 @@ export default function Home() {
         />
       )}
 
+      {/* Mobile Menu Toggle Button - Only visible on mobile */}
+      {isMobile && (
+        <button
+          style={{
+            ...styles.mobileMenuBtn,
+            left: isMobileMenuOpen ? '290px' : '12px',
+          }}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="mobileMenuBtn"
+        >
+          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
+      )}
+
       {/* Modern Sidebar */}
-      <motion.nav 
+      <motion.nav
         style={{
           ...styles.sidebar,
           transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
+          position: isMobile ? 'fixed' : 'relative',
         }}
         initial={false}
-        animate={{ 
+        animate={{
           x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
           transition: { type: "spring", stiffness: 300, damping: 30 }
         }}
       >
         <div style={styles.sidebarGradient} />
-        
+
         <div style={styles.brandSection}>
-          <motion.div 
+          <motion.div
             style={styles.logoBadge}
             whileHover={{ rotate: [0, -10, 10, -5, 5, 0] }}
             transition={{ duration: 0.5 }}
           >
             {logoUrl ? (
-              <img 
-                src={logoUrl} 
-                alt="Brand Logo" 
+              <img
+                src={logoUrl}
+                alt="Brand Logo"
                 style={styles.sidebarLogo}
                 onError={(e) => {
                   e.target.style.display = 'none';
@@ -490,7 +471,7 @@ export default function Home() {
             )}
           </motion.div>
           <div style={styles.brandText}>
-            <motion.h2 
+            <motion.h2
               style={styles.logoText}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -498,7 +479,7 @@ export default function Home() {
             >
               Brand<span style={styles.logoHighlight}>Portal</span>
             </motion.h2>
-            <motion.p 
+            <motion.p
               style={styles.logoSubtext}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -507,11 +488,6 @@ export default function Home() {
               {brandName || "Brand Partner"}
             </motion.p>
           </div>
-          {isMobile && (
-            <button style={styles.mobileCloseBtn} onClick={() => setIsMobileMenuOpen(false)}>
-              <FaTimes />
-            </button>
-          )}
         </div>
 
         <div style={styles.navGroup}>
@@ -531,7 +507,7 @@ export default function Home() {
               whileHover={{ x: 4 }}
               transition={{ type: "spring", stiffness: 400 }}
             >
-              <motion.span 
+              <motion.span
                 style={{
                   ...styles.icon,
                   color: activeTab === item.id ? "#f9c349" : "#94a3b8"
@@ -550,7 +526,7 @@ export default function Home() {
                 <span style={styles.navDesc}>{item.description}</span>
               </div>
               {activeTab === item.id && (
-                <motion.span 
+                <motion.span
                   style={styles.activeIndicator}
                   layoutId="activeIndicator"
                   transition={{ type: "spring", stiffness: 500, damping: 30 }}
@@ -560,23 +536,23 @@ export default function Home() {
           ))}
         </div>
 
-        <motion.div 
-          style={styles.userSection} 
+        <motion.div
+          style={styles.userSection}
           ref={userMenuRef}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ delay: 0.3 }}
         >
-          <motion.div 
-            style={styles.userInfo} 
+          <motion.div
+            style={styles.userInfo}
             onClick={() => setShowUserMenu(!showUserMenu)}
             whileHover={{ backgroundColor: "rgba(255,255,255,0.05)" }}
           >
             <div style={styles.userAvatar}>
               {logoUrl ? (
-                <img 
-                  src={logoUrl} 
-                  alt="Brand Logo" 
+                <img
+                  src={logoUrl}
+                  alt="Brand Logo"
                   style={styles.userAvatarImg}
                   onError={(e) => {
                     e.target.style.display = 'none';
@@ -591,7 +567,7 @@ export default function Home() {
               <div style={styles.userName}>{displayName}</div>
               <div style={styles.userRole}>{brandName || "Brand"}</div>
             </div>
-            <motion.div 
+            <motion.div
               animate={{ rotate: showUserMenu ? 180 : 0 }}
               transition={{ duration: 0.3 }}
             >
@@ -601,14 +577,14 @@ export default function Home() {
 
           <AnimatePresence>
             {showUserMenu && (
-              <motion.div 
+              <motion.div
                 style={styles.userDropdown}
                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <motion.div 
+                <motion.div
                   style={styles.dropdownItem}
                   whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
                   onClick={() => {
@@ -619,7 +595,7 @@ export default function Home() {
                   <FaUserCircle size={18} />
                   <span>My Profile</span>
                 </motion.div>
-                <motion.div 
+                <motion.div
                   style={styles.dropdownItem}
                   whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
                   onClick={() => {
@@ -631,7 +607,7 @@ export default function Home() {
                   <span>Settings</span>
                 </motion.div>
                 <div style={styles.dropdownDivider} />
-                <motion.div 
+                <motion.div
                   style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
                   whileHover={{ x: 5, backgroundColor: "rgba(239, 68, 68, 0.1)" }}
                   onClick={() => {
@@ -648,7 +624,7 @@ export default function Home() {
         </motion.div>
 
         <div style={styles.sidebarFooter}>
-          <motion.div 
+          <motion.div
             style={styles.footerBadge}
             whileHover={{ scale: 1.02 }}
           >
@@ -663,7 +639,7 @@ export default function Home() {
 
       {/* Main Content */}
       <main style={styles.mainContent}>
-        <motion.div 
+        <motion.div
           style={styles.contentWrapper}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -672,10 +648,9 @@ export default function Home() {
           {/* Page Header */}
           <div style={styles.pageHeader}>
             <div style={styles.headerLeft}>
-              <motion.div 
+              <motion.div
                 style={styles.headerIconWrapper}
-                whileHover={{ rotate: [0, -10, 10, 0] }}
-                transition={{ duration: 0.3 }}
+                
               >
                 {activeTab === "home" && <FaHome style={styles.headerIcon} />}
                 {activeTab === "myOffers" && <FaTicketAlt style={styles.headerIcon} />}
@@ -685,7 +660,7 @@ export default function Home() {
                 {activeTab === "savingsHistory" && <FaChartLine style={styles.headerIcon} />}
               </motion.div>
               <div>
-                <motion.h1 
+                <motion.h1
                   style={styles.pageTitle}
                   key={activeTab}
                   initial={{ opacity: 0, x: -20 }}
@@ -694,7 +669,7 @@ export default function Home() {
                 >
                   {navItems.find(item => item.id === activeTab)?.label || "Dashboard"}
                 </motion.h1>
-                <motion.p 
+                <motion.p
                   style={styles.pageSubtitle}
                   key={`sub-${activeTab}`}
                   initial={{ opacity: 0 }}
@@ -705,10 +680,11 @@ export default function Home() {
                 </motion.p>
               </div>
             </div>
+           
           </div>
 
           {/* Dynamic Content */}
-          <div className="animated-content">
+          <div className="animated-content" style={styles.contentArea}>
             {renderContent()}
           </div>
         </motion.div>
@@ -734,14 +710,14 @@ export default function Home() {
             >
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
-                  <motion.div 
+                  <motion.div
                     style={styles.modalAvatar}
                     whileHover={{ scale: 1.05 }}
                   >
                     {logoUrl ? (
-                      <img 
-                        src={logoUrl} 
-                        alt="Brand Logo" 
+                      <img
+                        src={logoUrl}
+                        alt="Brand Logo"
                         style={styles.modalAvatarImg}
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -802,15 +778,16 @@ export default function Home() {
                     { icon: <FaStore />, label: "Brand Name", value: brandName || "Not specified" },
                     { icon: <FaEnvelope />, label: "Email", value: user?.email || "brand@example.com" },
                     { icon: <FaPhone />, label: "Phone", value: user?.phone || "+92 300 1234567" },
-                    { icon: <FaCalendarAlt />, label: "Member Since", value: brandData?.createdAt ? 
-                      new Date(brandData.createdAt).toLocaleDateString('en-US', { 
-                        month: 'long', 
-                        year: 'numeric' 
-                      }) : 'January 2025' 
+                    {
+                      icon: <FaCalendarAlt />, label: "Member Since", value: brandData?.createdAt ?
+                        new Date(brandData.createdAt).toLocaleDateString('en-US', {
+                          month: 'long',
+                          year: 'numeric'
+                        }) : 'January 2025'
                     },
                     { icon: <FaShieldAlt />, label: "Role", value: "Brand Partner" },
                   ].map((item, index) => (
-                    <motion.div 
+                    <motion.div
                       key={index}
                       style={styles.profileDetailItem}
                       whileHover={{ scale: 1.02 }}
@@ -879,7 +856,7 @@ export default function Home() {
                     { icon: <FaEnvelope />, label: "Email Preferences", desc: "Manage notification settings", action: "Configure" },
                     { icon: <FaLock />, label: "Security", desc: "Change password and security settings", action: "Update" },
                   ].map((item, index) => (
-                    <motion.div 
+                    <motion.div
                       key={index}
                       style={styles.settingsItem}
                       whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
@@ -901,7 +878,7 @@ export default function Home() {
 
                 <div style={styles.settingsGroup}>
                   <h3 style={styles.settingsGroupTitle}>Preferences</h3>
-                  <motion.div 
+                  <motion.div
                     style={styles.settingsItem}
                     whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
                   >
@@ -918,7 +895,7 @@ export default function Home() {
                       <option>French</option>
                     </select>
                   </motion.div>
-                  <motion.div 
+                  <motion.div
                     style={styles.settingsItem}
                     whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
                   >
@@ -1013,16 +990,12 @@ export default function Home() {
           box-shadow: 0 12px 40px rgba(0,0,0,0.08);
         }
 
-        .quick-action {
-          transition: all 0.3s ease;
-        }
-        .quick-action:hover {
-          border-color: #f9c349;
-          box-shadow: 0 12px 40px rgba(249, 195, 73, 0.2);
-        }
-
         .animated-content {
           animation: fadeIn 0.5s ease forwards;
+          width: 100%;
+          flex: 1;
+          overflow-y: auto;
+          padding-bottom: 20px;
         }
 
         ::-webkit-scrollbar {
@@ -1047,62 +1020,591 @@ export default function Home() {
           outline: none;
         }
 
+        .mobileMenuBtn {
+          display: none;
+          position: fixed;
+          top: 12px;
+          left: 12px;
+          z-index: 999;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          color: #0f172a;
+          font-size: 20px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+          transition: all 0.3s ease;
+        }
+        .mobileMenuBtn:hover {
+          background: #f8fafc;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
+
+        /* Mobile First - All devices */
         @media (max-width: 768px) {
+          .mobileMenuBtn {
+            display: flex !important;
+          }
           .stat-card {
             animation: fadeIn 0.5s ease forwards !important;
           }
           .search-input {
-            width: 100px !important;
-          }
-          .mobileMenuBtn {
-            display: flex !important;
+            width: 80px !important;
           }
           .searchBar {
             display: none !important;
-          }
-          .statsGrid {
-            grid-template-columns: 1fr !important;
-          }
-          .actionsGrid {
-            grid-template-columns: 1fr 1fr !important;
           }
           .profileDetails {
             grid-template-columns: 1fr !important;
           }
           .profileStats {
             grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
           }
           .contentWrapper {
-            padding: 16px !important;
+            padding: 12px !important;
+            border-radius: 12px !important;
+            height: 100% !important;
+            overflow-y: auto !important;
+            width: 100% !important;
           }
           .notificationDropdown {
             width: 280px !important;
-            right: -60px !important;
+            right: -40px !important;
+          }
+          .pageHeader {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 12px !important;
+            margin-bottom: 16px !important;
+            padding-bottom: 12px !important;
+          }
+          .headerLeft {
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .headerRight {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+          .sidebar {
+            width: 280px !important;
+            padding: 16px 12px !important;
+            position: fixed !important;
+            top: 0;
+            left: 0;
+            height: 100vh !important;
+            z-index: 100 !important;
+            transform: translateX(-100%);
+          }
+          .statValue {
+            font-size: 16px !important;
+          }
+          .statIconWrapper {
+            width: 38px !important;
+            height: 38px !important;
+          }
+          .statIcon {
+            font-size: 16px !important;
+          }
+          .statCard {
+            padding: 14px !important;
+            gap: 12px !important;
+          }
+          .statLabel {
+            font-size: 12px !important;
+          }
+          .statTrend {
+            font-size: 10px !important;
+          }
+          .modalContent {
+            max-width: 98% !important;
+            border-radius: 14px !important;
+          }
+          .modalBody {
+            padding: 16px !important;
+          }
+          .modalHeader {
+            padding: 14px 16px !important;
+          }
+          .discountModalContent {
+            max-width: 98% !important;
+            border-radius: 14px !important;
+          }
+          .discountModalBody {
+            padding: 12px !important;
+          }
+          .discountModalHeader {
+            padding: 12px 16px !important;
+          }
+          .profileStat {
+            padding: 8px !important;
+          }
+          .profileStatValue {
+            font-size: 14px !important;
+          }
+          .settingsItem {
+            padding: 10px 12px !important;
+            flex-wrap: wrap !important;
+          }
+          .settingsItemBtn {
+            width: 100% !important;
+            padding: 6px !important;
+            margin-top: 4px !important;
+          }
+          .settingsSelect {
+            width: 100% !important;
+            margin-top: 4px !important;
+          }
+          .mainContent {
+            padding: 0 !important;
+            flex: 1 !important;
+            width: 100% !important;
+            overflow: hidden !important;
+            margin-left: 0 !important;
+          }
+          .contentArea {
+            padding: 0 !important;
+            overflow-y: auto !important;
+            flex: 1 !important;
+          }
+          .homeContainer {
+            padding: 0 !important;
+            width: 100% !important;
+          }
+          .pageTitle {
+            font-size: 18px !important;
+          }
+          .headerIconWrapper {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 14px !important;
+          }
+          .headerIcon {
+            font-size: 14px !important;
+          }
+          .brandSection {
+            margin-bottom: 24px !important;
+            gap: 10px !important;
+          }
+          .logoBadge {
+            width: 40px !important;
+            height: 40px !important;
+            font-size: 18px !important;
+          }
+          .logoText {
+            font-size: 17px !important;
+          }
+          .logoSubtext {
+            font-size: 9px !important;
+          }
+          .navItem {
+            padding: 8px 12px !important;
+            gap: 10px !important;
+          }
+          .navLabel {
+            font-size: 13px !important;
+          }
+          .icon {
+            font-size: 16px !important;
+            width: 18px !important;
+          }
+          .userInfo {
+            padding: 6px !important;
+            gap: 8px !important;
+          }
+          .userAvatar {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 12px !important;
+          }
+          .userName {
+            font-size: 12px !important;
+          }
+          .userRole {
+            font-size: 10px !important;
+          }
+          .pageSubtitle {
+            font-size: 12px !important;
+          }
+          .notificationBadge {
+            font-size: 9px !important;
+            width: 16px !important;
+            height: 16px !important;
+          }
+          .notificationBtn {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 14px !important;
+          }
+          .notificationDropdown {
+            width: 260px !important;
+            right: -30px !important;
+          }
+          .notificationItem {
+            padding: 10px 14px !important;
+          }
+          .notificationItemText {
+            font-size: 12px !important;
+          }
+          .modalAvatar {
+            width: 44px !important;
+            height: 44px !important;
+            font-size: 18px !important;
+          }
+          .modalTitle {
+            font-size: 17px !important;
+          }
+          .modalCloseBtn {
+            width: 30px !important;
+            height: 30px !important;
+            font-size: 14px !important;
+          }
+          .modalCloseBtnBottom {
+            font-size: 13px !important;
+            padding: 12px !important;
+          }
+          .profileDetailItem {
+            padding: 10px !important;
+          }
+          .profileDetailValue {
+            font-size: 12px !important;
+          }
+          .profileDetailLabel {
+            font-size: 9px !important;
+          }
+          .settingsGroupTitle {
+            font-size: 13px !important;
+          }
+          .settingsItemLabel {
+            font-size: 13px !important;
+          }
+          .settingsItemDesc {
+            font-size: 11px !important;
+          }
+          .container {
+            padding: 0 !important;
+          }
+          .sidebarFooter {
+            margin-top: 8px !important;
+            padding-top: 8px !important;
+          }
+          .footerBadge {
+            padding: 8px 12px !important;
+          }
+          .footerBadgeTitle {
+            font-size: 11px !important;
+          }
+          .footerBadgeSub {
+            font-size: 9px !important;
+          }
+          .footerBadgeIcon {
+            font-size: 16px !important;
+          }
+          .userDropdown {
+            padding: 6px !important;
+          }
+          .dropdownItem {
+            padding: 8px 12px !important;
+            font-size: 13px !important;
+            gap: 10px !important;
+          }
+          .statsGrid {
+            margin-bottom: 16px !important;
           }
         }
+
         @media (max-width: 480px) {
-          .actionsGrid {
-            grid-template-columns: 1fr !important;
+          .mobileMenuBtn {
+            top: 10px;
+            width: 38px;
+            height: 38px;
+            font-size: 16px;
           }
           .profileStats {
             grid-template-columns: 1fr !important;
           }
-          .discountModalContent {
-            max-width: 98% !important;
-            border-radius: 16px !important;
+          .contentWrapper {
+            padding: 10px !important;
+            border-radius: 10px !important;
           }
-          .discountModalBody {
-            padding: 16px !important;
+          .statCard {
+            padding: 12px !important;
+            gap: 10px !important;
           }
-          .discountModalHeader {
-            padding: 16px 20px !important;
+          .statValue {
+            font-size: 15px !important;
+          }
+          .statIconWrapper {
+            width: 34px !important;
+            height: 34px !important;
+          }
+          .statIcon {
+            font-size: 14px !important;
+          }
+          .pageTitle {
+            font-size: 16px !important;
+          }
+          .headerIconWrapper {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 12px !important;
+          }
+          .headerIcon {
+            font-size: 12px !important;
           }
           .sidebar {
-            width: 280px !important;
+            width: 260px !important;
+            padding: 12px 10px !important;
           }
           .notificationDropdown {
+            width: 240px !important;
+            right: -50px !important;
+          }
+          .discountModalContent {
+            max-width: 98% !important;
+            border-radius: 12px !important;
+          }
+          .discountModalBody {
+            padding: 10px !important;
+          }
+          .discountModalHeader {
+            padding: 10px 14px !important;
+          }
+          .discountModalTitle {
+            font-size: 15px !important;
+          }
+          .discountModalSubtitle {
+            font-size: 11px !important;
+          }
+          .discountModalIcon {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .discountModalIcon svg {
+            font-size: 18px !important;
+          }
+          .modalContent {
+            max-width: 98% !important;
+            border-radius: 12px !important;
+          }
+          .modalTitle {
+            font-size: 16px !important;
+          }
+          .modalBody {
+            padding: 14px !important;
+          }
+          .modalHeader {
+            padding: 12px 14px !important;
+          }
+          .profileStatValue {
+            font-size: 13px !important;
+          }
+          .profileStatLabel {
+            font-size: 9px !important;
+          }
+          .profileDetailItem {
+            padding: 8px !important;
+          }
+          .profileDetailValue {
+            font-size: 11px !important;
+          }
+          .settingsItem {
+            padding: 8px 10px !important;
+          }
+          .settingsItemLabel {
+            font-size: 12px !important;
+          }
+          .settingsItemDesc {
+            font-size: 10px !important;
+          }
+          .mainContent {
+            padding: 0 !important;
+          }
+          .search-input {
+            width: 60px !important;
+            font-size: 11px !important;
+          }
+          .notificationBtn {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 12px !important;
+          }
+          .notificationBadge {
+            font-size: 8px !important;
+            width: 14px !important;
+            height: 14px !important;
+            top: -3px !important;
+            right: -3px !important;
+          }
+          .statTrend {
+            font-size: 9px !important;
+          }
+          .statLabel {
+            font-size: 11px !important;
+          }
+          .logoBadge {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 16px !important;
+          }
+          .logoText {
+            font-size: 15px !important;
+          }
+          .logoSubtext {
+            font-size: 8px !important;
+          }
+          .navItem {
+            padding: 6px 10px !important;
+            gap: 8px !important;
+          }
+          .navLabel {
+            font-size: 12px !important;
+          }
+          .icon {
+            font-size: 14px !important;
+            width: 16px !important;
+          }
+          .navDesc {
+            font-size: 9px !important;
+          }
+          .pageSubtitle {
+            font-size: 11px !important;
+          }
+          .statsGrid {
+            gap: 8px !important;
+            margin-bottom: 12px !important;
+          }
+          .brandSection {
+            margin-bottom: 16px !important;
+            gap: 8px !important;
+          }
+          .userAvatar {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 11px !important;
+          }
+          .userName {
+            font-size: 11px !important;
+          }
+          .userRole {
+            font-size: 9px !important;
+          }
+          .userChevron {
+            font-size: 10px !important;
+          }
+          .footerBadge {
+            padding: 6px 10px !important;
+          }
+          .footerBadgeTitle {
+            font-size: 10px !important;
+          }
+          .footerBadgeSub {
+            font-size: 8px !important;
+          }
+          .footerBadgeIcon {
+            font-size: 14px !important;
+          }
+          .dropdownItem {
+            padding: 6px 10px !important;
+            font-size: 12px !important;
+            gap: 8px !important;
+          }
+          .userDropdown {
+            padding: 4px !important;
+          }
+          .modalAvatar {
+            width: 38px !important;
+            height: 38px !important;
+            font-size: 16px !important;
+          }
+          .modalCloseBtn {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 12px !important;
+          }
+          .modalCloseBtnBottom {
+            font-size: 12px !important;
+            padding: 10px !important;
+          }
+        }
+
+        @media (max-width: 800px) {
+          .pageHeader {
+            flex-direction: column !important;
+            align-items: center !important;
+            text-align: center !important;
+            gap: 12px !important;
+          }
+          .headerLeft {
+            justify-content: center !important;
+            text-align: center !important;
+            width: 100% !important;
+          }
+          .headerRight {
+            width: 100% !important;
+            justify-content: center !important;
+          }
+        }
+
+        @media (min-width: 769px) and (max-width: 1024px) {
+          .statsGrid {
+            grid-template-columns: repeat(2, 1fr) !important;
+          }
+          .profileStats {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .profileDetails {
+            grid-template-columns: 1fr 1fr !important;
+          }
+          .sidebar {
+            width: 220px !important;
+            padding: 20px 12px !important;
+          }
+          .contentWrapper {
+            padding: 18px 20px !important;
+          }
+          .statValue {
+            font-size: 19px !important;
+          }
+          .statCard {
+            padding: 16px !important;
+          }
+          .logoText {
+            font-size: 18px !important;
+          }
+          .navItem {
+            padding: 8px 12px !important;
+          }
+          .navLabel {
+            font-size: 13px !important;
+          }
+          .mainContent {
+            padding: 10px !important;
+          }
+        }
+
+        @media (min-width: 1025px) {
+          .sidebar {
             width: 260px !important;
-            right: -80px !important;
+            padding: 24px 16px !important;
+            position: relative !important;
+            transform: translateX(0) !important;
+          }
+          .contentWrapper {
+            padding: 24px 28px !important;
+          }
+          .statsGrid {
+            grid-template-columns: repeat(4, 1fr) !important;
+          }
+          .mainContent {
+            padding: 16px !important;
           }
         }
       `}</style>
@@ -1114,13 +1616,18 @@ const styles = {
   container: {
     display: "flex",
     height: "100vh",
+    width: "100vw",
     backgroundColor: "#f1f5f9",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     overflow: "hidden",
     position: "relative",
+    padding: 0,
+    margin: 0,
+    boxSizing: "border-box",
   },
   sidebar: {
-    width: "280px",
+    width: "260px",
+    minWidth: "260px",
     background: "linear-gradient(180deg, #0f172a 0%, #1a2332 50%, #0f172a 100%)",
     padding: "24px 16px",
     display: "flex",
@@ -1131,7 +1638,7 @@ const styles = {
     zIndex: 100,
     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     flexShrink: 0,
-    borderRight: "1px solid rgba(255,255,255,0.05)",
+    height: "100vh",
   },
   sidebarGradient: {
     position: "absolute",
@@ -1156,8 +1663,8 @@ const styles = {
   brandSection: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
-    marginBottom: "36px",
+    gap: "12px",
+    marginBottom: "32px",
     padding: "0 8px",
     position: "relative",
     zIndex: 1,
@@ -1166,14 +1673,14 @@ const styles = {
     flex: 1,
   },
   logoBadge: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "14px",
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
     background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "800",
     color: "#0f172a",
     boxShadow: "0 8px 25px rgba(249, 195, 73, 0.25)",
@@ -1190,7 +1697,7 @@ const styles = {
   },
   logoText: {
     margin: 0,
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "700",
     letterSpacing: "-0.5px",
     color: "#fff",
@@ -1200,7 +1707,7 @@ const styles = {
   },
   logoSubtext: {
     margin: 0,
-    fontSize: "10px",
+    fontSize: "9px",
     opacity: 0.5,
     letterSpacing: "1px",
     textTransform: "uppercase",
@@ -1209,7 +1716,7 @@ const styles = {
     background: "transparent",
     border: "none",
     color: "#94a3b8",
-    fontSize: "20px",
+    fontSize: "18px",
     cursor: "pointer",
     padding: "4px",
   },
@@ -1229,21 +1736,21 @@ const styles = {
     fontWeight: "600",
   },
   navItem: {
-    padding: "10px 16px",
+    padding: "8px 14px",
     borderRadius: "10px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
     marginBottom: "4px",
     transition: "all 0.3s ease",
     position: "relative",
   },
   icon: {
-    fontSize: "18px",
+    fontSize: "16px",
     display: "flex",
     alignItems: "center",
-    width: "22px",
+    width: "20px",
     transition: "all 0.3s ease",
   },
   navText: {
@@ -1252,12 +1759,12 @@ const styles = {
     flex: 1,
   },
   navLabel: {
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "500",
     transition: "all 0.3s ease",
   },
   navDesc: {
-    fontSize: "10px",
+    fontSize: "9px",
     opacity: 0.4,
     marginTop: "1px",
   },
@@ -1269,7 +1776,7 @@ const styles = {
   },
   userSection: {
     marginTop: "auto",
-    paddingTop: "16px",
+    paddingTop: "14px",
     borderTop: "1px solid rgba(255,255,255,0.06)",
     position: "relative",
     zIndex: 1,
@@ -1277,8 +1784,8 @@ const styles = {
   userInfo: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "8px",
+    gap: "10px",
+    padding: "6px 8px",
     borderRadius: "12px",
     cursor: "pointer",
     transition: "all 0.3s ease",
@@ -1287,15 +1794,15 @@ const styles = {
     flex: 1,
   },
   userAvatar: {
-    width: "40px",
-    height: "40px",
+    width: "36px",
+    height: "36px",
     borderRadius: "50%",
     background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: "700",
-    fontSize: "16px",
+    fontSize: "14px",
     color: "#0f172a",
     flexShrink: 0,
     overflow: "hidden",
@@ -1306,16 +1813,16 @@ const styles = {
     objectFit: "cover",
   },
   userName: {
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     color: "#fff",
   },
   userRole: {
-    fontSize: "11px",
+    fontSize: "10px",
     opacity: 0.5,
   },
   userChevron: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#94a3b8",
   },
   userDropdown: {
@@ -1325,7 +1832,7 @@ const styles = {
     right: "0",
     background: "#1e293b",
     borderRadius: "12px",
-    padding: "8px",
+    padding: "6px",
     boxShadow: "0 10px 40px rgba(0,0,0,0.4)",
     zIndex: 100,
     border: "1px solid rgba(255,255,255,0.05)",
@@ -1333,13 +1840,13 @@ const styles = {
   dropdownItem: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "10px 14px",
+    gap: "10px",
+    padding: "8px 12px",
     borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.2s ease",
     color: "#e2e8f0",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "500",
   },
   dropdownDivider: {
@@ -1351,8 +1858,8 @@ const styles = {
     color: "#ef4444",
   },
   sidebarFooter: {
-    marginTop: "12px",
-    paddingTop: "12px",
+    marginTop: "10px",
+    paddingTop: "10px",
     borderTop: "1px solid rgba(255,255,255,0.04)",
     position: "relative",
     zIndex: 1,
@@ -1360,256 +1867,151 @@ const styles = {
   footerBadge: {
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "10px 14px",
+    gap: "8px",
+    padding: "8px 12px",
     background: "rgba(255,255,255,0.03)",
     borderRadius: "10px",
     border: "1px solid rgba(255,255,255,0.04)",
     cursor: "default",
   },
   footerBadgeIcon: {
-    fontSize: "18px",
+    fontSize: "16px",
     color: "#f9c349",
   },
   footerBadgeTitle: {
     display: "block",
-    fontSize: "12px",
+    fontSize: "11px",
     fontWeight: "600",
     color: "#fff",
   },
   footerBadgeSub: {
     display: "block",
-    fontSize: "10px",
+    fontSize: "9px",
     opacity: 0.4,
   },
   mainContent: {
     flex: 1,
-    padding: "16px",
+    padding: "0px",
     overflow: "hidden",
+    display: "flex",
+    flexDirection: "column",
+    minWidth: 0,
+    width: "100%",
+    height: "100vh",
   },
   contentWrapper: {
     height: "100%",
     background: "#ffffff",
     borderRadius: "24px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-    padding: "24px 28px",
+    padding: "24px 15px",
     overflowY: "auto",
+    display: "flex",
+    flexDirection: "column",
+    flex: 1,
+    width: "100%",
+  },
+  contentArea: {
+    flex: 1,
+    width: "100%",
+    overflow: "visible",
+    display: "flex",
+    flexDirection: "column",
   },
   pageHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "28px",
-    paddingBottom: "20px",
+    marginBottom: "24px",
+    paddingBottom: "16px",
     borderBottom: "2px solid #f1f5f9",
     flexWrap: "wrap",
     gap: "12px",
+    flexShrink: 0,
+    width: "100%",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
   },
   headerIconWrapper: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "14px",
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
     background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#fff",
-    fontSize: "20px",
+    fontSize: "18px",
     flexShrink: 0,
     boxShadow: "0 4px 15px rgba(249, 195, 73, 0.25)",
+    marginLeft:70
   },
   headerIcon: {
-    fontSize: "20px",
+    fontSize: "18px",
+    
   },
   pageTitle: {
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
     letterSpacing: "-0.5px",
   },
   pageSubtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
     margin: "4px 0 0 0",
   },
-  headerRight: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  searchBar: {
-    display: "flex",
-    alignItems: "center",
-    background: "#f8fafc",
-    padding: "8px 16px",
-    borderRadius: "10px",
-    gap: "10px",
-    transition: "all 0.3s ease",
-    border: "1px solid #e2e8f0",
-  },
-  searchIcon: {
-    color: "#94a3b8",
-    fontSize: "14px",
-  },
-  searchInput: {
-    border: "none",
-    background: "transparent",
-    outline: "none",
-    fontSize: "13px",
-    color: "#0f172a",
-    width: "150px",
-  },
-  notificationWrapper: {
-    position: "relative",
-  },
-  notificationBtn: {
-    position: "relative",
-    width: "40px",
-    height: "40px",
-    borderRadius: "10px",
-    border: "1px solid #e2e8f0",
-    background: "#f8fafc",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#64748b",
-    transition: "all 0.3s ease",
-  },
-  notificationBadge: {
-    position: "absolute",
-    top: "-4px",
-    right: "-4px",
-    background: "#ef4444",
-    color: "#fff",
-    fontSize: "10px",
-    width: "18px",
-    height: "18px",
-    borderRadius: "50%",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-  },
-  notificationDropdown: {
-    position: "absolute",
-    top: "calc(100% + 10px)",
-    right: "0",
-    width: "340px",
-    background: "#fff",
-    borderRadius: "14px",
-    boxShadow: "0 20px 60px rgba(0,0,0,0.15)",
-    border: "1px solid #e2e8f0",
-    zIndex: 1000,
-    overflow: "hidden",
-  },
-  notificationHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    padding: "14px 20px",
-    borderBottom: "1px solid #e2e8f0",
-  },
-  notificationTitle: {
-    fontSize: "14px",
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  notificationMarkAll: {
-    fontSize: "12px",
-    color: "#f9c349",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "600",
-  },
-  notificationItem: {
-    display: "flex",
-    alignItems: "flex-start",
-    gap: "12px",
-    padding: "12px 20px",
-    borderBottom: "1px solid #f1f5f9",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-  },
-  notificationDot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%",
-    background: "#f9c349",
-    marginTop: "6px",
-    flexShrink: 0,
-  },
-  notificationItemContent: {
-    flex: 1,
-  },
-  notificationItemText: {
-    display: "block",
-    fontSize: "13px",
-    color: "#1e293b",
-    fontWeight: "500",
-  },
-  notificationItemTime: {
-    display: "block",
-    fontSize: "11px",
-    color: "#94a3b8",
-    marginTop: "4px",
-  },
-  notificationFooter: {
-    padding: "12px 20px",
-    textAlign: "center",
-    borderTop: "1px solid #e2e8f0",
-  },
-  notificationViewAll: {
-    fontSize: "13px",
-    color: "#f5a623",
-    background: "transparent",
-    border: "none",
-    cursor: "pointer",
-    fontWeight: "600",
-  },
+ 
+  
   mobileMenuBtn: {
     display: "none",
-    width: "40px",
-    height: "40px",
-    borderRadius: "10px",
+    position: "fixed",
+    top: "12px",
+    left: "12px",
+    zIndex: 999,
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
     border: "1px solid #e2e8f0",
-    background: "#f8fafc",
+    background: "#ffffff",
     cursor: "pointer",
     alignItems: "center",
     justifyContent: "center",
-    color: "#64748b",
-    fontSize: "18px",
+    color: "#0f172a",
+    fontSize: "20px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+    transition: "all 0.3s ease",
   },
   homeContainer: {
     animation: "fadeIn 0.5s ease",
+    width: "100%",
+    flex: 1,
   },
   statsGrid: {
     display: "grid",
     gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
     gap: "16px",
-    marginBottom: "28px",
+    marginBottom: "24px",
+    width: "100%",
   },
   statCard: {
     background: "#fff",
-    padding: "20px",
+    padding: "18px",
     borderRadius: "14px",
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
     border: "1px solid #e2e8f0",
     transition: "all 0.3s ease",
     cursor: "pointer",
   },
   statIconWrapper: {
-    width: "52px",
-    height: "52px",
+    width: "48px",
+    height: "48px",
     borderRadius: "12px",
     display: "flex",
     alignItems: "center",
@@ -1617,13 +2019,13 @@ const styles = {
     flexShrink: 0,
   },
   statIcon: {
-    fontSize: "22px",
+    fontSize: "20px",
   },
   statContent: {
     flex: 1,
   },
   statValue: {
-    fontSize: "22px",
+    fontSize: "20px",
     fontWeight: "800",
     margin: 0,
     color: "#0f172a",
@@ -1641,47 +2043,6 @@ const styles = {
     alignItems: "center",
     gap: "4px",
   },
-  quickActions: {
-    marginTop: "8px",
-  },
-  sectionTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#0f172a",
-    marginBottom: "16px",
-  },
-  actionsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "16px",
-  },
-  actionBtn: {
-    background: "#f8fafc",
-    border: "1px solid #e2e8f0",
-    padding: "20px",
-    borderRadius: "14px",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "12px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#0f172a",
-  },
-  actionIconWrapper: {
-    width: "48px",
-    height: "48px",
-    borderRadius: "12px",
-    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    fontSize: "20px",
-    transition: "all 0.3s ease",
-  },
   modalOverlay: {
     position: "fixed",
     top: 0,
@@ -1698,14 +2059,14 @@ const styles = {
   modalContent: {
     background: "#fff",
     borderRadius: "20px",
-    maxWidth: "580px",
+    maxWidth: "560px",
     width: "95%",
     maxHeight: "90vh",
     overflow: "hidden",
     boxShadow: "0 24px 80px rgba(0,0,0,0.3)",
   },
   modalHeader: {
-    padding: "24px 28px",
+    padding: "22px 26px",
     borderBottom: "1px solid #e2e8f0",
     display: "flex",
     justifyContent: "space-between",
@@ -1715,17 +2076,17 @@ const styles = {
   modalHeaderLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
   },
   modalAvatar: {
-    width: "56px",
-    height: "56px",
+    width: "50px",
+    height: "50px",
     borderRadius: "50%",
     background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "700",
     color: "#fff",
     flexShrink: 0,
@@ -1737,7 +2098,7 @@ const styles = {
     objectFit: "cover",
   },
   modalTitle: {
-    fontSize: "20px",
+    fontSize: "19px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
@@ -1748,8 +2109,8 @@ const styles = {
     marginTop: "2px",
   },
   modalCloseBtn: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     border: "none",
     background: "#f1f5f9",
@@ -1759,14 +2120,14 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.3s ease",
-    fontSize: "18px",
+    fontSize: "16px",
   },
   modalBody: {
-    padding: "28px",
+    padding: "24px",
     overflowY: "auto",
   },
   modalCloseBtnBottom: {
-    padding: "14px 32px",
+    padding: "12px 28px",
     background: "#f8fafc",
     border: "none",
     borderTop: "1px solid #e2e8f0",
@@ -1780,50 +2141,50 @@ const styles = {
   profileStats: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr 1fr 1fr",
-    gap: "12px",
-    marginBottom: "24px",
+    gap: "10px",
+    marginBottom: "20px",
   },
   profileStat: {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "12px",
+    padding: "10px",
     background: "#f8fafc",
     borderRadius: "10px",
   },
   profileStatValue: {
     display: "block",
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "700",
     color: "#0f172a",
   },
   profileStatLabel: {
     display: "block",
-    fontSize: "11px",
+    fontSize: "10px",
     color: "#64748b",
   },
   profileDivider: {
     height: "1px",
     background: "#e2e8f0",
-    marginBottom: "24px",
+    marginBottom: "20px",
   },
   profileDetails: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
+    gap: "10px",
   },
   profileDetailItem: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "12px",
+    gap: "10px",
+    padding: "10px",
     background: "#f8fafc",
     borderRadius: "10px",
     transition: "all 0.3s ease",
   },
   profileDetailIcon: {
-    width: "32px",
-    height: "32px",
+    width: "30px",
+    height: "30px",
     borderRadius: "50%",
     background: "#fff7ed",
     display: "flex",
@@ -1834,7 +2195,7 @@ const styles = {
   },
   profileDetailLabel: {
     display: "block",
-    fontSize: "10px",
+    fontSize: "9px",
     color: "#94a3b8",
     fontWeight: "500",
     textTransform: "uppercase",
@@ -1847,8 +2208,8 @@ const styles = {
     color: "#0f172a",
   },
   settingsIconWrapper: {
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "12px",
     background: "#fff7ed",
     display: "flex",
@@ -1856,27 +2217,27 @@ const styles = {
     justifyContent: "center",
   },
   settingsGroup: {
-    marginBottom: "24px",
+    marginBottom: "20px",
   },
   settingsGroupTitle: {
     fontSize: "14px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "12px",
+    marginBottom: "10px",
   },
   settingsItem: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
-    padding: "12px 16px",
+    gap: "12px",
+    padding: "10px 14px",
     background: "#f8fafc",
     borderRadius: "10px",
     marginBottom: "8px",
     transition: "all 0.3s ease",
   },
   settingsItemIcon: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     background: "#fff",
     display: "flex",
@@ -1889,16 +2250,16 @@ const styles = {
     flex: 1,
   },
   settingsItemLabel: {
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     color: "#0f172a",
   },
   settingsItemDesc: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#64748b",
   },
   settingsItemBtn: {
-    padding: "4px 14px",
+    padding: "4px 12px",
     border: "none",
     borderRadius: "8px",
     background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
@@ -1910,7 +2271,7 @@ const styles = {
     whiteSpace: "nowrap",
   },
   settingsSelect: {
-    padding: "6px 12px",
+    padding: "6px 10px",
     border: "1px solid #e2e8f0",
     borderRadius: "8px",
     fontSize: "12px",
@@ -1920,7 +2281,7 @@ const styles = {
   settingsDivider: {
     height: "1px",
     background: "#e2e8f0",
-    marginBottom: "24px",
+    marginBottom: "20px",
   },
   discountModalOverlay: {
     position: "fixed",
@@ -1938,7 +2299,7 @@ const styles = {
   discountModalContent: {
     background: "#fff",
     borderRadius: "24px",
-    maxWidth: "750px",
+    maxWidth: "720px",
     width: "95%",
     maxHeight: "92vh",
     overflow: "hidden",
@@ -1947,7 +2308,7 @@ const styles = {
     flexDirection: "column",
   },
   discountModalHeader: {
-    padding: "20px 28px",
+    padding: "18px 24px",
     borderBottom: "2px solid #f1f5f9",
     display: "flex",
     justifyContent: "space-between",
@@ -1958,11 +2319,11 @@ const styles = {
   discountModalHeaderLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
   },
   discountModalIcon: {
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "12px",
     background: "#fff7ed",
     display: "flex",
@@ -1970,19 +2331,19 @@ const styles = {
     justifyContent: "center",
   },
   discountModalTitle: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
   },
   discountModalSubtitle: {
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b",
     marginTop: "2px",
   },
   discountModalClose: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     border: "none",
     background: "#f1f5f9",
@@ -1992,10 +2353,10 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     transition: "all 0.3s ease",
-    fontSize: "18px",
+    fontSize: "16px",
   },
   discountModalBody: {
-    padding: "24px 28px",
+    padding: "20px 24px",
     overflowY: "auto",
     flex: 1,
   },
@@ -2004,20 +2365,20 @@ const styles = {
     top: "20px",
     right: "20px",
     zIndex: 9999,
-    maxWidth: "400px",
+    maxWidth: "380px",
   },
   notificationContent: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     background: "linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)",
-    padding: "14px 20px",
+    padding: "12px 18px",
     borderRadius: "14px",
     boxShadow: "0 10px 40px rgba(245, 158, 11, 0.3)",
     border: "1px solid #f59e0b",
   },
   notificationIcon: {
-    fontSize: "20px",
+    fontSize: "18px",
   },
   notificationText: {
     fontSize: "13px",

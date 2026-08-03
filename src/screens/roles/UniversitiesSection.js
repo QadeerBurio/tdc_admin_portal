@@ -11,7 +11,7 @@ import iobmLogo from './Iobm.png';
 import indusLogo from './indus.jpg';
 import hamdardLogo from './hamdard.png';
 import ziauddinLogo from './ziaudin.jpg';
-import denningLogo from './denning.jpg';
+import denningLogo from './denninguni.jpg';
 
 const UniversitiesSection = () => {
   const [activeTab, setActiveTab] = useState('all');

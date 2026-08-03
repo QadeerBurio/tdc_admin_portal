@@ -336,10 +336,9 @@ const Landing = () => {
           <div
             className="nav-logo"
             onClick={() => scrollToSection(sectionRefs.hero)}
-            style={{ cursor: "pointer" }}
           >
-            <span className="logo-suffix">The Deft</span>
-            <span className="logo-suffix">Crew</span>
+            <span className="logo">tdc</span>
+            <span className="logo-suffix">.</span>
           </div>
 
           <button
