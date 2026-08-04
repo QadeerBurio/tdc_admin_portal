@@ -595,17 +595,7 @@ export default function Home() {
                   <FaUserCircle size={18} />
                   <span>My Profile</span>
                 </motion.div>
-                <motion.div
-                  style={styles.dropdownItem}
-                  whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    setShowSettingsModal(true);
-                  }}
-                >
-                  <FaCog size={18} />
-                  <span>Settings</span>
-                </motion.div>
+                
                 <div style={styles.dropdownDivider} />
                 <motion.div
                   style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
