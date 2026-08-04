@@ -1,230 +1,389 @@
-/* ── UNIVERSITIES SECTION - COMPLETE MODERN DESIGN ────────────────────────── */
+/* UniversitiesSection.css */
+/* ── UNIVERSITIES SECTION - MODERN ULTIMATE DESIGN ────────────────────── */
 
 /* ── Section Container ──────────────────────────────────────────────────── */
-.universities-section {
+.universities-section-modern {
   position: relative;
-  padding: 6rem 0;
-  background: linear-gradient(180deg, #ffffff 0%, #f8f9fa 100%);
+  padding: 6rem 0 8rem;
+  background: linear-gradient(180deg, #ffffff 0%, #faf8f5 100%);
   overflow: hidden;
+  min-height: 100vh;
 }
 
 /* ── Background Effects ────────────────────────────────────────────────── */
-.universities-bg-effects {
+.uni-bg-effects {
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   pointer-events: none;
   z-index: 0;
   overflow: hidden;
 }
 
-.universities-half-white-bg {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: radial-gradient(ellipse at 30% 30%, rgba(229, 182, 62, 0.04) 0%, transparent 70%);
-  z-index: 0;
-}
-
-.universities-digital-grid {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-image: 
-    linear-gradient(rgba(0, 0, 0, 0.015) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(0, 0, 0, 0.015) 1px, transparent 1px);
-  background-size: 60px 60px;
-  background-position: center;
-  z-index: 1;
-  pointer-events: none;
-  animation: gridShift 30s linear infinite;
-}
-
-@keyframes gridShift {
-  0% { transform: translate(0, 0); }
-  100% { transform: translate(60px, 60px); }
-}
-
-.universities-radial-spotlight {
+.uni-bg-gradient-1 {
   position: absolute;
   top: -20%;
+  right: -10%;
+  width: 800px;
+  height: 800px;
+  background: radial-gradient(circle, rgba(249, 195, 73, 0.06) 0%, transparent 70%);
+  animation: floatBg1 20s ease-in-out infinite;
+}
+
+.uni-bg-gradient-2 {
+  position: absolute;
+  bottom: -20%;
+  left: -10%;
+  width: 600px;
+  height: 600px;
+  background: radial-gradient(circle, rgba(74, 144, 217, 0.04) 0%, transparent 70%);
+  animation: floatBg2 25s ease-in-out infinite reverse;
+}
+
+.uni-bg-gradient-3 {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 1200px;
+  height: 1200px;
+  background: radial-gradient(circle, rgba(249, 195, 73, 0.03) 0%, transparent 60%);
+  animation: pulseBg 10s ease-in-out infinite;
+}
+
+@keyframes floatBg1 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(40px, -40px) scale(1.05); }
+  66% { transform: translate(-30px, 30px) scale(0.95); }
+}
+
+@keyframes floatBg2 {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(-40px, 40px) scale(1.05); }
+  66% { transform: translate(30px, -30px) scale(0.95); }
+}
+
+@keyframes pulseBg {
+  0%, 100% { transform: translate(-50%, -50%) scale(1); opacity: 0.5; }
+  50% { transform: translate(-50%, -50%) scale(1.15); opacity: 0.8; }
+}
+
+.uni-bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(249, 195, 73, 0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(249, 195, 73, 0.04) 1px, transparent 1px);
+  background-size: 60px 60px;
+  animation: gridMove 40s linear infinite;
+}
+
+@keyframes gridMove {
+  0% { transform: translate(0, 0); }
+  100% { transform: translate(-60px, 60px); }
+}
+
+.uni-bg-spotlight {
+  position: absolute;
+  top: 10%;
   left: 50%;
   transform: translateX(-50%);
-  width: 1000px;
+  width: 1200px;
   height: 600px;
-  background: radial-gradient(circle, rgba(229, 182, 62, 0.05) 0%, transparent 70%);
-  z-index: 2;
+  background: radial-gradient(ellipse, rgba(249, 195, 73, 0.05) 0%, transparent 70%);
+  animation: spotlightPulse 12s ease-in-out infinite;
+}
+
+@keyframes spotlightPulse {
+  0%, 100% { opacity: 0.4; transform: translateX(-50%) scale(1); }
+  50% { opacity: 0.8; transform: translateX(-50%) scale(1.05); }
+}
+
+/* ── Floating Particles ────────────────────────────────────────────────── */
+.uni-floating-particles {
+  position: absolute;
+  inset: 0;
   pointer-events: none;
-  animation: spotlightFloat 8s ease-in-out infinite;
+  z-index: 1;
 }
 
-@keyframes spotlightFloat {
-  0%, 100% { 
-    opacity: 0.5; 
-    transform: translateX(-50%) scale(1); 
-  }
-  50% { 
-    opacity: 0.8; 
-    transform: translateX(-50%) scale(1.05); 
-  }
+.uni-particle {
+  position: absolute;
+  border-radius: 50%;
+  background: rgba(249, 195, 73, 0.12);
+  animation: particleFloat 10s ease-in-out infinite;
 }
 
-/* ── Content Container ──────────────────────────────────────────────────── */
-.universities-content {
+.uni-particle-1 { top: 5%; left: 3%; animation-delay: 0s; }
+.uni-particle-2 { top: 15%; right: 5%; animation-delay: 0.3s; }
+.uni-particle-3 { top: 30%; left: 2%; animation-delay: 0.6s; }
+.uni-particle-4 { top: 45%; right: 2%; animation-delay: 0.9s; }
+.uni-particle-5 { bottom: 25%; left: 4%; animation-delay: 1.2s; }
+.uni-particle-6 { bottom: 15%; right: 4%; animation-delay: 1.5s; }
+.uni-particle-7 { bottom: 40%; left: 2%; animation-delay: 1.8s; }
+.uni-particle-8 { top: 60%; right: 3%; animation-delay: 2.1s; }
+.uni-particle-9 { top: 75%; left: 8%; animation-delay: 2.4s; }
+.uni-particle-10 { bottom: 5%; right: 8%; animation-delay: 2.7s; }
+.uni-particle-11 { top: 50%; left: 6%; animation-delay: 3s; }
+.uni-particle-12 { top: 80%; right: 6%; animation-delay: 3.3s; }
+
+@keyframes particleFloat {
+  0%, 100% { transform: translate(0, 0) scale(1); opacity: 0.2; }
+  25% { transform: translate(25px, -35px) scale(1.6); opacity: 0.5; }
+  50% { transform: translate(-20px, -15px) scale(0.7); opacity: 0.3; }
+  75% { transform: translate(15px, -45px) scale(1.3); opacity: 0.6; }
+}
+
+/* ── Container ──────────────────────────────────────────────────────────── */
+.uni-container {
   position: relative;
-  z-index: 5;
-  text-align: center;
+  z-index: 2;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: 0 2rem;
+}
+
+.uni-content {
+  position: relative;
+  z-index: 3;
 }
 
 /* ── Header ────────────────────────────────────────────────────────────── */
-.universities-header {
-  margin-bottom: 2.5rem;
+.uni-header {
+  text-align: center;
+  margin-bottom: 3.5rem;
 }
 
-.universities-badge {
-  margin-bottom: 1rem;
+.uni-badge-wrapper {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 1.2rem;
 }
 
-.universities-badge span {
+.uni-badge {
   display: inline-flex;
   align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, rgba(229, 182, 62, 0.12), rgba(229, 182, 62, 0.04));
-  border: 1px solid rgba(229, 182, 62, 0.15);
-  color: #E5B63E;
-  padding: 0.4rem 1.5rem;
+  gap: 0.6rem;
+  background: linear-gradient(135deg, rgba(249, 195, 73, 0.12), rgba(249, 195, 73, 0.04));
+  border: 1px solid rgba(249, 195, 73, 0.15);
+  color: #c9951e;
+  padding: 0.6rem 2rem;
   border-radius: 50px;
-  font-size: 0.7rem;
+  font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   backdrop-filter: blur(10px);
+  position: relative;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 20px rgba(249, 195, 73, 0.06);
+}
+
+.uni-badge:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 30px rgba(249, 195, 73, 0.12);
 }
 
 .badge-icon {
-  font-size: 0.8rem;
+  font-size: 0.9rem;
+  animation: sparkle 2s ease-in-out infinite;
 }
 
-.universities-headline {
-  font-size: clamp(2.2rem, 3.5vw, 3rem);
-  font-weight: 800;
-  line-height: 1.15;
-  margin-bottom: 0.8rem;
+@keyframes sparkle {
+  0%, 100% { transform: scale(1) rotate(0deg); }
+  50% { transform: scale(1.2) rotate(20deg); }
+}
+
+.badge-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #f9c349;
+  display: inline-block;
+  animation: dotPulse 1.5s ease-in-out infinite;
+}
+
+@keyframes dotPulse {
+  0%, 100% { opacity: 0.3; transform: scale(0.8); }
+  50% { opacity: 1; transform: scale(1.2); }
+}
+
+.uni-headline {
+  font-size: clamp(2.5rem, 4.5vw, 4.2rem);
+  font-weight: 900;
   color: #1a1a1a;
-  letter-spacing: -0.5px;
+  line-height: 1.1;
+  margin-bottom: 1rem;
+  letter-spacing: -0.03em;
 }
 
-.highlight-text {
-  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+.highlight-gold {
+  background: linear-gradient(135deg, #f9c349, #f7b731, #f9c349);
+  background-size: 200% 200%;
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
+  animation: shimmerText 4s ease-in-out infinite;
   position: relative;
 }
 
-.highlight-text::after {
-  content: '';
-  position: absolute;
-  bottom: 2px;
-  left: 0;
-  right: 0;
-  height: 3px;
-  background: linear-gradient(135deg, #E5B63E, #f0c84a);
-  opacity: 0.2;
-  border-radius: 4px;
+@keyframes shimmerText {
+  0%, 100% { background-position: 0% 50%; }
+  50% { background-position: 100% 50%; }
 }
 
-.universities-subtitle {
-  font-size: clamp(1rem, 1.1vw, 1.1rem);
-  color: #4a4a4a;
-  max-width: 650px;
-  margin: 0 auto;
-  line-height: 1.7;
+.uni-subtitle {
+  font-size: clamp(1rem, 1.1vw, 1.2rem);
+  color: #5a5a5a;
+  max-width: 700px;
+  margin: 0 auto 1.5rem;
+  line-height: 1.8;
 }
 
-/* ── Stats Row ──────────────────────────────────────────────────────────── */
-.universities-stats {
+.highlight-text {
+  color: #f9c349;
+  font-weight: 600;
+}
+
+/* ── Header Stats ──────────────────────────────────────────────────────── */
+.uni-header-stats {
   display: flex;
   justify-content: center;
   gap: 3rem;
-  margin-top: 2rem;
-  margin-bottom: 3rem;
-  flex-wrap: wrap;
   padding: 1.5rem 2rem;
   background: rgba(255, 255, 255, 0.7);
-  backdrop-filter: blur(10px);
+  backdrop-filter: blur(20px);
   border-radius: 16px;
-  border: 1px solid rgba(229, 182, 62, 0.06);
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
+  border: 1px solid rgba(249, 195, 73, 0.08);
+  max-width: 800px;
+  margin: 0 auto;
+  flex-wrap: wrap;
 }
 
-.stat-item {
+.header-stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
   gap: 0.2rem;
 }
 
-.stat-number {
-  font-size: 2rem;
+.header-stat-number {
+  font-size: 1.8rem;
   font-weight: 900;
-  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+  background: linear-gradient(135deg, #f9c349, #f7b731);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
   background-clip: text;
-  letter-spacing: -0.5px;
+  letter-spacing: -0.02em;
 }
 
-.stat-label {
-  font-size: 0.75rem;
+.animated-counter {
+  display: inline-block;
+}
+
+.header-stat-label {
+  font-size: 0.7rem;
   color: #6c6c6c;
   font-weight: 500;
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
-.stat-divider {
+.header-stat-divider {
   width: 1px;
-  height: 40px;
-  background: linear-gradient(180deg, transparent, rgba(229, 182, 62, 0.15), transparent);
+  height: 35px;
+  background: linear-gradient(180deg, transparent, rgba(249, 195, 73, 0.2), transparent);
 }
 
-/* ── Controls ────────────────────────────────────────────────────────────── */
-.universities-controls {
+/* ── Stats Row ──────────────────────────────────────────────────────────── */
+.uni-stats-row {
+  display: flex;
+  justify-content: center;
+  gap: 4rem;
+  padding: 2rem 3rem;
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: 20px;
+  border: 1px solid rgba(249, 195, 73, 0.08);
+  box-shadow: 0 8px 40px rgba(0, 0, 0, 0.03);
+  margin-bottom: 3rem;
+  flex-wrap: wrap;
+}
+
+.uni-stat-item {
   display: flex;
   flex-direction: column;
-  gap: 1.5rem;
-  margin-bottom: 3rem;
-  max-width: 900px;
-  margin-left: auto;
-  margin-right: auto;
-}
-
-/* ── Search ─────────────────────────────────────────────────────────────── */
-.search-wrapper {
+  align-items: center;
+  gap: 0.2rem;
+  min-width: 120px;
   position: relative;
-  width: 100%;
 }
 
-.search-icon {
+.uni-stat-number {
+  font-size: 2.2rem;
+  font-weight: 900;
+  background: linear-gradient(135deg, #f9c349, #f7b731);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.02em;
+}
+
+.uni-stat-label {
+  font-size: 0.8rem;
+  color: #6c6c6c;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.uni-stat-bar {
+  height: 2px;
+  border-radius: 2px;
+  background: linear-gradient(90deg, #f9c349, #f7b731);
+  margin-top: 0.4rem;
+  transition: width 1s ease;
+}
+
+.uni-stat-divider {
+  width: 1px;
+  height: 50px;
+  background: linear-gradient(180deg, transparent, rgba(249, 195, 73, 0.15), transparent);
+}
+
+/* ── Controls ───────────────────────────────────────────────────────────── */
+.uni-controls {
+  display: flex;
+  flex-direction: column;
+  gap: 1.2rem;
+  margin-bottom: 1.5rem;
+}
+
+.uni-controls-top {
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.uni-search-wrapper {
+  position: relative;
+  flex: 1;
+  min-width: 250px;
+}
+
+.uni-search-icon {
   position: absolute;
   top: 50%;
   left: 1.2rem;
   transform: translateY(-50%);
-  color: #6c6c6c;
+  color: #999;
   font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
-.search-input {
+.uni-search-input {
   width: 100%;
-  padding: 1rem 1.2rem 1rem 3.5rem;
+  padding: 0.9rem 1.2rem 0.9rem 3.5rem;
   border: 2px solid rgba(0, 0, 0, 0.06);
   border-radius: 14px;
   font-size: 0.95rem;
@@ -235,35 +394,78 @@
   box-shadow: 0 2px 10px rgba(0, 0, 0, 0.02);
 }
 
-.search-input:focus {
+.uni-search-input:focus {
   outline: none;
-  border-color: #E5B63E;
-  box-shadow: 0 8px 30px rgba(229, 182, 62, 0.08);
+  border-color: #f9c349;
+  box-shadow: 0 8px 30px rgba(249, 195, 73, 0.08);
   transform: translateY(-2px);
 }
 
-.search-input:focus + .search-icon,
-.search-input:focus ~ .search-icon {
-  color: #E5B63E;
+.uni-search-clear {
+  position: absolute;
+  top: 50%;
+  right: 1.2rem;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  color: #999;
+  cursor: pointer;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.4rem;
+  transition: all 0.3s ease;
 }
 
-.search-input::placeholder {
+.uni-search-clear:hover {
+  color: #1a1a1a;
+  transform: translateY(-50%) scale(1.1);
+}
+
+/* ── View Toggle ───────────────────────────────────────────────────────── */
+.uni-view-toggle {
+  display: flex;
+  gap: 4px;
+  background: rgba(0, 0, 0, 0.04);
+  padding: 4px;
+  border-radius: 10px;
+  border: 1px solid rgba(0, 0, 0, 0.04);
+}
+
+.uni-view-btn {
+  padding: 6px 10px;
+  border: none;
+  border-radius: 8px;
+  background: transparent;
   color: #999;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.uni-view-btn.active {
+  background: #ffffff;
+  color: #1a1a1a;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.06);
+}
+
+.uni-view-btn:hover:not(.active) {
+  color: #1a1a1a;
 }
 
 /* ── Tabs ───────────────────────────────────────────────────────────────── */
-.tabs-wrapper {
+.uni-tabs-wrapper {
   display: flex;
   gap: 0.8rem;
   justify-content: center;
   flex-wrap: wrap;
 }
 
-.tab-btn {
+.uni-tab-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
-  padding: 0.7rem 1.8rem;
+  padding: 0.6rem 1.6rem;
   border: 2px solid rgba(0, 0, 0, 0.06);
   border-radius: 50px;
   background: #ffffff;
@@ -274,63 +476,123 @@
   transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   white-space: nowrap;
+  position: relative;
 }
 
-.tab-btn svg {
+.uni-tab-btn svg {
   font-size: 0.9rem;
   transition: all 0.3s ease;
 }
 
-.tab-btn.active {
-  background: linear-gradient(135deg, #E5B63E, #f0c84a);
-  border-color: #E5B63E;
+.uni-tab-btn.active {
+  background: linear-gradient(135deg, #f9c349, #f7b731);
+  border-color: #f9c349;
   color: #1a1a1a;
-  box-shadow: 0 8px 30px rgba(229, 182, 62, 0.15);
+  box-shadow: 0 8px 30px rgba(249, 195, 73, 0.15);
   transform: translateY(-2px);
 }
 
-.tab-btn.active svg {
+.uni-tab-btn.active svg {
   color: #1a1a1a;
 }
 
-.tab-btn:hover:not(.active) {
-  border-color: #E5B63E;
+.uni-tab-btn:hover:not(.active) {
+  border-color: #f9c349;
   transform: translateY(-2px);
   box-shadow: 0 4px 15px rgba(0, 0, 0, 0.04);
 }
 
-.tab-btn:active {
-  transform: scale(0.95);
+.tab-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  border-radius: 10px;
+  background: rgba(0, 0, 0, 0.06);
+  font-size: 0.6rem;
+  font-weight: 700;
+  color: #6c6c6c;
 }
 
-/* ── Universities Grid ──────────────────────────────────────────────────── */
-.universities-grid-wrapper {
-  margin-bottom: 3rem;
+.uni-tab-btn.active .tab-count {
+  background: rgba(255, 255, 255, 0.3);
+  color: #1a1a1a;
 }
 
-.universities-grid {
+/* ── Results Info ──────────────────────────────────────────────────────── */
+.uni-results-info {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  color: #6c6c6c;
+  margin-bottom: 1.5rem;
+  padding: 0.5rem 1rem;
+  background: rgba(255, 255, 255, 0.6);
+  border-radius: 12px;
+  backdrop-filter: blur(10px);
+}
+
+.uni-results-info strong {
+  color: #1a1a1a;
+  font-weight: 700;
+}
+
+.results-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.3rem 0.8rem;
+  background: rgba(249, 195, 73, 0.1);
+  border-radius: 20px;
+  font-size: 0.75rem;
+  color: #c9951e;
+  font-weight: 600;
+}
+
+.results-badge svg {
+  font-size: 0.7rem;
+}
+
+/* ── Grid ───────────────────────────────────────────────────────────────── */
+.uni-grid-wrapper {
+  margin-bottom: 2.5rem;
+}
+
+.uni-grid {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 1.5rem;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1.8rem;
 }
 
-/* ── University Card ────────────────────────────────────────────────────── */
-.university-card {
+/* ── University Card - Modern Premium ──────────────────────────────────── */
+.university-card-modern {
   background: #ffffff;
-  border-radius: 16px;
+  border-radius: 20px;
   padding: 1.8rem 1.5rem 1.5rem;
   border: 1px solid rgba(0, 0, 0, 0.04);
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   position: relative;
   overflow: hidden;
   text-align: center;
   display: flex;
   flex-direction: column;
   align-items: center;
-  cursor: default;
+  cursor: pointer;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.02);
 }
 
-.university-card-glow {
+.university-card-modern.hovered {
+  transform: translateY(-12px) scale(1.02);
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.06);
+  border-color: rgba(249, 195, 73, 0.15);
+}
+
+.card-glow-layer {
   position: absolute;
   top: 0;
   left: 0;
@@ -339,44 +601,109 @@
   pointer-events: none;
   opacity: 0;
   transition: opacity 0.6s ease;
+  border-radius: 20px;
 }
 
-.university-card:hover .university-card-glow {
+.university-card-modern.hovered .card-glow-layer {
   opacity: 1;
 }
 
-/* ── Card Rank Badge ───────────────────────────────────────────────────── */
-.university-card-rank {
+.card-border-glow {
   position: absolute;
-  top: 0.8rem;
-  right: 0.8rem;
-  padding: 0.2rem 0.6rem;
+  inset: -1px;
+  border-radius: 20px;
+  border: 1px solid transparent;
+  opacity: 0;
+  transition: opacity 0.6s ease;
+  pointer-events: none;
+}
+
+.university-card-modern.hovered .card-border-glow {
+  opacity: 0.3;
+}
+
+/* ── Card Header ───────────────────────────────────────────────────────── */
+.card-header {
+  width: 100%;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.card-rank-badge {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.2rem 0.8rem;
   border-radius: 20px;
   color: #ffffff;
   font-size: 0.65rem;
   font-weight: 700;
   letter-spacing: 0.02em;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
+.rank-icon {
+  font-size: 0.55rem;
+}
+
+.card-rating {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.stars {
+  font-size: 0.75rem;
+  color: #f9c349;
+  letter-spacing: 1px;
+}
+
+.rating-number {
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #1a1a1a;
 }
 
 /* ── Card Logo ──────────────────────────────────────────────────────────── */
-.university-logo-wrapper {
-  width: 90px;
-  height: 90px;
+.card-logo-wrapper {
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
   margin-bottom: 1rem;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
+  position: relative;
+  transition: all 0.6s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0.5rem;
 }
 
-.university-card:hover .university-logo-wrapper {
-  transform: scale(1.05);
+.university-card-modern.hovered .card-logo-wrapper {
+  transform: scale(1.05) rotate(-5deg);
 }
 
-.university-logo-img {
+.logo-ring {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid transparent;
+  opacity: 0;
+  transition: all 0.6s ease;
+}
+
+.university-card-modern.hovered .logo-ring {
+  opacity: 1;
+  animation: ringSpin 1.5s linear infinite;
+}
+
+@keyframes ringSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+.card-logo-img {
   width: 100%;
   height: 100%;
   object-fit: contain;
@@ -385,37 +712,77 @@
 }
 
 /* ── Card Info ──────────────────────────────────────────────────────────── */
-.university-info {
+.card-info {
   margin-bottom: 0.8rem;
+  width: 100%;
 }
 
-.university-name {
-  font-size: 1rem;
-  font-weight: 700;
-  color: #1a1a1a;
+.card-name {
+  font-size: 1.1rem;
+  font-weight: 800;
   margin-bottom: 0.2rem;
   transition: all 0.3s ease;
 }
 
-.university-card:hover .university-name {
-  color: #E5B63E;
-}
-
-.university-location {
+.card-location {
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.3rem;
   font-size: 0.8rem;
   color: #6c6c6c;
+  margin-bottom: 0.3rem;
 }
 
 .location-icon {
   font-size: 0.9rem;
 }
 
+.card-description {
+  font-size: 0.8rem;
+  color: #6c6c6c;
+  line-height: 1.4;
+  margin: 0;
+  transition: all 0.3s ease;
+}
+
+.university-card-modern.hovered .card-description {
+  color: #1a1a1a;
+}
+
+/* ── Achievements ──────────────────────────────────────────────────────── */
+.card-achievements {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  justify-content: center;
+  margin-bottom: 0.8rem;
+  width: 100%;
+}
+
+.achievement-tag {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.6rem;
+  font-weight: 500;
+  color: #4a4a4a;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 0.2rem 0.6rem;
+  border-radius: 12px;
+  transition: all 0.3s ease;
+}
+
+.achievement-icon {
+  font-size: 0.55rem;
+}
+
+.university-card-modern.hovered .achievement-tag {
+  background: rgba(0, 0, 0, 0.05);
+}
+
 /* ── Card Meta ──────────────────────────────────────────────────────────── */
-.university-meta {
+.card-meta {
   display: grid;
   grid-template-columns: 1fr 1fr 1fr;
   gap: 0.5rem;
@@ -428,27 +795,51 @@
 
 .meta-item {
   display: flex;
-  flex-direction: column;
   align-items: center;
-  gap: 0.15rem;
+  gap: 0.4rem;
   font-size: 0.65rem;
   color: #6c6c6c;
-  font-weight: 500;
+}
+
+.meta-item > div {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.2;
 }
 
 .meta-icon {
   font-size: 0.9rem;
+  opacity: 0.7;
+}
+
+.meta-value {
+  font-weight: 600;
+  color: #1a1a1a;
+  font-size: 0.75rem;
+}
+
+.meta-label {
+  font-size: 0.55rem;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: #999;
+}
+
+.meta-divider {
+  width: 1px;
+  height: 25px;
+  background: rgba(0, 0, 0, 0.04);
 }
 
 /* ── Card Footer ────────────────────────────────────────────────────────── */
-.university-card-footer {
+.card-footer {
   display: flex;
   align-items: center;
   justify-content: space-between;
   width: 100%;
 }
 
-.university-type {
+.card-category {
   padding: 0.2rem 0.8rem;
   border-radius: 12px;
   font-size: 0.6rem;
@@ -457,440 +848,530 @@
   letter-spacing: 0.04em;
 }
 
-.explore-btn {
+.card-explore-btn {
   display: flex;
   align-items: center;
-  gap: 0.3rem;
+  gap: 0.4rem;
   background: none;
   border: none;
   font-weight: 600;
-  font-size: 0.75rem;
+  font-size: 0.8rem;
   cursor: pointer;
   transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
   font-family: inherit;
   padding: 0.3rem 0.6rem;
   border-radius: 8px;
+  background: rgba(0, 0, 0, 0.02);
 }
 
-.explore-btn:hover {
-  background: rgba(0, 0, 0, 0.04);
+.card-explore-btn:hover {
+  background: rgba(0, 0, 0, 0.06);
   transform: translateX(4px);
 }
 
-.btn-icon {
-  font-size: 0.6rem;
+.explore-arrow {
+  font-size: 0.7rem;
   transition: all 0.3s ease;
 }
 
-.explore-btn:hover .btn-icon {
+.card-explore-btn:hover .explore-arrow {
   transform: translateX(4px);
 }
 
-/* ── View All CTA ───────────────────────────────────────────────────────── */
-.universities-cta {
-  margin-top: 1rem;
-}
-
-.view-all-btn {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.8rem;
-  padding: 1rem 3rem;
-  border: none;
-  border-radius: 50px;
-  background: linear-gradient(135deg, #1a1a1a, #2a2a2a);
-  color: #ffffff;
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.4s cubic-bezier(0.16, 1, 0.3, 1);
-  font-family: inherit;
-  position: relative;
-  overflow: hidden;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-}
-
-.view-all-btn::before {
-  content: '';
+/* ── Card Shimmer ───────────────────────────────────────────────────────── */
+.card-shimmer-line {
   position: absolute;
-  top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(229, 182, 62, 0.1), transparent);
-  transition: left 0.6s ease;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, #f9c349, transparent);
+  opacity: 0;
+  transition: opacity 0.6s ease;
 }
 
-.view-all-btn:hover::before {
-  left: 100%;
+.university-card-modern.hovered .card-shimmer-line {
+  opacity: 1;
+  animation: shimmerLine 1.5s ease-in-out infinite;
 }
 
-.view-all-btn:hover {
-  transform: translateY(-6px);
-  box-shadow: 0 12px 40px rgba(229, 182, 62, 0.2);
-  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+@keyframes shimmerLine {
+  0% { transform: translateX(-100%); }
+  100% { transform: translateX(100%); }
+}
+
+/* ── List View ───────────────────────────────────────────────────────────── */
+.university-card-modern.list-card {
+  flex-direction: row;
+  text-align: left;
+  padding: 1rem 1.5rem;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.university-card-modern.list-card .card-logo-wrapper {
+  width: 70px;
+  height: 70px;
+  margin-bottom: 0;
+}
+
+.university-card-modern.list-card .card-info {
+  text-align: left;
+  margin-bottom: 0;
+  flex: 1;
+}
+
+.university-card-modern.list-card .card-meta {
+  border: none;
+  padding: 0;
+  margin: 0;
+  width: auto;
+  gap: 1rem;
+}
+
+.university-card-modern.list-card .card-achievements {
+  margin: 0;
+  width: auto;
+}
+
+.university-card-modern.list-card .card-footer {
+  width: auto;
+}
+
+.uni-grid.list-mode .uni-grid {
+  grid-template-columns: 1fr;
+}
+
+/* ── Pagination ──────────────────────────────────────────────────────────── */
+.uni-pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.8rem;
+  margin-top: 2rem;
+  padding: 1rem 0;
+}
+
+.uni-page-btn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.6rem 1.2rem;
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  border-radius: 12px;
+  background: #ffffff;
   color: #1a1a1a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
 }
 
-.view-all-btn:active {
-  transform: scale(0.95);
+.uni-page-btn:hover:not(.disabled) {
+  border-color: #f9c349;
+  background: rgba(249, 195, 73, 0.04);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(249, 195, 73, 0.1);
 }
 
-.btn-arrow {
-  font-size: 0.9rem;
-  transition: all 0.3s ease;
+.uni-page-btn.disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.view-all-btn:hover .btn-arrow {
-  transform: translateX(6px);
+.uni-page-btn svg {
+  font-size: 0.8rem;
+}
+
+.uni-page-numbers {
+  display: flex;
+  gap: 0.4rem;
+}
+
+.uni-page-number {
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid rgba(0, 0, 0, 0.06);
+  border-radius: 10px;
+  background: #ffffff;
+  color: #1a1a1a;
+  font-weight: 600;
+  font-size: 0.85rem;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  font-family: inherit;
+}
+
+.uni-page-number:hover:not(.active) {
+  border-color: #f9c349;
+  background: rgba(249, 195, 73, 0.04);
+  transform: translateY(-2px);
+}
+
+.uni-page-number.active {
+  background: linear-gradient(135deg, #f9c349, #f7b731);
+  border-color: #f9c349;
+  color: #1a1a1a;
+  box-shadow: 0 4px 20px rgba(249, 195, 73, 0.2);
+  transform: translateY(-2px);
+}
+
+/* ── Bottom Decoration ─────────────────────────────────────────────────── */
+.uni-bottom-decoration {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1.2rem;
+  margin-top: 4rem;
+}
+
+.decoration-line {
+  width: 80px;
+  height: 2px;
+  background: linear-gradient(90deg, transparent, rgba(249, 195, 73, 0.3), transparent);
+  border-radius: 2px;
+}
+
+.decoration-dots {
+  display: flex;
+  gap: 0.6rem;
+}
+
+.decoration-dots span {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: rgba(249, 195, 73, 0.2);
+  animation: dotWave 1.5s ease-in-out infinite;
+}
+
+.decoration-dots span:nth-child(1) { animation-delay: 0s; }
+.decoration-dots span:nth-child(2) { animation-delay: 0.15s; }
+.decoration-dots span:nth-child(3) { animation-delay: 0.3s; }
+.decoration-dots span:nth-child(4) { animation-delay: 0.45s; }
+.decoration-dots span:nth-child(5) { animation-delay: 0.6s; }
+
+@keyframes dotWave {
+  0%, 100% { transform: scale(0.8); opacity: 0.3; }
+  50% { transform: scale(1.2); opacity: 0.8; }
+}
+
+.decoration-text {
+  font-size: 0.75rem;
+  color: #999;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  letter-spacing: 0.02em;
+}
+
+.decoration-text svg {
+  color: #f9c349;
+  font-size: 0.8rem;
 }
 
 /* ── Responsive ──────────────────────────────────────────────────────────── */
 
 @media (max-width: 1200px) {
-  .universities-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 1024px) {
-  .universities-grid {
+  .uni-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
-  .universities-stats {
+  .uni-header-stats {
     gap: 2rem;
     padding: 1.2rem 1.5rem;
   }
 }
 
-@media (max-width: 768px) {
-  .universities-section {
-    padding: 4rem 0;
+@media (max-width: 1024px) {
+  .uni-stats-row {
+    gap: 2.5rem;
+    padding: 1.5rem 2rem;
   }
   
-  .universities-headline {
+  .uni-header-stats {
+    gap: 1.5rem;
+    padding: 1rem 1.5rem;
+  }
+  
+  .header-stat-number {
+    font-size: 1.5rem;
+  }
+}
+
+@media (max-width: 768px) {
+  .universities-section-modern {
+    padding: 4rem 0 6rem;
+  }
+  
+  .uni-container {
+    padding: 0 1.5rem;
+  }
+  
+  .uni-headline {
     font-size: 2rem;
   }
   
-  .universities-subtitle {
+  .uni-subtitle {
     font-size: 0.95rem;
   }
   
-  .universities-grid {
+  .uni-grid {
     grid-template-columns: 1fr 1fr;
-    gap: 1rem;
+    gap: 1.2rem;
   }
   
-  .university-card {
+  .university-card-modern {
     padding: 1.2rem 1rem;
   }
   
-  .university-logo-wrapper {
-    width: 70px;
-    height: 70px;
+  .card-logo-wrapper {
+    width: 80px;
+    height: 80px;
   }
   
-  .university-name {
-    font-size: 0.9rem;
+  .card-name {
+    font-size: 0.95rem;
   }
   
-  .university-meta {
+  .uni-stats-row {
+    flex-direction: column;
+    gap: 1.5rem;
+    padding: 1.5rem;
+  }
+  
+  .uni-stat-divider {
+    width: 60%;
+    height: 1px;
+  }
+  
+  .uni-tabs-wrapper {
+    gap: 0.5rem;
+  }
+  
+  .uni-tab-btn {
+    padding: 0.5rem 1.2rem;
+    font-size: 0.75rem;
+  }
+  
+  .uni-tab-btn svg {
+    font-size: 0.8rem;
+  }
+  
+  .uni-pagination {
+    flex-wrap: wrap;
+  }
+  
+  .uni-page-numbers {
+    order: 3;
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .uni-page-btn {
+    padding: 0.5rem 1rem;
+    font-size: 0.8rem;
+  }
+  
+  .uni-controls-top {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .uni-view-toggle {
+    align-self: center;
+  }
+  
+  .university-card-modern.list-card {
+    flex-direction: column;
+    text-align: center;
+  }
+  
+  .university-card-modern.list-card .card-logo-wrapper {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .university-card-modern.list-card .card-info {
+    text-align: center;
+  }
+  
+  .university-card-modern.list-card .card-meta {
+    width: 100%;
+  }
+  
+  .uni-header-stats {
+    gap: 1rem;
+    padding: 0.8rem 1rem;
+  }
+  
+  .header-stat-number {
+    font-size: 1.2rem;
+  }
+  
+  .header-stat-label {
+    font-size: 0.6rem;
+  }
+  
+  .header-stat-divider {
+    height: 25px;
+  }
+  
+  .uni-results-info {
+    flex-direction: column;
+    align-items: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 480px) {
+  .universities-section-modern {
+    padding: 3rem 0 4rem;
+  }
+  
+  .uni-container {
+    padding: 0 1rem;
+  }
+  
+  .uni-headline {
+    font-size: 1.6rem;
+  }
+  
+  .uni-subtitle {
+    font-size: 0.85rem;
+  }
+  
+  .uni-grid {
+    grid-template-columns: 1fr;
+    gap: 1rem;
+  }
+  
+  .university-card-modern {
+    padding: 1.2rem;
+    max-width: 400px;
+    margin: 0 auto;
+  }
+  
+  .card-logo-wrapper {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .card-meta {
     grid-template-columns: 1fr 1fr 1fr;
     gap: 0.3rem;
   }
   
   .meta-item {
     font-size: 0.6rem;
+    flex-direction: column;
+    text-align: center;
   }
   
-  .meta-icon {
-    font-size: 0.8rem;
+  .meta-divider {
+    display: none;
   }
   
-  .tabs-wrapper {
-    gap: 0.5rem;
-  }
-  
-  .tab-btn {
-    padding: 0.5rem 1.2rem;
-    font-size: 0.75rem;
-  }
-  
-  .tab-btn svg {
-    font-size: 0.8rem;
-  }
-  
-  .universities-stats {
-    gap: 1.5rem;
-    padding: 1rem;
-  }
-  
-  .stat-number {
-    font-size: 1.6rem;
-  }
-  
-  .stat-label {
-    font-size: 0.65rem;
-  }
-  
-  .stat-divider {
-    height: 30px;
-  }
-  
-  .view-all-btn {
-    padding: 0.8rem 2rem;
-    font-size: 0.9rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .universities-section {
-    padding: 3rem 0;
-  }
-  
-  .universities-headline {
-    font-size: 1.8rem;
-  }
-  
-  .universities-subtitle {
-    font-size: 0.85rem;
-  }
-  
-  .universities-grid {
-    grid-template-columns: 1fr;
-    gap: 1rem;
-    max-width: 400px;
-    margin: 0 auto;
-  }
-  
-  .university-card {
-    padding: 1.2rem;
-    max-width: 400px;
-    margin: 0 auto;
-    width: 100%;
-  }
-  
-  .university-logo-wrapper {
-    width: 80px;
-    height: 80px;
-  }
-  
-  .university-name {
-    font-size: 1rem;
-  }
-  
-  .tabs-wrapper {
-    flex-direction: row;
+  .uni-tabs-wrapper {
     flex-wrap: wrap;
     justify-content: center;
   }
   
-  .tab-btn {
+  .uni-tab-btn {
+    font-size: 0.7rem;
     padding: 0.4rem 1rem;
-    font-size: 0.7rem;
-    white-space: nowrap;
   }
   
-  .tab-btn svg {
-    font-size: 0.7rem;
-  }
-  
-  .universities-stats {
-    flex-direction: column;
-    gap: 1rem;
-    padding: 1rem;
-    align-items: center;
-  }
-  
-  .stat-divider {
-    width: 60%;
-    height: 1px;
-    background: linear-gradient(90deg, transparent, rgba(229, 182, 62, 0.15), transparent);
-  }
-  
-  .stat-number {
-    font-size: 1.8rem;
-  }
-  
-  .stat-label {
-    font-size: 0.7rem;
-  }
-  
-  .search-input {
-    padding: 0.8rem 1rem 0.8rem 3rem;
+  .uni-search-input {
     font-size: 0.85rem;
-    border-radius: 12px;
+    padding: 0.8rem 1rem 0.8rem 3rem;
   }
   
-  .search-icon {
+  .uni-search-icon {
     left: 1rem;
     font-size: 0.8rem;
   }
   
-  .view-all-btn {
-    padding: 0.7rem 1.5rem;
-    font-size: 0.85rem;
+  .uni-badge {
+    font-size: 0.65rem;
+    padding: 0.4rem 1.2rem;
+  }
+  
+  .card-achievements {
+    flex-direction: column;
+    align-items: center;
+  }
+  
+  .achievement-tag {
     width: 100%;
     justify-content: center;
   }
   
-  .university-card-rank {
-    font-size: 0.55rem;
-    padding: 0.15rem 0.5rem;
-    top: 0.5rem;
-    right: 0.5rem;
+  .uni-stat-number {
+    font-size: 1.8rem;
   }
   
-  .university-type {
-    font-size: 0.55rem;
-    padding: 0.15rem 0.6rem;
-  }
-  
-  .explore-btn {
+  .uni-stat-label {
     font-size: 0.7rem;
   }
-}
-
-/* ── Empty State ────────────────────────────────────────────────────────── */
-.universities-empty {
-  grid-column: 1 / -1;
-  padding: 4rem 2rem;
-  text-align: center;
-}
-
-.universities-empty svg {
-  font-size: 3rem;
-  color: #E5B63E;
-  opacity: 0.3;
-  margin-bottom: 1rem;
-}
-
-.universities-empty h4 {
-  font-size: 1.2rem;
-  color: #1a1a1a;
-  margin-bottom: 0.3rem;
-}
-
-.universities-empty p {
-  color: #6c6c6c;
-  font-size: 0.9rem;
+  
+  .uni-page-number {
+    width: 34px;
+    height: 34px;
+    font-size: 0.75rem;
+  }
+  
+  .uni-page-btn {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.8rem;
+  }
+  
+  .uni-page-btn span {
+    display: none;
+  }
+  
+  .uni-header-stats {
+    flex-direction: column;
+    gap: 0.8rem;
+    padding: 1rem;
+  }
+  
+  .header-stat-divider {
+    width: 60%;
+    height: 1px;
+  }
+  
+  .header-stat-number {
+    font-size: 1.4rem;
+  }
 }
 
 /* ── Reduced Motion ────────────────────────────────────────────────────── */
 @media (prefers-reduced-motion: reduce) {
-  .universities-digital-grid,
-  .universities-radial-spotlight {
+  .uni-bg-grid,
+  .uni-bg-spotlight,
+  .uni-bg-gradient-1,
+  .uni-bg-gradient-2,
+  .uni-bg-gradient-3,
+  .uni-particle,
+  .highlight-gold,
+  .badge-icon,
+  .badge-dot,
+  .logo-ring,
+  .card-shimmer-line,
+  .decoration-dots span {
     animation: none !important;
   }
   
-  .university-card {
+  .university-card-modern {
     transition: none !important;
   }
   
-  .university-card:hover {
+  .university-card-modern.hovered {
     transform: none !important;
   }
-  
-  .view-all-btn::before {
-    display: none;
-  }
-  /* Add to your UniversitiesSection.css - Additional styles for description */
-
-.university-description {
-  font-size: 0.7rem;
-  color: #6c6c6c;
-  margin-top: 0.2rem;
-  line-height: 1.3;
-  opacity: 0.7;
-  transition: all 0.3s ease;
-}
-
-.university-card:hover .university-description {
-  opacity: 1;
-  color: #1a1a1a;
-}
-
-/* Adjust card padding for description */
-.university-card {
-  padding: 1.8rem 1.5rem 1.5rem;
-}
-
-/* Responsive adjustments for description */
-@media (max-width: 768px) {
-  .university-description {
-    font-size: 0.65rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .university-description {
-    font-size: 0.7rem;
-  }
-}
-
-/* Grid adjustment for 6 items */
-@media (min-width: 1200px) {
-  .universities-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-}
-
-@media (max-width: 1199px) and (min-width: 768px) {
-  .universities-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-}
-
-/* Adjust badge for Pakistan focus */
-.universities-badge span {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.5rem;
-  background: linear-gradient(135deg, rgba(229, 182, 62, 0.12), rgba(229, 182, 62, 0.04));
-  border: 1px solid rgba(229, 182, 62, 0.15);
-  color: #E5B63E;
-  padding: 0.4rem 1.5rem;
-  border-radius: 50px;
-  font-size: 0.7rem;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  backdrop-filter: blur(10px);
-}
-
-/* Pakistan flag accent (optional) */
-.universities-headline .highlight-text {
-  background: linear-gradient(135deg, #E5B63E, #f0c84a, #E5B63E);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-  background-size: 200% 200%;
-  animation: shimmerText 3s ease-in-out infinite;
-}
-
-@keyframes shimmerText {
-  0%, 100% { background-position: 0% 50%; }
-  50% { background-position: 100% 50%; }
-}
-
-/* Loading state for images */
-.university-logo-img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
-  border-radius: 50%;
-  transition: all 0.4s ease;
-  background: transparent;
-}
-
-/* Image fallback */
-.university-logo-img::before {
-  content: '';
-  display: block;
-  width: 100%;
-  height: 100%;
-  background: rgba(229, 182, 62, 0.1);
-  border-radius: 50%;
-}
 }

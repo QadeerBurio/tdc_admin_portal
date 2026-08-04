@@ -40,6 +40,7 @@ import OfferImagesGallery from "./screens/OfferImagesGallery";
 import AppStoreReviews from "./screens/roles/AppStoreReviews";
 import EventManagement from "./screens/EventManagement";
 import Discount from "./screens/Discount";
+import UniversitiesSection from "./screens/roles/UniversitiesSection";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -58,6 +59,7 @@ export default function AppNavigator() {
         <Route path="/company_profile" element={<CompanyProfile />} />
         <Route path="/OfferImagesGallery" element={<OfferImagesGallery />} />
          <Route path="/AppStoreReviews" element={<AppStoreReviews />} />
+         <Route path="/universities" element={<UniversitiesSection />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

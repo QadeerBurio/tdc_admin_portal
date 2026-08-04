@@ -7,8 +7,12 @@ const OfferImagesGallery = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [selectedOffer, setSelectedOffer] = useState(null);
+  const [hoveredOffer, setHoveredOffer] = useState(null);
   const scrollRef = useRef(null);
-  const [scrollPosition, setScrollPosition] = useState(0);
+  const [isDragging, setIsDragging] = useState(false);
+  const [startX, setStartX] = useState(0);
+  const [scrollLeft, setScrollLeft] = useState(0);
+  const [autoScroll, setAutoScroll] = useState(true);
 
   const getToken = () => {
     return localStorage.getItem('token') || sessionStorage.getItem('token');
@@ -32,7 +36,15 @@ const OfferImagesGallery = () => {
         }
       );
 
-      setOffers(response.data.offers || []);
+      // Filter out offers that don't have images or are invalid
+      const validOffers = (response.data.offers || []).filter(offer => 
+        offer.image && 
+        offer.image !== null && 
+        offer.image !== '' &&
+        offer.image !== 'https://via.placeholder.com/120x120?text=Logo'
+      );
+      
+      setOffers(validOffers);
       setError(null);
     } catch (err) {
       console.error('Error fetching offer images:', err);
@@ -52,33 +64,69 @@ const OfferImagesGallery = () => {
     document.body.style.overflow = 'auto';
   };
 
-  // Auto-scroll effect for single row
-  useEffect(() => {
+  const handleMouseDown = (e) => {
+    setIsDragging(true);
+    setAutoScroll(false);
     const container = scrollRef.current;
-    if (container && offers.length > 0) {
-      const autoScroll = setInterval(() => {
-        const maxScroll = container.scrollWidth - container.clientWidth;
-        const scrollAmount = 2;
-        
-        if (scrollPosition >= maxScroll) {
-          container.scrollTo({ left: 0, behavior: 'smooth' });
-          setScrollPosition(0);
-        } else {
-          const newPosition = scrollPosition + scrollAmount;
-          container.scrollTo({ left: newPosition, behavior: 'smooth' });
-          setScrollPosition(newPosition);
-        }
-      }, 30);
+    setStartX(e.pageX - container.offsetLeft);
+    setScrollLeft(container.scrollLeft);
+    container.style.cursor = 'grabbing';
+  };
 
-      return () => clearInterval(autoScroll);
-    }
-  }, [offers, scrollPosition]);
+  const handleMouseLeave = () => {
+    setIsDragging(false);
+    const container = scrollRef.current;
+    if (container) container.style.cursor = 'grab';
+  };
+
+  const handleMouseUp = () => {
+    setIsDragging(false);
+    const container = scrollRef.current;
+    if (container) container.style.cursor = 'grab';
+    setTimeout(() => setAutoScroll(true), 5000);
+  };
+
+  const handleMouseMove = (e) => {
+    if (!isDragging) return;
+    e.preventDefault();
+    const container = scrollRef.current;
+    const x = e.pageX - container.offsetLeft;
+    const walk = (x - startX) * 2;
+    container.scrollLeft = scrollLeft - walk;
+  };
+
+  useEffect(() => {
+    if (!autoScroll || offers.length === 0) return;
+
+    const container = scrollRef.current;
+    if (!container) return;
+
+    const interval = setInterval(() => {
+      const maxScroll = container.scrollWidth - container.clientWidth;
+      const currentScroll = container.scrollLeft;
+      
+      if (currentScroll >= maxScroll - 1) {
+        container.scrollTo({ left: 0, behavior: 'smooth' });
+      } else {
+        container.scrollTo({ left: currentScroll + 1, behavior: 'smooth' });
+      }
+    }, 30);
+
+    return () => clearInterval(interval);
+  }, [offers, autoScroll]);
 
   if (loading) {
     return (
       <div className="loading-container">
-        <div className="loader"></div>
-        <p>Loading offers...</p>
+        <div className="loading-spinner">
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+          <div className="spinner-ring"></div>
+        </div>
+        <p className="loading-text">Loading Amazing Offers...</p>
+        <div className="loading-bar">
+          <div className="loading-progress"></div>
+        </div>
       </div>
     );
   }
@@ -86,65 +134,122 @@ const OfferImagesGallery = () => {
   if (error) {
     return (
       <div className="error-container">
+        <div className="error-icon">😕</div>
         <p className="error-message">{error}</p>
         <button onClick={fetchAllOfferImages} className="retry-btn">
-          Retry
+          <span className="retry-icon">⟳</span> Try Again
         </button>
+      </div>
+    );
+  }
+
+  if (offers.length === 0) {
+    return (
+      <div className="empty-container">
+        <div className="empty-icon">🏷️</div>
+        <h3 className="empty-title">No Brands Available</h3>
+        <p className="empty-message">Check back later for exciting brands from our partner brands!</p>
       </div>
     );
   }
 
   return (
     <div className="gallery-container">
+      <div className="gallery-header">
+        <div className="header-content">
+          <span className="header-badge">Companies and Brands</span>
+          <h2 className="gallery-title">Trusted By Industries Leads</h2>
+          <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
+        </div>
+        
+      </div>
+
       <div className="gallery-wrapper">
-        {/* Single Row - All items */}
-       
-          <div className="offers-scroll-container" ref={scrollRef}>
-            {offers.map((offer) => (
-              <div 
-                key={offer.offerId} 
-                className="offer-card"
-                onClick={() => handleImageClick(offer)}
-              >
-                <div className="offer-image-wrapper">
-                  <img 
-                    src={offer.image} 
-                    alt={offer.title}
-                    className="offer-image"
-                    loading="lazy"
-                    onError={(e) => {
-                      e.target.src = 'https://via.placeholder.com/120x120?text=Logo';
-                      e.target.alt = 'Image not available';
-                    }}
-                  />
-                </div>
-                <div className="offer-info">
-                  <h3 className="offer-title">{offer.title}</h3>
-                  <span className="offer-category">{offer.category}</span>
+        <div 
+          className="offers-scroll-container" 
+          ref={scrollRef}
+          onMouseDown={handleMouseDown}
+          onMouseLeave={handleMouseLeave}
+          onMouseUp={handleMouseUp}
+          onMouseMove={handleMouseMove}
+          style={{ cursor: 'grab' }}
+        >
+          {offers.map((offer, index) => (
+            <div 
+              key={offer.offerId || index} 
+              className={`offer-card ${hoveredOffer === offer.offerId ? 'hovered' : ''}`}
+              onClick={() => handleImageClick(offer)}
+              onMouseEnter={() => setHoveredOffer(offer.offerId)}
+              onMouseLeave={() => setHoveredOffer(null)}
+              style={{ animationDelay: `${index * 0.05}s` }}
+            >
+              <div className="card-glow"></div>
+              <div className="offer-image-wrapper">
+                <img 
+                  src={offer.image} 
+                  alt={offer.title || 'Offer'}
+                  className="offer-image"
+                  loading="lazy"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/120x120?text=Logo';
+                    e.target.alt = 'Image not available';
+                  }}
+                />
+                <div className="image-ring-animation"></div>
+              </div>
+              <div className="offer-info">
+                <h3 className="offer-title">{offer.title || 'Offer'}</h3>
+                <div className="offer-meta">
+                  <span className="offer-category">{offer.category || 'General'}</span>
+                  <span className="offer-discount-badge">Partners</span>
                 </div>
               </div>
-            ))}
-          </div>
+              <div className="card-shimmer"></div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Modal */}
       {selectedOffer && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>×</button>
+            <button className="modal-close" onClick={closeModal}>
+              <svg viewBox="0 0 24 24" width="24" height="24">
+                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              </svg>
+            </button>
+            
             <div className="modal-image-container">
-              <img 
-                src={selectedOffer.image} 
-                alt={selectedOffer.title}
-                className="modal-image"
-              />
-            </div>
-            <div className="modal-details">
-              <h2>{selectedOffer.title}</h2>
-              <div className="modal-tags">
-                <span className="modal-discount">{selectedOffer.discountPercentage}% OFF</span>
-                <span className="modal-category">{selectedOffer.category}</span>
+            
+              <div className="modal-image-wrapper">
+                <img 
+                  src={selectedOffer.image} 
+                  alt={selectedOffer.title || 'Offer'}
+                  className="modal-image"
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x400?text=Offer';
+                  }}
+                  
+                />
+                <div className="modal-floating-badge">
+                  <span className="badge-discount">{selectedOffer.discountPercentage || 0}% OFF</span>
+                </div>
               </div>
+            </div>
+            
+            <div className="modal-details">
+              <div className="modal-category-tag">{selectedOffer.category || 'General'}</div>
+              <h2 className="modal-title">{selectedOffer.title || 'Offer'}</h2>
+              
+              
+              
+              <button className="modal-action-btn">
+                <span>View Brands</span>
+                <svg viewBox="0 0 24 24" width="20" height="20">
+                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+              </button>
             </div>
           </div>
         </div>

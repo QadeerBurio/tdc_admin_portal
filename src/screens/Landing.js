@@ -15,6 +15,8 @@ import {
   FaBullhorn,
   FaVideo,
   FaStore,
+  FaStar,
+  FaTrophy,
   FaGem,
   FaCoins,
   FaApple,
@@ -1049,67 +1051,232 @@ const Landing = () => {
         </div>
       </section>
 
-      {/* COMPANIES & BRANDS COLLABORATION SECTION */}
-      <section className="brands-collab-section">
-        <div className="brands-collab-bg-effects">
-          <div className="brands-collab-half-white-bg"></div>
-          <div className="brands-collab-digital-grid"></div>
-          <div className="brands-collab-radial-spotlight"></div>
-        </div>
+      
 
-        <div className="container">
-          <motion.div
-            className="brands-collab-content"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
+      <OfferImagesGallery/>
+    
+
+
+<section className="universities-preview-section">
+  {/* Enhanced Background Effects */}
+  <div className="uni-preview-bg-effects">
+    <div className="uni-preview-half-white-bg"></div>
+    <div className="uni-preview-digital-grid"></div>
+    <div className="uni-preview-radial-spotlight"></div>
+    <div className="uni-preview-particle-1"></div>
+    <div className="uni-preview-particle-2"></div>
+    <div className="uni-preview-particle-3"></div>
+  </div>
+
+  <div className="container">
+    <div className="uni-preview-content">
+      {/* Header with Enhanced Animation */}
+      <motion.div
+        className="uni-preview-header"
+        initial={{ opacity: 0, y: 30 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
+        viewport={{ once: true }}
+      >
+        <div className="uni-preview-badge-wrapper">
+          <motion.span 
+            className="uni-preview-badge"
+            whileHover={{ scale: 1.05 }}
+            transition={{ type: "spring", stiffness: 400 }}
           >
-            <motion.div
-              className="brands-collab-header"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
-              <motion.span
-                className="brands-collab-badge"
-                initial={{ opacity: 0, scale: 0.8 }}
-                whileInView={{ opacity: 1, scale: 1 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.2, duration: 0.4 }}
-              >
-                <span className="badge-icon"></span> COMPANIES & BRANDS
-              </motion.span>
-
-              <motion.h2
-                className="brands-collab-headline"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.3, duration: 0.6 }}
-              >
-                Trusted by{" "}
-                <span className="highlight-text">Industry Leaders</span>
-              </motion.h2>
-
-              <motion.p
-                className="brands-collab-subtext"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                Partnering with top companies and brands to create meaningful
-                connections with students
-              </motion.p>
-            </motion.div>
-
-            <OfferImagesGallery />
-          </motion.div>
+            <FaGraduationCap className="badge-icon" />
+            Partner Universities
+            <span className="badge-dot"></span>
+            <span className="badge-glow"></span>
+          </motion.span>
         </div>
-      </section>
-      <UniversitiesSection />
+
+        <motion.h2 
+          className="uni-preview-headline"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.1, duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          Pakistan's <span className="highlight-gold">Top Partner Universities</span>
+        </motion.h2>
+
+        <motion.p 
+          className="uni-preview-subtitle"
+          initial={{ opacity: 0, y: 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2, duration: 0.6 }}
+          viewport={{ once: true }}
+        >
+          We partner with Pakistan's leading universities to bring you the 
+          best talent and foster meaningful academic collaborations.
+        </motion.p>
+      </motion.div>
+
+     
+
+      {/* Universities Grid - Show only 3 with Enhanced Cards */}
+      <motion.div
+        className="uni-preview-grid-wrapper"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.3 }}
+        viewport={{ once: true }}
+      >
+        <div className="uni-preview-grid">
+          {universities.slice(0, 3).map((uni, index) => (
+            <motion.div
+              key={index}
+              className="uni-preview-card"
+              initial={{ opacity: 0, scale: 0.9, y: 30 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              transition={{ 
+                delay: index * 0.1,
+                type: "spring",
+                stiffness: 300,
+                damping: 20
+              }}
+              whileHover={{
+                y: -12,
+                scale: 1.03,
+                boxShadow: `0 20px 60px ${uni.color}25`,
+                borderColor: uni.color,
+                transition: { type: "spring", stiffness: 400 }
+              }}
+              whileTap={{ scale: 0.98 }}
+            >
+              {/* Card Glow Effects */}
+              <div 
+                className="uni-preview-card-glow" 
+                style={{ background: `radial-gradient(circle at 50% 0%, ${uni.color}20, transparent 70%)` }}
+              ></div>
+              <div className="card-shimmer-effect"></div>
+              
+              {/* Rating Badge */}
+              <div className="card-rating-badge">
+                <FaStar className="rating-star" />
+                <span>4.8</span>
+              </div>
+
+              {/* Logo with Ring Animation */}
+              <div 
+                className="uni-preview-logo-wrapper" 
+                style={{ backgroundColor: `${uni.color}10` }}
+              >
+                <motion.div 
+                  className="logo-ring-pulse"
+                  style={{ borderColor: uni.color }}
+                  animate={{ 
+                    scale: [1, 1.1, 1],
+                    opacity: [0.3, 0.6, 0.3]
+                  }}
+                  transition={{ 
+                    duration: 2,
+                    repeat: Infinity,
+                    ease: "easeInOut"
+                  }}
+                ></motion.div>
+                <img
+                  src={uni.logo}
+                  alt={uni.name}
+                  className="uni-preview-logo-img"
+                />
+              </div>
+
+              <div className="uni-preview-info">
+                <motion.h4 
+                  className="uni-preview-name" 
+                  style={{ color: uni.color }}
+                  whileHover={{ scale: 1.02 }}
+                >
+                  {uni.name}
+                </motion.h4>
+                <div className="uni-preview-location">
+                  <FaMapMarkerAlt className="location-icon" style={{ color: uni.color }} />
+                  <span>Karachi, Pakistan</span>
+                </div>
+              </div>
+
+              <div className="uni-preview-meta">
+                <div className="uni-preview-meta-item">
+                  <FaUsers className="meta-icon" style={{ color: uni.color }} />
+                  <span>5,000+ Students</span>
+                </div>
+                <div className="meta-divider-vertical"></div>
+                <div className="uni-preview-meta-item">
+                  <FaBuilding className="meta-icon" style={{ color: uni.color }} />
+                  <span>Private</span>
+                </div>
+              </div>
+
+              <div className="uni-preview-card-footer">
+                <motion.span 
+                  className="uni-preview-type" 
+                  style={{ background: `${uni.color}15`, color: uni.color }}
+                  whileHover={{ scale: 1.05 }}
+                >
+                  <FaTrophy className="type-icon" />
+                  Top Tier
+                </motion.span>
+                <motion.button 
+                  className="explore-mini-btn"
+                  style={{ color: uni.color }}
+                  whileHover={{ x: 5 }}
+                >
+                  Explore <FaArrowRight className="mini-arrow" />
+                </motion.button>
+              </div>
+
+              {/* Card Shimmer Line */}
+              <div className="card-shimmer-line" style={{ background: uni.color }}></div>
+            </motion.div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* View All CTA with Enhanced Animation */}
+      <motion.div
+        className="uni-preview-cta-wrapper"
+        initial={{ opacity: 0, y: 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6, delay: 0.4 }}
+        viewport={{ once: true }}
+      >
+        <motion.button 
+          className="uni-preview-view-all-btn"
+          onClick={() => navigate('/universities')}
+          whileHover={{ 
+            scale: 1.03,
+            y: -4,
+            transition: { type: "spring", stiffness: 400 }
+          }}
+          whileTap={{ scale: 0.95 }}
+        >
+          <span className="btn-text">View All Partner Universities</span>
+          <div className="btn-icon-wrapper">
+            <FaArrowRight className="btn-arrow" />
+          </div>
+          <div className="btn-shimmer"></div>
+        </motion.button>
+      </motion.div>
+
+      {/* Bottom Decoration */}
+      <div className="uni-preview-bottom-deco">
+        <div className="deco-line"></div>
+        <div className="deco-dots">
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+          <span></span>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
       <HomeReviews />
       {/* CONTACT US SECTION */}
       <section
