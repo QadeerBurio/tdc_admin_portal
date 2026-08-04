@@ -33,6 +33,9 @@ export default function MyOffers() {
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
 
+  // Discount options for dropdown
+  const discountOptions = [15, 20, 25, 30, 35, 40, 45, 50, 60];
+
   useEffect(() => {
     fetchOffers();
   }, []);
@@ -78,10 +81,10 @@ export default function MyOffers() {
 
   const validateDiscount = (value) => {
     const num = parseInt(value);
-    if (!value || value === "") { setDiscountError("Discount percentage is required"); return false; }
-    if (isNaN(num)) { setDiscountError("Please enter a valid number"); return false; }
+    if (!value || value === "") { setDiscountError("Please select a discount percentage"); return false; }
+    if (isNaN(num)) { setDiscountError("Please select a valid discount"); return false; }
     if (num < 15) { setDiscountError("Discount must be at least 15%"); return false; }
-    if (num > 50) { setDiscountError("Discount cannot exceed 50%"); return false; }
+    if (num > 60) { setDiscountError("Discount cannot exceed 60%"); return false; }
     setDiscountError("");
     return true;
   };
@@ -90,18 +93,18 @@ export default function MyOffers() {
     const value = e.target.value;
     setCurrentOffer({ ...currentOffer, discountPercentage: value });
     if (value && value !== "") validateDiscount(value);
-    else setDiscountError("Discount percentage is required");
+    else setDiscountError("Please select a discount percentage");
   };
 
   const handleUpdate = async () => {
     const discountValue = currentOffer.discountPercentage;
     if (!discountValue || discountValue === "") {
-      alert("Please enter a discount percentage (minimum 15%)");
+      alert("Please select a discount percentage");
       return;
     }
     const isValid = validateDiscount(discountValue);
     if (!isValid) {
-      alert("Please fix the discount percentage before updating. Minimum discount is 15%.");
+      alert("Please select a valid discount percentage (15% - 60%)");
       return;
     }
 
@@ -206,7 +209,6 @@ export default function MyOffers() {
           </h1>
           <p style={styles.subTitle}>Manage and optimize your promotional offers</p>
         </div>
-       
       </div>
 
       {/* Stats */}
@@ -429,15 +431,22 @@ export default function MyOffers() {
                 <div style={styles.formGroup}>
                   <label style={{...styles.formLabel, color: discountError ? '#ef4444' : '#64748b'}}>
                     Discount %
-                    <span style={styles.discountHint}>(15-50%)</span>
+                    <span style={styles.discountHint}>(15-60%)</span>
                   </label>
-                  <div style={{...styles.discountInputWrapper, borderColor: discountError ? '#ef4444' : '#e2e8f0',
-                    background: discountError ? '#fef2f2' : '#fafafa'}}>
-                    <FaPercent size={13} color={discountError ? '#ef4444' : '#6366f1'} />
-                    <input type="number" style={styles.discountInputField} 
-                      value={currentOffer.discountPercentage || ""} onChange={handleDiscountChange}
-                      placeholder="20" min="15" max="50" />
-                  </div>
+                  <select 
+                    style={{
+                      ...styles.discountSelect,
+                      borderColor: discountError ? '#ef4444' : '#e2e8f0',
+                      background: discountError ? '#fef2f2' : '#fafafa'
+                    }}
+                    value={currentOffer.discountPercentage || ""}
+                    onChange={handleDiscountChange}
+                  >
+                    <option value="">Select discount</option>
+                    {discountOptions.map((value) => (
+                      <option key={value} value={value}>{value}%</option>
+                    ))}
+                  </select>
                   {discountError && (
                     <div style={styles.errorMsg}>
                       <FaInfoCircle size={11} />
@@ -1254,24 +1263,19 @@ const styles = {
     boxSizing: "border-box",
     background: "#fafafa"
   },
-  discountInputWrapper: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "0 12px",
+  discountSelect: {
+    width: "100%",
+    padding: "8px 12px",
     borderRadius: "8px",
     border: "1px solid #e2e8f0",
-    background: "#fafafa",
-    transition: "all 0.3s ease"
-  },
-  discountInputField: {
-    width: "100%",
-    padding: "8px 0",
-    border: "none",
     fontSize: "13px",
     color: "#1e293b",
     outline: "none",
-    background: "transparent"
+    transition: "all 0.3s ease",
+    boxSizing: "border-box",
+    background: "#fafafa",
+    cursor: "pointer",
+    appearance: "auto"
   },
   errorMsg: {
     display: "flex",
