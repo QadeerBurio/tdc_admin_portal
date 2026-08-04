@@ -70,6 +70,56 @@ import appScreenshot3 from "../../src/assets/screen3.png";
 import OfferImagesGallery from "./OfferImagesGallery";
 import HomeReviews from "./roles/HomeReviews";
 import UniversitiesSection from "./roles/UniversitiesSection";
+
+// ── Counter Component ──────────────────────────────────────────────────────
+const AnimatedCounter = ({ target, duration = 2000, suffix = "" }) => {
+  const [count, setCount] = useState(0);
+  const counterRef = useRef(null);
+  const isInView = useInView(counterRef, { once: true, amount: 0.5 });
+  const [hasAnimated, setHasAnimated] = useState(false);
+
+  useEffect(() => {
+    if (isInView && !hasAnimated) {
+      setHasAnimated(true);
+      let startTime = null;
+      const startValue = 0;
+      const endValue = target;
+
+      const animateCount = (timestamp) => {
+        if (!startTime) startTime = timestamp;
+        const progress = Math.min((timestamp - startTime) / duration, 1);
+        // Ease out cubic
+        const eased = 1 - Math.pow(1 - progress, 3);
+        const current = Math.floor(eased * endValue);
+        setCount(current);
+
+        if (progress < 1) {
+          requestAnimationFrame(animateCount);
+        } else {
+          setCount(endValue);
+        }
+      };
+
+      requestAnimationFrame(animateCount);
+    }
+  }, [isInView, target, duration, hasAnimated]);
+
+  // Format number with commas for large numbers
+  const formatNumber = (num) => {
+    if (num >= 1000) {
+      return num.toLocaleString();
+    }
+    return num;
+  };
+
+  return (
+    <span ref={counterRef} className="counter-number">
+      {formatNumber(count)}
+      {suffix}
+    </span>
+  );
+};
+
 const Landing = () => {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
@@ -325,7 +375,6 @@ const Landing = () => {
     { name: "Honey", logo: Honey },
     { name: "leadsnotify", logo: leadsnotify },
     { name: "peng", logo: peng },
-    
   ];
 
   return (
@@ -337,7 +386,7 @@ const Landing = () => {
             className="nav-logo"
             onClick={() => scrollToSection(sectionRefs.hero)}
           >
-            <span className="logo">tdc</span>
+            <span className="logo" style={{ fontSize: 30 }}>tdc</span>
             <span className="logo-suffix">.</span>
           </div>
 
@@ -394,6 +443,26 @@ const Landing = () => {
               }}
             >
               Contact
+            </a>
+            <a
+              href="/brands"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/brands");
+                setMobileMenuOpen(false);
+              }}
+            >
+              Register As Brand
+            </a>
+            <a
+              href="/company_profile"
+              onClick={(e) => {
+                e.preventDefault();
+                navigate("/company_profile");
+                setMobileMenuOpen(false);
+              }}
+            >
+              Register As Company
             </a>
             <div className="nav-actions">
               <button className="nav-login-btn" onClick={handleLoginClick}>
@@ -462,10 +531,10 @@ const Landing = () => {
                 animate={isVisible.hero ? "visible" : "hidden"}
               >
                 {[
-                  { number: "50,000+", label: "Active Students" },
-                  { number: "50+", label: "Partner Companies" },
-                  { number: "100+", label: "Trusted Brands" },
-                  { number: "12+", label: "Universities" },
+                  { number: 50000, label: "Active Students", suffix: "+" },
+                  { number: 50, label: "Partner Companies", suffix: "+" },
+                  { number: 100, label: "Trusted Brands", suffix: "+" },
+                  { number: 12, label: "Universities", suffix: "+" },
                 ].map((stat, index) => (
                   <motion.div
                     key={index}
@@ -473,7 +542,9 @@ const Landing = () => {
                     variants={itemVariants}
                     custom={index}
                   >
-                    <span className="stat-number">{stat.number}</span>
+                    <span className="stat-number">
+                      <AnimatedCounter target={stat.number} suffix={stat.suffix} />
+                    </span>
                     <span className="stat-label">{stat.label}</span>
                   </motion.div>
                 ))}
@@ -494,7 +565,7 @@ const Landing = () => {
               <div className="features-grid-container">
                 <div className="features-grid-header">
                   <span className="features-badge">✨ App Features</span>
-                  <h3>Everything You Need in One App</h3>
+                  <h4>Everything You Need in One App</h4>
                 </div>
                 <div className="app-features-grid">
                   {appFeatures.map((feature, index) => {
@@ -539,15 +610,6 @@ const Landing = () => {
                       </motion.div>
                     );
                   })}
-                </div>
-                <div className="features-grid-footer">
-                  <span className="footer-tag">🌟 200+ Exclusive Deals</span>
-                  <span className="footer-tag">
-                    🎓 12+ Partner Universities
-                  </span>
-                  <span className="footer-tag">
-                    📱 Available on iOS & Android
-                  </span>
                 </div>
               </div>
             </motion.div>
@@ -926,19 +988,27 @@ const Landing = () => {
                 custom={1}
               >
                 <div className="about-stat-card">
-                  <span className="about-stat-number">50,000+</span>
+                  <span className="about-stat-number">
+                    <AnimatedCounter target={50000} suffix="+" />
+                  </span>
                   <span className="about-stat-label">Active Students</span>
                 </div>
                 <div className="about-stat-card">
-                  <span className="about-stat-number">50+</span>
+                  <span className="about-stat-number">
+                    <AnimatedCounter target={50} suffix="+" />
+                  </span>
                   <span className="about-stat-label">Partner Companies</span>
                 </div>
                 <div className="about-stat-card">
-                  <span className="about-stat-number">100+</span>
+                  <span className="about-stat-number">
+                    <AnimatedCounter target={100} suffix="+" />
+                  </span>
                   <span className="about-stat-label">Trusted Brands</span>
                 </div>
                 <div className="about-stat-card">
-                  <span className="about-stat-number">12+</span>
+                  <span className="about-stat-number">
+                    <AnimatedCounter target={12} suffix="+" />
+                  </span>
                   <span className="about-stat-label">Universities</span>
                 </div>
               </motion.div>
@@ -979,68 +1049,68 @@ const Landing = () => {
         </div>
       </section>
 
-     {/* COMPANIES & BRANDS COLLABORATION SECTION */}
-<section className="brands-collab-section">
-  <div className="brands-collab-bg-effects">
-    <div className="brands-collab-half-white-bg"></div>
-    <div className="brands-collab-digital-grid"></div>
-    <div className="brands-collab-radial-spotlight"></div>
-  </div>
+      {/* COMPANIES & BRANDS COLLABORATION SECTION */}
+      <section className="brands-collab-section">
+        <div className="brands-collab-bg-effects">
+          <div className="brands-collab-half-white-bg"></div>
+          <div className="brands-collab-digital-grid"></div>
+          <div className="brands-collab-radial-spotlight"></div>
+        </div>
 
-  <div className="container">
-    <motion.div
-      className="brands-collab-content"
-      initial={{ opacity: 0, y: 40 }}
-      whileInView={{ opacity: 1, y: 0 }}
-      viewport={{ once: true }}
-      transition={{ duration: 0.7 }}
-    >
-      <motion.div
-        className="brands-collab-header"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        viewport={{ once: true }}
-        transition={{ delay: 0.1, duration: 0.6 }}
-      >
-        <motion.span
-          className="brands-collab-badge"
-          initial={{ opacity: 0, scale: 0.8 }}
-          whileInView={{ opacity: 1, scale: 1 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.2, duration: 0.4 }}
-        >
-          <span className="badge-icon"></span> COMPANIES & BRANDS
-        </motion.span>
+        <div className="container">
+          <motion.div
+            className="brands-collab-content"
+            initial={{ opacity: 0, y: 40 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.7 }}
+          >
+            <motion.div
+              className="brands-collab-header"
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1, duration: 0.6 }}
+            >
+              <motion.span
+                className="brands-collab-badge"
+                initial={{ opacity: 0, scale: 0.8 }}
+                whileInView={{ opacity: 1, scale: 1 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.2, duration: 0.4 }}
+              >
+                <span className="badge-icon"></span> COMPANIES & BRANDS
+              </motion.span>
 
-        <motion.h2
-          className="brands-collab-headline"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.3, duration: 0.6 }}
-        >
-          Trusted by{" "}
-          <span className="highlight-text">Industry Leaders</span>
-        </motion.h2>
+              <motion.h2
+                className="brands-collab-headline"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.3, duration: 0.6 }}
+              >
+                Trusted by{" "}
+                <span className="highlight-text">Industry Leaders</span>
+              </motion.h2>
 
-        <motion.p
-          className="brands-collab-subtext"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          viewport={{ once: true }}
-          transition={{ delay: 0.4, duration: 0.6 }}
-        >
-          Partnering with top companies and brands to create meaningful
-          connections with students
-        </motion.p>
-      </motion.div>
+              <motion.p
+                className="brands-collab-subtext"
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true }}
+                transition={{ delay: 0.4, duration: 0.6 }}
+              >
+                Partnering with top companies and brands to create meaningful
+                connections with students
+              </motion.p>
+            </motion.div>
 
-      <OfferImagesGallery/>
-    </motion.div>
-  </div>
-</section>
-<UniversitiesSection/>
-<HomeReviews/>
+            <OfferImagesGallery />
+          </motion.div>
+        </div>
+      </section>
+      <UniversitiesSection />
+      <HomeReviews />
       {/* CONTACT US SECTION */}
       <section
         ref={sectionRefs.contact}
@@ -1141,7 +1211,7 @@ const Landing = () => {
                 <div className="contact-details-card">
                   <div className="contact-map">
                     <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2858.069255290672!2d67.066767!3d24.791769799999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33cebff2f4c39%3A0xd0b467e3ee81f4a7!2sThe%20Deft%20Crew-Digital%20Marketing%20Agency%20%7C%20Social%20Media%20Marketing%20%26%20Influencer%20Agency!5e1!3m2!1sen!2s!4v1784106864269!5m2!1sen!2s" width="600" height="450" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="strict-origin-when-cross-origin"
+                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2858.069255290672!2d67.066767!3d24.791769799999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33cebff2f4c39%3A0xd0b467e3ee81f4a7!2sThe%20Deft%20Crew-Digital%20Marketing%20Agency%20%7C%20Social%20Media%20Marketing%20%26%20Influencer%20Agency!5e1!3m2!1sen!2s!4v1784106864269!5m2!1sen!2s"
                       width="100%"
                       height="500"
                       style={{ border: 0, borderRadius: "12px" }}
@@ -1249,7 +1319,7 @@ const Landing = () => {
               </motion.a>
             </motion.div>
 
-            {/* Optional: App Screenshots Preview */}
+            {/* App Screenshots Preview */}
             <motion.div
               className="app-screenshots"
               initial={{ opacity: 0, y: 20 }}
@@ -1257,45 +1327,36 @@ const Landing = () => {
               viewport={{ once: true }}
               transition={{ delay: 0.4, duration: 0.6 }}
             >
-              {/* App Screenshots Preview with Images */}
-              <motion.div
-                className="app-screenshots"
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true }}
-                transition={{ delay: 0.4, duration: 0.6 }}
-              >
-                <div className="app-screenshot">
-                  <img
-                    src={appScreenshot1}
-                    alt="App Screenshot 1"
-                    className="app-screenshot-img"
-                  />
-                  <div className="app-screenshot-overlay">
-                    <span>Home</span>
-                  </div>
+              <div className="app-screenshot">
+                <img
+                  src={appScreenshot1}
+                  alt="App Screenshot 1"
+                  className="app-screenshot-img"
+                />
+                <div className="app-screenshot-overlay">
+                  <span>Home</span>
                 </div>
-                <div className="app-screenshot">
-                  <img
-                    src={appScreenshot2}
-                    alt="App Screenshot 2"
-                    className="app-screenshot-img"
-                  />
-                  <div className="app-screenshot-overlay">
-                    <span>Features</span>
-                  </div>
+              </div>
+              <div className="app-screenshot">
+                <img
+                  src={appScreenshot2}
+                  alt="App Screenshot 2"
+                  className="app-screenshot-img"
+                />
+                <div className="app-screenshot-overlay">
+                  <span>Features</span>
                 </div>
-                <div className="app-screenshot">
-                  <img
-                    src={appScreenshot3}
-                    alt="App Screenshot 3"
-                    className="app-screenshot-img"
-                  />
-                  <div className="app-screenshot-overlay">
-                    <span>Profile</span>
-                  </div>
+              </div>
+              <div className="app-screenshot">
+                <img
+                  src={appScreenshot3}
+                  alt="App Screenshot 3"
+                  className="app-screenshot-img"
+                />
+                <div className="app-screenshot-overlay">
+                  <span>Profile</span>
                 </div>
-              </motion.div>
+              </div>
             </motion.div>
           </motion.div>
         </div>
@@ -1412,7 +1473,6 @@ const Landing = () => {
                 >
                   <FaLinkedinIn />
                 </a>
-                
                 <a
                   href="https://www.facebook.com/share/1CijYDto1b/"
                   target="_blank"
@@ -1431,7 +1491,6 @@ const Landing = () => {
                 >
                   <FaInstagram />
                 </a>
-                
               </div>
             </div>
 
@@ -1507,7 +1566,6 @@ const Landing = () => {
               <span className="footer-copyright-brand">The Deft Crew</span>. All
               rights reserved.
             </p>
-            
           </div>
         </div>
       </footer>

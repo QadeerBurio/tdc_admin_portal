@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import {
@@ -21,8 +21,10 @@ import {
   FaClock,
   FaBuilding,
   FaExclamationTriangle,
+  FaSignOutAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
+import { AuthContext } from "../context/AuthContext"; // Adjust the import path as needed
 
 const API_BASE_URL = "https://the-deft-crew-production.up.railway.app/api/offers";
 const CATEGORIES = [
@@ -51,7 +53,10 @@ const CATEGORIES = [
 
 // Discount policy constants
 const MIN_DISCOUNT = 15;
-const MAX_DISCOUNT = 50;
+const MAX_DISCOUNT = 60;
+
+// Discount percentage options
+const DISCOUNT_OPTIONS = [15, 20, 25, 30, 35, 40, 45, 50, 60];
 
 const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the Offers section.
 2. Browse Brand and select the offer you want.
@@ -63,6 +68,7 @@ const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the
 
 export default function Discount({ onOfferCreated }) {
   const navigate = useNavigate();
+  const { logout } = useContext(AuthContext); // Use AuthContext for logout
   
   const [form, setForm] = useState({
     title: "",
@@ -83,6 +89,12 @@ export default function Discount({ onOfferCreated }) {
   const [errors, setErrors] = useState({});
   const [focusedField, setFocusedField] = useState(null);
   const [showErrorSummary, setShowErrorSummary] = useState(false);
+
+  // Logout handler using AuthContext
+  const handleLogout = () => {
+    // Call the logout function from AuthContext
+    logout();
+  };
 
   const validateForm = () => {
     const newErrors = {};
@@ -107,7 +119,7 @@ export default function Discount({ onOfferCreated }) {
     } else {
       const discount = parseInt(form.discountPercentage);
       if (isNaN(discount)) {
-        newErrors.discountPercentage = "Please enter a valid number";
+        newErrors.discountPercentage = "Please select a valid discount percentage";
         hasError = true;
       } else if (discount < MIN_DISCOUNT) {
         newErrors.discountPercentage = `Discount must be at least ${MIN_DISCOUNT}% (Current: ${discount}%)`;
@@ -348,9 +360,26 @@ export default function Discount({ onOfferCreated }) {
             <p style={styles.subTitle}>Launch a student discount in minutes</p>
           </div>
         </div>
-        <div style={styles.headerBadge}>
-          <FaShieldAlt size={14} />
-          <span>Secure</span>
+        <div style={styles.headerRight}>
+          <div style={styles.headerBadge}>
+            <FaShieldAlt size={14} />
+            <span>Secure</span>
+          </div>
+          <button 
+            style={styles.logoutBtn} 
+            onClick={handleLogout}
+            onMouseEnter={(e) => {
+              e.currentTarget.style.backgroundColor = '#dc2626';
+              e.currentTarget.style.transform = 'scale(1.02)';
+            }}
+            onMouseLeave={(e) => {
+              e.currentTarget.style.backgroundColor = '#ef4444';
+              e.currentTarget.style.transform = 'scale(1)';
+            }}
+          >
+            <FaSignOutAlt size={14} />
+            <span>Logout</span>
+          </button>
         </div>
       </div>
 
@@ -468,27 +497,26 @@ export default function Discount({ onOfferCreated }) {
               <label style={styles.label}>
                 Discount % <span style={styles.required}>*</span>
               </label>
-              <div style={styles.discountWrapper}>
-                <input
-                  type="number"
-                  style={{
-                    ...styles.input,
-                    borderColor: errors.discountPercentage ? '#ef4444' : isFocused('discount') ? '#f59e0b' : '#e2e8f0',
-                  }}
-                  placeholder={`${MIN_DISCOUNT}-${MAX_DISCOUNT}`}
-                  value={form.discountPercentage}
-                  min={MIN_DISCOUNT}
-                  max={MAX_DISCOUNT}
-                  onFocus={() => setFocusedField('discount')}
-                  onBlur={() => setFocusedField(null)}
-                  onChange={(e) => handleInputChange("discountPercentage", e.target.value)}
-                />
-                <span style={styles.discountSuffix}>%</span>
-              </div>
+              <select
+                style={{
+                  ...styles.select,
+                  borderColor: errors.discountPercentage ? '#ef4444' : isFocused('discount') ? '#f59e0b' : '#e2e8f0',
+                  paddingRight: "30px",
+                }}
+                value={form.discountPercentage}
+                onFocus={() => setFocusedField('discount')}
+                onBlur={() => setFocusedField(null)}
+                onChange={(e) => handleInputChange("discountPercentage", e.target.value)}
+              >
+                <option value="">Select %</option>
+                {DISCOUNT_OPTIONS.map((value) => (
+                  <option key={value} value={value}>{value}%</option>
+                ))}
+              </select>
               <div style={styles.discountPolicy}>
                 <span style={styles.policyIcon}>ℹ️</span>
                 <span style={styles.policyText}>
-                  Must be between <strong>{MIN_DISCOUNT}%</strong> and <strong>{MAX_DISCOUNT}%</strong>
+                  Must <strong>{MIN_DISCOUNT}%</strong> to <strong>{MAX_DISCOUNT}%</strong>
                 </span>
               </div>
               {errors.discountPercentage && <p style={styles.errorText}>{errors.discountPercentage}</p>}
@@ -619,6 +647,7 @@ export default function Discount({ onOfferCreated }) {
             <ul style={styles.policyCardList}>
               <li>Minimum discount: <strong>{MIN_DISCOUNT}%</strong></li>
               <li>Maximum discount: <strong>{MAX_DISCOUNT}%</strong></li>
+              <li>Available options: 15%, 20%, 25%, 30%, 35%, 40%, 45%, 50%, 60%</li>
               <li>Offers must provide meaningful student savings</li>
               <li>All discounts are verified before publishing</li>
             </ul>
@@ -672,6 +701,13 @@ export default function Discount({ onOfferCreated }) {
             0%, 100% { transform: translateX(0); }
             25% { transform: translateX(-6px); }
             75% { transform: translateX(6px); }
+          }
+          .logout-btn {
+            transition: all 0.2s ease !important;
+          }
+          .logout-btn:hover {
+            background-color: #dc2626 !important;
+            transform: scale(1.02) !important;
           }
         `}
       </style>
@@ -778,11 +814,18 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
+    flexWrap: "wrap",
+    gap: "10px",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
     gap: "14px",
+  },
+  headerRight: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
   },
   headerIcon: {
     width: "36px",
@@ -816,6 +859,20 @@ const styles = {
     background: "#f1f5f9",
     padding: "4px 12px",
     borderRadius: "20px",
+  },
+  logoutBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "6px 14px",
+    background: "#ef4444",
+    color: "#ffffff",
+    border: "none",
+    borderRadius: "8px",
+    fontSize: "13px",
+    fontWeight: "500",
+    transition: "all 0.2s ease",
+    cursor: "pointer",
   },
   progressContainer: {
     padding: "12px 28px",
@@ -954,7 +1011,7 @@ const styles = {
     fontSize: "12px",
   },
   policyText: {
-    fontSize: "12px",
+    fontSize: "8px",
     color: "#475569",
   },
   checkboxGroup: {
@@ -1165,7 +1222,7 @@ const styles = {
   },
 };
 
-// Media query styles
+// Add responsive styles
 const styleSheet = document.createElement("style");
 styleSheet.textContent = `
   @media (max-width: 768px) {
@@ -1179,6 +1236,10 @@ styleSheet.textContent = `
     .header {
       padding: 16px 20px !important;
     }
+    .headerRight {
+      width: 100% !important;
+      justify-content: flex-end !important;
+    }
     .headerBadge {
       display: none !important;
     }
@@ -1190,6 +1251,9 @@ styleSheet.textContent = `
     }
     .errorBanner {
       margin: 0 16px !important;
+    }
+    select {
+      font-size: 14px !important;
     }
   }
   @media (max-width: 480px) {
@@ -1219,10 +1283,31 @@ styleSheet.textContent = `
       flex-direction: column !important;
     }
     .errorBanner {
-      margin: 0 12px !important;
+      margin: 0 12px !important; 
     }
     .errorBannerContent {
       flex-wrap: wrap !important;
+    }
+    .headerBadge {
+      display: none !important;
+    }
+    .logoutBtn {
+      padding: 5px 10px !important;
+      font-size: 12px !important;
+    }
+    .logoutBtn span {
+      display: none !important;
+    }
+    .headerRight {
+      gap: 6px !important;
+    }
+    select {
+      font-size: 13px !important;
+      padding: 8px 10px !important;
+    }
+    .discountPolicy {
+      font-size: 11px !important;
+      padding: 3px 8px !important;
     }
   }
 `;

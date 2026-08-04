@@ -189,7 +189,7 @@ export default function SignIn() {
 
             <div className="signup-redirect">
               <p>
-                New brand?{" "}
+                New Account?{" "}
                 <span 
                   className="signup-link" 
                   onClick={() => navigate("/signup")}

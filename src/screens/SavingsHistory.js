@@ -31,7 +31,6 @@ const SavingsHistory = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [brandStats, setBrandStats] = useState({
     totalRevenue: 0,
-    totalSavings: 0,
     totalTransactions: 0,
     averageDiscount: 0,
     topPerformingOffer: "",
@@ -97,7 +96,6 @@ const SavingsHistory = () => {
     if (!data || data.length === 0) {
       setBrandStats({
         totalRevenue: 0,
-        totalSavings: 0,
         totalTransactions: 0,
         averageDiscount: 0,
         topPerformingOffer: "No data",
@@ -106,9 +104,8 @@ const SavingsHistory = () => {
     }
 
     const totalRevenue = data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
-    const totalSavings = data.reduce((acc, curr) => acc + curr.saved, 0);
     const totalTransactions = data.length;
-    const averageDiscount = totalTransactions > 0 ? (totalSavings / totalTransactions) : 0;
+    const averageDiscount = totalTransactions > 0 ? (data.reduce((acc, curr) => acc + curr.saved, 0) / totalTransactions) : 0;
 
     const offerCounts = {};
     data.forEach(item => {
@@ -125,7 +122,6 @@ const SavingsHistory = () => {
 
     setBrandStats({
       totalRevenue,
-      totalSavings,
       totalTransactions,
       averageDiscount,
       topPerformingOffer: topOffer,
@@ -208,15 +204,6 @@ const SavingsHistory = () => {
           <div style={styles.statContent}>
             <span style={styles.statLabel}>Total Revenue</span>
             <h3 style={{...styles.statValue, color: '#10b981'}}>₨ {brandStats.totalRevenue.toLocaleString()}</h3>
-          </div>
-        </div>
-        <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#fef3c7'}}>
-            <FaWallet color="#f59e0b" size={24} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={styles.statLabel}>Total Savings</span>
-            <h3 style={{...styles.statValue, color: '#f59e0b'}}>₨ {brandStats.totalSavings.toLocaleString()}</h3>
           </div>
         </div>
         <div className="stat-card" style={styles.statCard}>
@@ -334,11 +321,11 @@ const SavingsHistory = () => {
                   </td>
                 </tr>
               ) : filteredHistory.length === 0 ? (
-                <tr>
+                <tr className="empty-row">
                   <td colSpan="5" style={styles.emptyCell}>
                     <div style={styles.emptyState}>
                       <div style={styles.emptyIcon}>💰</div>
-                      <p style={styles.emptyText}>No transactions found</p>
+                      <p style={styles.emptyText}>No Redemption found</p>
                       <span style={styles.emptySubtext}>Try adjusting your search or date filters</span>
                     </div>
                   </td>
@@ -391,8 +378,6 @@ const SavingsHistory = () => {
           </div>
           <div style={styles.footerRight}>
             <span>Revenue: <strong style={{color: '#10b981'}}>₨ {filteredHistory.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0).toLocaleString()}</strong></span>
-            <span style={styles.footerDivider}>|</span>
-            <span>Savings: <strong style={{color: '#f59e0b'}}>₨ {filteredHistory.reduce((acc, curr) => acc + curr.saved, 0).toLocaleString()}</strong></span>
           </div>
         </div>
       )}
@@ -419,7 +404,6 @@ const SavingsHistory = () => {
         .stat-card:nth-child(2) { animation-delay: 0.1s; }
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.2s; }
-        .stat-card:nth-child(5) { animation-delay: 0.25s; }
         
         .table-row {
           transition: all 0.2s ease;
@@ -510,8 +494,8 @@ const SavingsHistory = () => {
             font-size: 9px !important;
           }
 
-          /* Table becomes card view */
-          table, thead, tbody, th, td, tr {
+          /* Table becomes card view - but NOT for empty state */
+          table, thead, tbody, th, tr {
             display: block;
           }
           
@@ -519,7 +503,9 @@ const SavingsHistory = () => {
             display: none;
           }
           
+          /* Only apply card styles to table rows with data, not empty rows */
           .table-row {
+            display: block !important;
             margin-bottom: 16px;
             border: 1px solid #e2e8f0;
             border-radius: 12px;
@@ -529,7 +515,7 @@ const SavingsHistory = () => {
             opacity: 0;
           }
           
-          td {
+          .table-row td {
             display: flex;
             justify-content: space-between;
             align-items: center;
@@ -539,11 +525,11 @@ const SavingsHistory = () => {
             width: 100% !important;
           }
           
-          td:last-child {
+          .table-row td:last-child {
             border-bottom: none !important;
           }
           
-          td:before {
+          .table-row td:before {
             content: attr(data-label);
             font-weight: 600;
             color: #475569;
@@ -554,20 +540,67 @@ const SavingsHistory = () => {
             margin-right: 12px;
           }
           
-          td > div, td > span {
+          .table-row td > div, .table-row td > span {
             flex-shrink: 0;
           }
           
-          td > div {
+          .table-row td > div {
             justify-content: flex-end !important;
           }
           
-          .studentCell, .offerCell, .dateCell {
+          .table-row .studentCell, 
+          .table-row .offerCell, 
+          .table-row .dateCell {
             justify-content: flex-end !important;
           }
           
-          .savedBadge {
+          .table-row .savedBadge {
             justify-content: flex-end !important;
+          }
+
+          /* Empty row - keep it as block but center the content */
+          .empty-row {
+            display: block !important;
+            width: 100% !important;
+          }
+          
+          .empty-row td {
+            display: block !important;
+            width: 100% !important;
+            text-align: center !important;
+            padding: 50px 20px !important;
+            border: none !important;
+          }
+          
+          .empty-row td:before {
+            display: none !important;
+          }
+          
+          .empty-row .emptyState {
+            display: flex !important;
+            flex-direction: column !important;
+            align-items: center !important;
+            justify-content: center !important;
+            width: 100% !important;
+            text-align: center !important;
+          }
+          
+          .empty-row .emptyIcon {
+            display: block !important;
+            margin: 0 auto 10px auto !important;
+            text-align: center !important;
+          }
+          
+          .empty-row .emptyText {
+            text-align: center !important;
+            width: 100% !important;
+            margin: 0 0 4px 0 !important;
+          }
+          
+          .empty-row .emptySubtext {
+            text-align: center !important;
+            width: 100% !important;
+            display: block !important;
           }
 
           /* Filter bar mobile */
@@ -664,12 +697,12 @@ const SavingsHistory = () => {
             padding: 10px !important;
           }
           
-          td {
+          .table-row td {
             font-size: 12px !important;
             padding: 6px 2px !important;
           }
           
-          td:before {
+          .table-row td:before {
             font-size: 10px !important;
           }
           
@@ -700,6 +733,23 @@ const SavingsHistory = () => {
           
           .footerLeft, .footerRight {
             font-size: 11px !important;
+          }
+          
+          /* Fix for empty state in extra small screens */
+          .empty-row td {
+            padding: 40px 16px !important;
+          }
+          
+          .empty-row .emptyIcon {
+            font-size: 40px !important;
+          }
+          
+          .empty-row .emptyText {
+            font-size: 16px !important;
+          }
+          
+          .empty-row .emptySubtext {
+            font-size: 13px !important;
           }
         }
 
@@ -745,6 +795,22 @@ const SavingsHistory = () => {
           .statIcon svg {
             width: 12px !important;
             height: 12px !important;
+          }
+
+          .empty-row td {
+            padding: 20px 12px !important;
+          }
+          
+          .empty-row .emptyIcon {
+            font-size: 32px !important;
+          }
+          
+          .empty-row .emptyText {
+            font-size: 14px !important;
+          }
+          
+          .empty-row .emptySubtext {
+            font-size: 11px !important;
           }
         }
       `}</style>

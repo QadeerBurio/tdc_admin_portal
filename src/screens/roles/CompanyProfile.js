@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { motion, useInView, AnimatePresence } from 'framer-motion';
 import { 
   FaUser, FaArrowRight, FaBriefcase, FaCalendarCheck, FaFileAlt,
-  FaTrophy, FaGraduationCap, FaSearch, FaFilter, FaCheckCircle,
+  FaTrophy, FaGraduationCap, FaSearch, FaFilter, FaCheckCircle,FaUserGraduate, FaBolt,
   FaUniversity, FaLaptopCode, FaChartLine, FaMinus, FaPlus,
   FaCalendarAlt, FaBuilding, FaUsers, FaRocket, FaShieldAlt,
   FaClock, FaEnvelope, FaPhone, FaMapMarkerAlt, FaLinkedinIn,
@@ -140,7 +140,7 @@ const CompanyProfile = () => {
               Login
             </button>
             <button className="nav-getstarted-btn" onClick={handleGetStarted}>
-              Get Started
+              Get Registered
               <FaArrowRight />
             </button>
           </div>
@@ -188,17 +188,43 @@ const CompanyProfile = () => {
                   whileHover={{ scale: 1.05, boxShadow: '0 20px 50px rgba(229, 182, 62, 0.4)', y: -3 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  Create Your Free Employer Profile
+                  Create Your Company Profile
                   <FaArrowRight />
                 </motion.button>
               </motion.div>
 
-              <motion.div className="hero-micro-copy" variants={itemVariants} custom={4}>
-                <span>Join 50+ leading companies</span>
-                <span className="dot">•</span>
-                <span>Hire for tech, marketing, finance & operations</span>
-                <span className="dot">•</span>
-                <span>Setup takes 2 minutes</span>
+              {/* Hero Micro Copy - Now as Cards/Counters */}
+              <motion.div className="hero-micro-copy-cards" variants={itemVariants} custom={4}>
+                <motion.div 
+                  className="micro-card"
+                  whileHover={{ y: -4, boxShadow: '0 8px 25px rgba(229, 182, 62, 0.12)' }}
+                >
+                  <div className="micro-card-icon">🏢</div>
+                  <div className="micro-card-content">
+                    <span className="micro-card-number">50+</span>
+                    <span className="micro-card-label">Leading Companies</span>
+                  </div>
+                </motion.div>
+                <motion.div 
+                  className="micro-card"
+                  whileHover={{ y: -4, boxShadow: '0 8px 25px rgba(229, 182, 62, 0.12)' }}
+                >
+                  <div className="micro-card-icon">💼</div>
+                  <div className="micro-card-content">
+                    <span className="micro-card-number">4+</span>
+                    <span className="micro-card-label">Hiring Tracks</span>
+                  </div>
+                </motion.div>
+                <motion.div 
+                  className="micro-card"
+                  whileHover={{ y: -4, boxShadow: '0 8px 25px rgba(229, 182, 62, 0.12)' }}
+                >
+                  <div className="micro-card-icon">⏱️</div>
+                  <div className="micro-card-content">
+                    <span className="micro-card-number">2</span>
+                    <span className="micro-card-label">Minute Setup</span>
+                  </div>
+                </motion.div>
               </motion.div>
 
               <motion.div className="hero-trust-badge" variants={itemVariants} custom={5}>
@@ -221,7 +247,7 @@ const CompanyProfile = () => {
                     <span className="dot-yellow"></span>
                     <span className="dot-green"></span>
                   </div>
-                  <span className="dashboard-title">Talent Pipeline</span>
+                  <span className="dashboard-title">The Deft Crew</span>
                   <span className="dashboard-count">12 candidates</span>
                 </div>
 
@@ -239,9 +265,7 @@ const CompanyProfile = () => {
                       transition={{ delay: 0.5 + index * 0.15 }}
                       whileHover={{ scale: 1.02, y: -4, borderColor: '#E5B63E' }}
                     >
-                      <div className="candidate-avatar">
-                        <span>{candidate.name.charAt(0)}</span>
-                      </div>
+                     
                       <div className="candidate-info">
                         <h4>{candidate.name}</h4>
                         <p className="candidate-details">
@@ -249,10 +273,7 @@ const CompanyProfile = () => {
                         </p>
                         <span className="candidate-badge">{candidate.badge}</span>
                       </div>
-                      <button className="candidate-action">
-                        <FaCalendarCheck />
-                        Schedule Interview
-                      </button>
+                      
                     </motion.div>
                   ))}
                 </div>
@@ -357,22 +378,40 @@ const CompanyProfile = () => {
 
             <motion.div className="solution-features" variants={staggerVariants} initial="hidden" animate={isVisible.solution ? "visible" : "hidden"}>
               {[
-                {
-                  icon: FaSearch,
-                  title: 'Pre-Market Scouting',
-                  description: 'Interview and extend offers to exceptional final-year students before they step foot into the open job market. Secure tomorrow\'s leaders today at optimum entry-level packages.'
-                },
-                {
-                  icon: FaFilter,
-                  title: 'Zero Noise, 100% Signal',
-                  description: 'Filter candidates explicitly by university, specific GPA thresholds, key technical skill sets, and verified final-year graduation projects.'
-                },
-                {
-                  icon: FaCheckCircle,
-                  title: 'Vetted and Ready to Deploy',
-                  description: 'We don\'t just host resumes; we look for candidates equipped with practical, hands-on capabilities, saving you weeks of basic onboarding and training time.'
-                }
-              ].map((item, index) => {
+  {
+    icon: FaSearch,
+    title: 'Pre-Market Scouting',
+    description: 'Interview and extend offers to exceptional final-year students before they step foot into the open job market. Secure tomorrow\'s leaders today at optimum entry-level packages.'
+  },
+  {
+    icon: FaFilter,
+    title: 'Zero Noise, 100% Signal',
+    description: 'Filter candidates explicitly by university, specific GPA thresholds, key technical skill sets, and verified final-year graduation projects.'
+  },
+  {
+    icon: FaCheckCircle,
+    title: 'Vetted and Ready to Deploy',
+    description: 'We don\'t just host resumes; we connect you with candidates who possess practical, hands-on experience, reducing onboarding time and accelerating productivity.'
+  },
+
+  // New Features
+  {
+    icon: FaUserGraduate,
+    title: 'Verified Student Profiles',
+    description: 'Every candidate profile is verified through their university details, academic records, and graduation status, ensuring authentic and trustworthy hiring.'
+  },
+  {
+    icon: FaBolt,
+    title: 'Fast Hiring Pipeline',
+    description: 'Shortlist, connect, and schedule interviews within minutes using our streamlined recruitment workflow, reducing your overall hiring cycle.'
+  },
+  
+  {
+    icon: FaHandshake,
+    title: 'Direct Employer Connection',
+    description: 'Communicate directly with shortlisted candidates, manage interview invitations, and build long-term relationships with emerging talent from leading universities.'
+  }
+].map((item, index) => {
                 const IconComponent = item.icon;
                 return (
                   <motion.div key={index} className="solution-feature" variants={itemVariants} custom={index}>

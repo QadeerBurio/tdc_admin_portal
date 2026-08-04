@@ -786,7 +786,7 @@ body {
   display: flex;
   align-items: flex-start;
   gap: 0.8rem;
-  padding: 1rem;
+  padding: 0.6rem;
   border-radius: var(--border-radius-md);
   background: rgba(255, 255, 255, 0.9);
   border: 1px solid rgba(0, 0, 0, 0.04);
@@ -850,29 +850,14 @@ body {
   opacity: 0.2;
 }
 
-.features-grid-footer {
-  display: flex;
-  justify-content: center;
-  gap: 1rem;
-  margin-top: 1.2rem;
-  padding-top: 1rem;
-  border-top: 1px solid rgba(0, 0, 0, 0.04);
-  flex-wrap: wrap;
-}
 
-.features-grid-footer .footer-tag {
-  font-size: 0.6rem;
-  color: var(--text-muted);
-  background: rgba(0, 0, 0, 0.03);
-  padding: 0.2rem 0.8rem;
-  border-radius: 20px;
-  font-weight: 500;
-}
+
+
 
 /* ── Features Section ──────────────────────────────────────────────────── */
 .features-section {
   position: relative;
-  padding: 6rem 0;
+  padding: 2rem 0;
   background: var(--bg-light);
   overflow: hidden;
 }
@@ -1055,7 +1040,7 @@ body {
 /* ── Collaborate Section ────────────────────────────────────────────────── */
 .collaborate-section {
   position: relative;
-  padding: 6rem 0;
+  padding: 2rem 0;
   background: var(--bg-white);
   overflow: hidden;
 }
@@ -1361,7 +1346,7 @@ body {
 /* About Section Container */
 .about-section {
   position: relative;
-  padding: 6rem 0;
+  padding: 2rem 0;
   background: #f8f9fa;
   overflow: hidden;
 }
@@ -4883,4 +4868,99 @@ body {
   .about-headline {
     font-size: 1.8rem;
   }
+}
+/* ── Counter Styles ──────────────────────────────────────────────────────── */
+
+.counter-number {
+  display: inline-block;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.02em;
+}
+
+/* ── Hero Stats Counter ──────────────────────────────────────────────────── */
+.hero-stat .stat-number .counter-number {
+  font-size: 2rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -0.5px;
+}
+
+/* ── About Stats Counter ─────────────────────────────────────────────────── */
+.about-stat-card .about-stat-number .counter-number {
+  font-size: 2.8rem;
+  font-weight: 800;
+  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  letter-spacing: -1px;
+  line-height: 1;
+}
+
+/* ── Counter Pulse Animation ────────────────────────────────────────────── */
+.counter-number.animated {
+  animation: counterPop 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes counterPop {
+  0% { transform: scale(0.8); opacity: 0.5; }
+  50% { transform: scale(1.1); }
+  100% { transform: scale(1); opacity: 1; }
+}
+
+/* ── Responsive Counter ──────────────────────────────────────────────────── */
+@media (max-width: 768px) {
+  .hero-stat .stat-number .counter-number {
+    font-size: 1.6rem;
+  }
+  
+  .about-stat-card .about-stat-number .counter-number {
+    font-size: 2.2rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .hero-stat .stat-number .counter-number {
+    font-size: 1.4rem;
+  }
+  
+  .about-stat-card .about-stat-number .counter-number {
+    font-size: 2rem;
+  }
+}
+
+/* ── Stat Card Variant Colors ───────────────────────────────────────────── */
+/* Card 1 - Gold themed */
+.about-stat-card:nth-child(1) .about-stat-number .counter-number {
+  background: linear-gradient(135deg, #E5B63E, #f0c84a);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card 2 - Blue themed */
+.about-stat-card:nth-child(2) .about-stat-number .counter-number {
+  background: linear-gradient(135deg, #4a90d9, #357abd);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card 3 - Green themed */
+.about-stat-card:nth-child(3) .about-stat-number .counter-number {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* Card 4 - Purple themed */
+.about-stat-card:nth-child(4) .about-stat-number .counter-number {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
 }

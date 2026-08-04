@@ -70,7 +70,7 @@ export default function Home() {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [activeTab, setActiveTab] = useState("home");
+  const [activeTab, setActiveTab] = useState("verifyClaim");
   const [stats, setStats] = useState({
     totalLeads: 0,
     completedRedemptions: 0,
@@ -1904,7 +1904,7 @@ const styles = {
     background: "#ffffff",
     borderRadius: "24px",
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-    padding: "24px 15px",
+    padding: "10px 5px",
     overflowY: "auto",
     display: "flex",
     flexDirection: "column",

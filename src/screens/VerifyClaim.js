@@ -30,7 +30,7 @@ import QRCode from "qrcode";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('verify');
+  const [activeTab, setActiveTab] = useState('students'); // Changed default to 'students'
   const [showStudentAlert, setShowStudentAlert] = useState(false);
   const [scannedStudent, setScannedStudent] = useState(null);
   const [alertMessage, setAlertMessage] = useState('');
@@ -583,11 +583,12 @@ const VerifyClaim = () => {
     }
   };
 
+  // Render Scanned Students Tab (Now First Tab)
   const renderScannedStudents = () => (
     <div className="students-list-container">
       <div className="students-list-header">
         <FaQrCodeScan className="icon-orange" />
-        <h4 className="students-list-title">QR Scanned Students</h4>
+        <h4 className="students-list-title"> Verified Students</h4>
         <span className="students-count">{scannedStudentsList.length} students</span>
       </div>
 
@@ -647,6 +648,7 @@ const VerifyClaim = () => {
     </div>
   );
 
+  // Render Payment Modal
   const renderPaymentModal = () => {
     if (!showPaymentModal || !selectedStudent) return null;
 
@@ -829,13 +831,15 @@ const VerifyClaim = () => {
 
       {isBrand && (
         <div className="tab-container">
+          {/* Tab 1: Scanned Students (Active by default) */}
           <button
-            className={`tab-btn ${activeTab === 'verify' ? 'active' : ''}`}
-            onClick={() => handleTabChange('verify')}
+            className={`tab-btn ${activeTab === 'students' ? 'active' : ''}`}
+            onClick={() => handleTabChange('students')}
           >
-            <FaUserGraduate />
-            <span>Verify Student</span>
+            <FaUsers />
+            <span>Verified Students</span>
           </button>
+          {/* Tab 2: QR Generator */}
           <button
             className={`tab-btn ${activeTab === 'qr-generator' ? 'active' : ''}`}
             onClick={() => handleTabChange('qr-generator')}
@@ -843,16 +847,21 @@ const VerifyClaim = () => {
             <FaQrcode />
             <span>QR Generator</span>
           </button>
+          {/* Tab 3: Verify Student */}
           <button
-            className={`tab-btn ${activeTab === 'students' ? 'active' : ''}`}
-            onClick={() => handleTabChange('students')}
+            className={`tab-btn ${activeTab === 'verify' ? 'active' : ''}`}
+            onClick={() => handleTabChange('verify')}
           >
-            <FaUsers />
-            <span>Scanned Students</span>
+            <FaUserGraduate />
+            <span>Verify Student</span>
           </button>
         </div>
       )}
 
+      {/* Tab 1: Scanned Students (First) */}
+      {activeTab === 'students' && isBrand && renderScannedStudents()}
+
+      {/* Tab 2: QR Generator */}
       {activeTab === 'qr-generator' && isBrand ? (
         <div className="qr-generator-container">
           <div className="qr-header">
@@ -961,8 +970,7 @@ const VerifyClaim = () => {
         </div>
       ) : null}
 
-      {activeTab === 'students' && isBrand && renderScannedStudents()}
-
+      {/* QR Modal */}
       {showQrModal && (
         <div className="qr-modal-overlay" onClick={() => setShowQrModal(false)}>
           <div className="qr-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1013,13 +1021,14 @@ const VerifyClaim = () => {
         </div>
       )}
 
+      {/* Tab 3: Verify Student (Last) */}
       {activeTab === 'verify' && (
         <div className="main-grid">
           {/* Student Details Card */}
           <div className="card animate-card">
             <div className="card-header">
               <FaUserGraduate className="card-header-icon" />
-              <h3 className="card-title">Student Details</h3>
+              <h3 className="card-title">Verify Student Details</h3>
             </div>
 
             <div className="input-group">
@@ -1152,7 +1161,7 @@ const VerifyClaim = () => {
           <div className="card animate-card">
             <div className="card-header">
               <FaEnvelope className="card-header-icon" />
-              <h3 className="card-title">Verification Process</h3>
+              <h3 className="card-title">Verified Redemption</h3>
             </div>
 
             {(!result || result === "not_found") && !processingPayment && !isProcessingScan && (
@@ -1505,7 +1514,7 @@ const VerifyClaim = () => {
         }
 
         .tab-btn.active {
-          background: #1e293b;
+          background: #f9c349;
           color: #fff;
           box-shadow: 0 4px 12px rgba(30,41,59,0.15);
         }

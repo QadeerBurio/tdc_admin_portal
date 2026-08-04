@@ -598,7 +598,7 @@ export default function MyOffers() {
 
 const styles = {
   container: {
-    padding: "20px",
+    padding: "15px",
     background: "#f8fafc",
     minHeight: "100vh",
     fontFamily: "'Inter', -apple-system, sans-serif",
@@ -655,7 +655,7 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "24px",
+    marginBottom: "15px",
     position: "relative",
     zIndex: 1,
     flexWrap: "wrap",

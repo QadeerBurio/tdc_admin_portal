@@ -120,7 +120,7 @@ export default function Signup() {
     const errors = [];
     if (!role) errors.push("Please select a role");
     if (role === "brand" && !formData.brandName.trim()) errors.push("Brand name is required");
-    if (role === "employee" && !formData.fullName.trim()) errors.push("Full name is required");
+    if (role === "employee" && !formData.fullName.trim()) errors.push("Company name is required");
     if (!validateEmail(formData.email)) errors.push("Please enter a valid email");
     if (!validatePhone(formData.phone)) errors.push("Phone must be 11 digits starting with 0");
     if (!validatePassword(formData.password)) errors.push("Password must contain uppercase, lowercase, and number (6+ chars)");
@@ -250,7 +250,7 @@ export default function Signup() {
               <div className={`input-group ${isFieldInvalid(role === "brand" ? 'brandName' : 'fullName') ? 'error' : ''}`}>
                 <label className={focusedField === 'name' ? 'focused' : ''}>
                   <i className="fas fa-user"></i>
-                  {role === "brand" ? "Brand Name" : "Full Name"}
+                  {role === "brand" ? "Brand Name" : "Company Name"}
                   <span className="required-star">*</span>
                 </label>
                 <div className="input-wrapper">

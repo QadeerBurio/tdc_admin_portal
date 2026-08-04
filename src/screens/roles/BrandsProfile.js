@@ -12,6 +12,58 @@ import {
 } from 'react-icons/fa';
 import './BrandsProfile.css';
 
+// Counter Component
+const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2000 }) => {
+  const [count, setCount] = useState(0);
+  const counterRef = useRef(null);
+  const isInView = useInView(counterRef, { once: true, amount: 0.3 });
+
+  useEffect(() => {
+    if (!isInView) return;
+
+    let startTime = null;
+    const startValue = 0;
+    const endValue = typeof target === 'string' ? parseFloat(target.replace(/,/g, '')) : target;
+
+    const animateCount = (timestamp) => {
+      if (!startTime) startTime = timestamp;
+      const progress = Math.min((timestamp - startTime) / duration, 1);
+      
+      // Easing function for smooth animation
+      const easeOutQuart = 1 - Math.pow(1 - progress, 4);
+      const currentValue = startValue + (endValue - startValue) * easeOutQuart;
+      
+      if (typeof target === 'string' && target.includes('+')) {
+        setCount(Math.floor(currentValue));
+      } else {
+        setCount(Math.floor(currentValue));
+      }
+      
+      if (progress < 1) {
+        requestAnimationFrame(animateCount);
+      } else {
+        setCount(endValue);
+      }
+    };
+
+    requestAnimationFrame(animateCount);
+  }, [isInView, target, duration]);
+
+  const formatNumber = (num) => {
+    return num.toLocaleString();
+  };
+
+  return (
+    <span ref={counterRef}>
+      {prefix}
+      {typeof target === 'string' && target.includes('+') 
+        ? `${formatNumber(count)}+` 
+        : formatNumber(count)}
+      {suffix}
+    </span>
+  );
+};
+
 const BrandsProfile = () => {
   const navigate = useNavigate();
   
@@ -88,10 +140,16 @@ const BrandsProfile = () => {
   };
 
   const statsData = [
-    { number: '50,000+', label: 'Active Students' },
-    { number: '0%', label: 'Commission' },
-    { number: '100%', label: 'Free to List' },
+    { number: '50000+', label: 'Active Students' },
+    { number: '0', label: 'Commission', suffix: '%' },
+    { number: '100', label: 'Free to List', suffix: '%' },
     { number: '12+', label: 'Partner Universities' }
+  ];
+
+  const problemStatsData = [
+    { number: '12', label: 'Second Attention Span', suffix: 's' },
+    { number: '89', label: 'Use Ad Blockers', suffix: '%' },
+    { number: '3', label: 'Rising CPMs', suffix: 'x' }
   ];
 
   const howItWorksData = [
@@ -153,7 +211,7 @@ const BrandsProfile = () => {
               Login
             </button>
             <button className="nav-getstarted-btn" onClick={handleGetStarted}>
-              Get Started
+              Get Registered
               <FaArrowRight />
             </button>
           </div>
@@ -252,7 +310,13 @@ const BrandsProfile = () => {
                   variants={itemVariants}
                   custom={index}
                 >
-                  <span className="stat-number">{stat.number}</span>
+                  <span className="stat-number">
+                    <AnimatedCounter 
+                      target={stat.number} 
+                      suffix={stat.suffix || ''} 
+                      duration={2000 + index * 500}
+                    />
+                  </span>
                   <span className="stat-label">{stat.label}</span>
                 </motion.div>
               ))}
@@ -305,24 +369,40 @@ const BrandsProfile = () => {
             </motion.p>
 
             <motion.div 
-              className="problem-stat"
-              variants={itemVariants}
-              custom={3}
+              className="problem-stats-row"
+              variants={staggerVariants}
+              initial="hidden"
+              animate={isVisible.problem ? "visible" : "hidden"}
             >
-              <div className="stat-circle">
-                <span className="stat-number-large">12</span>
-                <span className="stat-label-small">Second Attention Span</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-circle">
-                <span className="stat-number-large">89%</span>
-                <span className="stat-label-small">Use Ad Blockers</span>
-              </div>
-              <div className="stat-divider"></div>
-              <div className="stat-circle">
-                <span className="stat-number-large">3x</span>
-                <span className="stat-label-small">Rising CPMs</span>
-              </div>
+              {problemStatsData.map((stat, index) => (
+                <motion.div 
+                  key={index}
+                  className="problem-stat-item"
+                  variants={itemVariants}
+                  custom={index}
+                  whileHover={{
+                    y: -8,
+                    boxShadow: '0 20px 60px rgba(229, 182, 62, 0.15)',
+                    transition: { type: 'spring', stiffness: 300 }
+                  }}
+                >
+                  <div className="stat-circle-modern">
+                    <span className="stat-number-large">
+                      <AnimatedCounter 
+                        target={stat.number} 
+                        suffix={stat.suffix || ''} 
+                        duration={2000 + index * 400}
+                      />
+                    </span>
+                    <span className="stat-label-small">{stat.label}</span>
+                  </div>
+                  {index < problemStatsData.length - 1 && (
+                    <div className="stat-divider-modern">
+                      <span className="divider-dot"></span>
+                    </div>
+                  )}
+                </motion.div>
+              ))}
             </motion.div>
           </motion.div>
         </div>
@@ -599,7 +679,7 @@ const BrandsProfile = () => {
               </div>
               <div className="trust-item">
                 <FaCheckCircle />
-                <span>Verified Students Only</span>
+                <span>Verified Students</span>
               </div>
             </motion.div>
           </motion.div>
