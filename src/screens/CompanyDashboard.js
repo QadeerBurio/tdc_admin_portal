@@ -839,16 +839,7 @@ const CompanyDashboard = () => {
                   <FaUserCircle size={18} />
                   <span>My Profile</span>
                 </div>
-                <div 
-                  style={styles.dropdownItem}
-                  onClick={() => {
-                    setShowUserMenu(false);
-                    setShowSettingsModal(true);
-                  }}
-                >
-                  <FaCog size={18} />
-                  <span>Settings</span>
-                </div>
+               
                 <div style={styles.dropdownDivider} />
                 <div 
                   style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
