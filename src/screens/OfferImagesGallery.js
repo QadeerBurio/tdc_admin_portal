@@ -158,7 +158,7 @@ const OfferImagesGallery = () => {
       <div className="gallery-header">
         <div className="header-content">
           <span className="header-badge">Companies and Brands</span>
-          <h2 className="gallery-title">Trusted By Industries Leads</h2>
+          <h2 className="gallery-title">Trusted By Industries Brands</h2>
           <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
         </div>
         
