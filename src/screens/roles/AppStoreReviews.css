@@ -675,3 +675,72 @@
     font-size: 0.85rem;
   }
 }
+/* AppStoreReviews.css - Add these styles */
+
+/* ─── Loading Progress ───────────────────────────────────────────── */
+.loading-progress {
+  display: flex;
+  gap: 20px;
+  margin-top: 16px;
+  justify-content: center;
+}
+
+.loading-progress .status {
+  font-size: 0.9rem;
+  padding: 6px 16px;
+  border-radius: 20px;
+  background: rgba(255,255,255,0.1);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255,255,255,0.1);
+}
+
+.loading-progress .status.loading {
+  color: #fbbf24;
+  animation: pulse 1.5s ease-in-out infinite;
+}
+
+.loading-progress .status.done {
+  color: #34d399;
+  background: rgba(52, 211, 153, 0.1);
+}
+
+.loading-progress .status.error {
+  color: #f87171;
+  background: rgba(248, 113, 113, 0.1);
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+
+/* ─── Error State ────────────────────────────────────────────────── */
+.error-state {
+  text-align: center;
+  padding: 40px 20px;
+  background: rgba(248, 113, 113, 0.05);
+  border-radius: 16px;
+  border: 1px solid rgba(248, 113, 113, 0.2);
+}
+
+.error-state p {
+  color: #f87171;
+  font-size: 1rem;
+  margin-bottom: 16px;
+}
+
+.error-state button {
+  background: #000;
+  color: #fff;
+  border: none;
+  padding: 10px 32px;
+  border-radius: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.error-state button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.15);
+}

@@ -59,7 +59,11 @@ import {
   FaUpload,
   FaFileUpload,
   FaCheckDouble,
+  FaBars,
+  FaChevronDown,
+  FaChevronUp,
 } from "react-icons/fa";
+import { motion, AnimatePresence } from "framer-motion";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -74,6 +78,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [activeSection, setActiveSection] = useState("basic");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: "",
     department: "",
@@ -120,6 +127,15 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const token = localStorage.getItem("token");
   const API_URL = "https://the-deft-crew-production.up.railway.app/api/jobs";
   const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetchJobs();
@@ -231,6 +247,27 @@ const AdminJobsManager = ({ userRole, userName }) => {
     setShowApplicationDetailModal(true);
   };
 
+  // ─── FIX: Safe array helpers ──────────────────────────────────────
+  const safeArray = (value) => {
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string') {
+      // If it's a string that might be JSON or comma-separated
+      try {
+        const parsed = JSON.parse(value);
+        return Array.isArray(parsed) ? parsed : [];
+      } catch {
+        return value.split(',').map(s => s.trim()).filter(Boolean);
+      }
+    }
+    return [];
+  };
+
+  const safeJoin = (value, separator = '\n') => {
+    const arr = safeArray(value);
+    return arr.join(separator);
+  };
+
+  // ─── FIX: Reset form with safe defaults ──────────────────────────
   const resetForm = () => {
     setFormData({
       title: "",
@@ -266,6 +303,45 @@ const AdminJobsManager = ({ userRole, userName }) => {
     });
     setSelectedJob(null);
     setActiveSection("basic");
+  };
+
+  // ─── FIX: Edit handler with safe data transformation ─────────────
+  const handleEditJob = (job) => {
+    setSelectedJob(job);
+    setFormData({
+      _id: job._id || "",
+      title: job.title || "",
+      department: job.department || "",
+      category: job.category || "Technology",
+      location: job.location || "",
+      locationType: job.locationType || "On-site",
+      type: job.type || "Full-time",
+      salary: job.salary || "",
+      salaryMin: job.salaryMin || "",
+      salaryMax: job.salaryMax || "",
+      currency: job.currency || "USD",
+      email: job.email || "",
+      description: job.description || "",
+      requirements: safeArray(job.requirements),
+      responsibilities: safeArray(job.responsibilities),
+      benefits: safeArray(job.benefits),
+      experienceLevel: job.experienceLevel || "Mid Level",
+      minExperience: job.minExperience || 0,
+      education: job.education || "Bachelor's Degree",
+      skills: safeArray(job.skills),
+      active: job.active !== undefined ? job.active : true,
+      featured: job.featured || false,
+      urgent: job.urgent || false,
+      applicationDeadline: job.applicationDeadline || "",
+      companyName: job.companyName || "",
+      companyWebsite: job.companyWebsite || "",
+      workSchedule: job.workSchedule || "Monday - Friday, 9AM - 5PM",
+      perks: safeArray(job.perks),
+      teamSize: job.teamSize || "",
+      reportTo: job.reportTo || "",
+      departmentDetails: job.departmentDetails || "",
+    });
+    setShowJobModal(true);
   };
 
   const getStatusBadgeColor = (status) => {
@@ -327,6 +403,54 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const currentItems = jobs.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(jobs.length / itemsPerPage);
 
+  // Mobile Job Card
+  const MobileJobCard = ({ job }) => (
+    <div style={styles.mobileJobCard}>
+      <div style={styles.mobileJobHeader}>
+        <div style={styles.mobileJobTitle}>
+          <strong>{job.title}</strong>
+          <div style={styles.mobileBadgeContainer}>
+            {job.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
+            {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
+          </div>
+        </div>
+        <button style={{ ...styles.statusBtn, background: job.active ? "#10b981" : "#ef4444", padding: "4px 12px", fontSize: "11px" }} onClick={() => handleToggleStatus(job._id)}>
+          {job.active ? "Active" : "Inactive"}
+        </button>
+      </div>
+      
+      <div style={styles.mobileJobDetails}>
+        <div style={styles.mobileJobDetail}>
+          <FaBuilding size={12} /> {job.department}
+        </div>
+        <div style={styles.mobileJobDetail}>
+          {getLocationIcon(job.locationType)} {job.location}
+        </div>
+        <div style={styles.mobileJobDetail}>
+          <span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#dbeafe" : "#f3e8ff", padding: "2px 10px", fontSize: "11px" }}>{job.type}</span>
+        </div>
+        <div style={styles.mobileJobDetail}>
+          <FaUsers size={12} /> {job.totalApplications || 0} applications
+        </div>
+        <div style={styles.mobileJobDetail}>
+          <FaEye size={12} /> {job.views || 0} views
+        </div>
+      </div>
+
+      <div style={styles.mobileJobActions}>
+        <button style={styles.mobileActionBtn} onClick={() => fetchJobApplications(job._id)}>
+          <FaUsers /> View Apps
+        </button>
+        <button style={{ ...styles.mobileActionBtn, background: "#10b981" }} onClick={() => handleEditJob(job)}>
+          <FaEdit /> Edit
+        </button>
+        <button style={{ ...styles.mobileActionBtn, background: "#ef4444" }} onClick={() => handleDeleteJob(job._id)}>
+          <FaTrash /> Delete
+        </button>
+      </div>
+    </div>
+  );
+
   if (loading) return (
     <div style={styles.loadingContainer}>
       <div style={styles.loadingSpinner}><FaSpinner /></div>
@@ -336,209 +460,318 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   return (
     <div style={styles.container}>
-      {/* Animated Header */}
+      {/* Header */}
       <div style={styles.header} className="fade-in">
         <div style={styles.headerLeft}>
           <div style={styles.headerBadge}>
             <span style={styles.headerBadgeIcon}><FaRocket /></span>
             <span style={styles.headerBadgeText}>Hiring Dashboard</span>
           </div>
-          <h1 style={styles.title}>
+          <h1 style={isMobile ? styles.mobileTitle : styles.title}>
             {userRole === "admin" ? "Job Portal Management" : "My Job Postings"}
           </h1>
-          <p style={styles.subtitle}>
+          <p style={isMobile ? styles.mobileSubtitle : styles.subtitle}>
             {userRole === "admin"
-              ? "Manage jobs, review applications, and track hiring metrics in real-time"
-              : `Welcome back, ${userName}! Manage your job postings and review applicants`}
+              ? "Manage jobs, review applications, and track hiring metrics"
+              : `Welcome back, ${userName}! Manage your job postings`}
           </p>
         </div>
-        <button style={styles.createBtn} className="pulse-btn" onClick={() => {
+        <button style={isMobile ? styles.mobileCreateBtn : styles.createBtn} className="pulse-btn" onClick={() => {
           resetForm();
           setShowJobModal(true);
         }}>
-          <FaPlus /> Post New Job
+          <FaPlus /> {isMobile ? "New" : "Post New Job"}
         </button>
       </div>
 
-      {/* Animated Stats Cards */}
+      {/* Stats Grid - Responsive */}
       {stats && (
-        <div style={styles.statsGrid}>
-          <div style={styles.statCard} className="stat-card">
-            <div style={{ ...styles.statIcon, background: "#eff6ff", color: "#3b82f6" }}>
+        <div style={{
+          ...styles.statsGrid,
+          gridTemplateColumns: isMobile 
+            ? "repeat(2, 1fr)" 
+            : isTablet 
+              ? "repeat(2, 1fr)" 
+              : "repeat(4, 1fr)",
+          gap: isMobile ? "8px" : isTablet ? "10px" : "12px",
+        }}>
+          <div style={{
+            ...styles.statCard,
+            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+          }} className="stat-card">
+            <div style={{
+              ...styles.statIcon,
+              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+              background: "#eff6ff",
+              color: "#3b82f6",
+            }}>
               <FaBriefcase />
             </div>
             <div>
-              <h3 style={styles.statValue}>{stats.totalJobs}</h3>
-              <p style={styles.statLabel}>Total Jobs</p>
-              <span style={styles.statTrend}>+{stats.activeJobs} active</span>
+              <h3 style={{
+                ...styles.statValue,
+                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
+              }}>{stats.totalJobs}</h3>
+              <p style={{
+                ...styles.statLabel,
+                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              }}>Total Jobs</p>
+              <span style={{
+                ...styles.statTrend,
+                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
+              }}>+{stats.activeJobs} active</span>
             </div>
           </div>
-          <div style={styles.statCard} className="stat-card">
-            <div style={{ ...styles.statIcon, background: "#f0fdf4", color: "#10b981" }}>
+          <div style={{
+            ...styles.statCard,
+            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+          }} className="stat-card">
+            <div style={{
+              ...styles.statIcon,
+              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+              background: "#f0fdf4",
+              color: "#10b981",
+            }}>
               <FaCheckCircle />
             </div>
             <div>
-              <h3 style={styles.statValue}>{stats.activeJobs}</h3>
-              <p style={styles.statLabel}>Active Jobs</p>
-              <span style={styles.statTrend}>Open positions</span>
+              <h3 style={{
+                ...styles.statValue,
+                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
+              }}>{stats.activeJobs}</h3>
+              <p style={{
+                ...styles.statLabel,
+                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              }}>Active Jobs</p>
+              <span style={{
+                ...styles.statTrend,
+                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
+              }}>Open positions</span>
             </div>
           </div>
-          <div style={styles.statCard} className="stat-card">
-            <div style={{ ...styles.statIcon, background: "#fef3c7", color: "#f59e0b" }}>
+          <div style={{
+            ...styles.statCard,
+            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+          }} className="stat-card">
+            <div style={{
+              ...styles.statIcon,
+              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+              background: "#fef3c7",
+              color: "#f59e0b",
+            }}>
               <FaUsers />
             </div>
             <div>
-              <h3 style={styles.statValue}>{stats.totalApplications}</h3>
-              <p style={styles.statLabel}>Applications</p>
-              <span style={styles.statTrend}>{stats.pendingApplications} pending</span>
+              <h3 style={{
+                ...styles.statValue,
+                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
+              }}>{stats.totalApplications}</h3>
+              <p style={{
+                ...styles.statLabel,
+                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              }}>Applications</p>
+              <span style={{
+                ...styles.statTrend,
+                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
+              }}>{stats.pendingApplications} pending</span>
             </div>
           </div>
-          <div style={styles.statCard} className="stat-card">
-            <div style={{ ...styles.statIcon, background: "#f3e8ff", color: "#8b5cf6" }}>
+          <div style={{
+            ...styles.statCard,
+            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+          }} className="stat-card">
+            <div style={{
+              ...styles.statIcon,
+              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
+              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+              background: "#f3e8ff",
+              color: "#8b5cf6",
+            }}>
               <FaStar />
             </div>
             <div>
-              <h3 style={styles.statValue}>{stats.shortlistedApplications || 0}</h3>
-              <p style={styles.statLabel}>Shortlisted</p>
-              <span style={styles.statTrend}>Ready for interview</span>
-            </div>
-          </div>
-          <div style={styles.statCard} className="stat-card">
-            <div style={{ ...styles.statIcon, background: "#dcfce7", color: "#059669" }}>
-              <FaCheckCircle />
-            </div>
-            <div>
-              <h3 style={styles.statValue}>{stats.hiredApplications || 0}</h3>
-              <p style={styles.statLabel}>Hired</p>
-              <span style={styles.statTrend}>Successfully placed</span>
+              <h3 style={{
+                ...styles.statValue,
+                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
+              }}>{stats.shortlistedApplications || 0}</h3>
+              <p style={{
+                ...styles.statLabel,
+                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
+              }}>Shortlisted</p>
+              <span style={{
+                ...styles.statTrend,
+                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
+              }}>Ready for interview</span>
             </div>
           </div>
         </div>
       )}
 
-      {/* Advanced Filters */}
+      {/* Advanced Filters - Toggle on Mobile */}
       {userRole === "admin" && (
-        <div style={styles.advancedFilters} className="slide-down">
-          <div style={styles.filterRow}>
-            <div style={styles.searchWrapper}>
-              <FaSearch style={styles.searchIcon} />
-              <input
-                type="text"
-                placeholder="Search jobs by title, department..."
-                style={styles.searchInput}
-                value={filters.search}
-                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-              />
-            </div>
-            <select style={styles.filterSelect} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
-              <option value="">All Status</option>
-              <option value="active">Active</option>
-              <option value="inactive">Inactive</option>
-            </select>
-            <select style={styles.filterSelect} value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
-              <option value="">All Types</option>
-              <option value="Full-time">Full-time</option>
-              <option value="Part-time">Part-time</option>
-              <option value="Contract">Contract</option>
-              <option value="Internship">Internship</option>
-            </select>
-            <select style={styles.filterSelect} value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
-              <option value="">All Categories</option>
-              <option value="Technology">Technology</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Sales">Sales</option>
-              <option value="Finance">Finance</option>
-              <option value="HR">HR</option>
-              <option value="Design">Design</option>
-            </select>
-            <button style={styles.resetBtn} onClick={() => setFilters({ status: "", department: "", category: "", type: "", locationType: "", experienceLevel: "", search: "", sort: "recent" })}>
-              <FaTimes /> Reset
-            </button>
+        <div style={styles.filterSection}>
+          <div style={styles.filterToggle} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+            <FaFilter /> Filters
+            {isFilterOpen ? <FaChevronUp /> : <FaChevronDown />}
+            <span style={styles.filterCount}>
+              {Object.values(filters).filter(v => v && v !== "" && v !== "recent").length}
+            </span>
           </div>
+          
+          <AnimatePresence>
+            {(isFilterOpen || !isMobile) && (
+              <motion.div
+                initial={isMobile ? { height: 0, opacity: 0 } : { opacity: 1 }}
+                animate={isMobile ? { height: "auto", opacity: 1 } : { opacity: 1 }}
+                exit={isMobile ? { height: 0, opacity: 0 } : {}}
+                transition={{ duration: 0.3 }}
+                style={styles.advancedFilters}
+              >
+                <div style={isMobile ? styles.mobileFilterRow : styles.filterRow}>
+                  <div style={styles.searchWrapper}>
+                    <FaSearch style={styles.searchIcon} />
+                    <input
+                      type="text"
+                      placeholder="Search jobs..."
+                      style={styles.searchInput}
+                      value={filters.search}
+                      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+                    />
+                  </div>
+                  <select style={styles.filterSelect} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                    <option value="">All Status</option>
+                    <option value="active">Active</option>
+                    <option value="inactive">Inactive</option>
+                  </select>
+                  <select style={styles.filterSelect} value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
+                    <option value="">All Types</option>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                  </select>
+                  <select style={styles.filterSelect} value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
+                    <option value="">All Categories</option>
+                    <option value="Technology">Technology</option>
+                    <option value="Marketing">Marketing</option>
+                    <option value="Sales">Sales</option>
+                    <option value="Finance">Finance</option>
+                    <option value="HR">HR</option>
+                    <option value="Design">Design</option>
+                  </select>
+                  <button style={styles.resetBtn} onClick={() => setFilters({ status: "", department: "", category: "", type: "", locationType: "", experienceLevel: "", search: "", sort: "recent" })}>
+                    <FaTimes /> Reset
+                  </button>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       )}
 
-      {/* Jobs Table */}
+      {/* Jobs Table / Cards */}
       <div style={styles.tableContainer} className="scale-in">
-        <table style={styles.table}>
-          <thead>
-            <tr style={styles.tableHeader}>
-              <th style={styles.th}>Job Title</th>
-              <th style={styles.th}>Department</th>
-              <th style={styles.th}>Location</th>
-              <th style={styles.th}>Type</th>
-              <th style={styles.th}>Applications</th>
-              <th style={styles.th}>Views</th>
-              <th style={styles.th}>Status</th>
-              <th style={styles.th}>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {currentItems.map((job, index) => (
-              <tr key={job._id} style={{ ...styles.tableRow, animationDelay: `${index * 0.05}s` }} className="fade-in-row">
-                <td style={styles.jobTitle}>
-                  <div style={styles.jobTitleContent}>
-                    <strong>{job.title}</strong>
-                    <div style={styles.badgeContainer}>
-                      {job.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
-                      {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
-                    </div>
-                  </div>
-                </td>
-                <td>{job.department}</td>
-                <td>
-                  <div style={styles.locationCell}>
-                    {getLocationIcon(job.locationType)}
-                    {job.location}
-                    <small style={styles.locationType}>({job.locationType})</small>
-                  </div>
-                </td>
-                <td><span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#dbeafe" : "#f3e8ff" }}>{job.type}</span></td>
-                <td>
-                  <button style={styles.viewAppsBtn} onClick={() => fetchJobApplications(job._id)}>
-                    <FaUsers /> {job.totalApplications || 0}
-                  </button>
-                </td>
-                <td>
-                  <span style={styles.viewsCell}>
-                    <FaEye /> {job.views || 0}
-                  </span>
-                </td>
-                <td>
-                  <button style={{ ...styles.statusBtn, background: job.active ? "#10b981" : "#ef4444" }} onClick={() => handleToggleStatus(job._id)}>
-                    {job.active ? "Active" : "Inactive"}
-                  </button>
-                </td>
-                <td>
-                  <div style={styles.actionButtons}>
-                    <button style={styles.editBtn} onClick={() => {
-                      setSelectedJob(job);
-                      setFormData(job);
-                      setShowJobModal(true);
-                    }}>
-                      <FaEdit />
-                    </button>
-                    <button style={styles.deleteBtn} onClick={() => handleDeleteJob(job._id)}>
-                      <FaTrash />
-                    </button>
-                  </div>
-                </td>
-              </tr>
+        {!isMobile ? (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHeader}>
+                  <th style={styles.th}>Job Title</th>
+                  <th style={styles.th}>Department</th>
+                  <th style={styles.th}>Location</th>
+                  <th style={styles.th}>Type</th>
+                  <th style={styles.th}>Applications</th>
+                  <th style={styles.th}>Views</th>
+                  <th style={styles.th}>Status</th>
+                  <th style={styles.th}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((job, index) => (
+                  <tr key={job._id} style={{ ...styles.tableRow, animationDelay: `${index * 0.05}s` }} className="fade-in-row">
+                    <td style={styles.jobTitle}>
+                      <div style={styles.jobTitleContent}>
+                        <strong>{job.title}</strong>
+                        <div style={styles.badgeContainer}>
+                          {job.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
+                          {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
+                        </div>
+                      </div>
+                    </td>
+                    <td>{job.department}</td>
+                    <td>
+                      <div style={styles.locationCell}>
+                        {getLocationIcon(job.locationType)}
+                        {job.location}
+                      </div>
+                    </td>
+                    <td><span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#dbeafe" : "#f3e8ff" }}>{job.type}</span></td>
+                    <td>
+                      <button style={styles.viewAppsBtn} onClick={() => fetchJobApplications(job._id)}>
+                        <FaUsers /> {job.totalApplications || 0}
+                      </button>
+                    </td>
+                    <td>
+                      <span style={styles.viewsCell}>
+                        <FaEye /> {job.views || 0}
+                      </span>
+                    </td>
+                    <td>
+                      <button style={{ ...styles.statusBtn, background: job.active ? "#10b981" : "#ef4444" }} onClick={() => handleToggleStatus(job._id)}>
+                        {job.active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td>
+                      <div style={styles.actionButtons}>
+                        <button style={styles.editBtn} onClick={() => handleEditJob(job)}>
+                          <FaEdit />
+                        </button>
+                        <button style={styles.deleteBtn} onClick={() => handleDeleteJob(job._id)}>
+                          <FaTrash />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+                {jobs.length === 0 && (
+                  <tr>
+                    <td colSpan="8" style={styles.emptyRow}>
+                      <FaBriefcase size={40} color="#cbd5e1" />
+                      <p>No jobs found</p>
+                      <button style={styles.emptyBtn} onClick={() => {
+                        resetForm();
+                        setShowJobModal(true);
+                      }}>Post Your First Job</button>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={styles.mobileJobList}>
+            {currentItems.map((job) => (
+              <MobileJobCard key={job._id} job={job} />
             ))}
             {jobs.length === 0 && (
-              <tr>
-                <td colSpan="8" style={styles.emptyRow}>
-                  <FaBriefcase size={40} color="#cbd5e1" />
-                  <p>No jobs found</p>
-                  <button style={styles.emptyBtn} onClick={() => {
-                    resetForm();
-                    setShowJobModal(true);
-                  }}>Post Your First Job</button>
-                </td>
-              </tr>
+              <div style={styles.emptyRow}>
+                <FaBriefcase size={40} color="#cbd5e1" />
+                <p>No jobs found</p>
+                <button style={styles.emptyBtn} onClick={() => {
+                  resetForm();
+                  setShowJobModal(true);
+                }}>Post Your First Job</button>
+              </div>
             )}
-          </tbody>
-        </table>
+          </div>
+        )}
 
         {/* Pagination */}
         {jobs.length > itemsPerPage && (
@@ -562,13 +795,13 @@ const AdminJobsManager = ({ userRole, userName }) => {
         )}
       </div>
 
-      {/* Applications Modal */}
+      {/* Applications Modal - Responsive */}
       {showApplicationsModal && (
         <div style={styles.modalOverlay} onClick={() => setShowApplicationsModal(false)}>
-          <div style={styles.modalLargeContent} onClick={(e) => e.stopPropagation()}>
+          <div style={isMobile ? styles.mobileModalLargeContent : styles.modalLargeContent} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <div>
-                <h2 style={styles.modalTitle}>Applications for {selectedJob?.title}</h2>
+                <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>Applications for {selectedJob?.title}</h2>
                 <p style={styles.modalSubtitle}>{applications.length} candidates applied</p>
               </div>
               <button style={styles.closeBtn} onClick={() => setShowApplicationsModal(false)}>
@@ -577,20 +810,70 @@ const AdminJobsManager = ({ userRole, userName }) => {
             </div>
 
             <div style={styles.tableContainer}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.tableHeader}>
-                    <th>Applicant</th>
-                    <th>Experience</th>
-                    <th>Applied Date</th>
-                    <th>Status</th>
-                    <th>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
+              {!isMobile ? (
+                <div style={styles.tableWrapper}>
+                  <table style={styles.table}>
+                    <thead>
+                      <tr style={styles.tableHeader}>
+                        <th>Applicant</th>
+                        <th>Experience</th>
+                        <th>Applied Date</th>
+                        <th>Status</th>
+                        <th>Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {applications.map((app) => (
+                        <tr key={app._id} style={styles.tableRow}>
+                          <td>
+                            <div style={styles.applicantCell}>
+                              <div style={styles.applicantAvatar}>
+                                {app.fullName?.charAt(0) || "A"}
+                              </div>
+                              <div>
+                                <strong>{app.fullName}</strong>
+                                <div style={styles.applicantContact}>
+                                  <FaEnvelope /> {app.email}
+                                </div>
+                              </div>
+                            </div>
+                          </td>
+                          <td>{app.yearsOfExperience} years</td>
+                          <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
+                          <td>
+                            <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(app.status) }}>
+                              {getStatusIcon(app.status)} {getStatusLabel(app.status)}
+                            </span>
+                          </td>
+                          <td>
+                            <div style={styles.mobileAppActions}>
+                              <select
+                                style={styles.statusSelect}
+                                value={app.status}
+                                onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}
+                              >
+                                <option value="pending">Pending</option>
+                                <option value="reviewed">Reviewed</option>
+                                <option value="shortlisted">Shortlisted</option>
+                                <option value="interview">Interview</option>
+                                <option value="rejected">Rejected</option>
+                                <option value="hired">Hired</option>
+                              </select>
+                              <button style={styles.viewDetailsBtn} onClick={() => viewApplicationDetail(app)}>
+                                <FaEye />
+                              </button>
+                            </div>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+              ) : (
+                <div style={styles.mobileAppList}>
                   {applications.map((app) => (
-                    <tr key={app._id} style={styles.tableRow}>
-                      <td>
+                    <div key={app._id} style={styles.mobileAppCard}>
+                      <div style={styles.mobileAppHeader}>
                         <div style={styles.applicantCell}>
                           <div style={styles.applicantAvatar}>
                             {app.fullName?.charAt(0) || "A"}
@@ -600,22 +883,19 @@ const AdminJobsManager = ({ userRole, userName }) => {
                             <div style={styles.applicantContact}>
                               <FaEnvelope /> {app.email}
                             </div>
-                            <div style={styles.applicantContact}>
-                              <FaPhone /> {app.phone}
-                            </div>
                           </div>
                         </div>
-                      </td>
-                      <td>{app.yearsOfExperience} years</td>
-                      <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
-                      <td>
-                        <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(app.status) }}>
-                          {getStatusIcon(app.status)} {getStatusLabel(app.status)}
+                        <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(app.status), fontSize: "10px", padding: "2px 10px" }}>
+                          {getStatusLabel(app.status)}
                         </span>
-                      </td>
-                      <td>
+                      </div>
+                      <div style={styles.mobileAppDetails}>
+                        <span>Experience: {app.yearsOfExperience} years</span>
+                        <span>Applied: {new Date(app.appliedAt).toLocaleDateString()}</span>
+                      </div>
+                      <div style={styles.mobileAppActions}>
                         <select
-                          style={styles.statusSelect}
+                          style={{ ...styles.statusSelect, flex: 1 }}
                           value={app.status}
                           onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}
                         >
@@ -629,30 +909,28 @@ const AdminJobsManager = ({ userRole, userName }) => {
                         <button style={styles.viewDetailsBtn} onClick={() => viewApplicationDetail(app)}>
                           <FaEye /> View
                         </button>
-                      </td>
-                    </tr>
+                      </div>
+                    </div>
                   ))}
-                  {applications.length === 0 && (
-                    <tr>
-                      <td colSpan="5" style={styles.emptyRow}>
-                        <FaUsers size={40} color="#cbd5e1" />
-                        <p>No applications yet for this position.</p>
-                      </td>
-                    </tr>
-                  )}
-                </tbody>
-              </table>
+                </div>
+              )}
+              {applications.length === 0 && (
+                <div style={styles.emptyRow}>
+                  <FaUsers size={40} color="#cbd5e1" />
+                  <p>No applications yet for this position.</p>
+                </div>
+              )}
             </div>
           </div>
         </div>
       )}
 
-      {/* Application Detail Modal */}
+      {/* Application Detail Modal - Responsive */}
       {showApplicationDetailModal && selectedApplication && (
         <div style={styles.modalOverlay} onClick={() => setShowApplicationDetailModal(false)}>
-          <div style={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+          <div style={{ ...styles.modalContent, maxWidth: isMobile ? "95%" : "600px", padding: isMobile ? "16px" : "24px" }} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
-              <h2 style={styles.modalTitle}>Application Details</h2>
+              <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>Application Details</h2>
               <button style={styles.closeBtn} onClick={() => setShowApplicationDetailModal(false)}>
                 <FaTimes />
               </button>
@@ -671,7 +949,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                 </div>
               </div>
 
-              <div style={styles.detailGrid}>
+              <div style={isMobile ? { ...styles.detailGrid, gridTemplateColumns: "1fr" } : styles.detailGrid}>
                 <div style={styles.detailItem}>
                   <FaEnvelope /> <span>{selectedApplication.email}</span>
                 </div>
@@ -726,15 +1004,15 @@ const AdminJobsManager = ({ userRole, userName }) => {
         </div>
       )}
 
-      {/* Modern Create/Edit Job Modal */}
+      {/* Create/Edit Job Modal - Responsive */}
       {showJobModal && (
         <div style={styles.modalOverlay} onClick={() => setShowJobModal(false)}>
-          <div style={styles.modalLargeContent} onClick={(e) => e.stopPropagation()}>
+          <div style={{ ...styles.modalLargeContent, maxWidth: isMobile ? "100%" : "1100px", padding: isMobile ? "16px" : "24px", borderRadius: isMobile ? "12px" : "20px" }} onClick={(e) => e.stopPropagation()}>
             <div style={styles.modalHeader}>
               <div>
-                <h2 style={styles.modalTitle}>
+                <h2 style={isMobile ? { ...styles.mobileModalTitle } : styles.modalTitle}>
                   {selectedJob ? <FaEdit style={{ color: '#f9c349', marginRight: '12px' }} /> : <FaPlus style={{ color: '#f9c349', marginRight: '12px' }} />}
-                  {selectedJob ? "Edit Job Posting" : "Create New Job Posting"}
+                  {selectedJob ? "Edit Job Posting" : "Create New Job"}
                 </h2>
                 <p style={styles.modalSubtitle}>
                   {selectedJob ? "Update the job details below" : "Fill in the details to attract the best talent"}
@@ -746,22 +1024,21 @@ const AdminJobsManager = ({ userRole, userName }) => {
             </div>
 
             <form onSubmit={selectedJob ? handleUpdateJob : handleCreateJob} style={styles.form}>
-              {/* Section Navigation */}
-              <div style={styles.sectionNav}>
+              {/* Section Navigation - Responsive */}
+              <div style={isMobile ? styles.mobileSectionNav : styles.sectionNav}>
                 {sections.map((section) => (
                   <button
                     key={section.id}
                     type="button"
                     style={{
-                      ...styles.sectionNavBtn,
+                      ...(isMobile ? styles.mobileSectionNavBtn : styles.sectionNavBtn),
                       background: activeSection === section.id ? "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)" : "#f8fafc",
                       color: activeSection === section.id ? "#fff" : "#475569",
                     }}
                     onClick={() => setActiveSection(section.id)}
                   >
                     {section.icon}
-                    <span style={styles.sectionNavLabel}>{section.label}</span>
-                    {activeSection === section.id && <span style={styles.sectionNavActive} />}
+                    {!isMobile && <span style={styles.sectionNavLabel}>{section.label}</span>}
                   </button>
                 ))}
               </div>
@@ -777,7 +1054,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </h3>
                       <p style={styles.formSectionDesc}>Essential details about the position</p>
                     </div>
-                    <div style={styles.formGrid}>
+                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Job Title *</label>
                         <input 
@@ -788,7 +1065,6 @@ const AdminJobsManager = ({ userRole, userName }) => {
                           placeholder="e.g., Senior Software Engineer" 
                           style={styles.formInput}
                         />
-                        <span style={styles.formHint}>Be specific and include keywords</span>
                       </div>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Department *</label>
@@ -879,7 +1155,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </h3>
                       <p style={styles.formSectionDesc}>Compensation, requirements, and responsibilities</p>
                     </div>
-                    <div style={styles.formGrid}>
+                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Salary Range *</label>
                         <input 
@@ -890,7 +1166,6 @@ const AdminJobsManager = ({ userRole, userName }) => {
                           onChange={(e) => setFormData({ ...formData, salary: e.target.value })} 
                           style={styles.formInput}
                         />
-                        <span style={styles.formHint}>Format: XX,XXX - XX,XXX</span>
                       </div>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Education Level</label>
@@ -924,31 +1199,11 @@ const AdminJobsManager = ({ userRole, userName }) => {
                           placeholder="e.g., Monday - Friday, 9AM - 5PM"
                         />
                       </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Team Size</label>
-                        <input 
-                          type="text" 
-                          value={formData.teamSize} 
-                          onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="e.g., 10-15 members"
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Reports To</label>
-                        <input 
-                          type="text" 
-                          value={formData.reportTo} 
-                          onChange={(e) => setFormData({ ...formData, reportTo: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="e.g., Director of Engineering"
-                        />
-                      </div>
                     </div>
                     <div style={styles.formGroup}>
                       <label style={styles.formLabel}>Job Description *</label>
                       <textarea 
-                        rows="6" 
+                        rows={isMobile ? "4" : "6"} 
                         required 
                         value={formData.description} 
                         onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
@@ -969,51 +1224,34 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </h3>
                       <p style={styles.formSectionDesc}>Define what candidates need and what they'll do</p>
                     </div>
-                    <div style={styles.formGrid}>
+                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Required Skills</label>
                         <input 
                           type="text" 
                           placeholder="React, Node.js, Python, AWS" 
-                          value={formData.skills.join(', ')} 
+                          value={safeJoin(formData.skills, ', ')} 
                           onChange={(e) => setFormData({ ...formData, skills: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} 
                           style={styles.formInput}
                         />
-                        <span style={styles.formHint}>Separate skills with commas</span>
                       </div>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Key Requirements</label>
-                        <div style={styles.textareaWrapper}>
-                          <textarea 
-                            rows="4" 
-                            placeholder="• Bachelor's degree in Computer Science&#10;• 5+ years of experience&#10;• Strong knowledge of React" 
-                            value={formData.requirements.join('\n')} 
-                            onChange={(e) => setFormData({ ...formData, requirements: e.target.value.split('\n').filter(r => r.trim()) })} 
-                            style={styles.formTextarea}
-                          />
-                          <span style={styles.textareaHint}>One requirement per line</span>
-                        </div>
+                        <textarea 
+                          rows={isMobile ? "3" : "4"} 
+                          placeholder="• Bachelor's degree in Computer Science&#10;• 5+ years of experience" 
+                          value={safeJoin(formData.requirements, '\n')} 
+                          onChange={(e) => setFormData({ ...formData, requirements: e.target.value.split('\n').filter(r => r.trim()) })} 
+                          style={styles.formTextarea}
+                        />
                       </div>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Responsibilities</label>
-                        <div style={styles.textareaWrapper}>
-                          <textarea 
-                            rows="4" 
-                            placeholder="• Lead development of new features&#10;• Mentor junior developers&#10;• Collaborate with product team" 
-                            value={formData.responsibilities.join('\n')} 
-                            onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value.split('\n').filter(r => r.trim()) })} 
-                            style={styles.formTextarea}
-                          />
-                          <span style={styles.textareaHint}>One responsibility per line</span>
-                        </div>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Department Details</label>
                         <textarea 
-                          rows="4" 
-                          placeholder="Provide additional information about the department and team culture..." 
-                          value={formData.departmentDetails} 
-                          onChange={(e) => setFormData({ ...formData, departmentDetails: e.target.value })} 
+                          rows={isMobile ? "3" : "4"} 
+                          placeholder="• Lead development of new features&#10;• Mentor junior developers" 
+                          value={safeJoin(formData.responsibilities, '\n')} 
+                          onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value.split('\n').filter(r => r.trim()) })} 
                           style={styles.formTextarea}
                         />
                       </div>
@@ -1031,32 +1269,26 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </h3>
                       <p style={styles.formSectionDesc}>Attract top talent with great benefits</p>
                     </div>
-                    <div style={styles.formGrid}>
+                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Benefits</label>
-                        <div style={styles.textareaWrapper}>
-                          <textarea 
-                            rows="4" 
-                            placeholder="• Health insurance&#10;• 401(k) matching&#10;• Flexible work hours" 
-                            value={formData.benefits.join('\n')} 
-                            onChange={(e) => setFormData({ ...formData, benefits: e.target.value.split('\n').filter(b => b.trim()) })} 
-                            style={styles.formTextarea}
-                          />
-                          <span style={styles.textareaHint}>One benefit per line</span>
-                        </div>
+                        <textarea 
+                          rows={isMobile ? "3" : "4"} 
+                          placeholder="• Health insurance&#10;• 401(k) matching" 
+                          value={safeJoin(formData.benefits, '\n')} 
+                          onChange={(e) => setFormData({ ...formData, benefits: e.target.value.split('\n').filter(b => b.trim()) })} 
+                          style={styles.formTextarea}
+                        />
                       </div>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Perks</label>
-                        <div style={styles.textareaWrapper}>
-                          <textarea 
-                            rows="4" 
-                            placeholder="• Free lunch&#10;• Gym membership&#10;• Learning stipend" 
-                            value={formData.perks.join('\n')} 
-                            onChange={(e) => setFormData({ ...formData, perks: e.target.value.split('\n').filter(p => p.trim()) })} 
-                            style={styles.formTextarea}
-                          />
-                          <span style={styles.textareaHint}>One perk per line</span>
-                        </div>
+                        <textarea 
+                          rows={isMobile ? "3" : "4"} 
+                          placeholder="• Free lunch&#10;• Gym membership" 
+                          value={safeJoin(formData.perks, '\n')} 
+                          onChange={(e) => setFormData({ ...formData, perks: e.target.value.split('\n').filter(p => p.trim()) })} 
+                          style={styles.formTextarea}
+                        />
                       </div>
                     </div>
                   </div>
@@ -1072,7 +1304,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </h3>
                       <p style={styles.formSectionDesc}>Tell candidates about your company</p>
                     </div>
-                    <div style={styles.formGrid}>
+                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
                       <div style={styles.formGroup}>
                         <label style={styles.formLabel}>Company Name</label>
                         <input 
@@ -1117,36 +1349,30 @@ const AdminJobsManager = ({ userRole, userName }) => {
                             {formData.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
                           </div>
                         </div>
-                        <div style={styles.previewDetails}>
+                        <div style={isMobile ? styles.mobilePreviewDetails : styles.previewDetails}>
                           <span><FaBuilding /> {formData.department || "Department"}</span>
-                          <span><FaMapMarkerAlt /> {formData.location || "Location"} ({formData.locationType || "On-site"})</span>
+                          <span><FaMapMarkerAlt /> {formData.location || "Location"}</span>
                           <span><FaBriefcase /> {formData.type || "Full-time"}</span>
                           <span><FaDollarSign /> {formData.salary || "Salary range"}</span>
-                        </div>
-                        <div style={styles.previewDescription}>
-                          {formData.description || "Job description goes here..."}
                         </div>
                       </div>
                     </div>
 
                     <div style={styles.publishOptions}>
                       <h4 style={styles.publishOptionsTitle}>Publishing Options</h4>
-                      <div style={styles.publishGrid}>
+                      <div style={isMobile ? styles.mobilePublishGrid : styles.publishGrid}>
                         <label style={styles.checkbox}>
                           <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} />
                           <span><FaCheck style={{ color: '#10b981' }} /> Publish Immediately</span>
-                          <small style={styles.checkboxHint}>Job will be visible to candidates</small>
                         </label>
                         <label style={styles.checkbox}>
                           <input type="checkbox" checked={formData.urgent} onChange={(e) => setFormData({ ...formData, urgent: e.target.checked })} />
                           <span><FaFire style={{ color: '#f59e0b' }} /> Mark as Urgent</span>
-                          <small style={styles.checkboxHint}>Highlights job as urgent hire</small>
                         </label>
                         {userRole === "admin" && (
                           <label style={styles.checkbox}>
                             <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} />
                             <span><FaStar style={{ color: '#f59e0b' }} /> Feature Job</span>
-                            <small style={styles.checkboxHint}>Featured in top positions</small>
                           </label>
                         )}
                       </div>
@@ -1155,12 +1381,12 @@ const AdminJobsManager = ({ userRole, userName }) => {
                 )}
               </div>
 
-              <div style={styles.formActions}>
+              <div style={isMobile ? styles.mobileFormActions : styles.formActions}>
                 <button type="button" style={styles.cancelBtn} onClick={() => setShowJobModal(false)}>
                   Cancel
                 </button>
                 <button type="submit" style={styles.submitBtn}>
-                  {selectedJob ? <><FaEdit /> Update Job</> : <><FaRocket /> {activeSection === "publish" ? "Publish Job" : "Continue"}</>}
+                  {selectedJob ? <><FaEdit /> Update</> : <><FaRocket /> {activeSection === "publish" ? "Publish" : "Continue"}</>}
                 </button>
               </div>
             </form>
@@ -1187,18 +1413,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
             50% { transform: scale(1.05); }
             100% { transform: scale(1); }
           }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-          }
-          @keyframes glow {
-            0% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(249, 195, 73, 0.4); }
-            100% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.2); }
           }
 
           .fade-in {
@@ -1222,17 +1439,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
           .stat-card:nth-child(2) { animation-delay: 0.1s; }
           .stat-card:nth-child(3) { animation-delay: 0.15s; }
           .stat-card:nth-child(4) { animation-delay: 0.2s; }
-          .stat-card:nth-child(5) { animation-delay: 0.25s; }
 
           .pulse-btn {
             animation: pulse 2s infinite;
-          }
-          .stat-card:hover {
-            transform: translateY(-4px);
-            box-shadow: 0 12px 40px rgba(0,0,0,0.1);
-          }
-          .section-nav-btn {
-            animation: glow 2s ease-in-out infinite;
           }
 
           ::-webkit-scrollbar {
@@ -1246,17 +1455,106 @@ const AdminJobsManager = ({ userRole, userName }) => {
             background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
             border-radius: 10px;
           }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
-          }
 
           input:focus, select:focus, textarea:focus {
             border-color: #f9c349 !important;
-            box-shadow: 0 0 0 3px rgba(249, 195, 73, 0.1) !important;
+            outline: none !important;
           }
 
-          .checkbox input[type="checkbox"] {
-            accent-color: #f9c349;
+          /* Mobile Responsive Styles */
+          @media (max-width: 768px) {
+            .stat-card {
+              animation: fadeIn 0.5s ease forwards !important;
+            }
+            .stat-card:nth-child(1) { animation-delay: 0.05s; }
+            .stat-card:nth-child(2) { animation-delay: 0.1s; }
+            .stat-card:nth-child(3) { animation-delay: 0.15s; }
+            .stat-card:nth-child(4) { animation-delay: 0.2s; }
+            
+            .filter-toggle {
+              display: flex !important;
+            }
+            .filter-row {
+              flex-direction: column !important;
+            }
+            .search-wrapper {
+              width: 100% !important;
+              min-width: unset !important;
+            }
+            .filter-select {
+              width: 100% !important;
+              min-width: unset !important;
+            }
+            .reset-btn {
+              width: 100% !important;
+              justify-content: center !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .stat-card {
+              padding: 10px !important;
+              gap: 8px !important;
+            }
+            .statValue {
+              font-size: 16px !important;
+            }
+            .statIcon {
+              width: 32px !important;
+              height: 32px !important;
+              font-size: 14px !important;
+            }
+            .statLabel {
+              font-size: 9px !important;
+            }
+            .header {
+              flex-direction: column !important;
+              align-items: stretch !important;
+            }
+            .create-btn {
+              width: 100% !important;
+              justify-content: center !important;
+            }
+            .title {
+              font-size: 20px !important;
+            }
+            .subtitle {
+              font-size: 13px !important;
+            }
+            .stats-grid {
+              grid-template-columns: 1fr 1fr !important;
+              gap: 6px !important;
+            }
+            .mobile-job-details {
+              grid-template-columns: 1fr !important;
+            }
+            .mobile-job-actions {
+              flex-direction: column !important;
+            }
+            .mobile-action-btn {
+              width: 100% !important;
+            }
+            .mobile-app-actions {
+              flex-direction: column !important;
+            }
+            .mobile-app-actions select,
+            .mobile-app-actions button {
+              width: 100% !important;
+            }
+            .form-actions {
+              flex-direction: column !important;
+            }
+            .form-actions button {
+              width: 100% !important;
+              justify-content: center !important;
+            }
+            .checkbox {
+              padding: 8px !important;
+              font-size: 12px !important;
+            }
+            .publish-grid {
+              grid-template-columns: 1fr !important;
+            }
           }
         `}
       </style>
@@ -1266,12 +1564,14 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
 const styles = {
   container: {
-    padding: "24px",
-    maxWidth: "1400px",
+    width: "100%",
+    padding: "8px 10px",
     margin: "0 auto",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     background: "#f8fafc",
     minHeight: "100vh",
+    boxSizing: "border-box",
+    maxWidth: "1400px",
   },
   loadingContainer: {
     display: "flex",
@@ -1294,12 +1594,13 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "28px",
+    marginBottom: "24px",
     flexWrap: "wrap",
-    gap: "16px",
+    gap: "12px",
   },
   headerLeft: {
     flex: 1,
+    minWidth: "200px",
   },
   headerBadge: {
     display: "inline-flex",
@@ -1311,7 +1612,7 @@ const styles = {
     color: "#fff",
     fontSize: "12px",
     fontWeight: "600",
-    marginBottom: "12px",
+    marginBottom: "8px",
   },
   headerBadgeIcon: {
     fontSize: "14px",
@@ -1320,7 +1621,14 @@ const styles = {
     letterSpacing: "0.5px",
   },
   title: {
-    fontSize: "32px",
+    fontSize: "24px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+    letterSpacing: "-0.5px",
+  },
+  mobileTitle: {
+    fontSize: "20px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
@@ -1328,147 +1636,202 @@ const styles = {
   },
   subtitle: {
     color: "#64748b",
-    marginTop: "6px",
-    fontSize: "15px",
-    lineHeight: "1.6",
+    marginTop: "4px",
+    fontSize: "14px",
+    lineHeight: "1.5",
+  },
+  mobileSubtitle: {
+    color: "#64748b",
+    marginTop: "4px",
+    fontSize: "13px",
+    lineHeight: "1.5",
   },
   createBtn: {
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     color: "#fff",
     border: "none",
-    padding: "14px 28px",
-    borderRadius: "14px",
+    padding: "12px 20px",
+    borderRadius: "12px",
     fontWeight: "600",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
+    gap: "8px",
     boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
     transition: "all 0.3s ease",
-    fontSize: "15px",
+    fontSize: "14px",
     flexShrink: 0,
+  },
+  mobileCreateBtn: {
+    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    color: "#fff",
+    border: "none",
+    padding: "10px 16px",
+    borderRadius: "10px",
+    fontWeight: "600",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
+    transition: "all 0.3s ease",
+    fontSize: "13px",
+    flexShrink: 0,
+    width: "100%",
+    justifyContent: "center",
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
-    marginBottom: "28px",
+    gap: "12px",
+    marginBottom: "24px",
   },
   statCard: {
     background: "#fff",
-    padding: "20px",
-    borderRadius: "16px",
+    borderRadius: "14px",
     display: "flex",
     alignItems: "center",
-    gap: "16px",
+    gap: "14px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     border: "1px solid #e5e7eb",
     transition: "all 0.3s ease",
     cursor: "pointer",
   },
   statIcon: {
-    width: "50px",
-    height: "50px",
     borderRadius: "12px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "22px",
     flexShrink: 0,
   },
   statValue: {
-    fontSize: "26px",
     fontWeight: "700",
     margin: 0,
     color: "#0f172a",
     letterSpacing: "-0.5px",
   },
   statLabel: {
-    fontSize: "13px",
     color: "#64748b",
-    margin: "4px 0 0 0",
+    margin: "2px 0 0 0",
   },
   statTrend: {
-    fontSize: "11px",
     color: "#10b981",
   },
+  filterSection: {
+    marginBottom: "20px",
+  },
+  filterToggle: {
+    display: "none",
+    alignItems: "center",
+    gap: "8px",
+    padding: "10px 16px",
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "12px",
+    cursor: "pointer",
+    fontSize: "14px",
+    fontWeight: "500",
+    color: "#0f172a",
+    transition: "all 0.3s ease",
+  },
+  filterCount: {
+    background: "#f9c349",
+    color: "#fff",
+    borderRadius: "50%",
+    padding: "2px 8px",
+    fontSize: "11px",
+    fontWeight: "700",
+    marginLeft: "auto",
+  },
   advancedFilters: {
-    marginBottom: "24px",
+    overflow: "hidden",
   },
   filterRow: {
     display: "flex",
-    gap: "12px",
+    gap: "10px",
     flexWrap: "wrap",
     alignItems: "center",
   },
+  mobileFilterRow: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+    width: "100%",
+  },
   searchWrapper: {
     flex: 1,
-    minWidth: "200px",
+    minWidth: "180px",
     position: "relative",
   },
   searchIcon: {
     position: "absolute",
-    left: "14px",
+    left: "12px",
     top: "50%",
     transform: "translateY(-50%)",
     color: "#94a3b8",
   },
   searchInput: {
     width: "100%",
-    padding: "12px 16px 12px 40px",
+    padding: "10px 14px 10px 36px",
     border: "2px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     fontSize: "14px",
     background: "#fff",
     transition: "all 0.3s ease",
     outline: "none",
+    boxSizing: "border-box",
   },
   filterSelect: {
-    padding: "12px 16px",
+    padding: "10px 14px",
     border: "2px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     background: "#fff",
     fontSize: "14px",
-    minWidth: "140px",
+    minWidth: "120px",
     cursor: "pointer",
     outline: "none",
     transition: "all 0.3s ease",
+    boxSizing: "border-box",
   },
   resetBtn: {
-    padding: "12px 20px",
+    padding: "10px 16px",
     background: "#f1f5f9",
     color: "#475569",
     border: "2px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    fontSize: "14px",
+    fontSize: "13px",
     transition: "all 0.3s ease",
   },
   tableContainer: {
-    overflowX: "auto",
+    overflow: "hidden",
     background: "#fff",
-    borderRadius: "16px",
+    borderRadius: "14px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
     border: "1px solid #e5e7eb",
+    width: "100%",
+  },
+  tableWrapper: {
+    overflowX: "auto",
+    width: "100%",
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "900px",
+    minWidth: "800px",
   },
   tableHeader: {
     borderBottom: "2px solid #e5e7eb",
     background: "#f8fafc",
   },
   th: {
-    padding: "16px 20px",
+    padding: "14px 16px",
     textAlign: "left",
     fontWeight: "600",
     color: "#475569",
-    fontSize: "12px",
+    fontSize: "11px",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
@@ -1477,7 +1840,7 @@ const styles = {
     transition: "all 0.2s ease",
   },
   jobTitle: {
-    padding: "16px 20px",
+    padding: "14px 16px",
   },
   jobTitleContent: {
     display: "flex",
@@ -1486,15 +1849,15 @@ const styles = {
   },
   badgeContainer: {
     display: "flex",
-    gap: "6px",
+    gap: "4px",
     flexWrap: "wrap",
   },
   urgentBadge: {
     background: "#fef3c7",
     color: "#d97706",
-    padding: "2px 12px",
-    borderRadius: "12px",
-    fontSize: "10px",
+    padding: "2px 10px",
+    borderRadius: "10px",
+    fontSize: "9px",
     fontWeight: "600",
     display: "inline-flex",
     alignItems: "center",
@@ -1503,112 +1866,108 @@ const styles = {
   featuredBadge: {
     background: "#f3e8ff",
     color: "#9333ea",
-    padding: "2px 12px",
-    borderRadius: "12px",
-    fontSize: "10px",
+    padding: "2px 10px",
+    borderRadius: "10px",
+    fontSize: "9px",
     fontWeight: "600",
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
   },
   typeBadge: {
-    padding: "4px 14px",
-    borderRadius: "8px",
-    fontSize: "12px",
+    padding: "4px 12px",
+    borderRadius: "6px",
+    fontSize: "11px",
     fontWeight: "500",
     display: "inline-block",
   },
   locationCell: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    fontSize: "13px",
-  },
-  locationType: {
-    color: "#94a3b8",
-    fontSize: "11px",
+    gap: "6px",
+    fontSize: "12px",
   },
   viewAppsBtn: {
     background: "#3b82f6",
     color: "#fff",
     border: "none",
-    padding: "6px 16px",
-    borderRadius: "10px",
+    padding: "5px 12px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontSize: "12px",
+    fontSize: "11px",
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     transition: "all 0.3s ease",
   },
   viewsCell: {
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
+    gap: "4px",
+    fontSize: "12px",
     color: "#64748b",
   },
   statusBtn: {
-    padding: "4px 16px",
-    borderRadius: "20px",
+    padding: "4px 14px",
+    borderRadius: "16px",
     border: "none",
     color: "#fff",
-    fontSize: "12px",
+    fontSize: "11px",
     cursor: "pointer",
     transition: "all 0.3s ease",
     fontWeight: "500",
   },
   actionButtons: {
     display: "flex",
-    gap: "8px",
+    gap: "6px",
   },
   editBtn: {
-    padding: "8px 12px",
+    padding: "6px 10px",
     background: "#10b981",
     color: "#fff",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.3s ease",
   },
   deleteBtn: {
-    padding: "8px 12px",
+    padding: "6px 10px",
     background: "#ef4444",
     color: "#fff",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.3s ease",
   },
   statusBadge: {
-    padding: "4px 14px",
-    borderRadius: "20px",
+    padding: "4px 12px",
+    borderRadius: "16px",
     color: "#fff",
-    fontSize: "12px",
+    fontSize: "11px",
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     fontWeight: "500",
   },
   statusSelect: {
-    padding: "6px 12px",
-    borderRadius: "10px",
+    padding: "5px 10px",
+    borderRadius: "8px",
     border: "2px solid #e5e7eb",
-    marginRight: "8px",
-    fontSize: "12px",
+    marginRight: "6px",
+    fontSize: "11px",
     background: "#fff",
     cursor: "pointer",
     outline: "none",
     transition: "all 0.3s ease",
   },
   viewDetailsBtn: {
-    padding: "6px 14px",
+    padding: "5px 12px",
     background: "#8b5cf6",
     color: "#fff",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
-    fontSize: "12px",
+    fontSize: "11px",
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
@@ -1627,35 +1986,58 @@ const styles = {
     justifyContent: "center",
     zIndex: 1000,
     animation: "fadeIn 0.3s ease",
+    padding: "16px",
   },
   modalContent: {
     background: "#fff",
-    borderRadius: "24px",
-    padding: "32px",
+    borderRadius: "20px",
+    padding: "24px",
     maxWidth: "600px",
-    width: "90%",
+    width: "100%",
     maxHeight: "90vh",
     overflowY: "auto",
     animation: "scaleIn 0.3s ease",
+    boxSizing: "border-box",
   },
   modalLargeContent: {
     background: "#fff",
-    borderRadius: "24px",
-    padding: "32px",
+    borderRadius: "20px",
+    padding: "24px",
     maxWidth: "1100px",
-    width: "95%",
+    width: "100%",
     maxHeight: "90vh",
     overflowY: "auto",
     animation: "scaleIn 0.3s ease",
+    boxSizing: "border-box",
+  },
+  mobileModalLargeContent: {
+    background: "#fff",
+    borderRadius: "14px",
+    padding: "16px",
+    maxWidth: "100%",
+    width: "100%",
+    maxHeight: "95vh",
+    overflowY: "auto",
+    animation: "scaleIn 0.3s ease",
+    boxSizing: "border-box",
   },
   modalHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "flex-start",
-    marginBottom: "24px",
+    marginBottom: "20px",
+    gap: "12px",
   },
   modalTitle: {
-    fontSize: "24px",
+    fontSize: "20px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+    display: "flex",
+    alignItems: "center",
+  },
+  mobileModalTitle: {
+    fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
@@ -1663,196 +2045,214 @@ const styles = {
     alignItems: "center",
   },
   modalSubtitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
-    marginTop: "4px",
+    marginTop: "2px",
   },
   closeBtn: {
     background: "none",
     border: "none",
-    fontSize: "20px",
+    fontSize: "18px",
     cursor: "pointer",
     color: "#94a3b8",
-    padding: "8px",
+    padding: "6px",
     borderRadius: "8px",
     transition: "all 0.3s ease",
   },
   form: {
     display: "flex",
     flexDirection: "column",
-    gap: "24px",
+    gap: "20px",
   },
   sectionNav: {
     display: "flex",
-    gap: "8px",
+    gap: "6px",
     flexWrap: "wrap",
-    padding: "8px",
+    padding: "6px",
     background: "#f8fafc",
-    borderRadius: "16px",
+    borderRadius: "12px",
     border: "1px solid #e5e7eb",
   },
   sectionNavBtn: {
-    padding: "10px 18px",
-    borderRadius: "12px",
+    padding: "8px 16px",
+    borderRadius: "10px",
     border: "none",
     cursor: "pointer",
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: "500",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     transition: "all 0.3s ease",
-    position: "relative",
+  },
+  mobileSectionNav: {
+    display: "flex",
+    gap: "4px",
+    flexWrap: "wrap",
+    padding: "4px",
+    background: "#f8fafc",
+    borderRadius: "10px",
+    border: "1px solid #e5e7eb",
+  },
+  mobileSectionNavBtn: {
+    padding: "6px 12px",
+    borderRadius: "8px",
+    border: "none",
+    cursor: "pointer",
+    fontSize: "11px",
+    fontWeight: "500",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    transition: "all 0.3s ease",
+    flex: "1 1 auto",
+    minWidth: "40px",
+    justifyContent: "center",
   },
   sectionNavLabel: {
     display: "inline",
   },
-  sectionNavActive: {
-    position: "absolute",
-    bottom: "-2px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    width: "20px",
-    height: "3px",
-    background: "#fff",
-    borderRadius: "3px",
-  },
   formBody: {
     display: "flex",
     flexDirection: "column",
-    gap: "20px",
+    gap: "16px",
   },
   formSection: {
     background: "#fff",
-    padding: "24px",
-    borderRadius: "16px",
+    padding: "20px",
+    borderRadius: "14px",
     border: "1px solid #e5e7eb",
   },
   formSectionHeader: {
-    marginBottom: "20px",
+    marginBottom: "16px",
   },
   formSectionTitle: {
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "4px",
+    marginBottom: "2px",
     display: "flex",
     alignItems: "center",
   },
   formSectionDesc: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#64748b",
   },
   formGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(240px, 1fr))",
-    gap: "20px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: "16px",
+  },
+  mobileFormGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "14px",
   },
   formGroup: {
     display: "flex",
     flexDirection: "column",
-    gap: "6px",
+    gap: "4px",
   },
   formLabel: {
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: "600",
     color: "#0f172a",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
   },
   formInput: {
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "2px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
+    borderRadius: "8px",
+    fontSize: "13px",
     transition: "all 0.3s ease",
     outline: "none",
     background: "#fff",
+    width: "100%",
+    boxSizing: "border-box",
   },
   formSelect: {
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "2px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
+    borderRadius: "8px",
+    fontSize: "13px",
     transition: "all 0.3s ease",
     outline: "none",
     background: "#fff",
     cursor: "pointer",
+    width: "100%",
+    boxSizing: "border-box",
   },
   formTextarea: {
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "2px solid #e5e7eb",
-    borderRadius: "10px",
-    fontSize: "14px",
+    borderRadius: "8px",
+    fontSize: "13px",
     transition: "all 0.3s ease",
     outline: "none",
     background: "#fff",
     resize: "vertical",
     fontFamily: "'Inter', sans-serif",
-  },
-  formHint: {
-    fontSize: "11px",
-    color: "#94a3b8",
-    marginTop: "2px",
-  },
-  textareaWrapper: {
-    position: "relative",
-  },
-  textareaHint: {
-    fontSize: "11px",
-    color: "#94a3b8",
-    marginTop: "4px",
-    display: "block",
+    width: "100%",
+    boxSizing: "border-box",
   },
   formActions: {
     display: "flex",
     justifyContent: "flex-end",
-    gap: "12px",
+    gap: "10px",
+    paddingTop: "16px",
+    borderTop: "2px solid #e5e7eb",
+    flexWrap: "wrap",
+  },
+  mobileFormActions: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
     paddingTop: "16px",
     borderTop: "2px solid #e5e7eb",
   },
   cancelBtn: {
-    padding: "12px 28px",
+    padding: "10px 24px",
     background: "#f1f5f9",
     border: "2px solid #e5e7eb",
-    borderRadius: "12px",
+    borderRadius: "10px",
     cursor: "pointer",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "500",
     color: "#475569",
     transition: "all 0.3s ease",
   },
   submitBtn: {
-    padding: "12px 32px",
+    padding: "10px 28px",
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     color: "#fff",
     border: "none",
-    borderRadius: "12px",
+    borderRadius: "10px",
     cursor: "pointer",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     display: "flex",
     alignItems: "center",
-    gap: "8px",
+    gap: "6px",
     transition: "all 0.3s ease",
     boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
   },
   emptyRow: {
     textAlign: "center",
-    padding: "60px 20px",
+    padding: "40px 16px",
     color: "#94a3b8",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
   },
   emptyBtn: {
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     color: "#fff",
     border: "none",
-    padding: "12px 28px",
-    borderRadius: "12px",
+    padding: "10px 24px",
+    borderRadius: "10px",
     cursor: "pointer",
     fontWeight: "500",
     transition: "all 0.3s ease",
@@ -1861,15 +2261,15 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "16px",
-    padding: "16px",
+    gap: "12px",
+    padding: "14px",
     borderTop: "1px solid #e5e7eb",
   },
   pageBtn: {
-    padding: "8px 18px",
+    padding: "6px 14px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     transition: "all 0.3s ease",
     display: "flex",
@@ -1877,58 +2277,59 @@ const styles = {
     gap: "4px",
   },
   pageInfo: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#475569",
     fontWeight: "500",
   },
   applicantCell: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
   },
   applicantAvatar: {
-    width: "40px",
-    height: "40px",
+    width: "36px",
+    height: "36px",
     borderRadius: "50%",
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: "700",
-    fontSize: "16px",
+    fontSize: "14px",
     color: "#fff",
     flexShrink: 0,
   },
   applicantContact: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#64748b",
     display: "flex",
     alignItems: "center",
     gap: "4px",
   },
   detailSection: {
-    padding: "8px 0",
+    padding: "4px 0",
   },
   detailHeader: {
     display: "flex",
     alignItems: "center",
-    gap: "16px",
-    marginBottom: "24px",
+    gap: "14px",
+    marginBottom: "20px",
   },
   detailAvatar: {
-    width: "64px",
-    height: "64px",
+    width: "56px",
+    height: "56px",
     borderRadius: "50%",
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     fontWeight: "700",
-    fontSize: "28px",
+    fontSize: "24px",
     color: "#fff",
+    flexShrink: 0,
   },
   detailName: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "600",
     color: "#0f172a",
     margin: 0,
@@ -1936,125 +2337,232 @@ const styles = {
   detailGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "12px",
-    marginBottom: "20px",
+    gap: "10px",
+    marginBottom: "16px",
   },
   detailItem: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
+    gap: "6px",
+    fontSize: "13px",
     color: "#475569",
-    padding: "8px 12px",
+    padding: "6px 10px",
     background: "#f8fafc",
-    borderRadius: "10px",
+    borderRadius: "8px",
   },
   detailSubtitle: {
-    fontSize: "16px",
+    fontSize: "15px",
     fontWeight: "600",
     color: "#0f172a",
-    marginTop: "16px",
-    marginBottom: "8px",
+    marginTop: "14px",
+    marginBottom: "6px",
   },
   coverLetter: {
     background: "#f8fafc",
-    padding: "16px",
-    borderRadius: "10px",
-    lineHeight: "1.8",
-    fontSize: "14px",
+    padding: "14px",
+    borderRadius: "8px",
+    lineHeight: "1.6",
+    fontSize: "13px",
     color: "#334155",
-    marginBottom: "16px",
+    marginBottom: "14px",
   },
   detailLinks: {
     display: "flex",
-    gap: "12px",
+    gap: "8px",
     flexWrap: "wrap",
-    marginTop: "16px",
+    marginTop: "12px",
   },
   detailLink: {
-    padding: "8px 16px",
+    padding: "6px 14px",
     background: "#f1f5f9",
-    borderRadius: "10px",
+    borderRadius: "8px",
     textDecoration: "none",
     color: "#475569",
-    fontSize: "13px",
+    fontSize: "12px",
     display: "inline-flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     transition: "all 0.3s ease",
   },
-  // Publish Preview Styles
   publishPreview: {
-    marginBottom: "24px",
+    marginBottom: "20px",
   },
   previewCard: {
     background: "#f8fafc",
-    padding: "24px",
-    borderRadius: "12px",
+    padding: "16px",
+    borderRadius: "10px",
     border: "2px solid #e5e7eb",
   },
   previewHeader: {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "12px",
+    marginBottom: "10px",
+    flexWrap: "wrap",
+    gap: "6px",
   },
   previewTitle: {
-    fontSize: "18px",
+    fontSize: "16px",
     fontWeight: "600",
     color: "#0f172a",
     margin: 0,
   },
   previewBadges: {
     display: "flex",
-    gap: "8px",
+    gap: "6px",
   },
   previewDetails: {
     display: "flex",
     flexWrap: "wrap",
-    gap: "16px",
-    marginBottom: "12px",
-    padding: "12px 0",
+    gap: "12px",
+    marginBottom: "10px",
+    padding: "10px 0",
     borderTop: "1px solid #e5e7eb",
     borderBottom: "1px solid #e5e7eb",
+    fontSize: "13px",
   },
-  previewDescription: {
-    fontSize: "14px",
-    color: "#475569",
-    lineHeight: "1.8",
+  mobilePreviewDetails: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "8px",
+    padding: "10px 0",
+    borderTop: "1px solid #e5e7eb",
+    borderBottom: "1px solid #e5e7eb",
+    fontSize: "12px",
   },
   publishOptions: {
     background: "#f8fafc",
-    padding: "20px",
-    borderRadius: "12px",
+    padding: "16px",
+    borderRadius: "10px",
     border: "1px solid #e5e7eb",
   },
   publishOptionsTitle: {
-    fontSize: "15px",
+    fontSize: "14px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "16px",
+    marginBottom: "12px",
   },
   publishGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(200px, 1fr))",
-    gap: "16px",
+    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+    gap: "12px",
+  },
+  mobilePublishGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "10px",
   },
   checkbox: {
     display: "flex",
     flexDirection: "column",
-    gap: "4px",
+    gap: "2px",
     cursor: "pointer",
-    padding: "12px",
+    padding: "10px",
     background: "#fff",
-    borderRadius: "10px",
+    borderRadius: "8px",
     border: "1px solid #e5e7eb",
     transition: "all 0.3s ease",
+    fontSize: "13px",
   },
-  checkboxHint: {
+  // Mobile specific styles
+  mobileJobList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "12px",
+    padding: "12px",
+    width: "100%",
+  },
+  mobileJobCard: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "12px",
+    padding: "14px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+    width: "100%",
+  },
+  mobileJobHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "10px",
+  },
+  mobileJobTitle: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    flex: 1,
+  },
+  mobileBadgeContainer: {
+    display: "flex",
+    gap: "4px",
+    flexWrap: "wrap",
+  },
+  mobileJobDetails: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "6px",
+    marginBottom: "12px",
+    padding: "8px 0",
+    borderTop: "1px solid #f1f5f9",
+    borderBottom: "1px solid #f1f5f9",
+  },
+  mobileJobDetail: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#475569",
+  },
+  mobileJobActions: {
+    display: "flex",
+    gap: "6px",
+  },
+  mobileActionBtn: {
+    flex: 1,
+    padding: "6px 10px",
+    background: "#3b82f6",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
     fontSize: "11px",
-    color: "#94a3b8",
-    marginLeft: "24px",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: "4px",
+    transition: "all 0.3s ease",
+  },
+  mobileAppList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    padding: "12px",
+    width: "100%",
+  },
+  mobileAppCard: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "12px",
+    padding: "12px",
+    width: "100%",
+  },
+  mobileAppHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: "8px",
+  },
+  mobileAppDetails: {
+    display: "flex",
+    gap: "12px",
+    fontSize: "12px",
+    color: "#64748b",
+    marginBottom: "10px",
+    flexWrap: "wrap",
+  },
+  mobileAppActions: {
+    display: "flex",
+    gap: "6px",
   },
 };
 

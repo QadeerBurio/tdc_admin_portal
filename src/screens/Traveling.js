@@ -4,7 +4,8 @@ import {
   Edit3, X, Search, Briefcase,  
   Sparkles, Globe, DollarSign,  
   TrendingUp,  
-  Grid, List,  SlidersHorizontal
+  Grid, List, SlidersHorizontal,
+  ChevronDown, ChevronUp
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -32,6 +33,9 @@ const AdminPackageScreen = () => {
   const [showFilters, setShowFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState('All');
   const [sortBy, setSortBy] = useState('newest');
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   const [form, setForm] = useState({
     name: '',
@@ -45,6 +49,15 @@ const AdminPackageScreen = () => {
 
   const [imageFile, setImageFile] = useState(null);
   const [previewUrl, setPreviewUrl] = useState(null);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetchPackages();
@@ -194,8 +207,55 @@ const AdminPackageScreen = () => {
   const totalPackages = packages.length;
   const uniqueCategories = ['All', ...new Set(packages.map(p => p.category))];
 
+  // Mobile Package Card Component
+  const MobilePackageCard = ({ pkg }) => (
+    <motion.div 
+      style={styles.mobileCard}
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+      whileHover={{ y: -4, boxShadow: "0 12px 25px -8px rgba(0,0,0,0.12)" }}
+    >
+      <div style={styles.mobileCardImage}>
+        <img 
+          src={pkg.image} 
+          alt={pkg.name} 
+          style={styles.mobileCardImg} 
+          onError={(e) => e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'} 
+        />
+        <div style={styles.mobileCardCategory}>{pkg.category}</div>
+        <div style={styles.mobileCardPrice}>${parseInt(pkg.price).toLocaleString()}</div>
+      </div>
+      <div style={styles.mobileCardBody}>
+        <h3 style={styles.mobileCardTitle}>{pkg.name}</h3>
+        <div style={styles.mobileCardLocation}>
+          <MapPin size={12} /> {pkg.location || 'TBD'}
+        </div>
+        <p style={styles.mobileCardDesc}>
+          {pkg.description?.substring(0, 60) || 'No description available'}...
+        </p>
+        <div style={styles.mobileCardActions}>
+          <button style={{...styles.mobileActionBtn, background: '#eff6ff', color: '#3b82f6'}} onClick={() => openModal(pkg)}>
+            <Edit3 size={14} /> Edit
+          </button>
+          <button style={{...styles.mobileActionBtn, background: '#fef2f2', color: '#ef4444'}} onClick={() => handleDelete(pkg._id)}>
+            {deletingId === pkg._id ? (
+              <div style={styles.spinnerSmall}></div>
+            ) : (
+              <Trash2 size={14} />
+            )}
+          </button>
+        </div>
+      </div>
+    </motion.div>
+  );
+
   return (
-    <div style={styles.pageWrapper}>
+    <div style={{
+      ...styles.pageWrapper,
+      padding: isMobile ? '12px 16px' : isTablet ? '16px 24px' : '25px 35px',
+      borderRadius: isMobile ? '16px' : isTablet ? '24px' : '32px',
+    }}>
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
       <div style={styles.bgDecoration3}></div>
@@ -204,7 +264,12 @@ const AdminPackageScreen = () => {
         {/* HEADER */}
         <motion.div 
           className="animate-header" 
-          style={styles.dashboardHeader}
+          style={{
+            ...styles.dashboardHeader,
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'flex-start',
+            gap: isMobile ? '16px' : '20px',
+          }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -214,38 +279,69 @@ const AdminPackageScreen = () => {
               <Globe size={14} />
               <span>Travel Inventory</span>
             </div>
-            <h1 style={styles.mainTitle}>Travel Packages</h1>
-            <p style={styles.mainSubtitle}>Manage and update your travel inventory across all categories</p>
+            <h1 style={{
+              ...styles.mainTitle,
+              fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
+            }}>Travel Packages</h1>
+            <p style={{
+              ...styles.mainSubtitle,
+              fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
+            }}>
+              {isMobile ? 'Manage your travel inventory' : 'Manage and update your travel inventory across all categories'}
+            </p>
           </div>
-          <div style={styles.headerActions}>
-            <div className="stats-group" style={styles.statsRow}>
-              <motion.div className="stat-card" style={styles.statCard} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
-                <div style={{...styles.statIcon, background: '#ecfdf5'}}>
-                  <Briefcase size={18} color="#10b981" />
+          <div style={{
+            ...styles.headerActions,
+            flexDirection: isMobile ? 'column' : 'row',
+            width: isMobile ? '100%' : 'auto',
+          }}>
+            <div className="stats-group" style={{
+              ...styles.statsRow,
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              width: isMobile ? '100%' : 'auto',
+            }}>
+              <motion.div className="stat-card" style={{
+                ...styles.statCard,
+                padding: isMobile ? '8px 14px' : '10px 20px',
+                flex: isMobile ? 1 : 'auto',
+              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+                <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
+                  <Briefcase size={isMobile ? 14 : 18} color="#10b981" />
                 </div>
                 <div>
-                  <div style={styles.statVal}>{totalPackages}</div>
-                  <div style={styles.statLab}>Total Packages</div>
+                  <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{totalPackages}</div>
+                  <div style={{...styles.statLab, fontSize: isMobile ? '8px' : '10px'}}>Total</div>
                 </div>
               </motion.div>
-              <motion.div className="stat-card" style={styles.statCard} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
-                <div style={{...styles.statIcon, background: '#eff6ff'}}>
-                  <TrendingUp size={18} color="#3b82f6" />
+              <motion.div className="stat-card" style={{
+                ...styles.statCard,
+                padding: isMobile ? '8px 14px' : '10px 20px',
+                flex: isMobile ? 1 : 'auto',
+              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+                <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
+                  <TrendingUp size={isMobile ? 14 : 18} color="#3b82f6" />
                 </div>
                 <div>
-                  <div style={styles.statVal}>{CATEGORIES.length}</div>
-                  <div style={styles.statLab}>Categories</div>
+                  <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{CATEGORIES.length}</div>
+                  <div style={{...styles.statLab, fontSize: isMobile ? '8px' : '10px'}}>Categories</div>
                 </div>
               </motion.div>
             </div>
             <motion.button 
               className="add-btn" 
-              style={styles.addMainBtn} 
+              style={{
+                ...styles.addMainBtn,
+                width: isMobile ? '100%' : 'auto',
+                justifyContent: 'center',
+                padding: isMobile ? '10px 16px' : '12px 28px',
+                fontSize: isMobile ? '13px' : '14px',
+              }} 
               onClick={() => openModal()}
               whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
               whileTap={{ scale: 0.95 }}
             >
-              <Plus size={18} /> Create Package
+              <Plus size={isMobile ? 16 : 18} /> {isMobile ? 'Create' : 'Create Package'}
             </motion.button>
           </div>
         </motion.div>
@@ -253,18 +349,34 @@ const AdminPackageScreen = () => {
         {/* TABLE CONTROLS WITH FILTERS */}
         <motion.div 
           className="animate-controls" 
-          style={styles.tableControls}
+          style={{
+            ...styles.tableControls,
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '12px' : '16px',
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          <div style={styles.controlsLeft}>
-            <div style={styles.searchContainer}>
-              <Search size={18} style={styles.searchIcon} />
+          <div style={{
+            ...styles.controlsLeft,
+            width: isMobile ? '100%' : 'auto',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+          }}>
+            <div style={{
+              ...styles.searchContainer,
+              width: isMobile ? '100%' : '280px',
+            }}>
+              <Search size={isMobile ? 16 : 18} style={styles.searchIcon} />
               <input 
                 type="text" 
-                placeholder="Search by name or category..." 
-                style={styles.searchInput}
+                placeholder={isMobile ? "Search..." : "Search by name or category..."} 
+                style={{
+                  ...styles.searchInput,
+                  padding: isMobile ? '8px 32px 8px 36px' : '10px 40px 10px 40px',
+                  fontSize: isMobile ? '13px' : '14px',
+                }}
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
               />
@@ -275,58 +387,108 @@ const AdminPackageScreen = () => {
               )}
             </div>
             
-            <motion.button 
-              style={styles.filterToggle}
-              onClick={() => setShowFilters(!showFilters)}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <SlidersHorizontal size={16} /> Filters
-              {filterCategory !== 'All' && <span style={styles.filterDot} />}
-            </motion.button>
+            {isMobile ? (
+              <button 
+                style={styles.mobileFilterToggle}
+                onClick={() => setIsFilterOpen(!isFilterOpen)}
+              >
+                <SlidersHorizontal size={16} /> Filters {isFilterOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
+                {filterCategory !== 'All' && <span style={styles.filterDot} />}
+              </button>
+            ) : (
+              <motion.button 
+                style={styles.filterToggle}
+                onClick={() => setShowFilters(!showFilters)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+              >
+                <SlidersHorizontal size={16} /> Filters
+                {filterCategory !== 'All' && <span style={styles.filterDot} />}
+              </motion.button>
+            )}
           </div>
 
-          <div style={styles.controlsRight}>
+          <div style={{
+            ...styles.controlsRight,
+            width: isMobile ? '100%' : 'auto',
+            flexWrap: isMobile ? 'wrap' : 'nowrap',
+            justifyContent: isMobile ? 'center' : 'flex-end',
+          }}>
             <div style={styles.viewToggle}>
               <motion.button
-                style={{...styles.viewBtn, ...(viewMode === 'grid' ? styles.activeView : {})}}
+                style={{...styles.viewBtn, ...(viewMode === 'grid' ? styles.activeView : {}), padding: isMobile ? '6px 8px' : '8px 10px'}}
                 onClick={() => setViewMode('grid')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <Grid size={16} />
+                <Grid size={isMobile ? 14 : 16} />
               </motion.button>
               <motion.button
-                style={{...styles.viewBtn, ...(viewMode === 'list' ? styles.activeView : {})}}
+                style={{...styles.viewBtn, ...(viewMode === 'list' ? styles.activeView : {}), padding: isMobile ? '6px 8px' : '8px 10px'}}
                 onClick={() => setViewMode('list')}
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
               >
-                <List size={16} />
+                <List size={isMobile ? 14 : 16} />
               </motion.button>
             </div>
             
             <select
-              style={styles.sortSelect}
+              style={{
+                ...styles.sortSelect,
+                padding: isMobile ? '6px 10px' : '8px 14px',
+                fontSize: isMobile ? '12px' : '13px',
+              }}
               value={sortBy}
               onChange={(e) => setSortBy(e.target.value)}
             >
-              <option value="newest">Newest First</option>
-              <option value="oldest">Oldest First</option>
-              <option value="priceLow">Price: Low to High</option>
-              <option value="priceHigh">Price: High to Low</option>
+              <option value="newest">Newest</option>
+              <option value="oldest">Oldest</option>
+              <option value="priceLow">Price: Low</option>
+              <option value="priceHigh">Price: High</option>
               <option value="name">Alphabetical</option>
             </select>
             
-            <div style={styles.badgeCount}>
-              {filteredPackages.length} of {totalPackages}
-            </div>
+            {!isMobile && (
+              <div style={styles.badgeCount}>
+                {filteredPackages.length} of {totalPackages}
+              </div>
+            )}
           </div>
         </motion.div>
 
-        {/* Filters Dropdown */}
+        {/* Mobile Filters */}
+        {isMobile && isFilterOpen && (
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: 'auto' }}
+            exit={{ opacity: 0, height: 0 }}
+            style={styles.mobileFilters}
+          >
+            <div style={styles.mobileFilterGroup}>
+              <label style={styles.mobileFilterLabel}>Category</label>
+              <select
+                style={styles.mobileFilterSelect}
+                value={filterCategory}
+                onChange={(e) => setFilterCategory(e.target.value)}
+              >
+                {uniqueCategories.map(cat => (
+                  <option key={cat} value={cat}>{cat}</option>
+                ))}
+              </select>
+            </div>
+            <button
+              style={styles.mobileClearFilters}
+              onClick={() => { setFilterCategory('All'); setIsFilterOpen(false); }}
+            >
+              Clear Filters
+            </button>
+          </motion.div>
+        )}
+
+        {/* Filters Dropdown - Desktop */}
         <AnimatePresence>
-          {showFilters && (
+          {showFilters && !isMobile && (
             <motion.div 
               style={styles.filtersDropdown}
               initial={{ opacity: 0, height: 0 }}
@@ -377,50 +539,80 @@ const AdminPackageScreen = () => {
         >
           {viewMode === 'grid' ? (
             // GRID VIEW
-            <div style={styles.gridContainer}>
+            <div style={{
+              ...styles.gridContainer,
+              gridTemplateColumns: isMobile ? '1fr' : isTablet ? 'repeat(2, 1fr)' : 'repeat(auto-fill, minmax(280px, 1fr))',
+              gap: isMobile ? '12px' : isTablet ? '16px' : '20px',
+            }}>
               {filteredPackages.length > 0 ? (
                 filteredPackages.map((pkg, index) => (
                   <motion.div 
                     key={pkg._id} 
                     className="package-card"
-                    style={styles.gridCard}
+                    style={{
+                      ...styles.gridCard,
+                      borderRadius: isMobile ? '16px' : isTablet ? '20px' : '24px',
+                    }}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
                     whileHover={{ y: -8, boxShadow: "0 20px 35px -12px rgba(0,0,0,0.15)" }}
                   >
-                    <div style={styles.gridImageWrapper}>
+                    <div style={{
+                      ...styles.gridImageWrapper,
+                      height: isMobile ? '160px' : isTablet ? '180px' : '200px',
+                    }}>
                       <img src={pkg.image} alt={pkg.name} style={styles.gridImage} onError={(e) => e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'} />
-                      <div style={styles.gridCategory}>{pkg.category}</div>
-                      <div style={styles.gridPrice}>${parseInt(pkg.price).toLocaleString()}</div>
+                      <div style={{...styles.gridCategory, fontSize: isMobile ? '10px' : '11px'}}>{pkg.category}</div>
+                      <div style={{...styles.gridPrice, fontSize: isMobile ? '12px' : '14px'}}>${parseInt(pkg.price).toLocaleString()}</div>
                     </div>
-                    <div style={styles.gridBody}>
-                      <h3 style={styles.gridTitle}>{pkg.name}</h3>
-                      <div style={styles.gridLocation}>
-                        <MapPin size={14} /> {pkg.location || 'TBD'}
+                    <div style={{
+                      ...styles.gridBody,
+                      padding: isMobile ? '12px 14px' : isTablet ? '14px 16px' : '16px 20px',
+                    }}>
+                      <h3 style={{
+                        ...styles.gridTitle,
+                        fontSize: isMobile ? '14px' : isTablet ? '15px' : '16px',
+                      }}>{pkg.name}</h3>
+                      <div style={{
+                        ...styles.gridLocation,
+                        fontSize: isMobile ? '12px' : isTablet ? '12px' : '13px',
+                      }}>
+                        <MapPin size={isMobile ? 12 : 14} /> {pkg.location || 'TBD'}
                       </div>
-                      <p style={styles.gridDescription}>
-                        {pkg.description?.substring(0, 80) || 'No description available'}...
+                      <p style={{
+                        ...styles.gridDescription,
+                        fontSize: isMobile ? '12px' : isTablet ? '12px' : '13px',
+                      }}>
+                        {pkg.description?.substring(0, isMobile ? 50 : 80) || 'No description available'}...
                       </p>
                       <div style={styles.gridActions}>
                         <motion.button 
                           onClick={() => openModal(pkg)} 
-                          style={styles.gridEditBtn}
+                          style={{
+                            ...styles.gridEditBtn,
+                            padding: isMobile ? '6px 12px' : '8px 16px',
+                            fontSize: isMobile ? '12px' : '13px',
+                          }}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <Edit3 size={14} /> Edit
+                          <Edit3 size={isMobile ? 12 : 14} /> Edit
                         </motion.button>
                         <motion.button 
                           onClick={() => handleDelete(pkg._id)} 
-                          style={styles.gridDeleteBtn}
+                          style={{
+                            ...styles.gridDeleteBtn,
+                            padding: isMobile ? '6px 10px' : '8px 14px',
+                            fontSize: isMobile ? '12px' : '13px',
+                          }}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
                           {deletingId === pkg._id ? (
                             <div style={styles.spinnerSmall}></div>
                           ) : (
-                            <Trash2 size={14} />
+                            <Trash2 size={isMobile ? 12 : 14} />
                           )}
                         </motion.button>
                       </div>
@@ -434,16 +626,22 @@ const AdminPackageScreen = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <div style={styles.emptyIcon}>✈️</div>
-                  <p style={styles.emptyTitle}>No travel packages found</p>
-                  <span style={styles.emptySubtext}>Try adjusting your search or create a new package</span>
+                  <div style={{...styles.emptyIcon, fontSize: isMobile ? '40px' : '64px'}}>✈️</div>
+                  <p style={{...styles.emptyTitle, fontSize: isMobile ? '16px' : '18px'}}>No travel packages found</p>
+                  <span style={{...styles.emptySubtext, fontSize: isMobile ? '13px' : '14px'}}>
+                    Try adjusting your search or create a new package
+                  </span>
                   <motion.button 
-                    style={styles.emptyBtn}
+                    style={{
+                      ...styles.emptyBtn,
+                      padding: isMobile ? '10px 20px' : '12px 24px',
+                      fontSize: isMobile ? '13px' : '14px',
+                    }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={() => openModal()}
                   >
-                    <Plus size={16} /> Create New Package
+                    <Plus size={isMobile ? 14 : 16} /> Create New Package
                   </motion.button>
                 </motion.div>
               )}
@@ -451,71 +649,109 @@ const AdminPackageScreen = () => {
           ) : (
             // LIST VIEW
             <div style={styles.listContainer}>
-              <div style={styles.tableHeader}>
-                <div style={{...styles.column, flex: 2.5}}>Package Details</div>
-                <div style={{...styles.column, flex: 1}}>Category</div>
-                <div style={{...styles.column, flex: 1}}>Destination</div>
-                <div style={{...styles.column, flex: 1}}>Price</div>
-                <div style={{...styles.column, flex: 0.8, textAlign: 'right'}}>Actions</div>
-              </div>
+              {!isMobile && (
+                <div style={{
+                  ...styles.tableHeader,
+                  padding: isTablet ? '12px 16px' : '16px 24px',
+                  fontSize: isTablet ? '10px' : '11px',
+                }}>
+                  <div style={{...styles.column, flex: 2.5}}>Package Details</div>
+                  <div style={{...styles.column, flex: 1}}>Category</div>
+                  <div style={{...styles.column, flex: 1}}>Destination</div>
+                  <div style={{...styles.column, flex: 1}}>Price</div>
+                  <div style={{...styles.column, flex: 0.8, textAlign: 'right'}}>Actions</div>
+                </div>
+              )}
 
               {filteredPackages.length > 0 ? (
-                filteredPackages.map((pkg, index) => (
-                  <motion.div 
-                    key={pkg._id} 
-                    className="package-row" 
-                    style={styles.tableRow}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ duration: 0.4, delay: index * 0.05 }}
-                    whileHover={{ backgroundColor: '#f8fafc', x: 4 }}
-                  >
-                    <div style={{...styles.cell, flex: 2.5}}>
-                      <img src={pkg.image} alt="" style={styles.listThumb} onError={(e) => e.target.src = 'https://via.placeholder.com/60x60?text=No+Image'} />
-                      <div>
-                        <div style={styles.pkgName}>{pkg.name}</div>
-                        <div style={styles.pkgId}>ID: {pkg._id.slice(-8).toUpperCase()}</div>
+                isMobile ? (
+                  <div style={styles.mobileCardList}>
+                    {filteredPackages.map((pkg) => (
+                      <MobilePackageCard key={pkg._id} pkg={pkg} />
+                    ))}
+                  </div>
+                ) : (
+                  filteredPackages.map((pkg, index) => (
+                    <motion.div 
+                      key={pkg._id} 
+                      className="package-row" 
+                      style={{
+                        ...styles.tableRow,
+                        padding: isTablet ? '14px 16px' : '18px 24px',
+                      }}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ duration: 0.4, delay: index * 0.05 }}
+                      whileHover={{ backgroundColor: '#f8fafc', x: 4 }}
+                    >
+                      <div style={{...styles.cell, flex: 2.5}}>
+                        <img src={pkg.image} alt="" style={{
+                          ...styles.listThumb,
+                          width: isTablet ? '48px' : '56px',
+                          height: isTablet ? '48px' : '56px',
+                          marginRight: isTablet ? '12px' : '16px',
+                        }} onError={(e) => e.target.src = 'https://via.placeholder.com/60x60?text=No+Image'} />
+                        <div>
+                          <div style={{
+                            ...styles.pkgName,
+                            fontSize: isTablet ? '13px' : '15px',
+                          }}>{pkg.name}</div>
+                          <div style={{
+                            ...styles.pkgId,
+                            fontSize: isTablet ? '9px' : '10px',
+                          }}>ID: {pkg._id.slice(-8).toUpperCase()}</div>
+                        </div>
                       </div>
-                    </div>
-                    <div style={{...styles.cell, flex: 1}}>
-                      <span style={styles.categoryTag}>{pkg.category}</span>
-                    </div>
-                    <div style={{...styles.cell, flex: 1, color: '#64748b'}}>
-                      <MapPin size={14} style={{marginRight: 4}} /> {pkg.location || 'TBD'}
-                    </div>
-                    <div style={{...styles.cell, flex: 1, fontWeight: '700', color: '#ff961a'}}>
-                      <DollarSign size={14} style={{display: 'inline', marginRight: 2}} />
-                      {parseInt(pkg.price).toLocaleString()}
-                    </div>
-                    <div style={{...styles.cell, flex: 0.8, justifyContent: 'flex-end', gap: '8px'}}>
-                      <motion.button 
-                        onClick={() => openModal(pkg)} 
-                        className="action-icon" 
-                        style={styles.iconBtnEdit} 
-                        title="Edit"
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        <Edit3 size={16} />
-                      </motion.button>
-                      <motion.button 
-                        onClick={() => handleDelete(pkg._id)} 
-                        className="action-icon" 
-                        style={styles.iconBtnDel} 
-                        title="Delete" 
-                        disabled={deletingId === pkg._id}
-                        whileHover={{ scale: 1.1 }}
-                        whileTap={{ scale: 0.9 }}
-                      >
-                        {deletingId === pkg._id ? (
-                          <div style={styles.spinnerSmall}></div>
-                        ) : (
-                          <Trash2 size={16} />
-                        )}
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                ))
+                      <div style={{...styles.cell, flex: 1}}>
+                        <span style={{
+                          ...styles.categoryTag,
+                          fontSize: isTablet ? '10px' : '12px',
+                          padding: isTablet ? '4px 10px' : '5px 12px',
+                        }}>{pkg.category}</span>
+                      </div>
+                      <div style={{...styles.cell, flex: 1, color: '#64748b', fontSize: isTablet ? '12px' : '13px'}}>
+                        <MapPin size={isTablet ? 12 : 14} style={{marginRight: 4}} /> {pkg.location || 'TBD'}
+                      </div>
+                      <div style={{...styles.cell, flex: 1, fontWeight: '700', color: '#ff961a', fontSize: isTablet ? '13px' : '14px'}}>
+                        <DollarSign size={isTablet ? 12 : 14} style={{display: 'inline', marginRight: 2}} />
+                        {parseInt(pkg.price).toLocaleString()}
+                      </div>
+                      <div style={{...styles.cell, flex: 0.8, justifyContent: 'flex-end', gap: isTablet ? '4px' : '8px'}}>
+                        <motion.button 
+                          onClick={() => openModal(pkg)} 
+                          className="action-icon" 
+                          style={{
+                            ...styles.iconBtnEdit,
+                            padding: isTablet ? '6px' : '8px',
+                          }} 
+                          title="Edit"
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          <Edit3 size={isTablet ? 14 : 16} />
+                        </motion.button>
+                        <motion.button 
+                          onClick={() => handleDelete(pkg._id)} 
+                          className="action-icon" 
+                          style={{
+                            ...styles.iconBtnDel,
+                            padding: isTablet ? '6px' : '8px',
+                          }} 
+                          title="Delete" 
+                          disabled={deletingId === pkg._id}
+                          whileHover={{ scale: 1.1 }}
+                          whileTap={{ scale: 0.9 }}
+                        >
+                          {deletingId === pkg._id ? (
+                            <div style={styles.spinnerSmall}></div>
+                          ) : (
+                            <Trash2 size={isTablet ? 14 : 16} />
+                          )}
+                        </motion.button>
+                      </div>
+                    </motion.div>
+                  ))
+                )
               ) : (
                 <motion.div 
                   className="empty-state" 
@@ -523,9 +759,11 @@ const AdminPackageScreen = () => {
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                 >
-                  <div style={styles.emptyIcon}>✈️</div>
-                  <p style={styles.emptyTitle}>No travel packages found</p>
-                  <span style={styles.emptySubtext}>Try adjusting your search or create a new package</span>
+                  <div style={{...styles.emptyIcon, fontSize: isMobile ? '40px' : '64px'}}>✈️</div>
+                  <p style={{...styles.emptyTitle, fontSize: isMobile ? '16px' : '18px'}}>No travel packages found</p>
+                  <span style={{...styles.emptySubtext, fontSize: isMobile ? '13px' : '14px'}}>
+                    Try adjusting your search or create a new package
+                  </span>
                 </motion.div>
               )}
             </div>
@@ -546,21 +784,34 @@ const AdminPackageScreen = () => {
           >
             <motion.div 
               className="modal-content" 
-              style={styles.modalContent} 
+              style={{
+                ...styles.modalContent,
+                maxWidth: isMobile ? '95%' : '950px',
+                borderRadius: isMobile ? '20px' : '28px',
+              }} 
               onClick={e => e.stopPropagation()}
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 30, opacity: 0 }}
               transition={{ type: "spring", damping: 25 }}
             >
-              <div style={styles.modalHeader}>
+              <div style={{
+                ...styles.modalHeader,
+                padding: isMobile ? '16px 20px 12px' : '24px 32px 20px',
+              }}>
                 <div>
                   <div style={styles.modalBadge}>
                     <Sparkles size={14} />
                     <span>{isEditing ? 'Edit Package' : 'New Package'}</span>
                   </div>
-                  <h2 style={styles.modalTitle}>{isEditing ? "Modify Package" : "Create New Package"}</h2>
-                  <p style={styles.modalSubtitle}>Complete all required fields below</p>
+                  <h2 style={{
+                    ...styles.modalTitle,
+                    fontSize: isMobile ? '18px' : '22px',
+                  }}>{isEditing ? "Modify Package" : "Create New Package"}</h2>
+                  <p style={{
+                    ...styles.modalSubtitle,
+                    fontSize: isMobile ? '12px' : '13px',
+                  }}>Complete all required fields below</p>
                 </div>
                 <motion.button 
                   onClick={closeModal} 
@@ -573,8 +824,15 @@ const AdminPackageScreen = () => {
                 </motion.button>
               </div>
               
-              <form onSubmit={handleSubmit} style={styles.modalForm}>
-                <div style={styles.formGrid}>
+              <form onSubmit={handleSubmit} style={{
+                ...styles.modalForm,
+                padding: isMobile ? '16px' : '32px',
+              }}>
+                <div style={{
+                  ...styles.formGrid,
+                  gridTemplateColumns: isMobile ? '1fr' : '1.2fr 0.8fr',
+                  gap: isMobile ? '16px' : '32px',
+                }}>
                   <div style={styles.formCol}>
                     <div className="animate-field" style={styles.inputGroup}>
                       <label style={styles.label}>Package Title <span style={styles.required}>*</span></label>
@@ -588,8 +846,12 @@ const AdminPackageScreen = () => {
                       />
                     </div>
 
-                    <div style={styles.row}>
-                      <div style={{flex: 1}}>
+                    <div style={{
+                      ...styles.row,
+                      flexDirection: isMobile ? 'column' : 'row',
+                      gap: isMobile ? '12px' : '16px',
+                    }}>
+                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
                         <label style={styles.label}>Category <span style={styles.required}>*</span></label>
                         <motion.select 
                           style={styles.input} 
@@ -602,7 +864,7 @@ const AdminPackageScreen = () => {
                           {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </motion.select>
                       </div>
-                      <div style={{flex: 1}}>
+                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
                         <label style={styles.label}>Price (USD) <span style={styles.required}>*</span></label>
                         <motion.input 
                           style={styles.input} 
@@ -630,7 +892,11 @@ const AdminPackageScreen = () => {
                     <div className="animate-field" style={styles.inputGroup}>
                       <label style={styles.label}>Description</label>
                       <motion.textarea 
-                        style={{...styles.input, height: '100px', resize: 'none'}} 
+                        style={{
+                          ...styles.input,
+                          height: isMobile ? '80px' : '100px',
+                          resize: 'none',
+                        }} 
                         value={form.description} 
                         onChange={(e) => setForm({...form, description: e.target.value})} 
                         placeholder="Provide an overview of the package..."
@@ -644,7 +910,10 @@ const AdminPackageScreen = () => {
                       <label style={styles.label}>Featured Image <span style={styles.required}>*</span></label>
                       <motion.div 
                         className="upload-area" 
-                        style={styles.uploadBox} 
+                        style={{
+                          ...styles.uploadBox,
+                          height: isMobile ? '140px' : '180px',
+                        }} 
                         onClick={() => fileInputRef.current.click()}
                         whileHover={{ borderColor: "#ff961a", background: "#fff7ed" }}
                       >
@@ -658,8 +927,11 @@ const AdminPackageScreen = () => {
                           </div>
                         ) : (
                           <div style={styles.uploadPlaceholder}>
-                            <ImageIcon size={32} color="#cbd5e1" />
-                            <span style={styles.uploadText}>Click to upload image</span>
+                            <ImageIcon size={isMobile ? 24 : 32} color="#cbd5e1" />
+                            <span style={{
+                              ...styles.uploadText,
+                              fontSize: isMobile ? '12px' : '14px',
+                            }}>Click to upload image</span>
                             <small style={styles.uploadHint}>PNG, JPG up to 5MB</small>
                           </div>
                         )}
@@ -674,11 +946,15 @@ const AdminPackageScreen = () => {
                           type="button" 
                           onClick={() => addField('requirements')} 
                           className="add-field" 
-                          style={styles.addSmallBtn}
+                          style={{
+                            ...styles.addSmallBtn,
+                            padding: isMobile ? '4px 10px' : '6px 12px',
+                            fontSize: isMobile ? '11px' : '12px',
+                          }}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <Plus size={14} /> Add
+                          <Plus size={isMobile ? 12 : 14} /> Add
                         </motion.button>
                       </div>
                       <div style={styles.dynamicList}>
@@ -692,7 +968,7 @@ const AdminPackageScreen = () => {
                             transition={{ duration: 0.3, delay: idx * 0.05 }}
                           >
                             <input 
-                              style={{...styles.input, flex: 1}} 
+                              style={{...styles.input, flex: 1, fontSize: isMobile ? '13px' : '14px'}} 
                               value={req} 
                               onChange={(e) => handleDynamicChange(idx, e.target.value, 'requirements')} 
                               placeholder="Requirement item" 
@@ -718,11 +994,15 @@ const AdminPackageScreen = () => {
                           type="button" 
                           onClick={() => addField('inclusions')} 
                           className="add-field" 
-                          style={styles.addSmallBtn}
+                          style={{
+                            ...styles.addSmallBtn,
+                            padding: isMobile ? '4px 10px' : '6px 12px',
+                            fontSize: isMobile ? '11px' : '12px',
+                          }}
                           whileHover={{ scale: 1.05 }}
                           whileTap={{ scale: 0.95 }}
                         >
-                          <Plus size={14} /> Add
+                          <Plus size={isMobile ? 12 : 14} /> Add
                         </motion.button>
                       </div>
                       <div style={styles.dynamicList}>
@@ -736,7 +1016,7 @@ const AdminPackageScreen = () => {
                             transition={{ duration: 0.3, delay: idx * 0.05 }}
                           >
                             <input 
-                              style={{...styles.input, flex: 1}} 
+                              style={{...styles.input, flex: 1, fontSize: isMobile ? '13px' : '14px'}} 
                               value={inc} 
                               onChange={(e) => handleDynamicChange(idx, e.target.value, 'inclusions')} 
                               placeholder="Inclusion item" 
@@ -757,11 +1037,20 @@ const AdminPackageScreen = () => {
                   </div>
                 </div>
 
-                <div style={styles.modalFooter}>
+                <div style={{
+                  ...styles.modalFooter,
+                  flexDirection: isMobile ? 'column' : 'row',
+                  gap: isMobile ? '8px' : '14px',
+                  paddingTop: isMobile ? '16px' : '24px',
+                }}>
                   <motion.button 
                     type="button" 
                     onClick={closeModal} 
-                    style={styles.cancelBtn}
+                    style={{
+                      ...styles.cancelBtn,
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center',
+                    }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -770,7 +1059,12 @@ const AdminPackageScreen = () => {
                   <motion.button 
                     type="submit" 
                     disabled={loading} 
-                    style={styles.submitBtn}
+                    style={{
+                      ...styles.submitBtn,
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center',
+                      padding: isMobile ? '10px 16px' : '12px 32px',
+                    }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -902,6 +1196,65 @@ const AdminPackageScreen = () => {
               order: -1 !important;
             }
           }
+
+          @media (max-width: 480px) {
+            .pageWrapper {
+              padding: 8px 12px !important;
+              border-radius: 12px !important;
+            }
+            .mainTitle {
+              font-size: 20px !important;
+            }
+            .mainSubtitle {
+              font-size: 11px !important;
+            }
+            .statVal {
+              font-size: 14px !important;
+            }
+            .statLab {
+              font-size: 7px !important;
+            }
+            .statCard {
+              padding: 6px 10px !important;
+            }
+            .modalContent {
+              padding: 12px !important;
+            }
+            .modalTitle {
+              font-size: 16px !important;
+            }
+            .modalSubtitle {
+              font-size: 11px !important;
+            }
+            .input {
+              font-size: 12px !important;
+              padding: 8px 12px !important;
+            }
+            .gridCard {
+              border-radius: 12px !important;
+            }
+            .gridImageWrapper {
+              height: 140px !important;
+            }
+            .gridBody {
+              padding: 10px 12px !important;
+            }
+            .gridTitle {
+              font-size: 13px !important;
+            }
+            .gridDescription {
+              font-size: 11px !important;
+            }
+            .mobileCard {
+              padding: 10px !important;
+            }
+            .mobileCardImage {
+              height: 120px !important;
+            }
+            .mobileCardTitle {
+              font-size: 13px !important;
+            }
+          }
         `}
       </style>
     </div>
@@ -909,8 +1262,145 @@ const AdminPackageScreen = () => {
 };
 
 const styles = {
-  // ... (previous styles remain the same until tableControls)
-  
+  pageWrapper: { 
+    minHeight: '100vh', 
+    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+    padding: '25px 35px', 
+    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    position: 'relative',
+    borderRadius: '32px',
+    overflow: 'hidden'
+  },
+  bgDecoration1: {
+    position: 'absolute',
+    top: '-100px',
+    right: '-50px',
+    width: '300px',
+    height: '300px',
+    background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
+    borderRadius: '50%',
+    pointerEvents: 'none'
+  },
+  bgDecoration2: {
+    position: 'absolute',
+    bottom: '-80px',
+    left: '-60px',
+    width: '250px',
+    height: '250px',
+    background: 'radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)',
+    borderRadius: '50%',
+    pointerEvents: 'none'
+  },
+  bgDecoration3: {
+    position: 'absolute',
+    top: '50%',
+    right: '10%',
+    width: '150px',
+    height: '150px',
+    background: 'radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)',
+    borderRadius: '50%',
+    pointerEvents: 'none'
+  },
+  container: { 
+    maxWidth: '1400px', 
+    margin: '0 auto',
+    position: 'relative',
+    zIndex: 1
+  },
+  dashboardHeader: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'flex-start', 
+    marginBottom: '32px',
+    flexWrap: 'wrap',
+    gap: '20px'
+  },
+  headerBadge: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '8px',
+    background: '#fff7ed',
+    padding: '6px 16px',
+    borderRadius: '40px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#ff961a',
+    marginBottom: '16px'
+  },
+  headerActions: { 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '20px', 
+    flexWrap: 'wrap' 
+  },
+  statsRow: { 
+    display: 'flex', 
+    gap: '12px' 
+  },
+  statCard: { 
+    background: '#fff', 
+    padding: '10px 20px', 
+    borderRadius: '20px', 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '12px', 
+    border: '1px solid #e2e8f0',
+    transition: 'all 0.3s ease'
+  },
+  statIcon: {
+    width: '36px',
+    height: '36px',
+    borderRadius: '12px',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center'
+  },
+  statVal: { 
+    fontSize: '20px', 
+    fontWeight: '800', 
+    color: '#1e293b',
+    lineHeight: '1.2'
+  },
+  statLab: { 
+    fontSize: '10px', 
+    color: '#94a3b8', 
+    textTransform: 'uppercase', 
+    fontWeight: '600' 
+  },
+  mainTitle: { 
+    fontSize: '32px', 
+    fontWeight: '800', 
+    color: '#1e293b', 
+    margin: 0, 
+    letterSpacing: '-0.5px' 
+  },
+  mainSubtitle: { 
+    color: '#64748b', 
+    fontSize: '14px', 
+    marginTop: '8px' 
+  },
+  addMainBtn: { 
+    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
+    color: '#fff', 
+    border: 'none', 
+    padding: '12px 28px', 
+    borderRadius: '16px', 
+    fontWeight: '600', 
+    cursor: 'pointer', 
+    display: 'flex', 
+    alignItems: 'center', 
+    gap: '8px', 
+    transition: 'all 0.3s ease',
+    fontSize: '14px'
+  },
+  tableControls: { 
+    display: 'flex', 
+    justifyContent: 'space-between', 
+    alignItems: 'center', 
+    marginBottom: '24px',
+    flexWrap: 'wrap',
+    gap: '16px'
+  },
   controlsLeft: {
     display: 'flex',
     alignItems: 'center',
@@ -922,6 +1412,46 @@ const styles = {
     alignItems: 'center',
     gap: '12px',
     flexWrap: 'wrap'
+  },
+  searchContainer: { 
+    position: 'relative', 
+    width: '280px' 
+  },
+  searchIcon: { 
+    position: 'absolute', 
+    left: '14px', 
+    top: '50%', 
+    transform: 'translateY(-50%)', 
+    color: '#94a3b8' 
+  },
+  clearSearch: {
+    position: 'absolute',
+    right: '14px',
+    top: '50%',
+    transform: 'translateY(-50%)',
+    background: 'none',
+    border: 'none',
+    cursor: 'pointer',
+    color: '#94a3b8'
+  },
+  searchInput: { 
+    width: '100%', 
+    padding: '10px 40px 10px 40px', 
+    borderRadius: '14px', 
+    border: '2px solid #e2e8f0', 
+    outline: 'none', 
+    fontSize: '14px', 
+    backgroundColor: '#fff',
+    transition: 'all 0.2s ease'
+  },
+  badgeCount: { 
+    background: '#f1f5f9', 
+    padding: '6px 16px', 
+    borderRadius: '20px', 
+    fontSize: '12px', 
+    fontWeight: '600', 
+    color: '#475569',
+    whiteSpace: 'nowrap'
   },
   filterToggle: {
     display: 'flex',
@@ -1151,7 +1681,7 @@ const styles = {
     fontSize: '13px',
     transition: 'all 0.2s ease'
   },
-  // List styles (existing)
+  // List styles
   listWrapper: {
     background: '#fff',
     borderRadius: '24px',
@@ -1240,189 +1770,6 @@ const styles = {
     alignItems: 'center',
     justifyContent: 'center'
   },
-  
-  // ... (rest of the styles remain the same)
-  
-  pageWrapper: { 
-    minHeight: '100vh', 
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
-    padding: '25px 35px', 
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
-    position: 'relative',
-    borderRadius: '32px',
-    overflow: 'hidden'
-  },
-  bgDecoration1: {
-    position: 'absolute',
-    top: '-100px',
-    right: '-50px',
-    width: '300px',
-    height: '300px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  bgDecoration2: {
-    position: 'absolute',
-    bottom: '-80px',
-    left: '-60px',
-    width: '250px',
-    height: '250px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  bgDecoration3: {
-    position: 'absolute',
-    top: '50%',
-    right: '10%',
-    width: '150px',
-    height: '150px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  container: { 
-    maxWidth: '1400px', 
-    margin: '0 auto',
-    position: 'relative',
-    zIndex: 1
-  },
-  dashboardHeader: { 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start', 
-    marginBottom: '32px',
-    flexWrap: 'wrap',
-    gap: '20px'
-  },
-  headerBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: '#fff7ed',
-    padding: '6px 16px',
-    borderRadius: '40px',
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#ff961a',
-    marginBottom: '16px'
-  },
-  headerActions: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '20px', 
-    flexWrap: 'wrap' 
-  },
-  statsRow: { 
-    display: 'flex', 
-    gap: '12px' 
-  },
-  statCard: { 
-    background: '#fff', 
-    padding: '10px 20px', 
-    borderRadius: '20px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '12px', 
-    border: '1px solid #e2e8f0',
-    transition: 'all 0.3s ease'
-  },
-  statIcon: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  statVal: { 
-    fontSize: '20px', 
-    fontWeight: '800', 
-    color: '#1e293b',
-    lineHeight: '1.2'
-  },
-  statLab: { 
-    fontSize: '10px', 
-    color: '#94a3b8', 
-    textTransform: 'uppercase', 
-    fontWeight: '600' 
-  },
-  mainTitle: { 
-    fontSize: '32px', 
-    fontWeight: '800', 
-    color: '#1e293b', 
-    margin: 0, 
-    letterSpacing: '-0.5px' 
-  },
-  mainSubtitle: { 
-    color: '#64748b', 
-    fontSize: '14px', 
-    marginTop: '8px' 
-  },
-  addMainBtn: { 
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
-    color: '#fff', 
-    border: 'none', 
-    padding: '12px 28px', 
-    borderRadius: '16px', 
-    fontWeight: '600', 
-    cursor: 'pointer', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    transition: 'all 0.3s ease',
-    fontSize: '14px'
-  },
-  tableControls: { 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    marginBottom: '24px',
-    flexWrap: 'wrap',
-    gap: '16px'
-  },
-  searchContainer: { 
-    position: 'relative', 
-    width: '280px' 
-  },
-  searchIcon: { 
-    position: 'absolute', 
-    left: '14px', 
-    top: '50%', 
-    transform: 'translateY(-50%)', 
-    color: '#94a3b8' 
-  },
-  clearSearch: {
-    position: 'absolute',
-    right: '14px',
-    top: '50%',
-    transform: 'translateY(-50%)',
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#94a3b8'
-  },
-  searchInput: { 
-    width: '100%', 
-    padding: '10px 40px 10px 40px', 
-    borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
-    outline: 'none', 
-    fontSize: '14px', 
-    backgroundColor: '#fff',
-    transition: 'all 0.2s ease'
-  },
-  badgeCount: { 
-    background: '#f1f5f9', 
-    padding: '6px 16px', 
-    borderRadius: '20px', 
-    fontSize: '12px', 
-    fontWeight: '600', 
-    color: '#475569',
-    whiteSpace: 'nowrap'
-  },
-  // ... (modal and other styles remain the same)
   modalOverlay: { 
     position: 'fixed', 
     top: 0, 
@@ -1716,6 +2063,152 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px'
+  },
+  // Mobile specific styles
+  mobileFilterToggle: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    padding: '8px 16px',
+    background: '#fff',
+    border: '2px solid #e2e8f0',
+    borderRadius: '12px',
+    fontSize: '13px',
+    fontWeight: '500',
+    color: '#1e293b',
+    cursor: 'pointer',
+    flex: 1,
+    justifyContent: 'center'
+  },
+  mobileFilters: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    padding: '12px',
+    background: '#fff',
+    borderRadius: '12px',
+    border: '1px solid #e2e8f0',
+    marginBottom: '16px'
+  },
+  mobileFilterGroup: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px'
+  },
+  mobileFilterLabel: {
+    fontSize: '12px',
+    fontWeight: '600',
+    color: '#475569'
+  },
+  mobileFilterSelect: {
+    padding: '10px 14px',
+    borderRadius: '10px',
+    border: '2px solid #e2e8f0',
+    fontSize: '13px',
+    background: '#fff',
+    color: '#1e293b',
+    cursor: 'pointer',
+    outline: 'none',
+    fontFamily: 'inherit'
+  },
+  mobileClearFilters: {
+    padding: '8px',
+    background: '#f1f5f9',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '13px',
+    fontWeight: '600',
+    color: '#475569',
+    cursor: 'pointer'
+  },
+  mobileCardList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
+    padding: '12px'
+  },
+  mobileCard: {
+    background: '#fff',
+    border: '1px solid #e2e8f0',
+    borderRadius: '16px',
+    overflow: 'hidden',
+    transition: 'all 0.3s ease'
+  },
+  mobileCardImage: {
+    position: 'relative',
+    height: '160px',
+    overflow: 'hidden',
+    background: '#f1f5f9'
+  },
+  mobileCardImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover'
+  },
+  mobileCardCategory: {
+    position: 'absolute',
+    top: '10px',
+    left: '10px',
+    background: '#fff',
+    padding: '3px 10px',
+    borderRadius: '16px',
+    fontSize: '10px',
+    fontWeight: '600',
+    color: '#ff961a',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
+  },
+  mobileCardPrice: {
+    position: 'absolute',
+    bottom: '10px',
+    right: '10px',
+    background: 'rgba(0,0,0,0.8)',
+    color: '#fff',
+    padding: '4px 12px',
+    borderRadius: '16px',
+    fontSize: '12px',
+    fontWeight: '700'
+  },
+  mobileCardBody: {
+    padding: '12px 14px'
+  },
+  mobileCardTitle: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#1e293b',
+    margin: '0 0 4px 0'
+  },
+  mobileCardLocation: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '4px',
+    fontSize: '12px',
+    color: '#64748b',
+    marginBottom: '6px'
+  },
+  mobileCardDesc: {
+    fontSize: '12px',
+    color: '#94a3b8',
+    marginBottom: '10px',
+    lineHeight: '1.4'
+  },
+  mobileCardActions: {
+    display: 'flex',
+    gap: '6px'
+  },
+  mobileActionBtn: {
+    flex: 1,
+    padding: '6px 10px',
+    borderRadius: '8px',
+    border: 'none',
+    fontSize: '12px',
+    fontWeight: '500',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+    transition: 'all 0.2s ease',
+    fontFamily: 'inherit'
   }
 };
 

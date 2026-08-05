@@ -1321,25 +1321,25 @@ body {
 
   /* Sidebar becomes slide-out menu */
   .sidebar {
-    position: fixed;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: 280px;
-    transform: translateX(-100%);
-    z-index: 100;
-    margin: 0;
-    border-radius: 0;
-    padding: 20px 16px;
-    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: fixed !important;
+    top: 0 !important;
+    left: 0 !important;
+    bottom: 0 !important;
+    width: 280px !important;
+    transform: translateX(-100%) !important;
+    z-index: 100 !important;
+    margin: 0 !important;
+    border-radius: 0 !important;
+    padding: 20px 16px !important;
+    transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
   }
 
   .sidebar.open {
-    transform: translateX(0);
+    transform: translateX(0) !important;
   }
 
   .mobile-close-btn {
-    display: block;
+    display: block !important;
   }
 
   .mobile-overlay.active {
@@ -1347,7 +1347,7 @@ body {
   }
 
   .mobile-menu-btn {
-    display: flex;
+    display: flex !important;
   }
 
   .main-content {
@@ -1759,8 +1759,8 @@ body {
   }
 
   .sidebar {
-    width: 260px;
-    padding: 16px 12px;
+    width: 260px !important;
+    padding: 16px 12px !important;
   }
 
   .logo-text {
@@ -1849,8 +1849,8 @@ body {
   }
 
   .sidebar {
-    width: 240px;
-    padding: 12px 10px;
+    width: 240px !important;
+    padding: 12px 10px !important;
   }
 
   .logo-text {

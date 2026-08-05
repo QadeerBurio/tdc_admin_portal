@@ -14,7 +14,7 @@ import {
   Image, Layers, PieChart, BookOpen, Briefcase as BriefcaseIcon,
   Ticket, ShoppingBag, FileCheck, Users as UsersIcon,
   QrCode, Copy, Download as DownloadIcon, Share2,
-  ChevronLeft, ChevronsLeft, ChevronsRight
+  ChevronLeft, ChevronsLeft, ChevronsRight, Menu
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
@@ -44,6 +44,8 @@ export default function AdminUserList({ role, title }) {
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [loadingPassword, setLoadingPassword] = useState({});
   const [activeStatFilter, setActiveStatFilter] = useState(null);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
   
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
@@ -64,6 +66,15 @@ export default function AdminUserList({ role, title }) {
   const tableContainerRef = useRef(null);
   
   const navigate = useNavigate();
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const getAuthHeaders = () => ({
     Authorization: `Bearer ${localStorage.getItem("token")}`,
@@ -477,7 +488,7 @@ export default function AdminUserList({ role, title }) {
   };
 
   const handleStatClick = (filterType, value) => {
-    setCurrentPage(1); // Reset to first page when filtering
+    setCurrentPage(1);
     if (activeStatFilter === filterType) {
       setActiveStatFilter(null);
       setFilterStatus("all");
@@ -571,7 +582,7 @@ export default function AdminUserList({ role, title }) {
   // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
-    const maxPagesToShow = 5;
+    const maxPagesToShow = isMobile ? 3 : 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
     
@@ -632,7 +643,12 @@ export default function AdminUserList({ role, title }) {
         {/* Header Section */}
         <motion.div 
           className="animate-header" 
-          style={styles.header}
+          style={{
+            ...styles.header,
+            flexDirection: isMobile ? "column" : "row",
+            alignItems: isMobile ? "stretch" : "flex-start",
+            gap: isMobile ? "12px" : "16px",
+          }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
@@ -642,33 +658,52 @@ export default function AdminUserList({ role, title }) {
               {getRoleIcon(role)}
               <span>{role.charAt(0).toUpperCase() + role.slice(1)} Management</span>
             </div>
-            <h2 style={styles.title}>{title}</h2>
-            <p style={styles.subtitle}>
+            <h2 style={{
+              ...styles.title,
+              fontSize: isMobile ? "20px" : isTablet ? "24px" : "26px",
+            }}>{title}</h2>
+            <p style={{
+              ...styles.subtitle,
+              fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+            }}>
               Manage and monitor all {role} accounts in your platform
             </p>
           </div>
-          <div style={styles.headerActions}>
+          <div style={{
+            ...styles.headerActions,
+            flexDirection: isMobile ? "column" : "row",
+            width: isMobile ? "100%" : "auto",
+          }}>
             <motion.button
               className="refresh-btn"
               onClick={refreshUsers}
-              style={styles.refreshBtn}
+              style={{
+                ...styles.refreshBtn,
+                width: isMobile ? "100%" : "auto",
+                justifyContent: "center",
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               disabled={refreshing}
             >
               <RefreshCw size={16} className={refreshing ? 'spinning' : ''} />
-              Refresh
+              {!isMobile && "Refresh"}
             </motion.button>
             <motion.button
               className="download-btn"
               onClick={downloadExcel}
               disabled={users.length === 0}
-              style={{...styles.downloadBtn, opacity: users.length === 0 ? 0.5 : 1}}
+              style={{
+                ...styles.downloadBtn,
+                width: isMobile ? "100%" : "auto",
+                justifyContent: "center",
+                opacity: users.length === 0 ? 0.5 : 1,
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
               <Download size={16} />
-              Export
+              {!isMobile && "Export"}
             </motion.button>
           </div>
         </motion.div>
@@ -676,14 +711,18 @@ export default function AdminUserList({ role, title }) {
         {/* Stats Summary - Clickable */}
         <motion.div 
           className="stats-group" 
-          style={styles.statsGrid}
+          style={{
+            ...styles.statsGrid,
+            gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : isTablet ? "repeat(3, 1fr)" : "repeat(auto-fit, minmax(120px, 1fr))",
+            gap: isMobile ? "6px" : isTablet ? "8px" : "10px",
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {[
             { 
-              icon: <Users size={16} />, 
+              icon: <Users size={isMobile ? 14 : 16} />, 
               label: 'Total', 
               value: stats.total, 
               color: '#10b981', 
@@ -691,7 +730,7 @@ export default function AdminUserList({ role, title }) {
               filter: 'total'
             },
             { 
-              icon: <CheckCircle size={16} />, 
+              icon: <CheckCircle size={isMobile ? 14 : 16} />, 
               label: 'Verified', 
               value: stats.verified, 
               color: '#3b82f6', 
@@ -699,7 +738,7 @@ export default function AdminUserList({ role, title }) {
               filter: 'verified'
             },
             { 
-              icon: <Clock size={16} />, 
+              icon: <Clock size={isMobile ? 14 : 16} />, 
               label: 'Pending', 
               value: stats.pending, 
               color: '#f59e0b', 
@@ -707,7 +746,7 @@ export default function AdminUserList({ role, title }) {
               filter: 'pending'
             },
             { 
-              icon: <Crown size={16} />, 
+              icon: <Crown size={isMobile ? 14 : 16} />, 
               label: 'VIP', 
               value: stats.vip, 
               color: '#ec4899', 
@@ -715,7 +754,7 @@ export default function AdminUserList({ role, title }) {
               filter: 'vip'
             },
             { 
-              icon: <Gift size={16} />, 
+              icon: <Gift size={isMobile ? 14 : 16} />, 
               label: 'Referrals', 
               value: stats.totalReferrals, 
               color: '#eab308', 
@@ -723,7 +762,7 @@ export default function AdminUserList({ role, title }) {
               filter: 'referrals'
             },
             { 
-              icon: <Image size={16} />, 
+              icon: <Image size={isMobile ? 14 : 16} />, 
               label: 'With Logo', 
               value: stats.withLogo, 
               color: '#8b5cf6', 
@@ -736,6 +775,7 @@ export default function AdminUserList({ role, title }) {
               className="stat-card" 
               style={{
                 ...styles.statCard,
+                padding: isMobile ? "8px 10px" : isTablet ? "10px 14px" : "12px 16px",
                 cursor: stat.filter !== 'total' && stat.filter !== 'logo' ? 'pointer' : 'default',
                 border: activeStatFilter === stat.filter ? `2px solid ${stat.color}` : '1px solid rgba(255,255,255,0.8)',
                 background: activeStatFilter === stat.filter ? stat.bg : 'rgba(255,255,255,0.8)',
@@ -750,15 +790,28 @@ export default function AdminUserList({ role, title }) {
               }}
               onClick={() => handleStatClick(stat.filter, stat.value)}
             >
-              <div style={{...styles.statIcon, background: stat.bg, color: stat.color}}>
+              <div style={{
+                ...styles.statIcon,
+                width: isMobile ? "28px" : "32px",
+                height: isMobile ? "28px" : "32px",
+                background: stat.bg, 
+                color: stat.color,
+                fontSize: isMobile ? "12px" : "16px",
+              }}>
                 {stat.icon}
               </div>
               <div>
-                <div style={styles.statValue}>{stat.value}</div>
-                <div style={styles.statLabel}>{stat.label}</div>
+                <div style={{
+                  ...styles.statValue,
+                  fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
+                }}>{stat.value}</div>
+                <div style={{
+                  ...styles.statLabel,
+                  fontSize: isMobile ? "7px" : isTablet ? "9px" : "10px",
+                }}>{stat.label}</div>
               </div>
               {(stat.filter === 'verified' || stat.filter === 'pending' || stat.filter === 'vip' || stat.filter === 'referrals') && (
-                <div style={{ marginLeft: 'auto', fontSize: '10px', color: stat.color, opacity: 0.5 }}>
+                <div style={{ marginLeft: 'auto', fontSize: isMobile ? '8px' : '10px', color: stat.color, opacity: 0.5 }}>
                   {activeStatFilter === stat.filter ? '✓' : '↗'}
                 </div>
               )}
@@ -769,19 +822,30 @@ export default function AdminUserList({ role, title }) {
         {/* Search and Filter Bar */}
         <motion.div 
           className="animate-controls" 
-          style={styles.controlsBar}
+          style={{
+            ...styles.controlsBar,
+            gap: isMobile ? "8px" : "12px",
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          <div style={styles.searchWrapper}>
-            <Search size={18} style={styles.searchIcon} />
+          <div style={{
+            ...styles.searchWrapper,
+            maxWidth: isMobile ? "100%" : "380px",
+            width: isMobile ? "100%" : "auto",
+          }}>
+            <Search size={isMobile ? 16 : 18} style={styles.searchIcon} />
             <input
               type="text"
-              placeholder={`Search by name, email, ${role === 'brand' || role === 'employee' ? 'company or ' : ''}referral code...`}
+              placeholder={isMobile ? "Search..." : `Search by name, email, ${role === 'brand' || role === 'employee' ? 'company or ' : ''}referral code...`}
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              style={styles.searchInput}
+              style={{
+                ...styles.searchInput,
+                padding: isMobile ? "8px 12px 8px 36px" : "10px 16px 10px 42px",
+                fontSize: isMobile ? "13px" : "14px",
+              }}
             />
             {searchTerm && (
               <motion.button 
@@ -790,77 +854,115 @@ export default function AdminUserList({ role, title }) {
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
               >
-                <X size={14} />
+                <X size={isMobile ? 12 : 14} />
               </motion.button>
             )}
           </div>
-          <div style={styles.filterGroupWrapper}>
-            <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>Status:</span>
+          <div style={{
+            ...styles.filterGroupWrapper,
+            flexDirection: isMobile ? "column" : "row",
+            gap: isMobile ? "6px" : "10px",
+          }}>
+            <div style={{
+              ...styles.filterGroup,
+              padding: isMobile ? "3px" : "4px",
+              gap: isMobile ? "2px" : "4px",
+              width: isMobile ? "100%" : "auto",
+              justifyContent: isMobile ? "center" : "flex-start",
+            }}>
+              <span style={{
+                ...styles.filterLabel,
+                fontSize: isMobile ? "8px" : "10px",
+              }}>Status:</span>
               <button
                 className={`filter-btn ${filterStatus === "all" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterStatus === "all" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterStatus === "all" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterStatus("all"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 All
               </button>
               <button
                 className={`filter-btn ${filterStatus === "verified" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterStatus === "verified" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterStatus === "verified" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterStatus("verified"); setActiveStatFilter('verified'); setCurrentPage(1); }}
               >
-                <CheckCircle size={12} /> Verified
+                <CheckCircle size={isMobile ? 10 : 12} /> {isMobile ? "Verified" : "Verified"}
               </button>
               <button
                 className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterStatus === "pending" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterStatus === "pending" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterStatus("pending"); setActiveStatFilter('pending'); setCurrentPage(1); }}
               >
-                <Clock size={12} /> Pending
+                <Clock size={isMobile ? 10 : 12} /> {isMobile ? "Pending" : "Pending"}
               </button>
             </div>
-            <div style={styles.filterGroup}>
-              <span style={styles.filterLabel}>Referrals:</span>
+            <div style={{
+              ...styles.filterGroup,
+              padding: isMobile ? "3px" : "4px",
+              gap: isMobile ? "2px" : "4px",
+              width: isMobile ? "100%" : "auto",
+              justifyContent: isMobile ? "center" : "flex-start",
+            }}>
+              <span style={{
+                ...styles.filterLabel,
+                fontSize: isMobile ? "8px" : "10px",
+              }}>Referrals:</span>
               <button
                 className={`filter-btn ${filterReferral === "all" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterReferral === "all" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterReferral === "all" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterReferral("all"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
                 All
               </button>
               <button
                 className={`filter-btn ${filterReferral === "high" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterReferral === "high" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterReferral === "high" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterReferral("high"); setActiveStatFilter('referrals'); setCurrentPage(1); }}
               >
-                <Flame size={12} /> 10+
+                <Flame size={isMobile ? 10 : 12} /> {isMobile ? "10+" : "10+"}
               </button>
               <button
                 className={`filter-btn ${filterReferral === "medium" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterReferral === "medium" ? styles.activeFilter : {})}}
+                style={{
+                  ...styles.filterBtn,
+                  ...(filterReferral === "medium" ? styles.activeFilter : {}),
+                  padding: isMobile ? "3px 8px" : "5px 12px",
+                  fontSize: isMobile ? "9px" : "11px",
+                }}
                 onClick={() => { setFilterReferral("medium"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
-                <TrendingUp size={12} /> 5-9
-              </button>
-              <button
-                className={`filter-btn ${filterReferral === "low" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterReferral === "low" ? styles.activeFilter : {})}}
-                onClick={() => { setFilterReferral("low"); setActiveStatFilter(null); setCurrentPage(1); }}
-              >
-                <UserPlus size={12} /> 1-4
-              </button>
-              <button
-                className={`filter-btn ${filterReferral === "none" ? "active" : ""}`}
-                style={{...styles.filterBtn, ...(filterReferral === "none" ? styles.activeFilter : {})}}
-                onClick={() => { setFilterReferral("none"); setActiveStatFilter(null); setCurrentPage(1); }}
-              >
-                <X size={12} /> 0
+                <TrendingUp size={isMobile ? 10 : 12} /> {isMobile ? "5-9" : "5-9"}
               </button>
             </div>
           </div>
         </motion.div>
 
-        {/* Table Section */}
+        {/* Table Section - Full Width */}
         <motion.div 
           className="table-container" 
           style={styles.tableWrapper}
@@ -869,323 +971,495 @@ export default function AdminUserList({ role, title }) {
           animate={{ opacity: 1, scale: 1 }}
           transition={{ duration: 0.5, delay: 0.3 }}
         >
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.theadRow}>
-                <th style={styles.th} onClick={() => handleSort('name')} className="sortable">
-                  USER {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th style={styles.th} onClick={() => handleSort('email')} className="sortable">
-                  CONTACT {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                {(role === "brand" || role === "employee") && (
-                  <th style={styles.th} onClick={() => handleSort('brandName')} className="sortable">
-                    COMPANY/BRAND {sortField === 'brandName' && (sortDirection === 'asc' ? '↑' : '↓')}
+          <div style={styles.table}>
+            <table style={{ width: "100%", borderCollapse: "collapse" }}>
+              <thead>
+                <tr style={styles.theadRow}>
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                  }} onClick={() => handleSort('name')} className="sortable">
+                    USER {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                )}
-                {role === "student" && (
-                  <th style={styles.th} onClick={() => handleSort('university')} className="sortable">
-                    UNIVERSITY {sortField === 'university' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                  }} onClick={() => handleSort('email')} className="sortable">
+                    CONTACT {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                )}
-                <th style={styles.th} onClick={() => handleSort('referralCount')} className="sortable">
-                  REFERRAL {sortField === 'referralCount' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th style={styles.th} onClick={() => handleSort('status')} className="sortable">
-                  STATUS {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
-                </th>
-                <th style={{...styles.th, textAlign: 'center'}}>LOGO</th>
-                <th style={{...styles.th, textAlign: 'center'}}>ROLE</th>
-                <th style={{...styles.th, textAlign: 'center'}}>ACTIONS</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentUsers.length > 0 ? (
-                currentUsers.map((u, index) => {
-                  const referralLevel = getReferralLevel(u.referralCount);
-                  const isTop = u.referralCount >= 10;
-                  const roleColor = getRoleColor(u.role);
-                  
-                  return (
-                    <motion.tr
-                      key={u._id}
-                      className="user-row"
-                      style={{
-                        ...styles.tr,
-                        cursor: 'pointer',
-                        ...(isTop ? styles.topReferrerRow : {}),
-                      }}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      whileHover={{ backgroundColor: '#f8fafc' }}
-                      onClick={() => openUserModal(u)}
-                    >
-                      <td style={styles.td}>
-                        <div style={styles.userCell}>
-                          <div style={{
-                            ...styles.avatar,
-                            ...(isTop ? styles.topAvatar : {})
-                          }}>
-                            {u.name?.charAt(0).toUpperCase() || '?'}
-                            {isTop && <div style={styles.crownBadge}>👑</div>}
-                          </div>
-                          <div>
-                            <span style={styles.userName}>{u.name}</span>
-                            <div style={styles.userRole}>
-                              {u.role} {u.isAlumni ? '• 🎓 Alumni' : ''}
-                            </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.emailCell}>
-                          <Mail size={12} color="#94a3b8" />
-                          <span>{u.email}</span>
-                        </div>
-                        {u.phone && (
-                          <div style={styles.phoneCell}>
-                            <Phone size={12} color="#94a3b8" />
-                            <span>{u.phone}</span>
-                          </div>
-                        )}
-                      </td>
-                      {(role === "brand" || role === "employee") && (
-                        <td style={styles.td}>
-                          <span style={styles.companyTag}>
-                            <Building size={12} />
-                            {u.brandName || u.companyName || "N/A"}
-                          </span>
-                          {u.logo && (
-                            <div style={styles.logoIndicator}>
-                              <Image size={10} color="#10b981" />
-                              <span>Has Logo</span>
-                            </div>
-                          )}
-                        </td>
-                      )}
-                      {role === "student" && (
-                        <td style={styles.td}>
-                          <span style={styles.universityTag}>
-                            <Building size={12} />
-                            {u.university?.name || "N/A"}
-                          </span>
-                          {u.rollNo && (
-                            <div style={styles.rollNoText}>
-                              <Hash size={10} />
-                              {u.rollNo}
-                            </div>
-                          )}
-                        </td>
-                      )}
-                      <td style={styles.td}>
-                        <div style={styles.referralInfo}>
-                          <div style={styles.referralCode}>
-                            <Link2 size={12} color="#eab308" />
-                            <code>{u.referralCode || 'N/A'}</code>
-                          </div>
-                          <div style={styles.referralStats}>
+                  {(role === "brand" || role === "employee") && (
+                    <th style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    }} onClick={() => handleSort('brandName')} className="sortable">
+                      COMPANY {sortField === 'brandName' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                  )}
+                  {role === "student" && (
+                    <th style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    }} onClick={() => handleSort('university')} className="sortable">
+                      UNIVERSITY {sortField === 'university' && (sortDirection === 'asc' ? '↑' : '↓')}
+                    </th>
+                  )}
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                  }} onClick={() => handleSort('referralCount')} className="sortable">
+                    REFERRAL {sortField === 'referralCount' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                  }} onClick={() => handleSort('status')} className="sortable">
+                    STATUS {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    textAlign: 'center'
+                  }}>LOGO</th>
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    textAlign: 'center'
+                  }}>ROLE</th>
+                  <th style={{
+                    ...styles.th,
+                    padding: isMobile ? "8px 10px" : "12px 16px",
+                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    textAlign: 'center'
+                  }}>ACTIONS</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentUsers.length > 0 ? (
+                  currentUsers.map((u, index) => {
+                    const referralLevel = getReferralLevel(u.referralCount);
+                    const isTop = u.referralCount >= 10;
+                    const roleColor = getRoleColor(u.role);
+                    
+                    return (
+                      <motion.tr
+                        key={u._id}
+                        className="user-row"
+                        style={{
+                          ...styles.tr,
+                          cursor: 'pointer',
+                          ...(isTop ? styles.topReferrerRow : {}),
+                        }}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.03 }}
+                        whileHover={{ backgroundColor: '#f8fafc' }}
+                        onClick={() => openUserModal(u)}
+                      >
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                        }}>
+                          <div style={styles.userCell}>
                             <div style={{
-                              ...styles.referralBadge,
-                              background: referralLevel.bg,
-                              color: referralLevel.color,
+                              ...styles.avatar,
+                              width: isMobile ? "30px" : "36px",
+                              height: isMobile ? "30px" : "36px",
+                              fontSize: isMobile ? "11px" : "14px",
+                              ...(isTop ? styles.topAvatar : {})
                             }}>
-                              <span style={styles.referralCountNumber}>
-                                {u.referralCount || 0}
-                              </span>
-                              <span style={styles.referralLevelText}>
-                                {referralLevel.icon} {referralLevel.level}
-                              </span>
+                              {u.name?.charAt(0).toUpperCase() || '?'}
+                              {isTop && <div style={styles.crownBadge}>👑</div>}
                             </div>
-                            {isTop && (
-                              <div style={styles.flameBadge}>
-                                <Flame size={12} color="#8b5cf6" />
-                                <span>Top</span>
+                            <div>
+                              <span style={{
+                                ...styles.userName,
+                                fontSize: isMobile ? "11px" : "13px",
+                              }}>{u.name}</span>
+                              <div style={{
+                                ...styles.userRole,
+                                fontSize: isMobile ? "8px" : "10px",
+                              }}>
+                                {u.role} {u.isAlumni ? '• 🎓 Alumni' : ''}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                        }}>
+                          <div style={styles.emailCell}>
+                            <Mail size={isMobile ? 10 : 12} color="#94a3b8" />
+                            <span style={{fontSize: isMobile ? "10px" : "12px"}}>{u.email}</span>
+                          </div>
+                          {u.phone && (
+                            <div style={styles.phoneCell}>
+                              <Phone size={isMobile ? 10 : 12} color="#94a3b8" />
+                              <span style={{fontSize: isMobile ? "9px" : "11px"}}>{u.phone}</span>
+                            </div>
+                          )}
+                        </td>
+                        {(role === "brand" || role === "employee") && (
+                          <td style={{
+                            ...styles.td,
+                            padding: isMobile ? "8px 10px" : "12px 16px",
+                            fontSize: isMobile ? "11px" : "13px",
+                          }}>
+                            <span style={{
+                              ...styles.companyTag,
+                              fontSize: isMobile ? "9px" : "11px",
+                              padding: isMobile ? "2px 6px" : "4px 10px",
+                            }}>
+                              <Building size={isMobile ? 10 : 12} />
+                              {u.brandName || u.companyName || "N/A"}
+                            </span>
+                            {u.logo && (
+                              <div style={{
+                                ...styles.logoIndicator,
+                                fontSize: isMobile ? "8px" : "10px",
+                              }}>
+                                <Image size={isMobile ? 8 : 10} color="#10b981" />
+                                <span>Logo</span>
                               </div>
                             )}
-                          </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <span
-                          style={{
-                            ...styles.badge,
-                            backgroundColor: u.status === "Verified"
-                              ? "#10b98115"
-                              : "#f59e0b15",
-                            color: u.status === "Verified" ? "#10b981" : "#f59e0b",
-                          }}
-                        >
-                          {u.status === "Verified" ? (
-                            <>
-                              <span style={styles.badgeDotVerified}></span>
-                              Verified
-                            </>
-                          ) : (
-                            <>
-                              <span style={styles.badgeDotPending}></span>
-                              Pending
-                            </>
-                          )}
-                        </span>
-                      </td>
-                      <td style={{...styles.td, textAlign: 'center'}}>
-                        {u.logo ? (
-                          <img 
-                            src={u.logo} 
-                            alt="Logo" 
-                            style={styles.logoThumb}
-                            onError={(e) => {
-                              e.target.style.display = 'none';
-                              e.target.parentElement.innerHTML = '<span style={{color:"#94a3b8"}}>—</span>';
-                            }}
-                          />
-                        ) : (
-                          <span style={{color: '#94a3b8'}}>—</span>
+                          </td>
                         )}
-                      </td>
-                      <td style={{...styles.td, textAlign: 'center'}}>
-                        <span style={{
-                          ...styles.roleBadge,
-                          background: `${roleColor}15`,
-                          color: roleColor,
-                          border: `1px solid ${roleColor}30`,
-                        }}>
-                          {getRoleIcon(u.role)}
-                          {u.role}
-                        </span>
-                      </td>
-                      <td style={{...styles.td, textAlign: 'center'}}>
-                        <div style={styles.actionGroup}>
-                          <motion.button
-                            className="action-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              viewUserDetails(u._id);
-                            }}
-                            style={styles.viewBtn}
-                            title="View Full Profile"
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            <Eye size={14} />
-                          </motion.button>
-                          <motion.button
-                            className="action-btn"
-                            onClick={(e) => toggleVerification(u._id, e)}
-                            disabled={togglingId === u._id}
-                            style={{
-                              ...styles.actionBtn,
-                              backgroundColor: u.status === "Verified" ? "#ef444410" : "#10b98110",
-                              color: u.status === "Verified" ? "#ef4444" : "#10b981",
-                              border: u.status === "Verified"
-                                ? "1px solid #ef444430"
-                                : "1px solid #10b98130",
-                            }}
-                            title={u.status === "Verified" ? "Revoke Access" : "Approve User"}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                          >
-                            {togglingId === u._id ? (
-                              <div style={styles.spinnerSmall}></div>
-                            ) : u.status === "Verified" ? (
-                              <UserX size={14} />
-                            ) : (
-                              <UserCheck size={14} />
+                        {role === "student" && (
+                          <td style={{
+                            ...styles.td,
+                            padding: isMobile ? "8px 10px" : "12px 16px",
+                            fontSize: isMobile ? "11px" : "13px",
+                          }}>
+                            <span style={{
+                              ...styles.universityTag,
+                              fontSize: isMobile ? "9px" : "11px",
+                              padding: isMobile ? "2px 6px" : "4px 10px",
+                            }}>
+                              <Building size={isMobile ? 10 : 12} />
+                              {u.university?.name || "N/A"}
+                            </span>
+                            {u.rollNo && (
+                              <div style={{
+                                ...styles.rollNoText,
+                                fontSize: isMobile ? "8px" : "10px",
+                              }}>
+                                <Hash size={isMobile ? 8 : 10} />
+                                {u.rollNo}
+                              </div>
                             )}
-                          </motion.button>
-                          <motion.button
-                            className="action-btn"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              openUserModal(u);
+                          </td>
+                        )}
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                        }}>
+                          <div style={styles.referralInfo}>
+                            <div style={styles.referralCode}>
+                              <Link2 size={isMobile ? 10 : 12} color="#eab308" />
+                              <code style={{fontSize: isMobile ? "9px" : "11px"}}>{u.referralCode || 'N/A'}</code>
+                            </div>
+                            <div style={styles.referralStats}>
+                              <div style={{
+                                ...styles.referralBadge,
+                                background: referralLevel.bg,
+                                color: referralLevel.color,
+                                padding: isMobile ? "2px 6px" : "3px 10px",
+                                fontSize: isMobile ? "9px" : "11px",
+                              }}>
+                                <span style={{
+                                  ...styles.referralCountNumber,
+                                  fontSize: isMobile ? "11px" : "13px",
+                                }}>
+                                  {u.referralCount || 0}
+                                </span>
+                                <span style={{
+                                  ...styles.referralLevelText,
+                                  fontSize: isMobile ? "7px" : "9px",
+                                }}>
+                                  {referralLevel.icon} {referralLevel.level}
+                                </span>
+                              </div>
+                              {isTop && (
+                                <div style={{
+                                  ...styles.flameBadge,
+                                  fontSize: isMobile ? "7px" : "9px",
+                                  padding: isMobile ? "1px 4px" : "2px 8px",
+                                }}>
+                                  <Flame size={isMobile ? 8 : 12} color="#8b5cf6" />
+                                  <span>Top</span>
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                        }}>
+                          <span
+                            style={{
+                              ...styles.badge,
+                              padding: isMobile ? "2px 8px" : "4px 12px",
+                              fontSize: isMobile ? "9px" : "11px",
+                              backgroundColor: u.status === "Verified"
+                                ? "#10b98115"
+                                : "#f59e0b15",
+                              color: u.status === "Verified" ? "#10b981" : "#f59e0b",
                             }}
-                            style={styles.expandBtn}
-                            whileHover={{ scale: 1.1 }}
-                            whileTap={{ scale: 0.9 }}
-                            title="View Details"
                           >
-                            <ArrowUpRight size={14} />
-                          </motion.button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })
-              ) : (
-                <tr>
-                  <td colSpan="9" style={styles.emptyState}>
-                    <div style={styles.emptyIcon}>👥</div>
-                    <p style={styles.emptyTitle}>No users found</p>
-                    <span style={styles.emptySubtext}>
-                      {searchTerm ? "Try adjusting your search" : `No ${role} users registered yet`}
-                    </span>
-                  </td>
-                </tr>
-              )}
-            </tbody>
-          </table>
+                            {u.status === "Verified" ? (
+                              <>
+                                <span style={styles.badgeDotVerified}></span>
+                                Verified
+                              </>
+                            ) : (
+                              <>
+                                <span style={styles.badgeDotPending}></span>
+                                Pending
+                              </>
+                            )}
+                          </span>
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                          textAlign: 'center'
+                        }}>
+                          {u.logo ? (
+                            <img 
+                              src={u.logo} 
+                              alt="Logo" 
+                              style={{
+                                ...styles.logoThumb,
+                                width: isMobile ? "24px" : "32px",
+                                height: isMobile ? "24px" : "32px",
+                              }}
+                              onError={(e) => {
+                                e.target.style.display = 'none';
+                                e.target.parentElement.innerHTML = '<span style={{color:"#94a3b8"}}>—</span>';
+                              }}
+                            />
+                          ) : (
+                            <span style={{color: '#94a3b8', fontSize: isMobile ? "10px" : "12px"}}>—</span>
+                          )}
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                          textAlign: 'center'
+                        }}>
+                          <span style={{
+                            ...styles.roleBadge,
+                            background: `${roleColor}15`,
+                            color: roleColor,
+                            border: `1px solid ${roleColor}30`,
+                            padding: isMobile ? "1px 6px" : "2px 8px",
+                            fontSize: isMobile ? "8px" : "10px",
+                          }}>
+                            {getRoleIcon(u.role)}
+                            {isMobile ? "" : u.role}
+                          </span>
+                        </td>
+                        <td style={{
+                          ...styles.td,
+                          padding: isMobile ? "8px 10px" : "12px 16px",
+                          fontSize: isMobile ? "11px" : "13px",
+                          textAlign: 'center'
+                        }}>
+                          <div style={styles.actionGroup}>
+                            <motion.button
+                              className="action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                viewUserDetails(u._id);
+                              }}
+                              style={{
+                                ...styles.viewBtn,
+                                padding: isMobile ? "4px" : "6px",
+                              }}
+                              title="View Full Profile"
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              <Eye size={isMobile ? 12 : 14} />
+                            </motion.button>
+                            <motion.button
+                              className="action-btn"
+                              onClick={(e) => toggleVerification(u._id, e)}
+                              disabled={togglingId === u._id}
+                              style={{
+                                ...styles.actionBtn,
+                                padding: isMobile ? "4px 6px" : "6px 10px",
+                                backgroundColor: u.status === "Verified" ? "#ef444410" : "#10b98110",
+                                color: u.status === "Verified" ? "#ef4444" : "#10b981",
+                                border: u.status === "Verified"
+                                  ? "1px solid #ef444430"
+                                  : "1px solid #10b98130",
+                              }}
+                              title={u.status === "Verified" ? "Revoke Access" : "Approve User"}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                            >
+                              {togglingId === u._id ? (
+                                <div style={styles.spinnerSmall}></div>
+                              ) : u.status === "Verified" ? (
+                                <UserX size={isMobile ? 12 : 14} />
+                              ) : (
+                                <UserCheck size={isMobile ? 12 : 14} />
+                              )}
+                            </motion.button>
+                            <motion.button
+                              className="action-btn"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                openUserModal(u);
+                              }}
+                              style={{
+                                ...styles.expandBtn,
+                                padding: isMobile ? "4px" : "6px",
+                              }}
+                              whileHover={{ scale: 1.1 }}
+                              whileTap={{ scale: 0.9 }}
+                              title="View Details"
+                            >
+                              <ArrowUpRight size={isMobile ? 12 : 14} />
+                            </motion.button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td colSpan="9" style={styles.emptyState}>
+                      <div style={styles.emptyIcon}>👥</div>
+                      <p style={styles.emptyTitle}>No users found</p>
+                      <span style={styles.emptySubtext}>
+                        {searchTerm ? "Try adjusting your search" : `No ${role} users registered yet`}
+                      </span>
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
 
-          {/* Pagination Controls */}
-          {filteredAndSortedUsers.length > itemsPerPage && (
-            <div style={styles.paginationWrapper}>
-              <div style={styles.paginationInfo}>
-                Showing {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length} users
-              </div>
-              <div style={styles.paginationControls}>
-                <button
-                  onClick={goToFirstPage}
-                  disabled={currentPage === 1}
-                  style={{...styles.paginationBtn, ...(currentPage === 1 ? styles.paginationBtnDisabled : {})}}
-                  title="First Page"
-                >
-                  <ChevronsLeft size={16} />
-                </button>
-                <button
-                  onClick={goToPrevPage}
-                  disabled={currentPage === 1}
-                  style={{...styles.paginationBtn, ...(currentPage === 1 ? styles.paginationBtnDisabled : {})}}
-                  title="Previous Page"
-                >
-                  <ChevronLeft size={16} />
-                </button>
-                
-                {getPageNumbers().map(page => (
+            {/* Pagination Controls */}
+            {filteredAndSortedUsers.length > itemsPerPage && (
+              <div style={{
+                ...styles.paginationWrapper,
+                flexDirection: isMobile ? "column" : "row",
+                padding: isMobile ? "12px 16px" : "16px 20px",
+                gap: isMobile ? "10px" : "12px",
+              }}>
+                <div style={{
+                  ...styles.paginationInfo,
+                  fontSize: isMobile ? "11px" : "13px",
+                }}>
+                  Showing {indexOfFirstItem + 1} - {Math.min(indexOfLastItem, filteredAndSortedUsers.length)} of {filteredAndSortedUsers.length}
+                </div>
+                <div style={{
+                  ...styles.paginationControls,
+                  flexWrap: "wrap",
+                  justifyContent: "center",
+                }}>
                   <button
-                    key={page}
-                    onClick={() => goToPage(page)}
+                    onClick={goToFirstPage}
+                    disabled={currentPage === 1}
                     style={{
                       ...styles.paginationBtn,
-                      ...styles.paginationNumberBtn,
-                      ...(page === currentPage ? styles.paginationActive : {})
+                      ...(currentPage === 1 ? styles.paginationBtnDisabled : {}),
+                      padding: isMobile ? "4px 8px" : "6px 10px",
+                      minWidth: isMobile ? "30px" : "36px",
+                      height: isMobile ? "30px" : "36px",
                     }}
+                    title="First Page"
                   >
-                    {page}
+                    <ChevronsLeft size={isMobile ? 14 : 16} />
                   </button>
-                ))}
-                
-                <button
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                  style={{...styles.paginationBtn, ...(currentPage === totalPages ? styles.paginationBtnDisabled : {})}}
-                  title="Next Page"
-                >
-                  <ChevronRight size={16} />
-                </button>
-                <button
-                  onClick={goToLastPage}
-                  disabled={currentPage === totalPages}
-                  style={{...styles.paginationBtn, ...(currentPage === totalPages ? styles.paginationBtnDisabled : {})}}
-                  title="Last Page"
-                >
-                  <ChevronsRight size={16} />
-                </button>
+                  <button
+                    onClick={goToPrevPage}
+                    disabled={currentPage === 1}
+                    style={{
+                      ...styles.paginationBtn,
+                      ...(currentPage === 1 ? styles.paginationBtnDisabled : {}),
+                      padding: isMobile ? "4px 8px" : "6px 10px",
+                      minWidth: isMobile ? "30px" : "36px",
+                      height: isMobile ? "30px" : "36px",
+                    }}
+                    title="Previous Page"
+                  >
+                    <ChevronLeft size={isMobile ? 14 : 16} />
+                  </button>
+                  
+                  {getPageNumbers().map(page => (
+                    <button
+                      key={page}
+                      onClick={() => goToPage(page)}
+                      style={{
+                        ...styles.paginationBtn,
+                        ...styles.paginationNumberBtn,
+                        padding: isMobile ? "4px 8px" : "6px 10px",
+                        minWidth: isMobile ? "30px" : "36px",
+                        height: isMobile ? "30px" : "36px",
+                        fontSize: isMobile ? "11px" : "13px",
+                        ...(page === currentPage ? styles.paginationActive : {})
+                      }}
+                    >
+                      {page}
+                    </button>
+                  ))}
+                  
+                  <button
+                    onClick={goToNextPage}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      ...styles.paginationBtn,
+                      ...(currentPage === totalPages ? styles.paginationBtnDisabled : {}),
+                      padding: isMobile ? "4px 8px" : "6px 10px",
+                      minWidth: isMobile ? "30px" : "36px",
+                      height: isMobile ? "30px" : "36px",
+                    }}
+                    title="Next Page"
+                  >
+                    <ChevronRight size={isMobile ? 14 : 16} />
+                  </button>
+                  <button
+                    onClick={goToLastPage}
+                    disabled={currentPage === totalPages}
+                    style={{
+                      ...styles.paginationBtn,
+                      ...(currentPage === totalPages ? styles.paginationBtnDisabled : {}),
+                      padding: isMobile ? "4px 8px" : "6px 10px",
+                      minWidth: isMobile ? "30px" : "36px",
+                      height: isMobile ? "30px" : "36px",
+                    }}
+                    title="Last Page"
+                  >
+                    <ChevronsRight size={isMobile ? 14 : 16} />
+                  </button>
+                </div>
+                {!isMobile && (
+                  <div style={styles.paginationPageSize}>
+                    {itemsPerPage} per page
+                  </div>
+                )}
               </div>
-              <div style={styles.paginationPageSize}>
-                {itemsPerPage} per page
-              </div>
-            </div>
-          )}
+            )}
+          </div>
         </motion.div>
       </div>
 
@@ -1202,7 +1476,14 @@ export default function AdminUserList({ role, title }) {
           >
             <motion.div 
               className="modal-content" 
-              style={styles.modalContent}
+              style={{
+                ...styles.modalContent,
+                maxWidth: isMobile ? "98%" : "820px",
+                maxHeight: isMobile ? "95vh" : "90vh",
+                marginTop: isMobile ? "10px" : "30px",
+                marginBottom: isMobile ? "10px" : "30px",
+                borderRadius: isMobile ? "16px" : "24px",
+              }}
               ref={modalRef}
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
@@ -1211,9 +1492,17 @@ export default function AdminUserList({ role, title }) {
               onClick={e => e.stopPropagation()}
             >
               {/* Modal Header */}
-              <div style={styles.modalHeader}>
+              <div style={{
+                ...styles.modalHeader,
+                padding: isMobile ? "14px 16px" : "20px 28px",
+              }}>
                 <div style={styles.modalHeaderLeft}>
-                  <div style={styles.modalAvatar}>
+                  <div style={{
+                    ...styles.modalAvatar,
+                    width: isMobile ? "40px" : "48px",
+                    height: isMobile ? "40px" : "48px",
+                    fontSize: isMobile ? "16px" : "20px",
+                  }}>
                     {selectedUser.logo ? (
                       <img 
                         src={selectedUser.logo} 
@@ -1230,8 +1519,14 @@ export default function AdminUserList({ role, title }) {
                     {selectedUser.referralCount >= 10 && <div style={styles.modalCrown}>👑</div>}
                   </div>
                   <div>
-                    <h2 style={styles.modalTitle}>{selectedUser.name}</h2>
-                    <p style={styles.modalSubtitle}>
+                    <h2 style={{
+                      ...styles.modalTitle,
+                      fontSize: isMobile ? "16px" : "20px",
+                    }}>{selectedUser.name}</h2>
+                    <p style={{
+                      ...styles.modalSubtitle,
+                      fontSize: isMobile ? "11px" : "13px",
+                    }}>
                       {selectedUser.role} • {selectedUser.email}
                     </p>
                   </div>
@@ -1242,13 +1537,17 @@ export default function AdminUserList({ role, title }) {
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <X size={20} />
+                  <X size={isMobile ? 16 : 20} />
                 </motion.button>
               </div>
 
               {/* Modal Body with scroll reference */}
               <div 
-                style={styles.modalBody} 
+                style={{
+                  ...styles.modalBody,
+                  padding: isMobile ? "12px 16px" : "20px 24px",
+                  maxHeight: isMobile ? "calc(95vh - 160px)" : "calc(90vh - 180px)",
+                }} 
                 ref={modalBodyRef}
                 className="modal-body"
               >
@@ -1260,33 +1559,68 @@ export default function AdminUserList({ role, title }) {
                 ) : (
                   <>
                     {/* Quick Stats */}
-                    <div style={styles.modalStats}>
+                    <div style={{
+                      ...styles.modalStats,
+                      padding: isMobile ? "8px 12px" : "12px 16px",
+                      gap: isMobile ? "8px" : "16px",
+                    }}>
                       <div style={styles.modalStat}>
-                        <span style={styles.modalStatValue}>{selectedUser.referralCount || 0}</span>
-                        <span style={styles.modalStatLabel}>Referrals</span>
+                        <span style={{
+                          ...styles.modalStatValue,
+                          fontSize: isMobile ? "15px" : "18px",
+                        }}>{selectedUser.referralCount || 0}</span>
+                        <span style={{
+                          ...styles.modalStatLabel,
+                          fontSize: isMobile ? "8px" : "10px",
+                        }}>Referrals</span>
                       </div>
                       <div style={styles.modalStatDivider} />
                       <div style={styles.modalStat}>
-                        <span style={styles.modalStatValue}>{selectedUser.status === 'Verified' ? '✅' : '⏳'}</span>
-                        <span style={styles.modalStatLabel}>{selectedUser.status}</span>
+                        <span style={{
+                          ...styles.modalStatValue,
+                          fontSize: isMobile ? "15px" : "18px",
+                        }}>{selectedUser.status === 'Verified' ? '✅' : '⏳'}</span>
+                        <span style={{
+                          ...styles.modalStatLabel,
+                          fontSize: isMobile ? "8px" : "10px",
+                        }}>{selectedUser.status}</span>
                       </div>
                       <div style={styles.modalStatDivider} />
                       <div style={styles.modalStat}>
-                        <span style={styles.modalStatValue}>{selectedUser.isVip ? '⭐' : '—'}</span>
-                        <span style={styles.modalStatLabel}>VIP</span>
+                        <span style={{
+                          ...styles.modalStatValue,
+                          fontSize: isMobile ? "15px" : "18px",
+                        }}>{selectedUser.isVip ? '⭐' : '—'}</span>
+                        <span style={{
+                          ...styles.modalStatLabel,
+                          fontSize: isMobile ? "8px" : "10px",
+                        }}>VIP</span>
                       </div>
                       <div style={styles.modalStatDivider} />
                       <div style={styles.modalStat}>
-                        <span style={styles.modalStatValue}>{selectedUser.role}</span>
-                        <span style={styles.modalStatLabel}>Role</span>
+                        <span style={{
+                          ...styles.modalStatValue,
+                          fontSize: isMobile ? "15px" : "18px",
+                        }}>{selectedUser.role}</span>
+                        <span style={{
+                          ...styles.modalStatLabel,
+                          fontSize: isMobile ? "8px" : "10px",
+                        }}>Role</span>
                       </div>
                     </div>
 
-                    <div style={styles.modalGrid}>
+                    <div style={{
+                      ...styles.modalGrid,
+                      gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+                      gap: isMobile ? "10px" : "16px",
+                    }}>
                       {/* Personal Information */}
                       <div style={styles.modalSection}>
-                        <h4 style={styles.modalSectionTitle}>
-                          <User size={14} /> Personal Information
+                        <h4 style={{
+                          ...styles.modalSectionTitle,
+                          fontSize: isMobile ? "11px" : "12px",
+                        }}>
+                          <User size={isMobile ? 12 : 14} /> Personal Information
                         </h4>
                         <div style={styles.modalDetails}>
                           <div style={styles.modalDetailRow}>
@@ -1305,12 +1639,12 @@ export default function AdminUserList({ role, title }) {
                                   <span 
                                     style={{ 
                                       fontFamily: 'monospace', 
-                                      fontSize: '12px',
+                                      fontSize: isMobile ? "10px" : "12px",
                                       background: '#f1f5f9',
                                       padding: '2px 8px',
                                       borderRadius: '4px',
                                       wordBreak: 'break-all',
-                                      maxWidth: '200px',
+                                      maxWidth: '150px',
                                       display: 'inline-block',
                                       cursor: 'pointer'
                                     }}
@@ -1333,7 +1667,7 @@ export default function AdminUserList({ role, title }) {
                                   {loadingPassword[selectedUser._id] ? (
                                     <div style={styles.spinnerSmall}></div>
                                   ) : (
-                                    <Eye size={14} />
+                                    <Eye size={isMobile ? 12 : 14} />
                                   )}
                                 </motion.button>
                               </span>
@@ -1351,41 +1685,19 @@ export default function AdminUserList({ role, title }) {
                             <span style={styles.modalDetailLabel}>Location</span>
                             <span style={styles.modalDetailValue}>{selectedUser.location || 'N/A'}</span>
                           </div>
-                          <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>Instagram</span>
-                            <span style={styles.modalDetailValue}>{selectedUser.instagram || 'N/A'}</span>
-                          </div>
                           {selectedUser.logo && (
                             <div style={styles.modalDetailRow}>
                               <span style={styles.modalDetailLabel}>Logo</span>
                               <img 
                                 src={selectedUser.logo} 
                                 alt="Logo" 
-                                style={styles.modalLogoPreview}
+                                style={{
+                                  ...styles.modalLogoPreview,
+                                  width: isMobile ? "40px" : "60px",
+                                  height: isMobile ? "40px" : "60px",
+                                }}
                                 onError={(e) => { e.target.style.display = 'none'; }}
                               />
-                            </div>
-                          )}
-                          {selectedUser.bio && (
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>Bio</span>
-                              <span style={styles.modalDetailValue}>{selectedUser.bio}</span>
-                            </div>
-                          )}
-                          {selectedUser.headline && (
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>Headline</span>
-                              <span style={styles.modalDetailValue}>{selectedUser.headline}</span>
-                            </div>
-                          )}
-                          {selectedUser.skills && selectedUser.skills.length > 0 && (
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>Skills</span>
-                              <div style={styles.modalSkillsList}>
-                                {selectedUser.skills.map((skill, i) => (
-                                  <span key={i} style={styles.modalSkillTag}>{skill}</span>
-                                ))}
-                              </div>
                             </div>
                           )}
                         </div>
@@ -1394,8 +1706,11 @@ export default function AdminUserList({ role, title }) {
                       {/* Brand/Employee Company Details */}
                       {(selectedUser.role === "brand" || selectedUser.role === "employee") && (
                         <div style={styles.modalSection}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <Store size={14} /> Company Details
+                          <h4 style={{
+                            ...styles.modalSectionTitle,
+                            fontSize: isMobile ? "11px" : "12px",
+                          }}>
+                            <Store size={isMobile ? 12 : 14} /> Company Details
                           </h4>
                           <div style={styles.modalDetails}>
                             <div style={styles.modalDetailRow}>
@@ -1417,6 +1732,7 @@ export default function AdminUserList({ role, title }) {
                                   ...styles.modalRoleBadge,
                                   background: `${getRoleColor(selectedUser.role)}15`,
                                   color: getRoleColor(selectedUser.role),
+                                  fontSize: isMobile ? "10px" : "11px",
                                 }}>
                                   {getRoleIcon(selectedUser.role)}
                                   {selectedUser.role}
@@ -1430,8 +1746,11 @@ export default function AdminUserList({ role, title }) {
                       {/* Student Academic Info */}
                       {selectedUser.role === "student" && (
                         <div style={styles.modalSection}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <GraduationCap size={14} /> Academic Information
+                          <h4 style={{
+                            ...styles.modalSectionTitle,
+                            fontSize: isMobile ? "11px" : "12px",
+                          }}>
+                            <GraduationCap size={isMobile ? 12 : 14} /> Academic Information
                           </h4>
                           <div style={styles.modalDetails}>
                             <div style={styles.modalDetailRow}>
@@ -1446,60 +1765,32 @@ export default function AdminUserList({ role, title }) {
                               <span style={styles.modalDetailLabel}>Alumni</span>
                               <span style={styles.modalDetailValue}>{selectedUser.isAlumni ? '✅ Yes' : '❌ No'}</span>
                             </div>
-                            {selectedUser.education && selectedUser.education.length > 0 && (
-                              <div style={styles.modalDetailRow}>
-                                <span style={styles.modalDetailLabel}>Education</span>
-                                <div style={styles.modalEduList}>
-                                  {selectedUser.education.map((edu, i) => (
-                                    <div key={i} style={styles.modalEduItem}>
-                                      <div style={styles.modalEduHeader}>
-                                        <span style={{fontWeight: 600}}>{edu.school}</span>
-                                        <span style={styles.modalEduYear}>{edu.startYear} - {edu.endYear}</span>
-                                      </div>
-                                      <div style={styles.modalEduDegree}>{edu.degree}</div>
-                                    </div>
-                                  ))}
-                                </div>
-                              </div>
-                            )}
-                          </div>
-                        </div>
-                      )}
-
-                      {/* Traveler Details */}
-                      {selectedUser.role === "traveler" && (
-                        <div style={styles.modalSection}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <Plane size={14} /> Traveler Details
-                          </h4>
-                          <div style={styles.modalDetails}>
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>Name</span>
-                              <span style={styles.modalDetailValue}>{selectedUser.name}</span>
-                            </div>
-                            <div style={styles.modalDetailRow}>
-                              <span style={styles.modalDetailLabel}>Phone</span>
-                              <span style={styles.modalDetailValue}>{selectedUser.phone || 'N/A'}</span>
-                            </div>
                           </div>
                         </div>
                       )}
 
                       {/* Referral Information - ALL ROLES */}
                       <div style={styles.modalSection}>
-                        <h4 style={styles.modalSectionTitle}>
-                          <UserPlus size={14} /> Referral Information
+                        <h4 style={{
+                          ...styles.modalSectionTitle,
+                          fontSize: isMobile ? "11px" : "12px",
+                        }}>
+                          <UserPlus size={isMobile ? 12 : 14} /> Referral Information
                         </h4>
                         <div style={styles.modalDetails}>
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Referral Code</span>
-                            <code style={styles.modalReferralCode}>{selectedUser.referralCode || 'N/A'}</code>
+                            <code style={{
+                              ...styles.modalReferralCode,
+                              fontSize: isMobile ? "10px" : "12px",
+                            }}>{selectedUser.referralCode || 'N/A'}</code>
                           </div>
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Referral Count</span>
                             <span style={styles.modalDetailValue}>
                               <span style={{
                                 ...styles.modalReferralBadge,
+                                fontSize: isMobile ? "11px" : "12px",
                                 ...(selectedUser.referralCount >= 10 ? styles.modalTopReferralBadge : {})
                               }}>
                                 {selectedUser.referralCount || 0}
@@ -1514,6 +1805,7 @@ export default function AdminUserList({ role, title }) {
                                 ...styles.modalLevelBadge,
                                 background: getReferralLevel(selectedUser.referralCount).bg,
                                 color: getReferralLevel(selectedUser.referralCount).color,
+                                fontSize: isMobile ? "10px" : "11px",
                               }}>
                                 {getReferralLevel(selectedUser.referralCount).icon} {getReferralLevel(selectedUser.referralCount).level}
                               </span>
@@ -1528,34 +1820,55 @@ export default function AdminUserList({ role, title }) {
 
                       {/* BRAND OFFERS WITH QR GENERATION - ONLY FOR BRANDS */}
                       {selectedUser.role === "brand" && userDetails.offers && userDetails.offers.length > 0 && (
-                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <Gift size={14} /> Brand Offers ({userDetails.offers.length})
+                        <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                          <h4 style={{
+                            ...styles.modalSectionTitle,
+                            fontSize: isMobile ? "11px" : "12px",
+                          }}>
+                            <Gift size={isMobile ? 12 : 14} /> Brand Offers ({userDetails.offers.length})
                           </h4>
                           <div style={styles.offerList}>
-                            {userDetails.offers.slice(0, 5).map((offer, i) => (
-                              <div key={i} style={styles.offerItem}>
+                            {userDetails.offers.slice(0, isMobile ? 3 : 5).map((offer, i) => (
+                              <div key={i} style={{
+                                ...styles.offerItem,
+                                flexDirection: isMobile ? "column" : "row",
+                                alignItems: isMobile ? "flex-start" : "center",
+                                gap: isMobile ? "6px" : "0",
+                              }}>
                                 <div style={styles.offerItemLeft}>
-                                  <span style={styles.offerTitle}>{offer.title}</span>
-                                  <span style={styles.offerDiscount}>{offer.discountPercentage}% off</span>
-                                  <span style={styles.offerStatus}>
+                                  <span style={{
+                                    ...styles.offerTitle,
+                                    fontSize: isMobile ? "11px" : "12px",
+                                  }}>{offer.title}</span>
+                                  <span style={{
+                                    ...styles.offerDiscount,
+                                    fontSize: isMobile ? "10px" : "12px",
+                                  }}>{offer.discountPercentage}% off</span>
+                                  <span style={{
+                                    ...styles.offerStatus,
+                                    fontSize: isMobile ? "9px" : "11px",
+                                  }}>
                                     {offer.claimedBy?.length || 0} claims
                                   </span>
                                 </div>
                                 <div style={styles.offerItemRight}>
                                   {offer.isOnline && offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#8b5cf6'}}>Online & In-Store</span>
+                                    <span style={{...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px"}}>Online & In-Store</span>
                                   )}
                                   {offer.isOnline && !offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#3b82f6'}}>Online</span>
+                                    <span style={{...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px"}}>Online</span>
                                   )}
                                   {!offer.isOnline && offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#10b981'}}>In-Store</span>
+                                    <span style={{...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px"}}>In-Store</span>
                                   )}
                                   <motion.button
                                     className="qr-generate-btn"
                                     onClick={(e) => generateQRForOffer(offer, selectedUser, e)}
-                                    style={styles.qrGenerateBtn}
+                                    style={{
+                                      ...styles.qrGenerateBtn,
+                                      padding: isMobile ? "3px 8px" : "4px 10px",
+                                      fontSize: isMobile ? "9px" : "11px",
+                                    }}
                                     whileHover={{ scale: 1.05 }}
                                     whileTap={{ scale: 0.95 }}
                                     disabled={generatingQR}
@@ -1564,15 +1877,15 @@ export default function AdminUserList({ role, title }) {
                                     {generatingQR && selectedOfferForQR?._id === offer._id ? (
                                       <div style={styles.spinnerSmall}></div>
                                     ) : (
-                                      <QrCode size={14} />
+                                      <QrCode size={isMobile ? 12 : 14} />
                                     )}
                                     <span style={styles.qrBtnText}>QR</span>
                                   </motion.button>
                                 </div>
                               </div>
                             ))}
-                            {userDetails.offers.length > 5 && (
-                              <div style={styles.moreItems}>+{userDetails.offers.length - 5} more</div>
+                            {userDetails.offers.length > (isMobile ? 3 : 5) && (
+                              <div style={styles.moreItems}>+{userDetails.offers.length - (isMobile ? 3 : 5)} more</div>
                             )}
                           </div>
                         </div>
@@ -1580,24 +1893,41 @@ export default function AdminUserList({ role, title }) {
 
                       {/* Employee Jobs - ONLY EMPLOYEES */}
                       {selectedUser.role === "employee" && userDetails.jobs && userDetails.jobs.length > 0 && (
-                        <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                          <h4 style={styles.modalSectionTitle}>
-                            <BriefcaseIcon size={14} /> Jobs Posted ({userDetails.jobs.length})
+                        <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                          <h4 style={{
+                            ...styles.modalSectionTitle,
+                            fontSize: isMobile ? "11px" : "12px",
+                          }}>
+                            <BriefcaseIcon size={isMobile ? 12 : 14} /> Jobs Posted ({userDetails.jobs.length})
                           </h4>
                           <div style={styles.jobList}>
-                            {userDetails.jobs.slice(0, 5).map((job, i) => (
-                              <div key={i} style={styles.jobItem}>
-                                <span style={styles.jobTitle}>{job.title}</span>
-                                <span style={styles.jobStatus}>
+                            {userDetails.jobs.slice(0, isMobile ? 3 : 5).map((job, i) => (
+                              <div key={i} style={{
+                                ...styles.jobItem,
+                                flexDirection: isMobile ? "column" : "row",
+                                alignItems: isMobile ? "flex-start" : "center",
+                                gap: isMobile ? "4px" : "0",
+                              }}>
+                                <span style={{
+                                  ...styles.jobTitle,
+                                  fontSize: isMobile ? "11px" : "12px",
+                                }}>{job.title}</span>
+                                <span style={{
+                                  ...styles.jobStatus,
+                                  fontSize: isMobile ? "9px" : "11px",
+                                }}>
                                   {job.active ? '🟢 Active' : '🔴 Inactive'}
                                 </span>
-                                <span style={styles.jobApps}>
+                                <span style={{
+                                  ...styles.jobApps,
+                                  fontSize: isMobile ? "9px" : "11px",
+                                }}>
                                   {job.totalApplications || 0} applications
                                 </span>
                               </div>
                             ))}
-                            {userDetails.jobs.length > 5 && (
-                              <div style={styles.moreItems}>+{userDetails.jobs.length - 5} more</div>
+                            {userDetails.jobs.length > (isMobile ? 3 : 5) && (
+                              <div style={styles.moreItems}>+{userDetails.jobs.length - (isMobile ? 3 : 5)} more</div>
                             )}
                           </div>
                         </div>
@@ -1607,34 +1937,62 @@ export default function AdminUserList({ role, title }) {
                       {selectedUser.role === "student" && (
                         <>
                           {userDetails.claimedOffers && userDetails.claimedOffers.length > 0 && (
-                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                              <h4 style={styles.modalSectionTitle}>
-                                <Ticket size={14} /> Claimed Discounts ({userDetails.claimedOffers.length})
+                            <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                              <h4 style={{
+                                ...styles.modalSectionTitle,
+                                fontSize: isMobile ? "11px" : "12px",
+                              }}>
+                                <Ticket size={isMobile ? 12 : 14} /> Claimed Discounts ({userDetails.claimedOffers.length})
                               </h4>
                               <div style={styles.claimedList}>
-                                {userDetails.claimedOffers.slice(0, 5).map((offer, i) => (
-                                  <div key={i} style={styles.claimedItem}>
-                                    <span style={styles.claimedTitle}>{offer.title}</span>
-                                    <span style={styles.claimedBrand}>{offer.brand?.name || 'Brand'}</span>
-                                    <span style={styles.claimedDiscount}>{offer.discountPercentage}% off</span>
+                                {userDetails.claimedOffers.slice(0, isMobile ? 3 : 5).map((offer, i) => (
+                                  <div key={i} style={{
+                                    ...styles.claimedItem,
+                                    flexDirection: isMobile ? "column" : "row",
+                                    alignItems: isMobile ? "flex-start" : "center",
+                                    gap: isMobile ? "4px" : "0",
+                                  }}>
+                                    <span style={{
+                                      ...styles.claimedTitle,
+                                      fontSize: isMobile ? "11px" : "12px",
+                                    }}>{offer.title}</span>
+                                    <span style={{
+                                      ...styles.claimedBrand,
+                                      fontSize: isMobile ? "9px" : "11px",
+                                    }}>{offer.brand?.name || 'Brand'}</span>
+                                    <span style={{
+                                      ...styles.claimedDiscount,
+                                      fontSize: isMobile ? "10px" : "12px",
+                                    }}>{offer.discountPercentage}% off</span>
                                   </div>
                                 ))}
-                                {userDetails.claimedOffers.length > 5 && (
-                                  <div style={styles.moreItems}>+{userDetails.claimedOffers.length - 5} more</div>
+                                {userDetails.claimedOffers.length > (isMobile ? 3 : 5) && (
+                                  <div style={styles.moreItems}>+{userDetails.claimedOffers.length - (isMobile ? 3 : 5)} more</div>
                                 )}
                               </div>
                             </div>
                           )}
 
                           {userDetails.applications && userDetails.applications.length > 0 && (
-                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                              <h4 style={styles.modalSectionTitle}>
-                                <FileCheck size={14} /> Job Applications ({userDetails.applications.length})
+                            <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                              <h4 style={{
+                                ...styles.modalSectionTitle,
+                                fontSize: isMobile ? "11px" : "12px",
+                              }}>
+                                <FileCheck size={isMobile ? 12 : 14} /> Job Applications ({userDetails.applications.length})
                               </h4>
                               <div style={styles.applicationList}>
-                                {userDetails.applications.slice(0, 5).map((app, i) => (
-                                  <div key={i} style={styles.applicationItem}>
-                                    <span style={styles.applicationJob}>{app.jobId?.title || 'Job'}</span>
+                                {userDetails.applications.slice(0, isMobile ? 3 : 5).map((app, i) => (
+                                  <div key={i} style={{
+                                    ...styles.applicationItem,
+                                    flexDirection: isMobile ? "column" : "row",
+                                    alignItems: isMobile ? "flex-start" : "center",
+                                    gap: isMobile ? "4px" : "0",
+                                  }}>
+                                    <span style={{
+                                      ...styles.applicationJob,
+                                      fontSize: isMobile ? "11px" : "12px",
+                                    }}>{app.jobId?.title || 'Job'}</span>
                                     <span style={{
                                       ...styles.applicationStatus,
                                       background: {
@@ -1652,46 +2010,16 @@ export default function AdminUserList({ role, title }) {
                                         'interview': '#8b5cf6',
                                         'rejected': '#ef4444',
                                         'hired': '#059669'
-                                      }[app.status] || '#94a3b8'
+                                      }[app.status] || '#94a3b8',
+                                      fontSize: isMobile ? "9px" : "10px",
+                                      padding: isMobile ? "1px 6px" : "2px 8px",
                                     }}>
                                       {app.status || 'Pending'}
                                     </span>
                                   </div>
                                 ))}
-                                {userDetails.applications.length > 5 && (
-                                  <div style={styles.moreItems}>+{userDetails.applications.length - 5} more</div>
-                                )}
-                              </div>
-                            </div>
-                          )}
-
-                          {(userDetails.resume || userDetails.savings?.totalSaved > 0) && (
-                            <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                              <h4 style={styles.modalSectionTitle}>
-                                <FileText size={14} /> Resume & Savings
-                              </h4>
-                              <div style={styles.modalDetails}>
-                                <div style={styles.modalDetailRow}>
-                                  <span style={styles.modalDetailLabel}>Resume</span>
-                                  <span style={styles.modalDetailValue}>
-                                    {userDetails.resume ? '✅ Uploaded' : '❌ Not uploaded'}
-                                  </span>
-                                </div>
-                                {userDetails.savings?.totalSaved > 0 && (
-                                  <>
-                                    <div style={styles.modalDetailRow}>
-                                      <span style={styles.modalDetailLabel}>Total Savings</span>
-                                      <span style={styles.modalDetailValue}>
-                                        PKR {userDetails.savings.totalSaved.toLocaleString()}
-                                      </span>
-                                    </div>
-                                    <div style={styles.modalDetailRow}>
-                                      <span style={styles.modalDetailLabel}>Redemptions</span>
-                                      <span style={styles.modalDetailValue}>
-                                        {userDetails.savings.redemptionCount || 0}
-                                      </span>
-                                    </div>
-                                  </>
+                                {userDetails.applications.length > (isMobile ? 3 : 5) && (
+                                  <div style={styles.moreItems}>+{userDetails.applications.length - (isMobile ? 3 : 5)} more</div>
                                 )}
                               </div>
                             </div>
@@ -1700,20 +2028,29 @@ export default function AdminUserList({ role, title }) {
                       )}
 
                       {/* Timestamps - ALL ROLES */}
-                      <div style={{...styles.modalSection, gridColumn: 'span 2'}}>
-                        <h4 style={styles.modalSectionTitle}>
-                          <Calendar size={14} /> Timestamps
+                      <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                        <h4 style={{
+                          ...styles.modalSectionTitle,
+                          fontSize: isMobile ? "11px" : "12px",
+                        }}>
+                          <Calendar size={isMobile ? 12 : 14} /> Timestamps
                         </h4>
                         <div style={styles.modalDetails}>
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Joined</span>
-                            <span style={styles.modalDetailValue}>
+                            <span style={{
+                              ...styles.modalDetailValue,
+                              fontSize: isMobile ? "11px" : "12px",
+                            }}>
                               {new Date(selectedUser.createdAt).toLocaleString()}
                             </span>
                           </div>
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Last Updated</span>
-                            <span style={styles.modalDetailValue}>
+                            <span style={{
+                              ...styles.modalDetailValue,
+                              fontSize: isMobile ? "11px" : "12px",
+                            }}>
                               {new Date(selectedUser.updatedAt).toLocaleString()}
                             </span>
                           </div>
@@ -1725,18 +2062,35 @@ export default function AdminUserList({ role, title }) {
               </div>
 
               {/* Modal Footer */}
-              <div style={styles.modalFooter}>
+              <div style={{
+                ...styles.modalFooter,
+                padding: isMobile ? "12px 16px" : "16px 28px",
+                flexDirection: isMobile ? "column" : "row",
+                gap: isMobile ? "8px" : "12px",
+              }}>
                 <motion.button 
                   onClick={() => viewUserDetails(selectedUser._id)}
-                  style={styles.modalViewBtn}
+                  style={{
+                    ...styles.modalViewBtn,
+                    width: isMobile ? "100%" : "auto",
+                    justifyContent: "center",
+                    padding: isMobile ? "8px 16px" : "8px 20px",
+                    fontSize: isMobile ? "12px" : "13px",
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  View Full Profile <ChevronRight size={16} />
+                  View Full Profile <ChevronRight size={isMobile ? 14 : 16} />
                 </motion.button>
                 <motion.button 
                   onClick={closeModal}
-                  style={styles.modalCloseBtnBottom}
+                  style={{
+                    ...styles.modalCloseBtnBottom,
+                    width: isMobile ? "100%" : "auto",
+                    justifyContent: "center",
+                    padding: isMobile ? "8px 16px" : "8px 24px",
+                    fontSize: isMobile ? "12px" : "13px",
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
@@ -1759,20 +2113,33 @@ export default function AdminUserList({ role, title }) {
             onClick={closeQRModal}
           >
             <motion.div 
-              style={styles.qrModalContent}
+              style={{
+                ...styles.qrModalContent,
+                maxWidth: isMobile ? "98%" : "520px",
+                borderRadius: isMobile ? "16px" : "28px",
+              }}
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 30, opacity: 0 }}
               transition={{ type: "spring", damping: 25 }}
               onClick={e => e.stopPropagation()}
             >
-              <div style={styles.qrModalHeader}>
+              <div style={{
+                ...styles.qrModalHeader,
+                padding: isMobile ? "14px 16px" : "20px 24px",
+              }}>
                 <div>
-                  <h3 style={styles.qrModalTitle}>
-                    <QrCode size={20} style={{ marginRight: '8px', color: '#ff961a' }} />
+                  <h3 style={{
+                    ...styles.qrModalTitle,
+                    fontSize: isMobile ? "16px" : "18px",
+                  }}>
+                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#ff961a' }} />
                     QR Code - {selectedUser?.brandName || 'Brand'}
                   </h3>
-                  <p style={styles.qrModalSubtitle}>
+                  <p style={{
+                    ...styles.qrModalSubtitle,
+                    fontSize: isMobile ? "11px" : "13px",
+                  }}>
                     {selectedOfferForQR.title} • {selectedOfferForQR.discountPercentage}% OFF
                   </p>
                 </div>
@@ -1782,27 +2149,48 @@ export default function AdminUserList({ role, title }) {
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
                 >
-                  <X size={20} />
+                  <X size={isMobile ? 16 : 20} />
                 </motion.button>
               </div>
 
-              <div style={styles.qrModalBody}>
+              <div style={{
+                ...styles.qrModalBody,
+                padding: isMobile ? "16px" : "24px",
+              }}>
                 <div style={styles.qrImageContainer}>
-                  <img src={qrImage} alt="QR Code" style={styles.qrModalImage} />
+                  <img src={qrImage} alt="QR Code" style={{
+                    ...styles.qrModalImage,
+                    width: isMobile ? "200px" : "280px",
+                    height: isMobile ? "200px" : "280px",
+                  }} />
                 </div>
 
-                <div style={styles.qrOfferDetails}>
+                <div style={{
+                  ...styles.qrOfferDetails,
+                  padding: isMobile ? "12px" : "16px",
+                }}>
                   <div style={styles.qrOfferRow}>
                     <span style={styles.qrOfferLabel}>Brand:</span>
-                    <span style={styles.qrOfferValue}>{selectedUser?.brandName || selectedUser?.name || 'Brand'}</span>
+                    <span style={{
+                      ...styles.qrOfferValue,
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}>{selectedUser?.brandName || selectedUser?.name || 'Brand'}</span>
                   </div>
                   <div style={styles.qrOfferRow}>
                     <span style={styles.qrOfferLabel}>Offer:</span>
-                    <span style={styles.qrOfferValue}>{selectedOfferForQR.title}</span>
+                    <span style={{
+                      ...styles.qrOfferValue,
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}>{selectedOfferForQR.title}</span>
                   </div>
                   <div style={styles.qrOfferRow}>
                     <span style={styles.qrOfferLabel}>Discount:</span>
-                    <span style={{...styles.qrOfferValue, color: '#ff961a', fontWeight: 700}}>
+                    <span style={{
+                      ...styles.qrOfferValue,
+                      color: '#ff961a',
+                      fontWeight: 700,
+                      fontSize: isMobile ? "13px" : "14px",
+                    }}>
                       {selectedOfferForQR.discountPercentage}% OFF
                     </span>
                   </div>
@@ -1810,64 +2198,101 @@ export default function AdminUserList({ role, title }) {
                     <span style={styles.qrOfferLabel}>Type:</span>
                     <span style={styles.qrOfferValue}>
                       {selectedOfferForQR.isOnline && selectedOfferForQR.isInStore ? (
-                        <span style={{...styles.badgeSmall, background: '#8b5cf6'}}>Online & In-Store</span>
+                        <span style={{...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px"}}>Online & In-Store</span>
                       ) : selectedOfferForQR.isOnline ? (
-                        <span style={{...styles.badgeSmall, background: '#3b82f6'}}>Online Only</span>
+                        <span style={{...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px"}}>Online Only</span>
                       ) : selectedOfferForQR.isInStore ? (
-                        <span style={{...styles.badgeSmall, background: '#10b981'}}>In-Store Only</span>
+                        <span style={{...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px"}}>In-Store Only</span>
                       ) : (
-                        <span style={{...styles.badgeSmall, background: '#94a3b8'}}>Standard</span>
+                        <span style={{...styles.badgeSmall, background: '#94a3b8', fontSize: isMobile ? "8px" : "9px"}}>Standard</span>
                       )}
                     </span>
                   </div>
                   {selectedOfferForQR.promoCode && (
                     <div style={styles.qrOfferRow}>
                       <span style={styles.qrOfferLabel}>Promo Code:</span>
-                      <span style={{...styles.qrOfferValue, fontFamily: 'monospace', fontWeight: 700, color: '#0369a1'}}>
+                      <span style={{
+                        ...styles.qrOfferValue,
+                        fontFamily: 'monospace',
+                        fontWeight: 700,
+                        color: '#0369a1',
+                        fontSize: isMobile ? "12px" : "13px",
+                      }}>
                         {selectedOfferForQR.promoCode}
                       </span>
                     </div>
                   )}
-                  <div style={styles.qrOfferRow}>
-                    <span style={styles.qrOfferLabel}>Generated:</span>
-                    <span style={styles.qrOfferValue}>
-                      {new Date().toLocaleString()}
-                    </span>
-                  </div>
                 </div>
 
-                <div style={styles.qrModalActions}>
+                <div style={{
+                  ...styles.qrModalActions,
+                  flexDirection: isMobile ? "column" : "row",
+                  gap: isMobile ? "6px" : "8px",
+                }}>
                   <motion.button 
-                    style={{...styles.qrActionBtn, background: '#1e293b', color: '#fff'}}
+                    style={{
+                      ...styles.qrActionBtn,
+                      background: '#1e293b',
+                      color: '#fff',
+                      width: isMobile ? "100%" : "auto",
+                      justifyContent: "center",
+                      padding: isMobile ? "8px 12px" : "8px 16px",
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={downloadQR}
                   >
-                    <DownloadIcon size={16} /> Download
+                    <DownloadIcon size={isMobile ? 14 : 16} /> Download
                   </motion.button>
                   <motion.button 
-                    style={{...styles.qrActionBtn, background: '#8b5cf6', color: '#fff'}}
+                    style={{
+                      ...styles.qrActionBtn,
+                      background: '#8b5cf6',
+                      color: '#fff',
+                      width: isMobile ? "100%" : "auto",
+                      justifyContent: "center",
+                      padding: isMobile ? "8px 12px" : "8px 16px",
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={shareQR}
                   >
-                    <Share2 size={16} /> Share
+                    <Share2 size={isMobile ? 14 : 16} /> Share
                   </motion.button>
                   <motion.button 
-                    style={{...styles.qrActionBtn, background: '#10b981', color: '#fff'}}
+                    style={{
+                      ...styles.qrActionBtn,
+                      background: '#10b981',
+                      color: '#fff',
+                      width: isMobile ? "100%" : "auto",
+                      justifyContent: "center",
+                      padding: isMobile ? "8px 12px" : "8px 16px",
+                      fontSize: isMobile ? "12px" : "13px",
+                    }}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     onClick={copyQRData}
                   >
-                    <Copy size={16} /> {copied ? 'Copied!' : 'Copy Data'}
+                    <Copy size={isMobile ? 14 : 16} /> {copied ? 'Copied!' : 'Copy Data'}
                   </motion.button>
                 </div>
 
-                <div style={styles.qrScanInstructions}>
-                  <p style={styles.qrScanText}>
+                <div style={{
+                  ...styles.qrScanInstructions,
+                  padding: isMobile ? "10px" : "12px",
+                }}>
+                  <p style={{
+                    ...styles.qrScanText,
+                    fontSize: isMobile ? "11px" : "13px",
+                  }}>
                     📱 Students can scan this QR code to claim this discount
                   </p>
-                  <p style={styles.qrScanSubtext}>
+                  <p style={{
+                    ...styles.qrScanSubtext,
+                    fontSize: isMobile ? "9px" : "11px",
+                  }}>
                     The QR code contains all necessary information for verification
                   </p>
                 </div>
@@ -1990,7 +2415,7 @@ export default function AdminUserList({ role, title }) {
             .filterGroup { flex-wrap: wrap !important; }
             .modalGrid { grid-template-columns: 1fr !important; }
             .modal-content { max-width: 98% !important; max-height: 95vh !important; margin-top: 10px !important; margin-bottom: 10px !important; }
-            .modal-body { max-height: calc(95vh - 180px) !important; padding: 16px !important; }
+            .modal-body { max-height: calc(95vh - 160px) !important; padding: 16px !important; }
             .modal-overlay { padding: 10px !important; align-items: flex-start !important; }
             .offerItem { flex-direction: column !important; align-items: flex-start !important; gap: 8px !important; }
             .offerItemRight { width: 100% !important; justify-content: flex-start !important; flex-wrap: wrap !important; }
@@ -2000,6 +2425,34 @@ export default function AdminUserList({ role, title }) {
             .qrActionBtn { width: 100% !important; justify-content: center !important; }
             .paginationWrapper { flex-direction: column !important; gap: 12px !important; align-items: center !important; }
             .paginationControls { flex-wrap: wrap !important; justify-content: center !important; }
+          }
+
+          @media (max-width: 480px) {
+            .container { padding: 16px !important; }
+            .statsGrid { grid-template-columns: repeat(2, 1fr) !important; }
+            .statCard { padding: 6px 8px !important; }
+            .statValue { font-size: 12px !important; }
+            .statLabel { font-size: 6px !important; }
+            .statIcon { width: 24px !important; height: 24px !important; font-size: 10px !important; }
+            .filterGroup { padding: 2px !important; gap: 2px !important; }
+            .filterBtn { padding: 2px 6px !important; font-size: 8px !important; }
+            .modalContent { max-width: 100% !important; border-radius: 12px !important; }
+            .modalHeader { padding: 10px 12px !important; }
+            .modalTitle { font-size: 14px !important; }
+            .modalSubtitle { font-size: 10px !important; }
+            .modalAvatar { width: 32px !important; height: 32px !important; font-size: 12px !important; }
+            .modalBody { padding: 10px 12px !important; }
+            .modalStats { padding: 6px 8px !important; gap: 4px !important; }
+            .modalStatValue { font-size: 12px !important; }
+            .modalStatLabel { font-size: 7px !important; }
+            .modalGrid { gap: 8px !important; }
+            .modalSection { padding: 10px !important; }
+            .modalSectionTitle { font-size: 10px !important; }
+            .modalDetailRow { font-size: 10px !important; flex-wrap: wrap !important; }
+            .modalDetailLabel { min-width: 60px !important; font-size: 9px !important; }
+            .modalDetailValue { font-size: 10px !important; }
+            .qrModalImage { width: 150px !important; height: 150px !important; }
+            .qrActionBtn { font-size: 11px !important; padding: 6px 10px !important; }
           }
         `}
       </style>
@@ -2011,11 +2464,12 @@ const styles = {
   pageWrapper: {
     minHeight: '100vh',
     background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-    padding: '25px 35px',
+    padding: '0',
     fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
     position: 'relative',
-    borderRadius: '32px',
-    overflow: 'hidden'
+    borderRadius: '0',
+    overflow: 'hidden',
+    width: '100%',
   },
   bgDecoration1: {
     position: 'absolute',
@@ -2049,16 +2503,17 @@ const styles = {
     pointerEvents: 'none'
   },
   container: {
-    background: "rgba(255, 255, 255, 0.85)",
+    background: "rgba(255, 255, 255, 0.92)",
     backdropFilter: 'blur(20px)',
-    borderRadius: "28px",
-    padding: "32px",
+    borderRadius: "20px",
+    padding: "10px 10px",
     boxShadow: "0 8px 32px rgba(0, 0, 0, 0.04), 0 1px 2px rgba(0, 0, 0, 0.02)",
     border: "1px solid rgba(255, 255, 255, 0.5)",
-    maxWidth: "1600px",
+    maxWidth: "100%",
     margin: "0 auto",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
+    width: "100%",
   },
   header: {
     display: "flex",
@@ -2129,7 +2584,6 @@ const styles = {
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
     gap: "10px",
     marginBottom: "20px",
   },
@@ -2145,22 +2599,17 @@ const styles = {
     transition: "all 0.3s ease",
   },
   statIcon: {
-    width: "32px",
-    height: "32px",
     borderRadius: "10px",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    fontSize: "16px",
   },
   statValue: {
-    fontSize: "18px",
     fontWeight: "700",
     color: "#1e293b",
     lineHeight: 1.2,
   },
   statLabel: {
-    fontSize: "10px",
     color: "#64748b",
     fontWeight: "600",
     marginTop: "2px",
@@ -2257,11 +2706,12 @@ const styles = {
     border: "1px solid rgba(240, 242, 245, 0.8)",
     background: "rgba(255, 255, 255, 0.6)",
     backdropFilter: 'blur(10px)',
+    width: '100%',
   },
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "900px",
+    minWidth: "700px",
   },
   theadRow: {
     borderBottom: "1px solid #f0f2f5",
@@ -2357,14 +2807,6 @@ const styles = {
     fontSize: "11px",
     fontWeight: "500",
     color: "#475569",
-  },
-  designationText: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "10px",
-    color: "#94a3b8",
-    marginTop: "2px",
   },
   universityTag: {
     display: "inline-flex",
@@ -2727,95 +3169,6 @@ const styles = {
     fontSize: '11px',
     fontWeight: '600',
   },
-  modalVipBadge: {
-    display: 'inline-block',
-    background: 'linear-gradient(135deg, #fefce8, #fef3c7)',
-    color: '#d97706',
-    padding: '2px 10px',
-    borderRadius: '12px',
-    fontSize: '11px',
-    fontWeight: '700',
-  },
-  modalCardStatus: {
-    display: 'inline-block',
-    padding: '2px 10px',
-    borderRadius: '8px',
-    fontSize: '11px',
-    fontWeight: '600',
-  },
-  modalPaymentStatus: {
-    display: 'inline-block',
-    padding: '2px 10px',
-    borderRadius: '8px',
-    fontSize: '11px',
-    fontWeight: '600',
-  },
-  modalEduList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '6px',
-    width: '100%',
-  },
-  modalEduItem: {
-    padding: '6px 0',
-    borderBottom: '1px solid #f1f5f9',
-    width: '100%',
-  },
-  modalEduHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    fontSize: '12px',
-    marginBottom: '2px',
-    flexWrap: 'wrap',
-    gap: '4px',
-  },
-  modalEduYear: {
-    fontSize: '10px',
-    color: '#94a3b8',
-    fontWeight: '500',
-  },
-  modalEduDegree: {
-    fontSize: '11px',
-    color: '#64748b',
-  },
-  modalSkillsList: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: '4px',
-    justifyContent: 'flex-end',
-  },
-  modalSkillTag: {
-    padding: '2px 8px',
-    background: '#f1f5f9',
-    borderRadius: '8px',
-    fontSize: '10px',
-    color: '#475569',
-    fontWeight: '500',
-  },
-  passwordDisplay: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  passwordToggleBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '2px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalReceiptPreview: {
-    maxWidth: '200px',
-    maxHeight: '150px',
-    borderRadius: '8px',
-    border: '1px solid #e5e7eb',
-    objectFit: 'cover',
-  },
   modalLogoPreview: {
     width: '60px',
     height: '60px',
@@ -2863,6 +3216,44 @@ const styles = {
   offerStatus: {
     color: '#64748b',
     fontSize: '11px',
+  },
+  offerItemLeft: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '8px',
+    flexWrap: 'wrap',
+    flex: 1,
+  },
+  offerItemRight: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  badgeSmall: {
+    padding: '2px 8px',
+    borderRadius: '12px',
+    fontSize: '9px',
+    fontWeight: '600',
+    color: '#fff',
+    whiteSpace: 'nowrap',
+  },
+  qrGenerateBtn: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '4px',
+    padding: '4px 10px',
+    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontSize: '11px',
+    fontWeight: '600',
+    cursor: 'pointer',
+    transition: 'all 0.2s ease',
+  },
+  qrBtnText: {
+    fontSize: '10px',
+    fontWeight: '600',
   },
   jobList: {
     display: 'flex',
@@ -2944,12 +3335,6 @@ const styles = {
     fontSize: '11px',
     color: '#94a3b8',
     padding: '4px',
-  },
-  noItems: {
-    fontSize: '12px',
-    color: '#94a3b8',
-    textAlign: 'center',
-    padding: '8px',
   },
   loadingDetails: {
     display: 'flex',
@@ -3060,45 +3445,6 @@ const styles = {
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     borderRadius: "4px",
   },
-  offerItemLeft: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap',
-    flex: 1,
-  },
-  offerItemRight: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  badgeSmall: {
-    padding: '2px 8px',
-    borderRadius: '12px',
-    fontSize: '9px',
-    fontWeight: '600',
-    color: '#fff',
-    whiteSpace: 'nowrap',
-  },
-  qrGenerateBtn: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    padding: '4px 10px',
-    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
-    color: '#fff',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '11px',
-    fontWeight: '600',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  },
-  qrBtnText: {
-    fontSize: '10px',
-    fontWeight: '600',
-  },
-  
   // QR Modal Styles
   qrModalOverlay: {
     position: 'fixed',
@@ -3221,6 +3567,16 @@ const styles = {
     borderRadius: '12px',
     border: '1px solid #bae6fd',
   },
+  qrScanText: {
+    margin: 0,
+    fontWeight: '500',
+    color: '#0369a1',
+  },
+  qrScanSubtext: {
+    margin: '4px 0 0',
+    fontSize: '12px',
+    color: '#64748b',
+  },
   // Pagination Styles
   paginationWrapper: {
     display: 'flex',
@@ -3276,5 +3632,21 @@ const styles = {
     fontSize: '12px',
     color: '#94a3b8',
     fontWeight: '500',
+  },
+  passwordDisplay: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    gap: '6px',
+  },
+  passwordToggleBtn: {
+    background: 'none',
+    border: 'none',
+    color: '#94a3b8',
+    cursor: 'pointer',
+    padding: '2px',
+    borderRadius: '50%',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 };

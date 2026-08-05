@@ -76,7 +76,7 @@ export default function AdminDashboard() {
   // Recent Events State
   const [recentEvents, setRecentEvents] = useState([]);
 
-  // API Base URL - Use the same as your backend
+  // API Base URL
   const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
 
   useEffect(() => {
@@ -88,8 +88,11 @@ export default function AdminDashboard() {
 
   useEffect(() => {
     const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      if (window.innerWidth > 768) setIsMobileMenuOpen(false);
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
+      }
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -160,19 +163,16 @@ export default function AdminDashboard() {
     }
   }, [token]);
 
-  // Fetch recent events - FIXED
   const fetchRecentEvents = useCallback(async () => {
     if (!token) return;
     try {
       const headers = { "Authorization": `Bearer ${token}` };
       const eventsAPI = `${API_BASE}/events`;
       
-      // Fetch events created by the user
       const res = await fetch(`${eventsAPI}/my-events`, { headers });
       const data = await res.json();
       
       if (Array.isArray(data)) {
-        // Get registrations for each event
         const eventsWithRegistrations = await Promise.all(
           data.slice(0, 5).map(async (event) => {
             try {
@@ -201,7 +201,7 @@ export default function AdminDashboard() {
     }
   }, [token, loading, navigate, fetchDashboardStats, fetchRecentEvents]);
 
-  // ==================== COMPLETE MENU ITEMS ====================
+  // Menu Items
   const menuItems = [
     { 
       id: "dashboard", 
@@ -209,7 +209,6 @@ export default function AdminDashboard() {
       icon: <LayoutDashboard size={20} />,
       section: "main"
     },
-   
     { 
       id: "offer", 
       label: "Create Offer", 
@@ -240,13 +239,12 @@ export default function AdminDashboard() {
       icon: <Plane size={20} />,
       section: "content"
     },
-     { 
+    { 
       id: "events", 
       label: "Events", 
       icon: <CalendarCheck size={20} />,
       section: "content"
     },
-    // ==================== USER MANAGEMENT SECTION ====================
     { 
       id: "students", 
       label: "All Students", 
@@ -273,18 +271,8 @@ export default function AdminDashboard() {
     },
   ];
 
-  // ==================== CARD DATA WITH ALL USER TYPES ====================
+  // Card Data
   const cardData = [
-    // { 
-    //   id: "events", 
-    //   label: "Total Events", 
-    //   value: stats.events, 
-    //   icon: <CalendarCheck size={28} />, 
-    //   trend: `${stats.eventRegistrations} registrations`, 
-    //   color: "#6366f1", 
-    //   bg: "#eef2ff", 
-    //   gradient: "linear-gradient(135deg, #6366f1 0%, #818cf8 100%)" 
-    // },
     { 
       id: "students", 
       label: "Total Students", 
@@ -377,13 +365,12 @@ export default function AdminDashboard() {
     },
   ];
 
-  // ==================== RENDER CONTENT ====================
+  // Render Content
   const renderContent = () => {
     switch (activePage) {
       case "dashboard":
         return (
           <div style={styles.dashboardWrapper}>
-            {/* Modern Dashboard Header with Stats */}
             <motion.div 
               style={styles.dashboardHeader}
               initial={{ opacity: 0, y: -20 }}
@@ -413,7 +400,6 @@ export default function AdminDashboard() {
               </div>
             </motion.div>
 
-            {/* Stats Cards */}
             <motion.div 
               className="cards-grid" 
               style={styles.cardGrid}
@@ -467,7 +453,6 @@ export default function AdminDashboard() {
               ))}
             </motion.div>
 
-            {/* Quick Stats Footer */}
             <motion.div 
               style={styles.quickStats}
               initial={{ opacity: 0, y: 20 }}
@@ -494,8 +479,6 @@ export default function AdminDashboard() {
                 <span>{stats.offers + stats.jobs} Total Listings</span>
               </div>
             </motion.div>
-
-           
           </div>
         );
       
@@ -542,7 +525,14 @@ export default function AdminDashboard() {
     );
   };
 
-  // ==================== GROUPED SIDEBAR MENU ====================
+  const toggleMobileMenu = () => {
+    setIsMobileMenuOpen(!isMobileMenuOpen);
+  };
+
+  const closeMobileMenu = () => {
+    setIsMobileMenuOpen(false);
+  };
+
   const renderSidebarMenu = () => {
     const mainItems = menuItems.filter(item => item.section === "main");
     const contentItems = menuItems.filter(item => item.section === "content");
@@ -550,13 +540,10 @@ export default function AdminDashboard() {
 
     return (
       <>
-        {/* Main Section */}
         {mainItems.map((item) => renderMenuItem(item))}
-        
         <div style={styles.divider} />
         <p style={styles.menuLabel}>CONTENT MANAGEMENT</p>
         {contentItems.map((item) => renderMenuItem(item))}
-        
         <div style={styles.divider} />
         <p style={styles.menuLabel}>USER MANAGEMENT</p>
         {userItems.map((item) => renderMenuItem(item))}
@@ -578,12 +565,14 @@ export default function AdminDashboard() {
             ? "rgba(249, 195, 73, 0.12)" 
             : (hoveredItem === item.id ? "rgba(255,255,255,0.05)" : "transparent"),
           borderRight: isActive 
-            ? "3px solid rgba(249, 195, 73, 0.12)" 
+            ? "3px solid #f9c349" 
             : "3px solid transparent",
         }}
         onClick={() => {
           setActivePage(item.id);
-          if (isMobile) setIsMobileMenuOpen(false);
+          if (isMobile) {
+            closeMobileMenu();
+          }
         }}
         whileHover={{ x: 4 }}
         whileTap={{ scale: 0.98 }}
@@ -628,22 +617,57 @@ export default function AdminDashboard() {
       <div style={styles.bgDecoration3}></div>
 
       {/* Mobile Overlay */}
-      {isMobile && isMobileMenuOpen && (
-        <div style={styles.mobileOverlay} onClick={() => setIsMobileMenuOpen(false)} />
+      <AnimatePresence>
+        {isMobile && isMobileMenuOpen && (
+          <motion.div 
+            style={styles.mobileOverlay} 
+            onClick={closeMobileMenu}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.3 }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Mobile Menu Toggle Button */}
+      {isMobile && (
+        <motion.button
+          style={{
+            ...styles.mobileMenuBtn,
+            left: isMobileMenuOpen ? '290px' : '12px',
+          }}
+          onClick={toggleMobileMenu}
+          className="mobileMenuBtn"
+          whileTap={{ scale: 0.9 }}
+          initial={{ opacity: 0, scale: 0.8 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ duration: 0.2 }}
+        >
+          {isMobileMenuOpen ? <X size={20} /> : <Menu size={20} />}
+        </motion.button>
       )}
 
       {/* Sidebar */}
       <motion.aside 
-        className="sidebar" 
+        className={`sidebar ${isMobile && isMobileMenuOpen ? 'open' : ''}`}
         style={{
           ...styles.sidebar,
           transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
+          position: isMobile ? 'fixed' : 'relative',
         }}
         initial={{ x: -20, opacity: 0 }}
-        animate={{ x: 0, opacity: 1 }}
-        transition={{ duration: 0.5 }}
+        animate={{ 
+          x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
+          opacity: 1 
+        }}
+        transition={{ 
+          type: "spring", 
+          stiffness: 300, 
+          damping: 30 
+        }}
       >
-        <div>
+        <div style={styles.sidebarContent}>
           <div className="logo-container" style={styles.logoContainer}>
             <div style={styles.logoBadge}>
               <span style={styles.logoIcon}>A</span>
@@ -653,7 +677,11 @@ export default function AdminDashboard() {
               <p style={styles.logoSubtext}>Management Dashboard</p>
             </div>
             {isMobile && (
-              <button style={styles.mobileCloseBtn} onClick={() => setIsMobileMenuOpen(false)}>
+              <button 
+                style={styles.mobileCloseBtn} 
+                onClick={closeMobileMenu}
+                className="mobile-close-btn"
+              >
                 <X size={20} />
               </button>
             )}
@@ -748,12 +776,6 @@ export default function AdminDashboard() {
             </p>
           </div>
           <div style={styles.headerActions}>
-            {isMobile && (
-              <button style={styles.mobileMenuBtn} onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}>
-                <Menu size={20} />
-              </button>
-            )}
-            
             <div style={styles.notificationWrapper} ref={notificationRef}>
               <button 
                 className="icon-btn" 
@@ -1081,175 +1103,368 @@ export default function AdminDashboard() {
         )}
       </AnimatePresence>
 
-      <style>
-        {`
-          @keyframes slideIn {
-            from { opacity: 0; transform: translateX(-20px); }
-            to { opacity: 1; transform: translateX(0); }
-          }
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.98); }
-          }
-          @keyframes spin {
-            to { transform: rotate(360deg); }
-          }
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          @keyframes glow {
-            0% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.2); }
-            50% { box-shadow: 0 0 20px rgba(249, 195, 73, 0.4); }
-            100% { box-shadow: 0 0 5px rgba(249, 195, 73, 0.2); }
-          }
-          @keyframes float {
-            0% { transform: translateY(0px); }
-            50% { transform: translateY(-8px); }
-            100% { transform: translateY(0px); }
-          }
-          @keyframes statusPulse {
-            0% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.8); }
-            100% { opacity: 1; transform: scale(1); }
-          }
+      <style>{`
+        /* ===== MOBILE MENU BUTTON ===== */
+        .mobileMenuBtn {
+          display: none;
+          position: fixed;
+          top: 12px;
+          left: 12px;
+          z-index: 999;
+          width: 44px;
+          height: 44px;
+          border-radius: 12px;
+          border: 1px solid #e2e8f0;
+          background: #ffffff;
+          cursor: pointer;
+          align-items: center;
+          justify-content: center;
+          color: #0f172a;
+          font-size: 20px;
+          box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+          transition: all 0.3s ease;
+          padding: 0;
+        }
+        .mobileMenuBtn:hover {
+          background: #f8fafc;
+          box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+        }
 
+        .mobile-close-btn {
+          display: none;
+          background: transparent;
+          border: none;
+          color: #fff;
+          cursor: pointer;
+          padding: 4px;
+          margin-left: auto;
+        }
+
+        /* ===== SIDEBAR SCROLL FIX ===== */
+        .sidebar {
+          display: flex;
+          flex-direction: column;
+          height: 100vh;
+          overflow: hidden;
+        }
+
+        .sidebar-content {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          overflow: hidden;
+        }
+
+        .menu {
+          flex: 1;
+          overflow-y: auto;
+          padding-right: 4px;
+        }
+
+        .menu::-webkit-scrollbar {
+          width: 3px;
+        }
+        .menu::-webkit-scrollbar-track {
+          background: transparent;
+        }
+        .menu::-webkit-scrollbar-thumb {
+          background: rgba(255,255,255,0.2);
+          border-radius: 10px;
+        }
+
+        /* ===== RESPONSIVE ===== */
+        @media (max-width: 768px) {
+          .mobileMenuBtn {
+            display: flex !important;
+          }
+          .mobile-close-btn {
+            display: block !important;
+          }
+          
           .sidebar {
-            animation: slideIn 0.5s ease forwards;
+            position: fixed !important;
+            top: 0 !important;
+            left: 0 !important;
+            height: 100vh !important;
+            width: 280px !important;
+            z-index: 100 !important;
+            margin: 0 !important;
+            border-radius: 0 !important;
+            transform: translateX(-100%) !important;
+            transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1) !important;
           }
-          
-          .menu-item {
-            transition: all 0.3s ease;
-            position: relative;
-            overflow: hidden;
+          .sidebar.open {
+            transform: translateX(0) !important;
           }
-          .menu-item:hover {
-            transform: translateX(4px);
+          .modalContent {
+            max-width: 95% !important;
           }
-          .menu-item.active {
-            background: rgba(249, 195, 73, 0.12);
+          .profileDetails {
+            grid-template-columns: 1fr !important;
           }
-          
-          .main-header {
-            animation: fadeInUp 0.5s ease forwards;
-            opacity: 0;
-            animation-delay: 0.1s;
+          .profileStats {
+            grid-template-columns: 1fr 1fr !important;
           }
-          
-          .stat-card {
-            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-            position: relative;
-            overflow: hidden;
+          .dashboardHeader {
+            flex-direction: column !important;
+            align-items: flex-start !important;
           }
-          .stat-card:hover {
-            transform: translateY(-10px);
-            box-shadow: 0 20px 40px -12px rgba(0,0,0,0.15);
+          .dashboardHeaderRight {
+            width: 100% !important;
+            justify-content: space-between !important;
           }
-          
-          .stat-card .glow {
-            animation: glow 2s infinite;
+          .cardGrid {
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)) !important;
+            gap: 12px !important;
           }
-          
-          .icon-btn {
-            transition: all 0.2s ease;
+          .statCard {
+            padding: 16px !important;
+            min-height: 120px !important;
           }
-          .icon-btn:hover {
-            transform: translateY(-2px);
-            background: #f1f5f9;
+          .cardValue {
+            font-size: 24px !important;
           }
-          
-          .content-area {
-            animation: fadeInUp 0.5s ease forwards;
-            animation-delay: 0.15s;
-            opacity: 0;
+          .cardLabel {
+            font-size: 11px !important;
           }
-          
-          .skeleton {
-            background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
-            background-size: 200% 100%;
-            animation: shimmer 1.5s infinite;
+          .cardIconBox {
+            width: 44px !important;
+            height: 44px !important;
           }
-          
-          .user-info-clickable {
-            cursor: pointer;
-            transition: all 0.3s ease;
-            border-radius: 12px;
+          .quickStats {
+            gap: 12px !important;
+            padding: 12px 16px !important;
           }
-          .user-info-clickable:hover {
-            background: rgba(255,255,255,0.05);
+          .greeting {
+            font-size: 18px !important;
           }
+          .main {
+            padding: 16px 12px !important;
+          }
+          .contentArea {
+            padding: 0 !important;
+          }
+          .dashboardWrapper {
+            padding: 0 !important;
+          }
+          .dashboardHeader {
+            padding: 16px !important;
+            border-radius: 16px !important;
+          }
+          .dashboardMainTitle {
+            font-size: 18px !important;
+          }
+          .dashboardSubtitle {
+            font-size: 11px !important;
+          }
+          .dashboardIconWrapper {
+            width: 40px !important;
+            height: 40px !important;
+          }
+          .notificationDropdown {
+            width: 280px !important;
+            right: -40px !important;
+          }
+          .modalContent {
+            max-width: 98% !important;
+            border-radius: 16px !important;
+          }
+          .modalBody {
+            padding: 16px !important;
+          }
+          .modalHeader {
+            padding: 16px 20px !important;
+          }
+          .modalTitle {
+            font-size: 17px !important;
+          }
+          .logoBadge {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 16px !important;
+          }
+          .logoText {
+            font-size: 16px !important;
+          }
+          .menuBtn {
+            padding: 8px 10px !important;
+            font-size: 13px !important;
+          }
+          .userAvatar {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 12px !important;
+          }
+          .userName {
+            font-size: 12px !important;
+          }
+        }
 
-          .glow {
-            animation: glow 2s infinite;
+        @media (max-width: 480px) {
+          .mobileMenuBtn {
+            top: 10px;
+            left: 10px;
+            width: 38px;
+            height: 38px;
+            font-size: 16px;
           }
+          .main {
+            padding: 12px 8px !important;
+          }
+          .cardGrid {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 8px !important;
+          }
+          .statCard {
+            padding: 12px !important;
+            min-height: 100px !important;
+            border-radius: 16px !important;
+          }
+          .cardValue {
+            font-size: 20px !important;
+          }
+          .cardLabel {
+            font-size: 10px !important;
+          }
+          .cardIconBox {
+            width: 36px !important;
+            height: 36px !important;
+          }
+          .dashboardHeader {
+            padding: 12px !important;
+            border-radius: 14px !important;
+          }
+          .dashboardMainTitle {
+            font-size: 16px !important;
+          }
+          .greeting {
+            font-size: 16px !important;
+          }
+          .quickStats {
+            gap: 8px !important;
+            padding: 10px 12px !important;
+          }
+          .profileStats {
+            grid-template-columns: 1fr 1fr !important;
+            gap: 6px !important;
+          }
+          .profileStat {
+            padding: 6px !important;
+          }
+          .profileStatValue {
+            font-size: 13px !important;
+          }
+          .profileDetails {
+            gap: 6px !important;
+          }
+          .profileDetailItem {
+            padding: 6px 8px !important;
+          }
+          .modalContent {
+            max-width: 98% !important;
+            border-radius: 14px !important;
+          }
+          .modalHeader {
+            padding: 12px 14px !important;
+          }
+          .modalBody {
+            padding: 12px !important;
+          }
+          .modalTitle {
+            font-size: 15px !important;
+          }
+          .modalAvatar {
+            width: 36px !important;
+            height: 36px !important;
+            font-size: 16px !important;
+          }
+          .settingsItem {
+            padding: 8px 10px !important;
+            flex-wrap: wrap !important;
+          }
+          .sidebar {
+            width: 260px !important;
+          }
+          .logoBadge {
+            width: 32px !important;
+            height: 32px !important;
+            font-size: 14px !important;
+          }
+          .logoText {
+            font-size: 14px !important;
+          }
+          .menuBtn {
+            padding: 6px 8px !important;
+            font-size: 12px !important;
+          }
+          .userAvatar {
+            width: 28px !important;
+            height: 28px !important;
+            font-size: 10px !important;
+          }
+          .userName {
+            font-size: 11px !important;
+          }
+          .notificationDropdown {
+            width: 220px !important;
+            right: -50px !important;
+          }
+        }
 
-          .status-dot {
-            animation: statusPulse 2s infinite;
+        @media (min-width: 769px) {
+          .mobileMenuBtn {
+            display: none !important;
           }
+          .mobile-close-btn {
+            display: none !important;
+          }
+          .sidebar {
+            position: relative !important;
+            transform: translateX(0) !important;
+          }
+        }
 
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
-          }
+        /* Animations */
+        @keyframes slideIn {
+          from { opacity: 0; transform: translateX(-20px); }
+          to { opacity: 1; transform: translateX(0); }
+        }
+        @keyframes fadeInUp {
+          from { opacity: 0; transform: translateY(20px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes shimmer {
+          0% { background-position: -200% 0; }
+          100% { background-position: 200% 0; }
+        }
+        @keyframes statusPulse {
+          0% { opacity: 1; transform: scale(1); }
+          50% { opacity: 0.6; transform: scale(0.8); }
+          100% { opacity: 1; transform: scale(1); }
+        }
 
-          @media (max-width: 768px) {
-            .stat-card {
-              min-width: unset !important;
-            }
-            .sidebar {
-              position: fixed !important;
-              top: 0;
-              left: 0;
-              height: 100vh !important;
-              width: 280px !important;
-              z-index: 100 !important;
-              margin: 0 !important;
-              border-radius: 0 !important;
-            }
-            .mobileMenuBtn {
-              display: flex !important;
-            }
-            .modalContent {
-              max-width: 95% !important;
-            }
-            .profileDetails {
-              grid-template-columns: 1fr !important;
-            }
-            .profileStats {
-              grid-template-columns: 1fr 1fr !important;
-            }
-            .dashboardHeader {
-              flex-direction: column !important;
-              align-items: flex-start !important;
-            }
-            .dashboardHeaderRight {
-              width: 100% !important;
-              justify-content: space-between !important;
-            }
-            .recentEventsGrid {
-              grid-template-columns: 1fr !important;
-            }
-          }
-        `}
-      </style>
+        .skeleton {
+          background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+          background-size: 200% 100%;
+          animation: shimmer 1.5s infinite;
+        }
+
+        .status-dot {
+          animation: statusPulse 2s infinite;
+        }
+
+        ::-webkit-scrollbar {
+          width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+          background: #f1f1f1;
+          border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb {
+          background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+          border-radius: 10px;
+        }
+      `}</style>
     </div>
   );
 }
@@ -1261,7 +1476,8 @@ const styles = {
     background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", 
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", 
     overflow: "hidden",
-    position: "relative"
+    position: "relative",
+    width: "100vw",
   },
   bgDecoration1: {
     position: "absolute",
@@ -1271,7 +1487,8 @@ const styles = {
     height: "300px",
     background: "radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0,
   },
   bgDecoration2: {
     position: "absolute",
@@ -1281,7 +1498,8 @@ const styles = {
     height: "250px",
     background: "radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0,
   },
   bgDecoration3: {
     position: "absolute",
@@ -1291,7 +1509,8 @@ const styles = {
     height: "150px",
     background: "radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
-    pointerEvents: "none"
+    pointerEvents: "none",
+    zIndex: 0,
   },
   mobileOverlay: {
     position: "fixed",
@@ -1303,10 +1522,37 @@ const styles = {
     zIndex: 99,
     backdropFilter: "blur(4px)",
   },
+  mobileMenuBtn: {
+    display: "none",
+    position: "fixed",
+    top: "12px",
+    left: "12px",
+    zIndex: 999,
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    cursor: "pointer",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#0f172a",
+    fontSize: "20px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+    transition: "all 0.3s ease",
+    padding: 0,
+  },
+  mobileCloseBtn: {
+    background: "transparent",
+    border: "none",
+    color: "#fff",
+    cursor: "pointer",
+    padding: "4px",
+    marginLeft: "auto",
+  },
   sidebar: { 
     width: "240px", 
     background: "#0f172a",
-    margin: "2px", 
     padding: "24px 16px", 
     display: "flex", 
     flexDirection: "column", 
@@ -1318,14 +1564,15 @@ const styles = {
     transition: "transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     border: "1px solid rgba(255,255,255,0.05)",
     borderRadius: "16px",
-    minHeight: "calc(100vh - 4px)",
+    flexShrink: 0,
+    overflow: "hidden",
+    height: "100vh",
   },
-  mobileCloseBtn: {
-    background: "transparent",
-    border: "none",
-    color: "#fff",
-    cursor: "pointer",
-    marginLeft: "auto",
+  sidebarContent: {
+    flex: 1,
+    display: "flex",
+    flexDirection: "column",
+    overflow: "hidden",
   },
   logoContainer: { 
     display: "flex", 
@@ -1334,6 +1581,7 @@ const styles = {
     marginBottom: "24px", 
     paddingLeft: "8px",
     position: "relative",
+    flexShrink: 0,
   },
   logoBadge: { 
     width: "44px", 
@@ -1375,12 +1623,15 @@ const styles = {
     background: "rgba(255,255,255,0.06)",
     marginBottom: "16px",
     marginTop: "16px",
+    flexShrink: 0,
   },
   menu: { 
     display: "flex", 
     flexDirection: "column", 
     gap: "2px",
     flex: 1,
+    overflowY: "auto",
+    paddingRight: "4px",
   },
   menuLabel: {
     fontSize: "10px",
@@ -1390,6 +1641,8 @@ const styles = {
     padding: "0 12px",
     marginBottom: "8px",
     marginTop: "4px",
+    fontWeight: "600",
+    flexShrink: 0,
   },
   menuBtn: { 
     border: "none", 
@@ -1406,6 +1659,7 @@ const styles = {
     background: "transparent",
     position: "relative",
     gap: "12px",
+    flexShrink: 0,
   },
   btnIcon: { 
     display: "flex", 
@@ -1422,6 +1676,7 @@ const styles = {
     paddingTop: "16px",
     borderTop: "1px solid rgba(255,255,255,0.06)",
     position: "relative",
+    flexShrink: 0,
   },
   userInfo: {
     display: "flex",
@@ -1494,21 +1749,23 @@ const styles = {
   },
   main: { 
     flex: 1, 
-    padding: "24px 25px", 
+    padding: "24px 28px", 
     overflowY: "auto",
     position: "relative",
-    zIndex: 10
+    zIndex: 10,
+    minWidth: 0,
   },
   header: { 
     display: "flex", 
     justifyContent: "space-between", 
     alignItems: "flex-start", 
-    marginBottom: "24px",
+    marginBottom: "18px",
     flexWrap: "wrap",
     gap: "12px"
   },
   headerLeft: {
     flex: 1,
+    marginLeft:35
   },
   greeting: { 
     fontSize: "22px", 
@@ -1527,18 +1784,6 @@ const styles = {
     alignItems: "center",
     gap: "10px",
     flexWrap: "wrap",
-  },
-  mobileMenuBtn: {
-    background: "#fff",
-    border: "1px solid #e2e8f0",
-    padding: "10px",
-    borderRadius: "14px",
-    cursor: "pointer",
-    color: "#64748b",
-    display: "none",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.2s ease",
   },
   notificationWrapper: {
     position: "relative",
@@ -1670,10 +1915,12 @@ const styles = {
     transition: "all 0.2s ease"
   },
   contentArea: { 
-    flex: 1 
+    flex: 1,
+    width: "100%",
   },
   dashboardWrapper: {
-    padding: "4px 0"
+    padding: "4px 0",
+    width: "100%",
   },
   dashboardHeader: {
     display: "flex",
@@ -1745,13 +1992,13 @@ const styles = {
     height: "8px",
     borderRadius: "50%",
     background: "#10b981",
-    animation: "statusPulse 2s infinite"
   },
   cardGrid: { 
     display: "grid", 
     gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
     gap: "20px",
-    marginBottom: "24px"
+    marginBottom: "24px",
+    width: "100%",
   },
   statCard: { 
     background: "#fff", 
@@ -1830,7 +2077,8 @@ const styles = {
     borderRadius: "16px",
     border: "1px solid #e5e7eb",
     flexWrap: "wrap",
-    marginBottom: "24px"
+    marginBottom: "24px",
+    width: "100%",
   },
   quickStatItem: {
     display: "flex",
@@ -1844,139 +2092,6 @@ const styles = {
     width: "1px",
     height: "24px",
     background: "#e5e7eb"
-  },
-  // Recent Events Styles
-  recentEventsSection: {
-    background: "#fff",
-    borderRadius: "20px",
-    border: "1px solid #e5e7eb",
-    padding: "24px",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-  },
-  recentEventsHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px"
-  },
-  recentEventsTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px"
-  },
-  recentEventsHeading: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0
-  },
-  viewAllBtn: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    background: "transparent",
-    border: "none",
-    color: "#ff961a",
-    fontWeight: "600",
-    fontSize: "14px",
-    cursor: "pointer",
-    padding: "6px 12px",
-    borderRadius: "8px",
-    transition: "all 0.3s ease"
-  },
-  recentEventsGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
-    gap: "16px"
-  },
-  eventCard: {
-    display: "flex",
-    flexDirection: "column",
-    background: "#f8fafc",
-    borderRadius: "16px",
-    overflow: "hidden",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    border: "1px solid #f1f5f9"
-  },
-  eventCardImage: {
-    position: "relative",
-    height: "140px",
-    overflow: "hidden"
-  },
-  eventImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover"
-  },
-  eventCardBadge: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    background: "#f9c349",
-    color: "#0f172a",
-    padding: "4px 12px",
-    borderRadius: "20px",
-    fontSize: "11px",
-    fontWeight: "700",
-    textTransform: "uppercase"
-  },
-  eventCardContent: {
-    padding: "14px 16px",
-    flex: 1
-  },
-  eventCardTitle: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#0f172a",
-    margin: "0 0 8px 0",
-    whiteSpace: "nowrap",
-    overflow: "hidden",
-    textOverflow: "ellipsis"
-  },
-  eventCardMeta: {
-    display: "flex",
-    gap: "12px",
-    marginBottom: "8px",
-    flexWrap: "wrap"
-  },
-  eventCardMetaItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#64748b"
-  },
-  eventCardFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    paddingTop: "8px",
-    borderTop: "1px solid #e5e7eb"
-  },
-  eventCardRegistrations: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#475569",
-    fontWeight: "500"
-  },
-  eventCardStatus: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#10b981",
-    fontWeight: "500"
-  },
-  emptyEvents: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "8px",
-    padding: "40px 20px",
-    color: "#94a3b8"
   },
   placeholderSection: { 
     background: "#fff", 

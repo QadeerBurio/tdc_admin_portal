@@ -49,6 +49,18 @@ const CandidatesManager = ({ token }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
   const [sortBy, setSortBy] = useState("recent");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetchCandidates();
@@ -227,6 +239,80 @@ const CandidatesManager = ({ token }) => {
     { key: 'hired', icon: <FaCheckCircle />, label: 'Hired' },
   ];
 
+  const MobileCandidateCard = ({ candidate }) => {
+    const statusConfig = getStatusConfig(candidate.status);
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={styles.mobileCard}
+      >
+        <div style={styles.mobileCardHeader}>
+          <div style={styles.mobileCardUser}>
+            <div style={styles.mobileCardAvatar}>
+              {candidate.fullName?.charAt(0) || "A"}
+            </div>
+            <div>
+              <div style={styles.mobileCardName}>{candidate.fullName}</div>
+              <div style={styles.mobileCardEmail}>
+                <FaEnvelope size={10} /> {candidate.email}
+              </div>
+            </div>
+          </div>
+          <input
+            type="checkbox"
+            checked={selectedCandidates.includes(candidate._id)}
+            onChange={() => toggleSelectCandidate(candidate._id)}
+            style={styles.mobileCheckbox}
+          />
+        </div>
+
+        <div style={styles.mobileCardDetails}>
+          <div style={styles.mobileCardDetail}>
+            <FaBriefcase size={12} /> {candidate.jobId?.title || "N/A"}
+          </div>
+          <div style={styles.mobileCardDetail}>
+            <FaBuilding size={12} /> {candidate.jobId?.department || ""}
+          </div>
+          <div style={styles.mobileCardDetail}>
+            <FaCalendarAlt size={12} /> {new Date(candidate.appliedAt).toLocaleDateString()}
+          </div>
+          <div style={styles.mobileCardDetail}>
+            <FaClock size={12} /> {candidate.yearsOfExperience || 0}y exp
+          </div>
+        </div>
+
+        <div style={styles.mobileCardActions}>
+          <span style={{
+            ...styles.statusBadge,
+            background: statusConfig.bg,
+            color: statusConfig.color,
+          }}>
+            {statusConfig.icon} {statusConfig.label}
+          </span>
+          <div style={styles.mobileCardActionGroup}>
+            <select
+              style={styles.mobileStatusSelect}
+              value={candidate.status}
+              onChange={(e) => updateStatus(candidate._id, e.target.value)}
+            >
+              <option value="pending">Pending</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="shortlisted">Shortlisted</option>
+              <option value="interview">Interview</option>
+              <option value="rejected">Rejected</option>
+              <option value="hired">Hired</option>
+            </select>
+            <button style={styles.mobileViewBtn} onClick={() => viewCandidateDetails(candidate._id)}>
+              <FaEye size={12} />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   if (loading) return (
     <div style={styles.loadingContainer}>
       <motion.div
@@ -279,7 +365,7 @@ const CandidatesManager = ({ token }) => {
             style={styles.exportBtn}
             onClick={exportCandidates}
           >
-            <FaDownload size={14} /> Export
+            <FaDownload size={14} /> {!isMobile && "Export"}
           </motion.button>
           <motion.button
             whileHover={{ scale: 1.02 }}
@@ -287,7 +373,7 @@ const CandidatesManager = ({ token }) => {
             style={styles.refreshBtn}
             onClick={fetchCandidates}
           >
-            <FaSpinner size={14} /> Refresh
+            <FaSpinner size={14} /> {!isMobile && "Refresh"}
           </motion.button>
           {selectedCandidates.length > 0 && (
             <motion.button
@@ -296,19 +382,27 @@ const CandidatesManager = ({ token }) => {
               style={styles.bulkBtn}
               onClick={() => setShowBulkActions(!showBulkActions)}
             >
-              <FaUsers size={14} /> {selectedCandidates.length} Selected
+              <FaUsers size={14} /> {selectedCandidates.length}
+              {!isMobile && " Selected"}
               <FaChevronDown size={12} />
             </motion.button>
           )}
         </div>
       </motion.div>
 
-      {/* Stats Cards */}
+      {/* Stats Cards - Responsive Grid */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        style={styles.statsGrid}
+        style={{
+          ...styles.statsGrid,
+          gridTemplateColumns: isMobile 
+            ? "repeat(3, 1fr)" 
+            : isTablet 
+              ? "repeat(3, 1fr)" 
+              : "repeat(6, 1fr)"
+        }}
       >
         {statItems.map((stat, index) => (
           <motion.div
@@ -317,14 +411,32 @@ const CandidatesManager = ({ token }) => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.3, delay: 0.05 * (index + 1) }}
             whileHover={{ y: -2 }}
-            style={styles.statCard}
+            style={{
+              ...styles.statCard,
+              padding: isMobile ? "8px 10px" : isTablet ? "10px 12px" : "12px 16px",
+            }}
           >
-            <div style={styles.statIcon}>
+            <div style={{
+              ...styles.statIcon,
+              width: isMobile ? "28px" : isTablet ? "32px" : "36px",
+              height: isMobile ? "28px" : isTablet ? "32px" : "36px",
+              fontSize: isMobile ? "12px" : isTablet ? "14px" : "16px",
+            }}>
               {stat.icon}
             </div>
             <div>
-              <div style={styles.statValue}>{totalStats[stat.key] || 0}</div>
-              <div style={styles.statLabel}>{stat.label}</div>
+              <div style={{
+                ...styles.statValue,
+                fontSize: isMobile ? "14px" : isTablet ? "16px" : "20px",
+              }}>
+                {totalStats[stat.key] || 0}
+              </div>
+              <div style={{
+                ...styles.statLabel,
+                fontSize: isMobile ? "8px" : isTablet ? "10px" : "11px",
+              }}>
+                {stat.label}
+              </div>
             </div>
           </motion.div>
         ))}
@@ -339,7 +451,7 @@ const CandidatesManager = ({ token }) => {
             exit={{ opacity: 0, height: 0 }}
             style={styles.bulkActions}
           >
-            <span style={styles.bulkTitle}>Update Selected: </span>
+            <span style={styles.bulkTitle}>Update: </span>
             {['shortlisted', 'interview', 'rejected', 'hired'].map(status => (
               <motion.button
                 key={status}
@@ -348,7 +460,7 @@ const CandidatesManager = ({ token }) => {
                 style={{ ...styles.bulkActionBtn }}
                 onClick={() => bulkUpdateStatus(status)}
               >
-                {getStatusConfig(status).icon} {status.charAt(0).toUpperCase() + status.slice(1)}
+                {getStatusConfig(status).icon} {!isMobile && status.charAt(0).toUpperCase() + status.slice(1)}
               </motion.button>
             ))}
             <motion.button
@@ -374,7 +486,7 @@ const CandidatesManager = ({ token }) => {
           <FaSearch style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search by name, email, or position..."
+            placeholder={isMobile ? "Search..." : "Search by name, email, or position..."}
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={styles.searchInput}
@@ -385,46 +497,98 @@ const CandidatesManager = ({ token }) => {
             </button>
           )}
         </div>
-        <div style={styles.filterGroup}>
-          <FaFilter style={styles.filterIcon} />
-          <select
-            style={styles.filterSelect}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">All Status</option>
-            <option value="pending">⏳ Pending</option>
-            <option value="reviewed">👀 Reviewed</option>
-            <option value="shortlisted">⭐ Shortlisted</option>
-            <option value="interview">🎯 Interview</option>
-            <option value="rejected">❌ Rejected</option>
-            <option value="hired">✅ Hired</option>
-          </select>
-        </div>
-        <div style={styles.filterGroup}>
-          <FaSort style={styles.filterIcon} />
-          <select
-            style={styles.filterSelect}
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="recent">Most Recent</option>
-            <option value="oldest">Oldest First</option>
-            <option value="name">By Name</option>
-            <option value="experience">By Experience</option>
-          </select>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          style={styles.clearBtn}
-          onClick={() => { setSearch(""); setStatusFilter(""); setSortBy("recent"); }}
-        >
-          <FaTimes size={12} /> Clear
-        </motion.button>
+
+        {isMobile ? (
+          <button style={styles.mobileFilterToggle} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+            <FaFilter size={14} /> Filters <FaChevronDown size={12} />
+          </button>
+        ) : (
+          <>
+            <div style={styles.filterGroup}>
+              <FaFilter style={styles.filterIcon} />
+              <select
+                style={styles.filterSelect}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="pending">⏳ Pending</option>
+                <option value="reviewed">👀 Reviewed</option>
+                <option value="shortlisted">⭐ Shortlisted</option>
+                <option value="interview">🎯 Interview</option>
+                <option value="rejected">❌ Rejected</option>
+                <option value="hired">✅ Hired</option>
+              </select>
+            </div>
+            <div style={styles.filterGroup}>
+              <FaSort style={styles.filterIcon} />
+              <select
+                style={styles.filterSelect}
+                value={sortBy}
+                onChange={(e) => setSortBy(e.target.value)}
+              >
+                <option value="recent">Most Recent</option>
+                <option value="oldest">Oldest First</option>
+                <option value="name">By Name</option>
+                <option value="experience">By Experience</option>
+              </select>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={styles.clearBtn}
+              onClick={() => { setSearch(""); setStatusFilter(""); setSortBy("recent"); }}
+            >
+              <FaTimes size={12} /> Clear
+            </motion.button>
+          </>
+        )}
       </motion.div>
 
-      {/* Table */}
+      {/* Mobile Filters */}
+      {isMobile && isFilterOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          style={styles.mobileFilters}
+        >
+          <div style={styles.mobileFilterGroup}>
+            <label style={styles.mobileFilterLabel}>Status</label>
+            <select
+              style={styles.mobileFilterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="shortlisted">Shortlisted</option>
+              <option value="interview">Interview</option>
+              <option value="rejected">Rejected</option>
+              <option value="hired">Hired</option>
+            </select>
+          </div>
+          <div style={styles.mobileFilterGroup}>
+            <label style={styles.mobileFilterLabel}>Sort By</label>
+            <select
+              style={styles.mobileFilterSelect}
+              value={sortBy}
+              onChange={(e) => setSortBy(e.target.value)}
+            >
+              <option value="recent">Most Recent</option>
+              <option value="oldest">Oldest First</option>
+              <option value="name">By Name</option>
+              <option value="experience">By Experience</option>
+            </select>
+          </div>
+          <button style={styles.mobileClearBtn} onClick={() => { setSearch(""); setStatusFilter(""); setSortBy("recent"); setIsFilterOpen(false); }}>
+            Clear All Filters
+          </button>
+        </motion.div>
+      )}
+
+      {/* Table / Mobile Cards */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -438,114 +602,124 @@ const CandidatesManager = ({ token }) => {
             <span style={styles.tableCount}>{filteredCandidates.length}</span>
           </div>
         </div>
-        <div style={styles.tableWrapper}>
-          <table style={styles.table}>
-            <thead>
-              <tr style={styles.tableHead}>
-                <th style={{ width: "40px" }}>
-                  <input
-                    type="checkbox"
-                    checked={selectAll}
-                    onChange={handleSelectAll}
-                    style={styles.checkbox}
-                  />
-                </th>
-                <th style={{ minWidth: "240px" }}>Candidate</th>
-                <th style={{ minWidth: "170px" }}>Position</th>
-                <th style={{ minWidth: "100px" }}>Experience</th>
-                <th style={{ minWidth: "110px" }}>Applied</th>
-                <th style={{ minWidth: "120px" }}>Status</th>
-                <th style={{ minWidth: "190px" }}>Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              {currentItems.map((candidate, index) => {
-                const statusConfig = getStatusConfig(candidate.status);
-                return (
-                  <motion.tr
-                    key={candidate._id}
-                    initial={{ opacity: 0, y: 10 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    transition={{ duration: 0.3, delay: index * 0.03 }}
-                    whileHover={{ backgroundColor: "#fafafa" }}
-                    style={styles.tableRow}
-                  >
-                    <td>
-                      <input
-                        type="checkbox"
-                        checked={selectedCandidates.includes(candidate._id)}
-                        onChange={() => toggleSelectCandidate(candidate._id)}
-                        style={styles.checkbox}
-                      />
-                    </td>
-                    <td>
-                      <div style={styles.candidateCell}>
-                        <div style={styles.candidateAvatar}>
-                          {candidate.fullName?.charAt(0) || "A"}
-                        </div>
-                        <div>
-                          <div style={styles.candidateName}>{candidate.fullName}</div>
-                          <div style={styles.candidateEmail}>
-                            <FaEnvelope size={10} /> {candidate.email}
+
+        {!isMobile ? (
+          <div style={styles.tableWrapper}>
+            <table style={styles.table}>
+              <thead>
+                <tr style={styles.tableHead}>
+                  <th style={{ width: "40px" }}>
+                    <input
+                      type="checkbox"
+                      checked={selectAll}
+                      onChange={handleSelectAll}
+                      style={styles.checkbox}
+                    />
+                  </th>
+                  <th style={{ minWidth: "200px" }}>Candidate</th>
+                  <th style={{ minWidth: "150px" }}>Position</th>
+                  <th style={{ minWidth: "90px" }}>Experience</th>
+                  <th style={{ minWidth: "100px" }}>Applied</th>
+                  <th style={{ minWidth: "110px" }}>Status</th>
+                  <th style={{ minWidth: "170px" }}>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {currentItems.map((candidate, index) => {
+                  const statusConfig = getStatusConfig(candidate.status);
+                  return (
+                    <motion.tr
+                      key={candidate._id}
+                      initial={{ opacity: 0, y: 10 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      transition={{ duration: 0.3, delay: index * 0.03 }}
+                      whileHover={{ backgroundColor: "#fafafa" }}
+                      style={styles.tableRow}
+                    >
+                      <td>
+                        <input
+                          type="checkbox"
+                          checked={selectedCandidates.includes(candidate._id)}
+                          onChange={() => toggleSelectCandidate(candidate._id)}
+                          style={styles.checkbox}
+                        />
+                      </td>
+                      <td>
+                        <div style={styles.candidateCell}>
+                          <div style={styles.candidateAvatar}>
+                            {candidate.fullName?.charAt(0) || "A"}
+                          </div>
+                          <div>
+                            <div style={styles.candidateName}>{candidate.fullName}</div>
+                            <div style={styles.candidateEmail}>
+                              <FaEnvelope size={10} /> {candidate.email}
+                            </div>
                           </div>
                         </div>
-                      </div>
-                    </td>
-                    <td>
-                      <div style={styles.jobTitle}>{candidate.jobId?.title || "N/A"}</div>
-                      <div style={styles.jobDept}>
-                        <FaBuilding size={10} /> {candidate.jobId?.department || ""}
-                      </div>
-                    </td>
-                    <td>
-                      <div style={styles.experienceBadge}>
-                        <FaBriefcase size={12} /> {candidate.yearsOfExperience || 0}y
-                      </div>
-                    </td>
-                    <td>
-                      <div style={styles.dateBadge}>
-                        <FaCalendarAlt size={12} /> {new Date(candidate.appliedAt).toLocaleDateString()}
-                      </div>
-                    </td>
-                    <td>
-                      <span style={{
-                        ...styles.statusBadge,
-                        background: statusConfig.bg,
-                        color: statusConfig.color,
-                      }}>
-                        {statusConfig.icon} {statusConfig.label}
-                      </span>
-                    </td>
-                    <td>
-                      <div style={styles.actionGroup}>
-                        <select
-                          style={styles.statusSelect}
-                          value={candidate.status}
-                          onChange={(e) => updateStatus(candidate._id, e.target.value)}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="reviewed">Reviewed</option>
-                          <option value="shortlisted">Shortlisted</option>
-                          <option value="interview">Interview</option>
-                          <option value="rejected">Rejected</option>
-                          <option value="hired">Hired</option>
-                        </select>
-                        <motion.button
-                          whileHover={{ scale: 1.02 }}
-                          whileTap={{ scale: 0.98 }}
-                          style={styles.viewBtn}
-                          onClick={() => viewCandidateDetails(candidate._id)}
-                        >
-                          <FaEye size={12} /> View
-                        </motion.button>
-                      </div>
-                    </td>
-                  </motion.tr>
-                );
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td>
+                        <div style={styles.jobTitle}>{candidate.jobId?.title || "N/A"}</div>
+                        <div style={styles.jobDept}>
+                          <FaBuilding size={10} /> {candidate.jobId?.department || ""}
+                        </div>
+                      </td>
+                      <td>
+                        <div style={styles.experienceBadge}>
+                          <FaBriefcase size={12} /> {candidate.yearsOfExperience || 0}y
+                        </div>
+                      </td>
+                      <td>
+                        <div style={styles.dateBadge}>
+                          <FaCalendarAlt size={12} /> {new Date(candidate.appliedAt).toLocaleDateString()}
+                        </div>
+                      </td>
+                      <td>
+                        <span style={{
+                          ...styles.statusBadge,
+                          background: statusConfig.bg,
+                          color: statusConfig.color,
+                        }}>
+                          {statusConfig.icon} {statusConfig.label}
+                        </span>
+                      </td>
+                      <td>
+                        <div style={styles.actionGroup}>
+                          <select
+                            style={styles.statusSelect}
+                            value={candidate.status}
+                            onChange={(e) => updateStatus(candidate._id, e.target.value)}
+                          >
+                            <option value="pending">Pending</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="shortlisted">Shortlisted</option>
+                            <option value="interview">Interview</option>
+                            <option value="rejected">Rejected</option>
+                            <option value="hired">Hired</option>
+                          </select>
+                          <motion.button
+                            whileHover={{ scale: 1.02 }}
+                            whileTap={{ scale: 0.98 }}
+                            style={styles.viewBtn}
+                            onClick={() => viewCandidateDetails(candidate._id)}
+                          >
+                            <FaEye size={12} /> View
+                          </motion.button>
+                        </div>
+                      </td>
+                    </motion.tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        ) : (
+          <div style={styles.mobileCardList}>
+            {currentItems.map((candidate) => (
+              <MobileCandidateCard key={candidate._id} candidate={candidate} />
+            ))}
+          </div>
+        )}
+
         {filteredCandidates.length === 0 && (
           <motion.div
             initial={{ opacity: 0 }}
@@ -571,7 +745,7 @@ const CandidatesManager = ({ token }) => {
               onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
               disabled={currentPage === 1}
             >
-              <FaArrowLeft size={12} /> Previous
+              <FaArrowLeft size={12} /> {!isMobile && "Previous"}
             </motion.button>
             <div style={styles.pageInfo}>
               <span style={styles.pageCurrent}>{currentPage}</span>
@@ -585,7 +759,7 @@ const CandidatesManager = ({ token }) => {
               onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
               disabled={currentPage === totalPages}
             >
-              Next <FaArrowRight size={12} />
+              {!isMobile && "Next"} <FaArrowRight size={12} />
             </motion.button>
           </div>
         )}
@@ -606,7 +780,7 @@ const CandidatesManager = ({ token }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              style={styles.modalContent}
+              style={isMobile ? styles.mobileModalContent : styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
@@ -615,7 +789,9 @@ const CandidatesManager = ({ token }) => {
                     {selectedCandidate.fullName?.charAt(0) || "A"}
                   </div>
                   <div>
-                    <h2 style={styles.modalTitle}>{selectedCandidate.fullName}</h2>
+                    <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>
+                      {selectedCandidate.fullName}
+                    </h2>
                     <p style={styles.modalSubtitle}>
                       {selectedCandidate.jobId?.title || "Position"} • {selectedCandidate.jobId?.department || ""}
                     </p>
@@ -639,29 +815,29 @@ const CandidatesManager = ({ token }) => {
               </div>
 
               <div style={styles.modalBody}>
-                <div style={styles.modalStats}>
+                <div style={isMobile ? styles.mobileModalStats : styles.modalStats}>
                   <div style={styles.modalStat}>
                     <FaBriefcase size={16} />
-                    <span>{selectedCandidate.yearsOfExperience || 0} Years Experience</span>
+                    <span>{selectedCandidate.yearsOfExperience || 0} Years</span>
                   </div>
                   <div style={styles.modalStat}>
                     <FaCalendarAlt size={16} />
-                    <span>Applied {new Date(selectedCandidate.appliedAt).toLocaleDateString()}</span>
+                    <span>{new Date(selectedCandidate.appliedAt).toLocaleDateString()}</span>
                   </div>
                   <div style={styles.modalStat}>
                     <FaMapMarkerAlt size={16} />
-                    <span>{selectedCandidate.address || "Location not specified"}</span>
+                    <span>{selectedCandidate.address || "N/A"}</span>
                   </div>
                   <div style={styles.modalStat}>
                     <FaMoneyBillWave size={16} />
-                    <span>{selectedCandidate.expectedSalary || "Salary not specified"}</span>
+                    <span>{selectedCandidate.expectedSalary || "N/A"}</span>
                   </div>
                 </div>
 
-                <div style={styles.modalGrid}>
+                <div style={isMobile ? styles.mobileModalGrid : styles.modalGrid}>
                   <div style={styles.modalSection}>
                     <h3 style={styles.sectionTitle}>
-                      <FaUserCircle size={16} /> Personal Information
+                      <FaUserCircle size={16} /> Personal Info
                     </h3>
                     <div style={styles.infoGrid}>
                       <div style={styles.infoItem}>
@@ -679,14 +855,6 @@ const CandidatesManager = ({ token }) => {
                       <div style={styles.infoItem}>
                         <label>Current Position</label>
                         <span>{selectedCandidate.currentPosition || "N/A"}</span>
-                      </div>
-                      <div style={styles.infoItem}>
-                        <label>Notice Period</label>
-                        <span>{selectedCandidate.noticePeriod || "N/A"}</span>
-                      </div>
-                      <div style={styles.infoItem}>
-                        <label>Work Authorization</label>
-                        <span>{selectedCandidate.workAuthorization || "N/A"}</span>
                       </div>
                     </div>
                   </div>
@@ -780,10 +948,6 @@ const CandidatesManager = ({ token }) => {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
           }
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
 
           ::-webkit-scrollbar {
             width: 6px;
@@ -797,13 +961,45 @@ const CandidatesManager = ({ token }) => {
             background: #f9c349;
             border-radius: 10px;
           }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #e8a800;
-          }
 
           input:focus, select:focus {
             border-color: #f9c349 !important;
             outline: none !important;
+          }
+
+          @media (max-width: 768px) {
+            .stat-card {
+              padding: 8px 10px !important;
+            }
+            .stat-value {
+              font-size: 14px !important;
+            }
+            .stat-icon {
+              width: 28px !important;
+              height: 28px !important;
+              font-size: 12px !important;
+            }
+            .stat-label {
+              font-size: 8px !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .stat-card {
+              padding: 6px 8px !important;
+              gap: 6px !important;
+            }
+            .stat-value {
+              font-size: 12px !important;
+            }
+            .stat-icon {
+              width: 24px !important;
+              height: 24px !important;
+              font-size: 10px !important;
+            }
+            .stat-label {
+              font-size: 7px !important;
+            }
           }
         `}
       </style>
@@ -813,11 +1009,13 @@ const CandidatesManager = ({ token }) => {
 
 const styles = {
   container: {
-    padding: "24px 32px",
+    padding: "16px 20px",
     width: "100%",
     minHeight: "100vh",
     background: "#f8fafc",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    maxWidth: "1400px",
+    margin: "0 auto",
   },
   loadingContainer: {
     display: "flex",
@@ -849,40 +1047,41 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "24px",
+    marginBottom: "16px",
     flexWrap: "wrap",
-    gap: "12px",
+    gap: "10px",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
   },
   headerIcon: {
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "12px",
     background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#fff",
+    flexShrink: 0,
   },
   title: {
-    fontSize: "24px",
+    fontSize: "22px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
     letterSpacing: "-0.3px",
   },
   subtitle: {
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b",
     marginTop: "2px",
   },
   headerActions: {
     display: "flex",
-    gap: "8px",
+    gap: "6px",
     alignItems: "center",
     flexWrap: "wrap",
   },
@@ -890,80 +1089,73 @@ const styles = {
     background: "#0f172a",
     color: "#fff",
     border: "none",
-    padding: "8px 16px",
+    padding: "6px 14px",
     borderRadius: "8px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "13px",
+    fontSize: "12px",
     transition: "all 0.2s ease",
   },
   refreshBtn: {
     background: "#fff",
     color: "#475569",
     border: "1px solid #e5e7eb",
-    padding: "8px 16px",
+    padding: "6px 14px",
     borderRadius: "8px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "13px",
+    fontSize: "12px",
     transition: "all 0.2s ease",
   },
   bulkBtn: {
     background: "#f9c349",
     color: "#0f172a",
     border: "none",
-    padding: "8px 16px",
+    padding: "6px 14px",
     borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
-    fontSize: "13px",
+    fontSize: "12px",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     transition: "all 0.2s ease",
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))",
-    gap: "10px",
-    marginBottom: "20px",
+    gap: "8px",
+    marginBottom: "16px",
   },
   statCard: {
     background: "#fff",
-    padding: "14px 18px",
     borderRadius: "10px",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     border: "1px solid #e5e7eb",
     transition: "all 0.2s ease",
     cursor: "default",
   },
   statIcon: {
-    width: "36px",
-    height: "36px",
     borderRadius: "8px",
     background: "#f8fafc",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#f9c349",
-    fontSize: "16px",
     flexShrink: 0,
   },
   statValue: {
-    fontSize: "20px",
     fontWeight: "700",
     color: "#0f172a",
   },
   statLabel: {
-    fontSize: "11px",
     color: "#64748b",
     fontWeight: "500",
   },
@@ -971,10 +1163,10 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    padding: "12px 18px",
+    padding: "10px 16px",
     background: "#fff",
     borderRadius: "10px",
-    marginBottom: "16px",
+    marginBottom: "14px",
     flexWrap: "wrap",
     border: "1px solid #e5e7eb",
   },
@@ -984,7 +1176,7 @@ const styles = {
     color: "#0f172a",
   },
   bulkActionBtn: {
-    padding: "5px 12px",
+    padding: "4px 12px",
     border: "none",
     borderRadius: "6px",
     background: "#f9c349",
@@ -1006,11 +1198,11 @@ const styles = {
   },
   searchBox: {
     flex: 1,
-    minWidth: "200px",
+    minWidth: "120px",
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    padding: "8px 12px",
+    padding: "6px 12px",
     border: "1px solid #e5e7eb",
     borderRadius: "8px",
     background: "#fff",
@@ -1040,29 +1232,29 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    padding: "0 12px",
+    padding: "0 10px",
     border: "1px solid #e5e7eb",
     borderRadius: "8px",
     background: "#fff",
-    minWidth: "130px",
+    minWidth: "100px",
   },
   filterIcon: {
     color: "#94a3b8",
     fontSize: "14px",
   },
   filterSelect: {
-    padding: "8px 4px",
+    padding: "6px 4px",
     border: "none",
     outline: "none",
     fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
     cursor: "pointer",
-    minWidth: "110px",
+    minWidth: "90px",
     fontFamily: "'Inter', sans-serif",
   },
   clearBtn: {
-    padding: "8px 14px",
+    padding: "6px 12px",
     background: "#f1f5f9",
     color: "#475569",
     border: "1px solid #e5e7eb",
@@ -1070,9 +1262,65 @@ const styles = {
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
+    gap: "4px",
+    fontSize: "12px",
     transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
+  },
+  mobileFilterToggle: {
+    padding: "6px 14px",
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#0f172a",
+    fontFamily: "'Inter', sans-serif",
+  },
+  mobileFilters: {
+    background: "#fff",
+    padding: "14px",
+    borderRadius: "10px",
+    marginBottom: "14px",
+    border: "1px solid #e5e7eb",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  mobileFilterGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  mobileFilterLabel: {
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#475569",
+  },
+  mobileFilterSelect: {
+    padding: "8px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    fontSize: "13px",
+    background: "#fff",
+    color: "#0f172a",
+    cursor: "pointer",
+    fontFamily: "'Inter', sans-serif",
+    width: "100%",
+  },
+  mobileClearBtn: {
+    padding: "8px",
+    background: "#f9c349",
+    border: "none",
+    borderRadius: "8px",
+    color: "#0f172a",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontSize: "13px",
     fontFamily: "'Inter', sans-serif",
   },
   tableContainer: {
@@ -1082,7 +1330,7 @@ const styles = {
     overflow: "hidden",
   },
   tableHeader: {
-    padding: "12px 20px",
+    padding: "10px 16px",
     borderBottom: "1px solid #e5e7eb",
     background: "#f8fafc",
   },
@@ -1090,7 +1338,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     color: "#0f172a",
   },
@@ -1108,7 +1356,7 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "850px",
+    minWidth: "750px",
   },
   tableHead: {
     borderBottom: "1px solid #e5e7eb",
@@ -1129,11 +1377,11 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "10px",
-    padding: "8px 0",
+    padding: "6px 0",
   },
   candidateAvatar: {
-    width: "36px",
-    height: "36px",
+    width: "34px",
+    height: "34px",
     borderRadius: "50%",
     background: "#f9c349",
     display: "flex",
@@ -1147,10 +1395,10 @@ const styles = {
   candidateName: {
     fontWeight: "600",
     color: "#0f172a",
-    fontSize: "14px",
+    fontSize: "13px",
   },
   candidateEmail: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#64748b",
     display: "flex",
     alignItems: "center",
@@ -1162,7 +1410,7 @@ const styles = {
     fontSize: "13px",
   },
   jobDept: {
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#94a3b8",
     display: "flex",
     alignItems: "center",
@@ -1172,7 +1420,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    padding: "3px 10px",
+    padding: "2px 10px",
     background: "#f1f5f9",
     borderRadius: "12px",
     fontSize: "12px",
@@ -1262,20 +1510,20 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "16px",
-    padding: "14px 20px",
+    gap: "12px",
+    padding: "12px 16px",
     borderTop: "1px solid #e5e7eb",
   },
   pageBtn: {
-    padding: "6px 14px",
+    padding: "6px 12px",
     background: "#f1f5f9",
     border: "none",
     borderRadius: "6px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
+    gap: "4px",
+    fontSize: "12px",
     fontWeight: "500",
     color: "#475569",
     transition: "all 0.2s ease",
@@ -1311,6 +1559,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
+    padding: "16px",
   },
   modalContent: {
     background: "#fff",
@@ -1321,8 +1570,17 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
   },
+  mobileModalContent: {
+    background: "#fff",
+    borderRadius: "14px",
+    maxWidth: "98%",
+    width: "100%",
+    maxHeight: "95vh",
+    overflow: "hidden",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+  },
   modalHeader: {
-    padding: "20px 24px",
+    padding: "16px 20px",
     borderBottom: "1px solid #e5e7eb",
     display: "flex",
     justifyContent: "space-between",
@@ -1331,11 +1589,11 @@ const styles = {
   modalHeaderLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
   },
   modalAvatar: {
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "50%",
     background: "#f9c349",
     display: "flex",
@@ -1343,7 +1601,7 @@ const styles = {
     justifyContent: "center",
     fontWeight: "700",
     color: "#fff",
-    fontSize: "20px",
+    fontSize: "18px",
     flexShrink: 0,
   },
   modalTitle: {
@@ -1352,8 +1610,14 @@ const styles = {
     color: "#0f172a",
     margin: 0,
   },
+  mobileModalTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+  },
   modalSubtitle: {
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b",
     marginTop: "2px",
   },
@@ -1380,16 +1644,25 @@ const styles = {
     flexShrink: 0,
   },
   modalBody: {
-    padding: "24px",
+    padding: "20px",
     overflowY: "auto",
     maxHeight: "calc(90vh - 140px)",
   },
   modalStats: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(150px, 1fr))",
+    gridTemplateColumns: "repeat(auto-fit, minmax(120px, 1fr))",
     gap: "8px",
-    marginBottom: "20px",
-    padding: "12px 14px",
+    marginBottom: "16px",
+    padding: "10px 14px",
+    background: "#f8fafc",
+    borderRadius: "8px",
+  },
+  mobileModalStats: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "6px",
+    marginBottom: "14px",
+    padding: "10px 12px",
     background: "#f8fafc",
     borderRadius: "8px",
   },
@@ -1403,17 +1676,23 @@ const styles = {
   modalGrid: {
     display: "grid",
     gridTemplateColumns: "1fr 1fr",
-    gap: "20px",
-    marginBottom: "20px",
+    gap: "16px",
+    marginBottom: "16px",
+  },
+  mobileModalGrid: {
+    display: "grid",
+    gridTemplateColumns: "1fr",
+    gap: "14px",
+    marginBottom: "14px",
   },
   modalSection: {
     marginBottom: 0,
   },
   sectionTitle: {
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "600",
     color: "#0f172a",
-    marginBottom: "10px",
+    marginBottom: "8px",
     display: "flex",
     alignItems: "center",
     gap: "6px",
@@ -1427,16 +1706,18 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     gap: "2px",
+    fontSize: "13px",
+    color: "#0f172a",
   },
   infoItem: {
-    fontSize: "11px",
+    fontSize: "10px",
     color: "#94a3b8",
     fontWeight: "500",
     textTransform: "uppercase",
     letterSpacing: "0.3px",
   },
   infoItem: {
-    fontSize: "14px",
+    fontSize: "13px",
     color: "#0f172a",
     fontWeight: "500",
   },
@@ -1450,7 +1731,7 @@ const styles = {
     padding: "2px 8px",
     background: "#f1f5f9",
     borderRadius: "12px",
-    fontSize: "12px",
+    fontSize: "11px",
     color: "#475569",
     fontWeight: "500",
   },
@@ -1460,9 +1741,9 @@ const styles = {
   },
   coverLetter: {
     background: "#f8fafc",
-    padding: "14px",
+    padding: "12px",
     borderRadius: "8px",
-    fontSize: "14px",
+    fontSize: "13px",
     lineHeight: "1.8",
     color: "#0f172a",
     border: "1px solid #e5e7eb",
@@ -1470,10 +1751,10 @@ const styles = {
   },
   modalLinks: {
     display: "flex",
-    gap: "8px",
+    gap: "6px",
     flexWrap: "wrap",
-    marginTop: "14px",
-    paddingTop: "14px",
+    marginTop: "12px",
+    paddingTop: "12px",
     borderTop: "1px solid #e5e7eb",
   },
   modalLink: {
@@ -1482,15 +1763,15 @@ const styles = {
     borderRadius: "6px",
     textDecoration: "none",
     color: "#475569",
-    fontSize: "13px",
+    fontSize: "12px",
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
     transition: "all 0.2s ease",
   },
   modalActions: {
-    marginTop: "16px",
-    paddingTop: "14px",
+    marginTop: "14px",
+    paddingTop: "12px",
     borderTop: "1px solid #e5e7eb",
   },
   modalActionGroup: {
@@ -1499,7 +1780,7 @@ const styles = {
     gap: "4px",
   },
   modalActionGroup: {
-    fontSize: "13px",
+    fontSize: "12px",
     fontWeight: "600",
     color: "#0f172a",
   },
@@ -1507,7 +1788,7 @@ const styles = {
     padding: "6px 12px",
     borderRadius: "6px",
     border: "1px solid #e5e7eb",
-    fontSize: "14px",
+    fontSize: "13px",
     background: "#fff",
     color: "#0f172a",
     cursor: "pointer",
@@ -1515,6 +1796,117 @@ const styles = {
     transition: "all 0.2s ease",
     maxWidth: "200px",
     fontFamily: "'Inter', sans-serif",
+    width: "100%",
+  },
+  mobileCardList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    padding: "12px",
+  },
+  mobileCard: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    padding: "14px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+  },
+  mobileCardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "10px",
+  },
+  mobileCardUser: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flex: 1,
+  },
+  mobileCardAvatar: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    background: "#f9c349",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: "14px",
+    flexShrink: 0,
+  },
+  mobileCardName: {
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: "14px",
+  },
+  mobileCardEmail: {
+    fontSize: "11px",
+    color: "#64748b",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  mobileCheckbox: {
+    width: "16px",
+    height: "16px",
+    cursor: "pointer",
+    accentColor: "#f9c349",
+    marginTop: "4px",
+    flexShrink: 0,
+  },
+  mobileCardDetails: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "6px",
+    padding: "8px 0",
+    borderTop: "1px solid #f1f5f9",
+    borderBottom: "1px solid #f1f5f9",
+    marginBottom: "10px",
+  },
+  mobileCardDetail: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#475569",
+  },
+  mobileCardActions: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "8px",
+    flexWrap: "wrap",
+  },
+  mobileCardActionGroup: {
+    display: "flex",
+    gap: "6px",
+    alignItems: "center",
+  },
+  mobileStatusSelect: {
+    padding: "4px 8px",
+    borderRadius: "6px",
+    border: "1px solid #e5e7eb",
+    fontSize: "12px",
+    background: "#fff",
+    color: "#0f172a",
+    cursor: "pointer",
+    outline: "none",
+    fontFamily: "'Inter', sans-serif",
+  },
+  mobileViewBtn: {
+    padding: "4px 10px",
+    background: "#f9c349",
+    border: "none",
+    borderRadius: "6px",
+    color: "#0f172a",
+    cursor: "pointer",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontWeight: "500",
+    transition: "all 0.2s ease",
   },
 };
 

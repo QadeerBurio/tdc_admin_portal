@@ -4,7 +4,8 @@ import {
   FaCheckCircle, FaClock, FaSpinner, FaArrowUp,
   FaChartLine, FaCalendarAlt, FaSearch, FaPlus,
   FaFilter, FaSort, FaTh, FaBars, FaStar,
-  FaFire, FaRocket, FaShieldAlt, FaAward
+  FaFire, FaRocket, FaShieldAlt, FaAward,
+  FaChevronDown, FaChevronUp
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -18,6 +19,17 @@ export default function AdminOffers() {
   const [viewMode, setViewMode] = useState("grid");
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchItems = async () => {
     setLoading(true);
@@ -48,24 +60,24 @@ export default function AdminOffers() {
     }
   };
 
- const handleDelete = async (id) => {
-  if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
-  setDeletingId(id);
-  try {
-    await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
-      method: "DELETE",
-      headers: {
-        'Authorization': `Bearer ${localStorage.getItem('token')}` // Add this if needed
-      }
-    });
-    await fetchItems();
-  } catch (error) {
-    console.error("Delete error:", error);
-    alert("Failed to delete");
-  } finally {
-    setDeletingId(null);
-  }
-};
+  const handleDelete = async (id) => {
+    if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
+    setDeletingId(id);
+    try {
+      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
+        method: "DELETE",
+        headers: {
+          'Authorization': `Bearer ${localStorage.getItem('token')}`
+        }
+      });
+      await fetchItems();
+    } catch (error) {
+      console.error("Delete error:", error);
+      alert("Failed to delete");
+    } finally {
+      setDeletingId(null);
+    }
+  };
 
   const filteredItems = items
     .filter(item =>
@@ -84,7 +96,11 @@ export default function AdminOffers() {
   const draftCount = items.filter(item => !item.active).length;
 
   return (
-    <div style={styles.container}>
+    <div style={{
+      ...styles.container,
+      padding: isMobile ? "16px" : isTablet ? "20px 24px" : "30px 35px",
+      borderRadius: isMobile ? "16px" : isTablet ? "24px" : "32px",
+    }}>
       {/* Decorative Background */}
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
@@ -93,7 +109,11 @@ export default function AdminOffers() {
       {/* Header Section */}
       <motion.div 
         className="animate-header" 
-        style={styles.header}
+        style={{
+          ...styles.header,
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "flex-start" : "flex-start",
+        }}
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
@@ -103,58 +123,95 @@ export default function AdminOffers() {
             <FaImage />
             <span>Content Library</span>
           </div>
-          <h1 style={styles.mainTitle}>Asset Management</h1>
-          <p style={styles.subtitle}>Curate and control your storefront's visual identity</p>
+          <h1 style={{
+            ...styles.mainTitle,
+            fontSize: isMobile ? "22px" : isTablet ? "26px" : "30px",
+          }}>Asset Management</h1>
+          <p style={{
+            ...styles.subtitle,
+            fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+          }}>Curate and control your storefront's visual identity</p>
         </div>
 
-        <div style={styles.rightHeader}>
-          <div style={styles.statsGroup}>
+        <div style={{
+          ...styles.rightHeader,
+          flexDirection: isMobile ? "column" : "row",
+          alignItems: isMobile ? "stretch" : "center",
+          width: isMobile ? "100%" : "auto",
+          gap: isMobile ? "12px" : "20px",
+        }}>
+          <div style={{
+            ...styles.statsGroup,
+            padding: isMobile ? "6px 12px" : "8px 16px",
+            gap: isMobile ? "8px" : "12px",
+            flexWrap: isMobile ? "wrap" : "nowrap",
+            justifyContent: isMobile ? "center" : "flex-start",
+            width: isMobile ? "100%" : "auto",
+          }}>
             <motion.div 
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaCheckCircle color="#10b981" size={14} />
-              <span style={styles.statNumber}>{activeCount}</span>
-              <span style={styles.statLabel}>Live</span>
+              <FaCheckCircle color="#10b981" size={isMobile ? 12 : 14} />
+              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{activeCount}</span>
+              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Live</span>
             </motion.div>
             <motion.div 
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaClock color="#94a3b8" size={14} />
-              <span style={styles.statNumber}>{draftCount}</span>
-              <span style={styles.statLabel}>Draft</span>
+              <FaClock color="#94a3b8" size={isMobile ? 12 : 14} />
+              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{draftCount}</span>
+              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Draft</span>
             </motion.div>
             <motion.div 
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaChartLine color="#3b82f6" size={14} />
-              <span style={styles.statNumber}>{items.length}</span>
-              <span style={styles.statLabel}>Total</span>
+              <FaChartLine color="#3b82f6" size={isMobile ? 12 : 14} />
+              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{items.length}</span>
+              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Total</span>
             </motion.div>
           </div>
 
-          <div className="filter-group" style={styles.filterGroup}>
+          <div className="filter-group" style={{
+            ...styles.filterGroup,
+            width: isMobile ? "100%" : "auto",
+            justifyContent: isMobile ? "center" : "flex-start",
+          }}>
             <motion.button 
               className={`filter-btn ${filter === 'slider' ? 'active' : ''}`}
-              style={{...styles.filterBtn, ...(filter === 'slider' ? styles.activeFilter : {})}} 
+              style={{
+                ...styles.filterBtn,
+                ...(filter === 'slider' ? styles.activeFilter : {}),
+                padding: isMobile ? "8px 16px" : "10px 24px",
+                fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+                flex: isMobile ? 1 : "auto",
+                justifyContent: "center",
+              }} 
               onClick={() => setFilter('slider')}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
               <FaImage style={{marginRight: '6px'}} />
-              Sliders
+              {isMobile ? "Sliders" : "Sliders"}
             </motion.button>
             <motion.button 
               className={`filter-btn ${filter === 'offer' ? 'active' : ''}`}
-              style={{...styles.filterBtn, ...(filter === 'offer' ? styles.activeFilter : {})}} 
+              style={{
+                ...styles.filterBtn,
+                ...(filter === 'offer' ? styles.activeFilter : {}),
+                padding: isMobile ? "8px 16px" : "10px 24px",
+                fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+                flex: isMobile ? 1 : "auto",
+                justifyContent: "center",
+              }} 
               onClick={() => setFilter('offer')}
               whileHover={{ y: -2 }}
               whileTap={{ scale: 0.95 }}
             >
               <FaTag style={{marginRight: '6px'}} />
-              Banners
+              {isMobile ? "Banners" : "Banners"}
             </motion.button>
           </div>
         </div>
@@ -163,19 +220,30 @@ export default function AdminOffers() {
       {/* Search & Filter Bar */}
       <motion.div 
         className="animate-search" 
-        style={styles.searchWrapper}
+        style={{
+          ...styles.searchWrapper,
+          flexDirection: isMobile ? "column" : "row",
+          gap: isMobile ? "10px" : "16px",
+        }}
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
       >
-        <div style={styles.searchContainer}>
+        <div style={{
+          ...styles.searchContainer,
+          width: isMobile ? "100%" : "auto",
+        }}>
           <FaSearch style={styles.searchIcon} />
           <input
             type="text"
-            placeholder={`Search ${filter}s by title or ID...`}
+            placeholder={isMobile ? "Search..." : `Search ${filter}s by title or ID...`}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
+            style={{
+              ...styles.searchInput,
+              padding: isMobile ? "8px 32px 8px 36px" : "10px 40px 10px 40px",
+              fontSize: isMobile ? "13px" : "14px",
+            }}
           />
           {searchTerm && (
             <motion.button 
@@ -189,19 +257,32 @@ export default function AdminOffers() {
           )}
         </div>
 
-        <div style={styles.controlsGroup}>
+        <div style={{
+          ...styles.controlsGroup,
+          flexWrap: isMobile ? "wrap" : "nowrap",
+          justifyContent: isMobile ? "center" : "flex-start",
+          width: isMobile ? "100%" : "auto",
+        }}>
           <motion.button 
-            style={styles.filterToggle}
+            style={{
+              ...styles.filterToggle,
+              padding: isMobile ? "8px 12px" : "10px 16px",
+              fontSize: isMobile ? "12px" : "13px",
+            }}
             onClick={() => setShowFilters(!showFilters)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
           >
-            <FaFilter /> Filters
+            <FaFilter /> {isMobile ? "Filters" : "Filters"}
           </motion.button>
           
           <div style={styles.viewToggle}>
             <motion.button
-              style={{...styles.viewBtn, ...(viewMode === 'grid' ? styles.activeView : {})}}
+              style={{
+                ...styles.viewBtn,
+                ...(viewMode === 'grid' ? styles.activeView : {}),
+                padding: isMobile ? "6px 8px" : "8px 10px",
+              }}
               onClick={() => setViewMode('grid')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -209,7 +290,11 @@ export default function AdminOffers() {
               <FaTh />
             </motion.button>
             <motion.button
-              style={{...styles.viewBtn, ...(viewMode === 'list' ? styles.activeView : {})}}
+              style={{
+                ...styles.viewBtn,
+                ...(viewMode === 'list' ? styles.activeView : {}),
+                padding: isMobile ? "6px 8px" : "8px 10px",
+              }}
               onClick={() => setViewMode('list')}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -219,14 +304,19 @@ export default function AdminOffers() {
           </div>
 
           <select 
-            style={styles.sortSelect}
+            style={{
+              ...styles.sortSelect,
+              padding: isMobile ? "8px 10px" : "10px 14px",
+              fontSize: isMobile ? "12px" : "13px",
+              minWidth: isMobile ? "100px" : "auto",
+            }}
             value={sortBy}
             onChange={(e) => setSortBy(e.target.value)}
           >
-            <option value="newest">Newest First</option>
-            <option value="oldest">Oldest First</option>
-            <option value="title">By Title</option>
-            <option value="status">By Status</option>
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest</option>
+            <option value="title">Title</option>
+            <option value="status">Status</option>
           </select>
         </div>
       </motion.div>
@@ -240,24 +330,39 @@ export default function AdminOffers() {
             animate={{ opacity: 1, height: "auto" }}
             exit={{ opacity: 0, height: 0 }}
           >
-            <div style={styles.filtersContent}>
-              <div style={styles.filterGroup}>
-                <label>Status</label>
+            <div style={{
+              ...styles.filtersContent,
+              flexDirection: isMobile ? "column" : "row",
+              padding: isMobile ? "16px" : "20px 24px",
+              gap: isMobile ? "12px" : "20px",
+            }}>
+              <div style={{
+                ...styles.filterGroup,
+                minWidth: isMobile ? "100%" : "150px",
+              }}>
+                <label style={{fontSize: isMobile ? "12px" : "13px"}}>Status</label>
                 <select style={styles.filterSelect}>
                   <option value="all">All</option>
                   <option value="active">Live</option>
                   <option value="draft">Draft</option>
                 </select>
               </div>
-              <div style={styles.filterGroup}>
-                <label>Date Range</label>
+              <div style={{
+                ...styles.filterGroup,
+                minWidth: isMobile ? "100%" : "150px",
+              }}>
+                <label style={{fontSize: isMobile ? "12px" : "13px"}}>Date Range</label>
                 <select style={styles.filterSelect}>
                   <option value="all">All Time</option>
                   <option value="week">This Week</option>
                   <option value="month">This Month</option>
                 </select>
               </div>
-              <button style={styles.applyFiltersBtn}>Apply Filters</button>
+              <button style={{
+                ...styles.applyFiltersBtn,
+                width: isMobile ? "100%" : "auto",
+                padding: isMobile ? "10px" : "10px 24px",
+              }}>Apply Filters</button>
             </div>
           </motion.div>
         )}
@@ -268,27 +373,46 @@ export default function AdminOffers() {
         {loading ? (
           <motion.div 
             className="loader-container" 
-            style={styles.loader}
+            style={{
+              ...styles.loader,
+              padding: isMobile ? "40px" : isTablet ? "60px" : "80px",
+            }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
             <div className="spinner" style={styles.spinner}></div>
-            <p>Loading assets from database...</p>
+            <p style={{fontSize: isMobile ? "13px" : "14px"}}>Loading assets...</p>
           </motion.div>
         ) : filteredItems.length === 0 ? (
           <motion.div 
             className="empty-state" 
-            style={styles.emptyState}
+            style={{
+              ...styles.emptyState,
+              padding: isMobile ? "30px" : isTablet ? "40px" : "60px",
+            }}
             initial={{ opacity: 0, scale: 0.9 }}
             animate={{ opacity: 1, scale: 1 }}
           >
-            <div style={styles.emptyIcon}>📦</div>
-            <p style={styles.emptyTitle}>No {filter} assets found</p>
-            <span style={styles.emptySubtitle}>
+            <div style={{
+              ...styles.emptyIcon,
+              fontSize: isMobile ? "40px" : "64px",
+            }}>📦</div>
+            <p style={{
+              ...styles.emptyTitle,
+              fontSize: isMobile ? "16px" : isTablet ? "17px" : "18px",
+            }}>No {filter} assets found</p>
+            <span style={{
+              ...styles.emptySubtitle,
+              fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
+            }}>
               {searchTerm ? "Try a different search term" : "Create your first asset using the admin panel"}
             </span>
             <motion.button 
-              style={styles.emptyBtn}
+              style={{
+                ...styles.emptyBtn,
+                padding: isMobile ? "10px 20px" : "12px 24px",
+                fontSize: isMobile ? "13px" : "14px",
+              }}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
             >
@@ -298,7 +422,13 @@ export default function AdminOffers() {
         ) : (
           <motion.div 
             className="items-grid" 
-            style={viewMode === 'grid' ? styles.grid : styles.listGrid}
+            style={{
+              ...(viewMode === 'grid' ? styles.grid : styles.listGrid),
+              gap: isMobile ? "12px" : isTablet ? "16px" : "20px",
+              gridTemplateColumns: viewMode === 'grid' ? 
+                (isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(280px, 1fr))") : 
+                "1fr",
+            }}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5 }}
@@ -307,7 +437,16 @@ export default function AdminOffers() {
               <motion.div 
                 key={item._id} 
                 className="asset-card"
-                style={viewMode === 'grid' ? styles.card : styles.listCard}
+                style={viewMode === 'grid' ? {
+                  ...styles.card,
+                  borderRadius: isMobile ? "14px" : isTablet ? "16px" : "20px",
+                } : {
+                  ...styles.listCard,
+                  borderRadius: isMobile ? "12px" : isTablet ? "14px" : "16px",
+                  padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+                  flexDirection: isMobile ? "column" : "row",
+                  alignItems: isMobile ? "stretch" : "center",
+                }}
                 initial={{ opacity: 0, y: 30 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.4, delay: index * 0.05 }}
@@ -320,13 +459,16 @@ export default function AdminOffers() {
                 {viewMode === 'grid' ? (
                   <>
                     {/* Grid View */}
-                    <div style={styles.cardImageWrapper}>
+                    <div style={{
+                      ...styles.cardImageWrapper,
+                      height: isMobile ? "140px" : isTablet ? "150px" : "160px",
+                    }}>
                       <img 
                         src={item.image} 
                         alt={item.title || "Preview"} 
                         style={styles.cardImage} 
                         onError={(e) => { 
-                          e.target.src = 'https://via.placeholder.com/400x200?text=Image+Not+Found'; 
+                          e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'; 
                         }} 
                       />
                       {!item.active && <div style={styles.draftOverlay}>DRAFT</div>}
@@ -337,7 +479,10 @@ export default function AdminOffers() {
                         </div>
                       )}
                     </div>
-                    <div style={styles.cardContent}>
+                    <div style={{
+                      ...styles.cardContent,
+                      padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
+                    }}>
                       <div style={styles.cardMeta}>
                         <span style={{...styles.statusDot, backgroundColor: item.active ? "#10b981" : "#cbd5e1"}} />
                         <span style={styles.cardStatus}>{item.active ? "Live" : "Draft"}</span>
@@ -345,17 +490,26 @@ export default function AdminOffers() {
                           {item.type === "slider" ? "Slider" : "Offer"}
                         </span>
                       </div>
-                      <h3 style={styles.cardTitle}>{item.title || "Untitled Campaign"}</h3>
+                      <h3 style={{
+                        ...styles.cardTitle,
+                        fontSize: isMobile ? "14px" : isTablet ? "15px" : "16px",
+                      }}>{item.title || "Untitled Campaign"}</h3>
                       {item.type === "offer" && item.description && (
-                        <p style={styles.cardDescription}>
-                          {item.description.length > 60 
-                            ? item.description.substring(0, 60) + "..." 
+                        <p style={{
+                          ...styles.cardDescription,
+                          fontSize: isMobile ? "12px" : isTablet ? "12px" : "13px",
+                        }}>
+                          {item.description.length > (isMobile ? 40 : 60) 
+                            ? item.description.substring(0, isMobile ? 40 : 60) + "..." 
                             : item.description}
                         </p>
                       )}
                       <div style={styles.cardFooter}>
-                        <span style={styles.cardDate}>
-                          <FaCalendarAlt size={10} />
+                        <span style={{
+                          ...styles.cardDate,
+                          fontSize: isMobile ? "10px" : "11px",
+                        }}>
+                          <FaCalendarAlt size={isMobile ? 8 : 10} />
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                         <div style={styles.cardActions}>
@@ -365,6 +519,8 @@ export default function AdminOffers() {
                             disabled={togglingId === item._id}
                             style={{
                               ...styles.smallBtn,
+                              padding: isMobile ? "4px 8px" : "6px 10px",
+                              fontSize: isMobile ? "10px" : "12px",
                               background: item.active 
                                 ? "#f1f5f9" 
                                 : "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
@@ -376,21 +532,25 @@ export default function AdminOffers() {
                             {togglingId === item._id ? (
                               <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
                             ) : (
-                              item.active ? <FaEyeSlash size={12} /> : <FaEye size={12} />
+                              item.active ? <FaEyeSlash size={isMobile ? 10 : 12} /> : <FaEye size={isMobile ? 10 : 12} />
                             )}
                           </motion.button>
                           <motion.button 
                             className="action-btn delete-btn"
                             onClick={() => handleDelete(item._id)}
                             disabled={deletingId === item._id}
-                            style={styles.smallDeleteBtn}
+                            style={{
+                              ...styles.smallDeleteBtn,
+                              padding: isMobile ? "4px 8px" : "6px 10px",
+                              fontSize: isMobile ? "10px" : "12px",
+                            }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             {deletingId === item._id ? (
                               <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
                             ) : (
-                              <FaTrashAlt size={12} />
+                              <FaTrashAlt size={isMobile ? 10 : 12} />
                             )}
                           </motion.button>
                         </div>
@@ -400,7 +560,12 @@ export default function AdminOffers() {
                 ) : (
                   /* List View */
                   <>
-                    <div style={styles.listImageWrapper}>
+                    <div style={{
+                      ...styles.listImageWrapper,
+                      width: isMobile ? "100%" : "80px",
+                      height: isMobile ? "120px" : "80px",
+                      borderRadius: isMobile ? "10px" : "12px",
+                    }}>
                       <img 
                         src={item.image} 
                         alt={item.title || "Preview"} 
@@ -410,22 +575,47 @@ export default function AdminOffers() {
                         }} 
                       />
                     </div>
-                    <div style={styles.listContent}>
+                    <div style={{
+                      ...styles.listContent,
+                      width: isMobile ? "100%" : "auto",
+                    }}>
                       <div style={styles.listMeta}>
                         <span style={{...styles.statusDot, backgroundColor: item.active ? "#10b981" : "#cbd5e1"}} />
-                        <span style={styles.listStatus}>{item.active ? "Live" : "Draft"}</span>
-                        <span style={styles.listType}>
+                        <span style={{
+                          ...styles.listStatus,
+                          fontSize: isMobile ? "10px" : "11px",
+                        }}>{item.active ? "Live" : "Draft"}</span>
+                        <span style={{
+                          ...styles.listType,
+                          fontSize: isMobile ? "9px" : "10px",
+                        }}>
                           {item.type === "slider" ? "Slider" : "Offer"}
                         </span>
-                        <span style={styles.listId}>ID: {item._id.slice(-8).toUpperCase()}</span>
+                        <span style={{
+                          ...styles.listId,
+                          fontSize: isMobile ? "9px" : "10px",
+                        }}>ID: {item._id.slice(-8).toUpperCase()}</span>
                       </div>
-                      <h3 style={styles.listTitle}>{item.title || "Untitled Campaign"}</h3>
+                      <h3 style={{
+                        ...styles.listTitle,
+                        fontSize: isMobile ? "14px" : isTablet ? "14px" : "15px",
+                      }}>{item.title || "Untitled Campaign"}</h3>
                       {item.type === "offer" && item.description && (
-                        <p style={styles.listDescription}>{item.description}</p>
+                        <p style={{
+                          ...styles.listDescription,
+                          fontSize: isMobile ? "12px" : isTablet ? "12px" : "13px",
+                        }}>{item.description}</p>
                       )}
-                      <div style={styles.listFooter}>
-                        <span style={styles.listDate}>
-                          <FaCalendarAlt size={10} />
+                      <div style={{
+                        ...styles.listFooter,
+                        flexDirection: isMobile ? "column" : "row",
+                        alignItems: isMobile ? "stretch" : "center",
+                      }}>
+                        <span style={{
+                          ...styles.listDate,
+                          fontSize: isMobile ? "10px" : "11px",
+                        }}>
+                          <FaCalendarAlt size={isMobile ? 8 : 10} />
                           {new Date(item.createdAt).toLocaleDateString()}
                         </span>
                         <div style={styles.listActions}>
@@ -435,6 +625,8 @@ export default function AdminOffers() {
                             disabled={togglingId === item._id}
                             style={{
                               ...styles.smallBtn,
+                              padding: isMobile ? "4px 8px" : "6px 10px",
+                              fontSize: isMobile ? "10px" : "12px",
                               background: item.active 
                                 ? "#f1f5f9" 
                                 : "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
@@ -446,21 +638,25 @@ export default function AdminOffers() {
                             {togglingId === item._id ? (
                               <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
                             ) : (
-                              item.active ? <FaEyeSlash size={12} /> : <FaEye size={12} />
+                              item.active ? <FaEyeSlash size={isMobile ? 10 : 12} /> : <FaEye size={isMobile ? 10 : 12} />
                             )}
                           </motion.button>
                           <motion.button 
                             className="action-btn delete-btn"
                             onClick={() => handleDelete(item._id)}
                             disabled={deletingId === item._id}
-                            style={styles.smallDeleteBtn}
+                            style={{
+                              ...styles.smallDeleteBtn,
+                              padding: isMobile ? "4px 8px" : "6px 10px",
+                              fontSize: isMobile ? "10px" : "12px",
+                            }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                           >
                             {deletingId === item._id ? (
                               <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
                             ) : (
-                              <FaTrashAlt size={12} />
+                              <FaTrashAlt size={isMobile ? 10 : 12} />
                             )}
                           </motion.button>
                         </div>
@@ -576,6 +772,107 @@ export default function AdminOffers() {
             .controlsGroup {
               flex-wrap: wrap !important;
               justify-content: center !important;
+            }
+            .filtersContent {
+              flex-direction: column !important;
+            }
+            .filterGroup {
+              min-width: 100% !important;
+            }
+            .applyFiltersBtn {
+              width: 100% !important;
+            }
+            .listCard {
+              flex-direction: column !important;
+              align-items: stretch !important;
+            }
+            .listImageWrapper {
+              width: 100% !important;
+              height: 120px !important;
+            }
+            .listFooter {
+              flex-direction: column !important;
+              align-items: stretch !important;
+            }
+            .listActions {
+              justify-content: flex-end !important;
+            }
+            .grid {
+              grid-template-columns: 1fr !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .container {
+              padding: 12px !important;
+              border-radius: 12px !important;
+            }
+            .mainTitle {
+              font-size: 18px !important;
+            }
+            .subtitle {
+              font-size: 11px !important;
+            }
+            .statsGroup {
+              padding: 4px 8px !important;
+              gap: 4px !important;
+            }
+            .statBadge {
+              font-size: 11px !important;
+            }
+            .statNumber {
+              font-size: 11px !important;
+            }
+            .statLabel {
+              font-size: 9px !important;
+            }
+            .filterBtn {
+              padding: 6px 12px !important;
+              font-size: 11px !important;
+            }
+            .searchInput {
+              font-size: 12px !important;
+              padding: 6px 28px 6px 32px !important;
+            }
+            .filterToggle {
+              font-size: 11px !important;
+              padding: 6px 10px !important;
+            }
+            .sortSelect {
+              font-size: 11px !important;
+              padding: 6px 8px !important;
+              min-width: 80px !important;
+            }
+            .cardImageWrapper {
+              height: 120px !important;
+            }
+            .cardContent {
+              padding: 10px !important;
+            }
+            .cardTitle {
+              font-size: 13px !important;
+            }
+            .cardDescription {
+              font-size: 11px !important;
+            }
+            .emptyState {
+              padding: 20px !important;
+            }
+            .emptyIcon {
+              font-size: 32px !important;
+            }
+            .emptyTitle {
+              font-size: 14px !important;
+            }
+            .emptySubtitle {
+              font-size: 11px !important;
+            }
+            .emptyBtn {
+              font-size: 12px !important;
+              padding: 8px 16px !important;
+            }
+            .loader {
+              padding: 30px !important;
             }
           }
         `}

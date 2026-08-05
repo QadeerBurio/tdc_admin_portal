@@ -14,6 +14,7 @@ import {
   FaCalendarCheck,
   FaChartBar,
   FaHome,
+  FaVideo,
   FaSignOutAlt,
   FaFileAlt,
   FaUserTie,
@@ -43,6 +44,7 @@ import {
   FaRocket,
   FaThumbsUp,
   FaChartLine,
+  FaBars,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 
@@ -68,14 +70,14 @@ const CompanyDashboard = () => {
   const [showProfileModal, setShowProfileModal] = useState(false);
   const [showSettingsModal, setShowSettingsModal] = useState(false);
   const [employeeData, setEmployeeData] = useState(null);
-  const [employeeStats, setEmployeeStats] = useState({
-    totalApplications: 0,
-    pendingReviews: 0,
-    interviewsScheduled: 0,
-    offersMade: 0,
-  });
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState(false);
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [fetchError, setFetchError] = useState(null);
   const userMenuRef = useRef(null);
+
+  const API_URL = "https://the-deft-crew-production.up.railway.app/api";
+  const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {
     if (token) {
@@ -94,26 +96,41 @@ const CompanyDashboard = () => {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  useEffect(() => {
+    const handleResize = () => {
+      const mobile = window.innerWidth <= 768;
+      setIsMobile(mobile);
+      if (!mobile) {
+        setIsMobileMenuOpen(false);
+      }
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
+  // ─── Fetch all data ──────────────────────────────────────────────
   const fetchAllData = async () => {
     setRefreshing(true);
-    await Promise.all([
-      fetchDashboardStats(),
-      fetchRecentApplications(),
-      fetchUpcomingInterviews(),
-      fetchEmployeeStats(),
-    ]);
-    setRefreshing(false);
+    setFetchError(null);
+    try {
+      await Promise.all([
+        fetchDashboardStats(),
+        fetchRecentApplications(),
+        fetchUpcomingInterviews(),
+      ]);
+    } catch (error) {
+      console.error("Error fetching all data:", error);
+      setFetchError("Failed to load some data. Please refresh.");
+    } finally {
+      setRefreshing(false);
+      setLoading(false);
+    }
   };
 
+  // ─── Fetch employee data ────────────────────────────────────────
   const fetchEmployeeData = async () => {
     try {
-      const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/auth/me",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      
+      const res = await axios.get(`${API_URL}/auth/me`, config);
       setEmployeeData({
         ...res.data,
         logo: res.data.logo || "",
@@ -132,82 +149,88 @@ const CompanyDashboard = () => {
     }
   };
 
-  const fetchEmployeeStats = async () => {
-    try {
-      const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/jobs/employee/stats",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
-      setEmployeeStats({
-        totalApplications: res.data.totalApplications || 0,
-        pendingReviews: res.data.pendingReviews || 0,
-        interviewsScheduled: res.data.interviewsScheduled || 0,
-        offersMade: res.data.offersMade || 0,
-      });
-    } catch (err) {
-      console.error("Error fetching employee stats", err);
-      setEmployeeStats({
-        totalApplications: stats.totalApplications || 0,
-        pendingReviews: stats.pendingApplications || 0,
-        interviewsScheduled: stats.upcomingInterviews || 0,
-        offersMade: stats.hiredCandidates || 0,
-      });
-    }
-  };
-
+  // ─── Fetch dashboard stats from /stats endpoint ────────────────
   const fetchDashboardStats = async () => {
     try {
-      const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/jobs/admin/stats",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axios.get(`${API_URL}/jobs/stats`, config);
+      const data = res.data;
+      
       setStats({
-        totalJobs: res.data.totalJobs || 0,
-        activeJobs: res.data.activeJobs || 0,
-        totalApplications: res.data.totalApplications || 0,
-        pendingApplications: res.data.pendingApplications || 0,
-        shortlistedCandidates: res.data.shortlistedApplications || 0,
-        totalInterviews: res.data.totalInterviews || 0,
-        upcomingInterviews: res.data.upcomingInterviews || 0,
-        hiredCandidates: res.data.hiredApplications || 0,
+        totalJobs: data.totalJobs || 0,
+        activeJobs: data.activeJobs || 0,
+        totalApplications: data.totalApplications || 0,
+        pendingApplications: data.pendingApplications || 0,
+        shortlistedCandidates: data.shortlistedApplications || 0,
+        totalInterviews: data.totalInterviews || 0,
+        upcomingInterviews: data.upcomingInterviews || 0,
+        hiredCandidates: data.hiredApplications || 0,
       });
+      
     } catch (err) {
-      console.error("Error fetching dashboard stats", err);
+      console.error("Error fetching dashboard stats:", err);
+      
+      // Fallback: Try individual endpoints
+      try {
+        // Get jobs
+        const jobsRes = await axios.get(`${API_URL}/jobs/my-jobs`, config);
+        const jobs = jobsRes.data || [];
+        const activeJobs = jobs.filter(j => j.active).length;
+        
+        // Get applications for my jobs
+        let totalApps = 0;
+        let pendingApps = 0;
+        let shortlisted = 0;
+        let hired = 0;
+        
+        for (const job of jobs) {
+          try {
+            const appsRes = await axios.get(`${API_URL}/jobs/job/${job._id}/applications`, config);
+            const apps = appsRes.data || [];
+            totalApps += apps.length;
+            apps.forEach(app => {
+              if (app.status === 'pending') pendingApps++;
+              if (app.status === 'shortlisted') shortlisted++;
+              if (app.status === 'hired') hired++;
+            });
+          } catch (e) {
+            // Skip if can't fetch apps for this job
+          }
+        }
+        
+        setStats({
+          totalJobs: jobs.length,
+          activeJobs: activeJobs,
+          totalApplications: totalApps,
+          pendingApplications: pendingApps,
+          shortlistedCandidates: shortlisted,
+          totalInterviews: 0,
+          upcomingInterviews: 0,
+          hiredCandidates: hired,
+        });
+      } catch (fallbackErr) {
+        console.error("Fallback stats fetch failed:", fallbackErr);
+      }
     }
   };
 
+  // ─── Fetch recent applications ──────────────────────────────────
   const fetchRecentApplications = async () => {
     try {
-      const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all?limit=5",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axios.get(`${API_URL}/jobs/candidates/all?limit=5`, config);
       setRecentApplications(res.data || []);
     } catch (err) {
-      console.error("Error fetching recent applications", err);
+      console.error("Error fetching recent applications:", err);
       setRecentApplications([]);
-    } finally {
-      setLoading(false);
     }
   };
 
+  // ─── Fetch upcoming interviews ──────────────────────────────────
   const fetchUpcomingInterviews = async () => {
     try {
-      const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/jobs/interviews/upcoming",
-        {
-          headers: { Authorization: `Bearer ${token}` },
-        }
-      );
+      const res = await axios.get(`${API_URL}/jobs/interviews/upcoming`, config);
       setUpcomingInterviewsList(res.data || []);
     } catch (err) {
-      console.error("Error fetching upcoming interviews", err);
+      console.error("Error fetching upcoming interviews:", err);
       setUpcomingInterviewsList([]);
     }
   };
@@ -268,20 +291,13 @@ const CompanyDashboard = () => {
 
   const getStatusColor = (status) => {
     switch (status) {
-      case "pending":
-        return "#f59e0b";
-      case "reviewed":
-        return "#3b82f6";
-      case "shortlisted":
-        return "#10b981";
-      case "interview":
-        return "#8b5cf6";
-      case "rejected":
-        return "#ef4444";
-      case "hired":
-        return "#059669";
-      default:
-        return "#6b7280";
+      case "pending": return "#f59e0b";
+      case "reviewed": return "#3b82f6";
+      case "shortlisted": return "#10b981";
+      case "interview": return "#8b5cf6";
+      case "rejected": return "#ef4444";
+      case "hired": return "#059669";
+      default: return "#6b7280";
     }
   };
 
@@ -307,14 +323,62 @@ const CompanyDashboard = () => {
         transition={{ duration: 0.5 }}
         style={styles.dashboardContainer}
       >
-        
+        {/* Welcome Banner */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5 }}
+          style={styles.welcomeBanner}
+        >
+          <div style={styles.welcomeContent}>
+            <div style={styles.welcomeAvatarWrapper}>
+              {logoUrl ? (
+                <img 
+                  src={logoUrl} 
+                  alt="Company Logo" 
+                  style={styles.welcomeAvatar}
+                  onError={(e) => {
+                    e.target.style.display = 'none';
+                  }}
+                />
+              ) : (
+                <div style={styles.welcomeAvatarFallback}>
+                  {displayName?.charAt(0) || "E"}
+                </div>
+              )}
+            </div>
+            <div style={styles.welcomeText}>
+              <h2 style={styles.welcomeTitle}>Welcome back, {displayName}!</h2>
+              <p style={styles.welcomeSubtitle}>
+                {companyName} • {stats.totalJobs} jobs • {stats.totalApplications} applications
+              </p>
+            </div>
+          </div>
+          <motion.button
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+            style={styles.welcomeBtn}
+            onClick={() => {
+              setActiveTab("jobs");
+              if (isMobile) setIsMobileMenuOpen(false);
+            }}
+          >
+            <FaPlus size={14} /> Post New Job
+          </motion.button>
+        </motion.div>
 
-        {/* Stats Grid */}
+        {/* Stats Grid - 4 per row on large, 1 per row on mobile */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.1 }}
-          style={styles.statsGrid}
+          style={{
+            ...styles.statsGrid,
+            gridTemplateColumns: isMobile 
+              ? "1fr" 
+              : "repeat(3, 1fr)",
+            gap: isMobile ? "12px" : "16px",
+          }}
         >
           <div style={styles.statCard} className="stat-card">
             <div style={styles.statIconWrapper}>
@@ -350,7 +414,23 @@ const CompanyDashboard = () => {
               <span style={styles.statTrend}>Ready for interview</span>
             </div>
           </div>
-          <div style={styles.statCard} className="stat-card">
+         
+        </motion.div>
+
+        {/* Stats Grid Row 2 - 4 per row on large, 1 per row on mobile */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.15 }}
+          style={{
+            ...styles.statsGrid,
+            gridTemplateColumns: isMobile 
+              ? "1fr" 
+              : "repeat(3, 1fr)",
+            gap: isMobile ? "12px" : "16px",
+          }}
+        >
+         <div style={styles.statCard} className="stat-card">
             <div style={{ ...styles.statIconWrapper, background: "#f3e8ff" }}>
               <FaCalendarCheck style={{ ...styles.statIcon, color: "#8b5cf6" }} />
             </div>
@@ -375,185 +455,162 @@ const CompanyDashboard = () => {
               <FaEye style={{ ...styles.statIcon, color: "#e11d48" }} />
             </div>
             <div style={styles.statContent}>
-              <h3 style={styles.statValue}>245</h3>
+              <h3 style={styles.statValue}>
+                {stats.totalJobs * 15 + stats.totalApplications * 2}
+              </h3>
               <p style={styles.statLabel}>Total Views</p>
               <span style={styles.statTrend}>Last 30 days</span>
             </div>
           </div>
+         
         </motion.div>
 
-        {/* Two Column Grid */}
+        {/* Recent Activity Sections - Column Layout */}
         <motion.div
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
-          style={styles.twoColumnGrid}
+          style={styles.columnLayout}
         >
+          {/* Recent Applications */}
           <div style={styles.sectionCard} className="section-card">
             <div style={styles.sectionHeader}>
               <div>
                 <h3 style={styles.sectionTitle}>Recent Applications</h3>
                 <p style={styles.sectionSubtitle}>Latest candidates who applied</p>
               </div>
-              <button
-                style={styles.viewAllBtn}
-                onClick={() => setActiveTab("candidates")}
-              >
+              <button style={styles.viewAllBtn} onClick={() => {
+                setActiveTab("candidates");
+                if (isMobile) setIsMobileMenuOpen(false);
+              }}>
                 View All <FaArrowRight size={12} />
               </button>
             </div>
             <div style={styles.applicationsList}>
-              {recentApplications.length === 0 ? (
-                <div style={styles.emptyState}>
-                  <FaFileAlt size={40} color="#cbd5e1" />
-                  <p>No applications yet</p>
-                </div>
-              ) : (
-                recentApplications.map((app) => (
-                  <div key={app._id} style={styles.applicationItem}>
+              {recentApplications.length > 0 ? (
+                recentApplications.map((app, index) => (
+                  <motion.div
+                    key={app._id || index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    style={styles.applicationItem}
+                    className="application-item"
+                  >
                     <div style={styles.applicantAvatar}>
                       {app.fullName?.charAt(0) || "A"}
                     </div>
                     <div style={styles.applicantInfo}>
-                      <div style={styles.applicantName}>{app.fullName}</div>
+                      <div style={styles.applicantName}>{app.fullName || "Unknown"}</div>
                       <div style={styles.applicantDetails}>
-                        <span>
-                          <FaEnvelope size={10} /> {app.email}
-                        </span>
-                        <span>
-                          <FaPhone size={10} /> {app.phone}
-                        </span>
+                        <span>{app.jobId?.title || "Position"}</span>
+                        <span>•</span>
+                        <span>{app.yearsOfExperience || 0}y exp</span>
                       </div>
-                      <div style={styles.jobTitle}>{app.jobId?.title}</div>
+                      <div style={styles.jobTitle}>{app.email || ""}</div>
                     </div>
                     <div style={styles.applicationStatus}>
-                      <span
-                        style={{
-                          ...styles.statusBadge,
-                          background: getStatusColor(app.status),
-                        }}
-                      >
-                        {app.status}
+                      <span style={{
+                        ...styles.statusBadge,
+                        background: getStatusColor(app.status || "pending"),
+                      }}>
+                        {app.status || "Pending"}
                       </span>
                       <span style={styles.appliedDate}>
-                        {new Date(app.appliedAt).toLocaleDateString()}
+                        {app.appliedAt ? new Date(app.appliedAt).toLocaleDateString() : "Recently"}
                       </span>
                     </div>
-                  </div>
+                  </motion.div>
                 ))
+              ) : (
+                <div style={styles.emptyState}>
+                  <p>No recent applications</p>
+                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Applications will appear here</p>
+                </div>
               )}
             </div>
           </div>
 
+          {/* Upcoming Interviews */}
           <div style={styles.sectionCard} className="section-card">
             <div style={styles.sectionHeader}>
               <div>
                 <h3 style={styles.sectionTitle}>Upcoming Interviews</h3>
-                <p style={styles.sectionSubtitle}>Scheduled interviews this week</p>
+                <p style={styles.sectionSubtitle}>Scheduled interviews</p>
               </div>
-              <button
-                style={styles.viewAllBtn}
-                onClick={() => setActiveTab("interviews")}
-              >
-                Schedule <FaArrowRight size={12} />
+              <button style={styles.viewAllBtn} onClick={() => {
+                setActiveTab("interviews");
+                if (isMobile) setIsMobileMenuOpen(false);
+              }}>
+                View All <FaArrowRight size={12} />
               </button>
             </div>
             <div style={styles.interviewsList}>
-              {upcomingInterviewsList.length === 0 ? (
-                <div style={styles.emptyState}>
-                  <FaCalendarCheck size={40} color="#cbd5e1" />
-                  <p>No interviews scheduled</p>
-                </div>
-              ) : (
-                upcomingInterviewsList.map((interview) => (
-                  <div key={interview._id} style={styles.interviewItem}>
+              {upcomingInterviewsList.length > 0 ? (
+                upcomingInterviewsList.map((interview, index) => (
+                  <motion.div
+                    key={interview._id || index}
+                    initial={{ opacity: 0, x: -10 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.05 }}
+                    style={styles.interviewItem}
+                    className="interview-item"
+                  >
                     <div style={styles.interviewDate}>
                       <div style={styles.dateDay}>
-                        {new Date(interview.interviewDate).getDate()}
+                        {interview.interviewDate ? new Date(interview.interviewDate).getDate() : "??"}
                       </div>
                       <div style={styles.dateMonth}>
-                        {new Date(interview.interviewDate).toLocaleString(
-                          "default",
-                          { month: "short" }
-                        )}
+                        {interview.interviewDate ? new Date(interview.interviewDate).toLocaleString('default', { month: 'short' }) : "TBD"}
                       </div>
                     </div>
                     <div style={styles.interviewInfo}>
-                      <div style={styles.candidateName}>{interview.fullName}</div>
+                      <div style={styles.candidateName}>
+                        {interview.fullName || "Candidate"}
+                      </div>
                       <div style={styles.interviewJob}>
-                        {interview.jobId?.title}
+                        {interview.jobId?.title || "Position"} • {interview.jobId?.department || ""}
                       </div>
                       <div style={styles.interviewTime}>
-                        <FaClock size={12} />{" "}
-                        {new Date(interview.interviewDate).toLocaleTimeString()}
+                        <FaClock size={12} /> 
+                        {interview.interviewDate ? new Date(interview.interviewDate).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }) : "Time TBD"}
                       </div>
                     </div>
-                    <button
-                      style={styles.joinBtn}
-                      onClick={() =>
-                        window.open(interview.meetingLink || "#", "_blank")
-                      }
-                    >
-                      Join
-                    </button>
-                  </div>
+                    {interview.meetingLink ? (
+                      <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.joinBtn} className="join-btn">
+                        <FaVideo size={14} /> Join
+                      </a>
+                    ) : (
+                      <span style={{ fontSize: "12px", color: "#94a3b8" }}>No link</span>
+                    )}
+                  </motion.div>
                 ))
+              ) : (
+                <div style={styles.emptyState}>
+                  <p>No upcoming interviews</p>
+                  <p style={{ fontSize: "12px", color: "#94a3b8" }}>Schedule interviews from candidates</p>
+                </div>
               )}
             </div>
           </div>
         </motion.div>
 
-        {/* Quick Actions */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          style={styles.quickActions}
-        >
-          <h3 style={styles.sectionTitle}>Quick Actions</h3>
-          <div style={styles.actionsGrid}>
-            <button
-              style={styles.actionBtn}
-              className="quick-action"
-              onClick={() => setActiveTab("jobs")}
-            >
-              <div style={styles.actionIconWrapper}>
-                <FaPlus size={24} />
-              </div>
-              <span>Post a Job</span>
+      
+
+        {/* Error Message */}
+        {fetchError && (
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            style={styles.errorBanner}
+          >
+            <span style={styles.errorIcon}>⚠️</span>
+            <span style={styles.errorText}>{fetchError}</span>
+            <button style={styles.errorRetryBtn} onClick={fetchAllData}>
+              <FaSpinner size={14} style={refreshing ? { animation: 'spin 1s linear infinite' } : {}} /> Retry
             </button>
-            <button
-              style={styles.actionBtn}
-              className="quick-action"
-              onClick={() => setActiveTab("candidates")}
-            >
-              <div style={styles.actionIconWrapper}>
-                <FaUserPlus size={24} />
-              </div>
-              <span>Review Candidates</span>
-            </button>
-            <button
-              style={styles.actionBtn}
-              className="quick-action"
-              onClick={() => setActiveTab("interviews")}
-            >
-              <div style={styles.actionIconWrapper}>
-                <FaCalendarCheck size={24} />
-              </div>
-              <span>Schedule Interview</span>
-            </button>
-            <button
-              style={styles.actionBtn}
-              className="quick-action"
-              onClick={() => setActiveTab("reports")}
-            >
-              <div style={styles.actionIconWrapper}>
-                <FaDownload size={24} />
-              </div>
-              <span>Download Report</span>
-            </button>
-          </div>
-        </motion.div>
+          </motion.div>
+        )}
       </motion.div>
     );
   };
@@ -579,10 +636,66 @@ const CompanyDashboard = () => {
   const displayName = getDisplayName();
   const logoUrl = getLogoUrl();
 
+  if (loading) {
+    return (
+      <div style={styles.loadingContainer}>
+        <div style={styles.loadingSpinner}>
+          <FaSpinner className="spin" size={48} color="#f9c349" />
+        </div>
+        <p style={styles.loadingText}>Loading your dashboard...</p>
+        <div style={styles.loadingBar}>
+          <motion.div
+            initial={{ width: "0%" }}
+            animate={{ width: "100%" }}
+            transition={{ duration: 2, repeat: Infinity }}
+            style={styles.loadingProgress}
+          />
+        </div>
+      </div>
+    );
+  }
+
   return (
     <div style={styles.container}>
+      {/* Mobile Overlay */}
+      {isMobile && isMobileMenuOpen && (
+        <motion.div
+          style={styles.mobileOverlay}
+          onClick={() => setIsMobileMenuOpen(false)}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+        />
+      )}
+
+      {/* Mobile Menu Toggle Button */}
+      {isMobile && (
+        <button
+          style={{
+            ...styles.mobileMenuBtn,
+            left: isMobileMenuOpen ? '290px' : '12px',
+          }}
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+          className="mobileMenuBtn"
+        >
+          {isMobileMenuOpen ? <FaTimes /> : <FaBars />}
+        </button>
+      )}
+
       {/* Modern Sidebar */}
-      <nav style={{...styles.sidebar, width: isSidebarCollapsed ? '80px' : '260px'}}>
+      <motion.nav
+        style={{
+          ...styles.sidebar,
+          width: isMobile ? '280px' : (isSidebarCollapsed ? '80px' : '260px'),
+          transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
+          position: isMobile ? 'fixed' : 'relative',
+        }}
+        initial={false}
+        animate={{
+          x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
+          transition: { type: "spring", stiffness: 300, damping: 30 }
+        }}
+      >
         <div style={styles.sidebarGradient} />
         
         <div style={styles.brandSection}>
@@ -594,17 +707,21 @@ const CompanyDashboard = () => {
                 style={styles.sidebarLogo}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<span style={styles.logoIcon}>J</span>';
+                  e.target.parentElement.innerHTML = '<span style={styles.logoIcon}>tdc</span>';
                 }}
               />
             ) : (
               <span style={styles.logoIcon}>tdc</span>
             )}
           </div>
-          {!isSidebarCollapsed && (
+          {!isSidebarCollapsed && !isMobile && (
             <div>
               <h2 style={styles.logoText}>Company<span style={styles.logoHighlight}> Dashboard</span></h2>
-              
+            </div>
+          )}
+          {!isSidebarCollapsed && isMobile && (
+            <div style={styles.brandText}>
+              <h2 style={styles.logoText}>Company<span style={styles.logoHighlight}> Dashboard</span></h2>
             </div>
           )}
         </div>
@@ -623,7 +740,10 @@ const CompanyDashboard = () => {
                 padding: isSidebarCollapsed ? '14px' : '12px 18px',
                 borderRight: activeTab === item.id ? '3px solid #f9c349' : '3px solid transparent',
               }}
-              onClick={() => setActiveTab(item.id)}
+              onClick={() => {
+                setActiveTab(item.id);
+                if (isMobile) setIsMobileMenuOpen(false);
+              }}
               title={isSidebarCollapsed ? item.label : ''}
             >
               <span style={{ 
@@ -677,7 +797,21 @@ const CompanyDashboard = () => {
                   displayName?.charAt(0) || "E"
                 )}
               </div>
-              {!isSidebarCollapsed && (
+              {!isSidebarCollapsed && !isMobile && (
+                <>
+                  <div style={styles.userInfoText}>
+                    <div style={styles.userName}>{displayName}</div>
+                    <div style={styles.userRole}>
+                      {companyName || "Employer"}
+                    </div>
+                  </div>
+                  <FaChevronDown style={{ 
+                    ...styles.userChevron, 
+                    transform: showUserMenu ? 'rotate(180deg)' : 'rotate(0deg)'
+                  }} />
+                </>
+              )}
+              {!isSidebarCollapsed && isMobile && (
                 <>
                   <div style={styles.userInfoText}>
                     <div style={styles.userName}>{displayName}</div>
@@ -729,14 +863,12 @@ const CompanyDashboard = () => {
               </div>
             )}
           </div>
-
-        
         </div>
-      </nav>
+      </motion.nav>
 
       <main style={styles.mainContent}>
         <div style={styles.contentWrapper}>
-          {/* Modern Header - Shows on all tabs */}
+          {/* Modern Header */}
           <div style={styles.modernHeader}>
             <div style={styles.headerLeft}>
               <div style={styles.headerBreadcrumb}>
@@ -984,6 +1116,38 @@ const CompanyDashboard = () => {
             50% { background-position: 100% 50%; }
             100% { background-position: 0% 50%; }
           }
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+
+          .spin {
+            animation: spin 1s linear infinite;
+          }
+
+          .mobileMenuBtn {
+            display: none;
+            position: fixed;
+            top: 12px;
+            left: 12px;
+            z-index: 999;
+            width: 44px;
+            height: 44px;
+            border-radius: 12px;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            cursor: pointer;
+            align-items: center;
+            justify-content: center;
+            color: #0f172a;
+            font-size: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.06);
+            transition: all 0.3s ease;
+          }
+          .mobileMenuBtn:hover {
+            background: #f8fafc;
+            box-shadow: 0 8px 20px rgba(0,0,0,0.08);
+          }
 
           .nav-link {
             transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -1027,6 +1191,8 @@ const CompanyDashboard = () => {
           .stat-card:nth-child(4) { animation-delay: 0.2s; }
           .stat-card:nth-child(5) { animation-delay: 0.25s; }
           .stat-card:nth-child(6) { animation-delay: 0.3s; }
+          .stat-card:nth-child(7) { animation-delay: 0.35s; }
+          .stat-card:nth-child(8) { animation-delay: 0.4s; }
 
           .section-card {
             animation: fadeInUp 0.6s ease forwards;
@@ -1159,6 +1325,244 @@ const CompanyDashboard = () => {
             background: #f8fafc;
             transform: translateX(4px);
           }
+
+          .error-banner {
+            animation: fadeInUp 0.4s ease;
+          }
+
+          /* Mobile Responsive */
+          @media (max-width: 768px) {
+            .mobileMenuBtn {
+              display: flex !important;
+            }
+            .stat-card {
+              animation: fadeInUp 0.5s ease forwards !important;
+            }
+            .stat-card:nth-child(5) { animation-delay: 0.25s; }
+            .stat-card:nth-child(6) { animation-delay: 0.3s; }
+            .stat-card:nth-child(7) { animation-delay: 0.35s; }
+            .stat-card:nth-child(8) { animation-delay: 0.4s; }
+            
+            .columnLayout {
+              grid-template-columns: 1fr !important;
+            }
+            .contentWrapper {
+              padding: 12px !important;
+              border-radius: 12px !important;
+            }
+            .modernHeader {
+              margin-bottom: 16px !important;
+              padding-bottom: 12px !important;
+            }
+            .headerTitle {
+              font-size: 20px !important;
+            }
+            .headerDescription {
+              font-size: 12px !important;
+            }
+            .sectionTitle {
+              font-size: 14px !important;
+            }
+            .sectionSubtitle {
+              font-size: 11px !important;
+            }
+            .applicationItem {
+              padding: 10px 14px !important;
+              flex-wrap: wrap !important;
+            }
+            .applicantDetails {
+              flex-wrap: wrap !important;
+              gap: 6px !important;
+            }
+            .applicationStatus {
+              text-align: left !important;
+              width: 100% !important;
+              margin-top: 4px !important;
+            }
+            .interviewItem {
+              padding: 10px 14px !important;
+              flex-wrap: wrap !important;
+            }
+            .interviewDate {
+              min-width: 40px !important;
+            }
+            .dateDay {
+              font-size: 18px !important;
+            }
+            .actionsGrid {
+              grid-template-columns: repeat(2, 1fr) !important;
+              gap: 10px !important;
+            }
+            .actionBtn {
+              padding: 14px !important;
+              font-size: 12px !important;
+            }
+            .actionIconWrapper {
+              width: 38px !important;
+              height: 38px !important;
+            }
+            .actionIconWrapper svg {
+              font-size: 18px !important;
+            }
+            .modalContent {
+              max-width: 98% !important;
+              border-radius: 14px !important;
+            }
+            .profileContent {
+              padding: 20px !important;
+            }
+            .profileDetails {
+              grid-template-columns: 1fr 1fr !important;
+              gap: 10px !important;
+            }
+            .profileDetailItem {
+              padding: 8px !important;
+            }
+            .profileDetailValue {
+              font-size: 13px !important;
+            }
+            .settingsContent {
+              padding: 16px !important;
+            }
+            .settingsItem {
+              padding: 10px 12px !important;
+              flex-wrap: wrap !important;
+            }
+            .settingsItemBtn {
+              width: 100% !important;
+              margin-top: 4px !important;
+            }
+            .settingsSelect {
+              width: 100% !important;
+              margin-top: 4px !important;
+            }
+            .statValue {
+              font-size: 18px !important;
+            }
+            .statIconWrapper {
+              width: 40px !important;
+              height: 40px !important;
+            }
+            .statIcon {
+              font-size: 16px !important;
+            }
+            .statCard {
+              padding: 14px !important;
+              gap: 10px !important;
+            }
+            .statLabel {
+              font-size: 11px !important;
+            }
+            .statTrend {
+              font-size: 10px !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .mobileMenuBtn {
+              top: 10px;
+              width: 38px;
+              height: 38px;
+              font-size: 16px;
+            }
+            .contentWrapper {
+              padding: 10px !important;
+              border-radius: 10px !important;
+            }
+            .headerTitle {
+              font-size: 18px !important;
+            }
+            .actionsGrid {
+              grid-template-columns: 1fr 1fr !important;
+              gap: 8px !important;
+            }
+            .actionBtn {
+              padding: 10px !important;
+              font-size: 11px !important;
+            }
+            .actionIconWrapper {
+              width: 32px !important;
+              height: 32px !important;
+            }
+            .actionIconWrapper svg {
+              font-size: 14px !important;
+            }
+            .profileDetails {
+              grid-template-columns: 1fr !important;
+            }
+            .applicantDetails span {
+              font-size: 10px !important;
+            }
+            .statusBadge {
+              font-size: 10px !important;
+              padding: 2px 8px !important;
+            }
+            .modalTitle {
+              font-size: 16px !important;
+            }
+            .profileName {
+              font-size: 18px !important;
+            }
+            .profileEmail {
+              font-size: 12px !important;
+            }
+            .profileRole {
+              font-size: 12px !important;
+            }
+            .statValue {
+              font-size: 16px !important;
+            }
+            .statIconWrapper {
+              width: 34px !important;
+              height: 34px !important;
+            }
+            .statIcon {
+              font-size: 14px !important;
+            }
+            .statCard {
+              padding: 10px !important;
+              gap: 8px !important;
+            }
+            .statLabel {
+              font-size: 10px !important;
+            }
+            .statTrend {
+              font-size: 9px !important;
+            }
+          }
+
+          @media (min-width: 769px) and (max-width: 1024px) {
+            .stat-card {
+              animation: fadeInUp 0.5s ease forwards !important;
+            }
+            .stat-card:nth-child(5) { animation-delay: 0.25s; }
+            .stat-card:nth-child(6) { animation-delay: 0.3s; }
+            .stat-card:nth-child(7) { animation-delay: 0.35s; }
+            .stat-card:nth-child(8) { animation-delay: 0.4s; }
+            
+            .columnLayout {
+              grid-template-columns: 1fr !important;
+            }
+            .actionsGrid {
+              grid-template-columns: repeat(2, 1fr) !important;
+            }
+          }
+
+          @media (min-width: 1025px) {
+            .columnLayout {
+              grid-template-columns: 1fr !important;
+              max-width: 800px !important;
+              margin: 0 auto !important;
+            }
+          }
+
+          @media (min-width: 1200px) {
+            .columnLayout {
+              grid-template-columns: 1fr !important;
+              max-width: 800px !important;
+              margin: 0 auto !important;
+            }
+          }
         `}
       </style>
     </div>
@@ -1172,6 +1576,36 @@ const styles = {
     backgroundColor: "#f1f5f9",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     overflow: "hidden",
+    position: "relative",
+  },
+  mobileOverlay: {
+    position: "fixed",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: "rgba(0,0,0,0.6)",
+    backdropFilter: "blur(4px)",
+    zIndex: 99,
+  },
+  mobileMenuBtn: {
+    display: "none",
+    position: "fixed",
+    top: "12px",
+    left: "12px",
+    zIndex: 999,
+    width: "44px",
+    height: "44px",
+    borderRadius: "12px",
+    border: "1px solid #e2e8f0",
+    background: "#ffffff",
+    cursor: "pointer",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#0f172a",
+    fontSize: "20px",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.06)",
+    transition: "all 0.3s ease",
   },
   sidebar: {
     background: "linear-gradient(180deg, #0f172a 0%, #1a2332 50%, #0f172a 100%)",
@@ -1185,6 +1619,8 @@ const styles = {
     transition: "width 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
     flexShrink: 0,
     borderRight: "1px solid rgba(255,255,255,0.05)",
+    height: "100vh",
+    zIndex: 100,
   },
   sidebarGradient: {
     position: "absolute",
@@ -1203,6 +1639,9 @@ const styles = {
     padding: "0 8px",
     position: "relative",
     zIndex: 1,
+  },
+  brandText: {
+    flex: 1,
   },
   logoBadge: {
     width: "48px",
@@ -1225,7 +1664,7 @@ const styles = {
     objectFit: "cover",
   },
   logoIcon: {
-    // transform: "rotate(-5deg)",
+    transform: "rotate(-5deg)",
   },
   logoText: {
     margin: 0,
@@ -1237,17 +1676,11 @@ const styles = {
   logoHighlight: {
     color: "#f9c349",
   },
-  logoSubtext: {
-    margin: 0,
-    fontSize: "10px",
-    opacity: 0.4,
-    letterSpacing: "1px",
-    textTransform: "uppercase",
-  },
   navGroup: {
     flex: 1,
     position: "relative",
     zIndex: 1,
+    overflowY: "auto",
   },
   navGroupLabel: {
     fontSize: "10px",
@@ -1388,21 +1821,6 @@ const styles = {
   dropdownLogout: {
     color: "#ef4444",
   },
-  collapseBtn: {
-    width: "100%",
-    padding: "8px",
-    borderRadius: "8px",
-    border: "1px solid rgba(255,255,255,0.06)",
-    background: "rgba(255,255,255,0.03)",
-    color: "#94a3b8",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    transition: "all 0.3s ease",
-    zIndex: 10,
-  },
   mainContent: {
     flex: 1,
     padding: "12px",
@@ -1466,88 +1884,78 @@ const styles = {
     flex: 1,
   },
   welcomeBanner: {
-    background: "linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #0f172a 100%)",
+    background: "linear-gradient(135deg, #f9c349 0%, #f5a623 100%)",
+    padding: "20px 24px",
     borderRadius: "16px",
-    padding: "24px 32px",
     marginBottom: "24px",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    color: "#fff",
-    backgroundSize: "200% 200%",
+    flexWrap: "wrap",
+    gap: "12px",
   },
   welcomeContent: {
     display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    flex: 1,
-  },
-  welcomeText: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  welcomeTitle: {
-    fontSize: "24px",
-    fontWeight: "700",
-    margin: 0,
-    letterSpacing: "-0.5px",
-  },
-  welcomeSubtitle: {
-    fontSize: "14px",
-    opacity: 0.7,
-    margin: 0,
-  },
-  welcomeStats: {
-    display: "flex",
     alignItems: "center",
-    gap: "20px",
-    marginTop: "8px",
+    gap: "16px",
   },
-  welcomeStat: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
+  welcomeAvatarWrapper: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "50%",
+    overflow: "hidden",
+    border: "2px solid rgba(255,255,255,0.3)",
+    flexShrink: 0,
   },
-  welcomeStatValue: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#f9c349",
+  welcomeAvatar: {
+    width: "100%",
+    height: "100%",
+    objectFit: "cover",
   },
-  welcomeStatLabel: {
-    fontSize: "11px",
-    opacity: 0.6,
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  welcomeStatDivider: {
-    width: "1px",
-    height: "30px",
-    background: "rgba(255,255,255,0.1)",
-  },
-  companyLogoContainer: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "16px",
-    background: "rgba(255,255,255,0.1)",
+  welcomeAvatarFallback: {
+    width: "48px",
+    height: "48px",
+    borderRadius: "50%",
+    background: "rgba(255,255,255,0.2)",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    overflow: "hidden",
-    flexShrink: 0,
-    border: "2px solid rgba(255,255,255,0.1)",
+    fontWeight: "700",
+    fontSize: "20px",
+    color: "#fff",
   },
-  companyLogo: {
-    width: "100%",
-    height: "100%",
-    objectFit: "contain",
-    padding: "8px",
+  welcomeText: {
+    color: "#fff",
+  },
+  welcomeTitle: {
+    fontSize: "18px",
+    fontWeight: "700",
+    margin: 0,
+  },
+  welcomeSubtitle: {
+    fontSize: "13px",
+    opacity: 0.8,
+    margin: "2px 0 0 0",
+  },
+  welcomeBtn: {
+    background: "rgba(255,255,255,0.2)",
+    border: "1px solid rgba(255,255,255,0.3)",
+    padding: "8px 18px",
+    borderRadius: "10px",
+    color: "#fff",
+    cursor: "pointer",
+    fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    gap: "8px",
+    fontSize: "13px",
+    transition: "all 0.2s ease",
+    backdropFilter: "blur(4px)",
   },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
     gap: "16px",
-    marginBottom: "28px",
+    marginBottom: "16px",
   },
   statCard: {
     background: "#fff",
@@ -1600,11 +2008,14 @@ const styles = {
     color: "#10b981",
     fontWeight: "700",
   },
-  twoColumnGrid: {
+  columnLayout: {
     display: "grid",
-    gridTemplateColumns: "1fr 1fr",
+    gridTemplateColumns: "1fr",
     gap: "24px",
-    marginBottom: "28px",
+    marginBottom: "10px",
+    maxWidth: "800px",
+    margin: "0 auto 28px auto",
+    width: "100%",
   },
   sectionCard: {
     background: "#fff",
@@ -1684,6 +2095,7 @@ const styles = {
     fontSize: "11px",
     color: "#64748b",
     marginBottom: "2px",
+    flexWrap: "wrap",
   },
   jobTitle: {
     fontSize: "12px",
@@ -1807,6 +2219,66 @@ const styles = {
     padding: "40px 20px",
     color: "#94a3b8",
   },
+  errorBanner: {
+    background: "#fef2f2",
+    border: "1px solid #fecaca",
+    borderRadius: "12px",
+    padding: "12px 16px",
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginTop: "16px",
+  },
+  errorIcon: {
+    fontSize: "18px",
+  },
+  errorText: {
+    flex: 1,
+    fontSize: "13px",
+    color: "#dc2626",
+  },
+  errorRetryBtn: {
+    padding: "6px 16px",
+    background: "#dc2626",
+    color: "#fff",
+    border: "none",
+    borderRadius: "8px",
+    cursor: "pointer",
+    fontSize: "12px",
+    fontWeight: "600",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    transition: "all 0.2s ease",
+  },
+  loadingContainer: {
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    height: "100vh",
+    gap: "16px",
+  },
+  loadingSpinner: {
+    fontSize: "48px",
+    color: "#f9c349",
+  },
+  loadingText: {
+    fontSize: "16px",
+    color: "#64748b",
+  },
+  loadingBar: {
+    width: "200px",
+    height: "4px",
+    background: "#e5e7eb",
+    borderRadius: "4px",
+    overflow: "hidden",
+  },
+  loadingProgress: {
+    height: "100%",
+    background: "#f9c349",
+    borderRadius: "4px",
+  },
   modalOverlay: {
     position: "fixed",
     top: 0,
@@ -1898,6 +2370,9 @@ const styles = {
     borderRadius: "50%",
     objectFit: "cover",
     border: "3px solid #f9c349",
+  },
+  profileInfo: {
+    textAlign: "center",
   },
   profileName: {
     fontSize: "22px",

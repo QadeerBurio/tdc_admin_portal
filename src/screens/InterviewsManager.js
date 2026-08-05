@@ -13,6 +13,7 @@ import {
   FaBriefcase,
   FaEnvelope,
   FaPhone,
+  FaChevronDown,
   FaMapMarkerAlt,
   FaStar,
   FaTimes,
@@ -55,10 +56,22 @@ const InterviewsManager = ({ token }) => {
     today: 0,
   });
   const [currentPage, setCurrentPage] = useState(1);
-  const [itemsPerPage] = useState(10);
+  const [itemsPerPage] = useState(8);
   const [showToast, setShowToast] = useState(false);
   const [toastMessage, setToastMessage] = useState("");
   const [toastType, setToastType] = useState("success");
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   useEffect(() => {
     fetchInterviews();
@@ -316,6 +329,98 @@ const InterviewsManager = ({ token }) => {
   const currentItems = filteredInterviews.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredInterviews.length / itemsPerPage);
 
+  // Mobile Interview Card Component
+  const MobileInterviewCard = ({ interview }) => {
+    const statusConfig = getStatusConfig(interview.status);
+    const upcoming = isUpcoming(interview.interviewDate);
+    const today = isToday(interview.interviewDate);
+
+    return (
+      <motion.div
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.3 }}
+        style={styles.mobileCard}
+      >
+        <div style={styles.mobileCardHeader}>
+          <div style={styles.mobileCardUser}>
+            <div style={styles.mobileCardAvatar}>
+              {interview.fullName?.charAt(0) || "A"}
+              {today && upcoming && <span style={styles.mobileTodayBadge}>Today</span>}
+            </div>
+            <div style={styles.mobileCardUserInfo}>
+              <div style={styles.mobileCardName}>{interview.fullName}</div>
+              <div style={styles.mobileCardEmail}>
+                <FaEnvelope size={10} /> {interview.email}
+              </div>
+            </div>
+          </div>
+          <span style={{
+            ...styles.statusBadge,
+            background: statusConfig.bg,
+            color: statusConfig.color,
+            fontSize: isMobile ? "10px" : "12px",
+            padding: isMobile ? "2px 8px" : "4px 12px",
+          }}>
+            {statusConfig.icon} {statusConfig.label}
+          </span>
+        </div>
+
+        <div style={styles.mobileCardDetails}>
+          <div style={styles.mobileCardDetail}>
+            <FaBuilding size={12} /> {interview.jobId?.title || "N/A"}
+          </div>
+          <div style={styles.mobileCardDetail}>
+            <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
+          </div>
+          <div style={styles.mobileCardDetail}>
+            <FaClock size={12} /> {formatTime(interview.interviewDate)}
+          </div>
+          {upcoming && (
+            <div style={styles.mobileCardDetail}>
+              <span style={styles.mobileTimeRemaining}>
+                ⏱ {getTimeRemaining(interview.interviewDate)}
+              </span>
+            </div>
+          )}
+        </div>
+
+        <div style={styles.mobileCardActions}>
+          {interview.meetingLink && (
+            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.mobileMeetingLink}>
+              <FaVideo size={12} /> Join
+            </a>
+          )}
+          <div style={styles.mobileActionGroup}>
+            <button 
+              style={styles.mobileActionBtn} 
+              onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
+              disabled={actionInProgress === interview._id}
+            >
+              <FaEdit size={12} />
+            </button>
+            {interview.status !== "completed" && interview.status !== "hired" && (
+              <button 
+                style={{ ...styles.mobileActionBtn, background: "#10b981", color: "#fff" }}
+                onClick={() => completeInterview(interview._id, interview.fullName)}
+                disabled={actionInProgress === interview._id}
+              >
+                <FaCheck size={12} />
+              </button>
+            )}
+            <button 
+              style={{ ...styles.mobileActionBtn, background: "#ef4444", color: "#fff" }}
+              onClick={() => cancelInterview(interview._id, interview.fullName)}
+              disabled={actionInProgress === interview._id}
+            >
+              <FaTrash size={12} />
+            </button>
+          </div>
+        </div>
+      </motion.div>
+    );
+  };
+
   if (loading) return (
     <div style={styles.loadingContainer}>
       <motion.div
@@ -375,91 +480,100 @@ const InterviewsManager = ({ token }) => {
             <FaCalendarCheck size={24} />
           </div>
           <div>
-            <h1 style={styles.title}>Interview Management</h1>
-            <p style={styles.subtitle}>Schedule, track, and manage candidate interviews</p>
+            <h1 style={isMobile ? styles.mobileTitle : styles.title}>Interview Management</h1>
+            <p style={isMobile ? styles.mobileSubtitle : styles.subtitle}>
+              {isMobile ? "Schedule & track interviews" : "Schedule, track, and manage candidate interviews"}
+            </p>
           </div>
         </div>
         <motion.button
           whileHover={{ scale: 1.02 }}
           whileTap={{ scale: 0.98 }}
-          style={styles.scheduleBtn}
+          style={isMobile ? styles.mobileScheduleBtn : styles.scheduleBtn}
           onClick={() => setShowScheduleModal(true)}
         >
-          <FaPlus size={14} /> Schedule Interview
+          <FaPlus size={14} /> {isMobile ? "New" : "Schedule Interview"}
         </motion.button>
       </motion.div>
 
-      {/* Stats Cards - 5 in one row */}
+      {/* Stats Cards - Responsive */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5, delay: 0.1 }}
-        style={styles.statsGrid}
+        style={{
+          ...styles.statsGrid,
+          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
+          gap: isMobile ? "8px" : isTablet ? "10px" : "12px",
+        }}
       >
-        <motion.div 
-          whileHover={{ y: -2 }}
-          style={styles.statCard}
-        >
+        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
           <div style={styles.statIconWrapper}>
-            <FaCalendarCheck size={18} />
+            <FaCalendarCheck size={isMobile ? 14 : 18} />
           </div>
           <div style={styles.statContent}>
-            <span style={styles.statValue}>{stats.total}</span>
-            <span style={styles.statLabel}>Total</span>
+            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
+              {stats.total}
+            </span>
+            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
+              Total
+            </span>
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -2 }}
-          style={styles.statCard}
-        >
+        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
           <div style={styles.statIconWrapper}>
-            <FaRocket size={18} />
+            <FaRocket size={isMobile ? 14 : 18} />
           </div>
           <div style={styles.statContent}>
-            <span style={styles.statValue}>{stats.upcoming}</span>
-            <span style={styles.statLabel}>Upcoming</span>
+            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
+              {stats.upcoming}
+            </span>
+            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
+              Upcoming
+            </span>
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -2 }}
-          style={styles.statCard}
-        >
+        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
           <div style={styles.statIconWrapper}>
-            <FaThumbsUp size={18} />
+            <FaThumbsUp size={isMobile ? 14 : 18} />
           </div>
           <div style={styles.statContent}>
-            <span style={styles.statValue}>{stats.today}</span>
-            <span style={styles.statLabel}>Today</span>
+            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
+              {stats.today}
+            </span>
+            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
+              Today
+            </span>
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -2 }}
-          style={styles.statCard}
-        >
+        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
           <div style={styles.statIconWrapper}>
-            <FaRegClock size={18} />
+            <FaRegClock size={isMobile ? 14 : 18} />
           </div>
           <div style={styles.statContent}>
-            <span style={styles.statValue}>{stats.pending}</span>
-            <span style={styles.statLabel}>Pending</span>
+            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
+              {stats.pending}
+            </span>
+            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
+              Pending
+            </span>
           </div>
         </motion.div>
 
-        <motion.div 
-          whileHover={{ y: -2 }}
-          style={styles.statCard}
-        >
-          <div style={styles.statIconWrapper}>
-            <FaCheckCircle size={18} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={styles.statValue}>{stats.completed}</span>
-            <span style={styles.statLabel}>Completed</span>
-          </div>
-        </motion.div>
+        {!isMobile && !isTablet && (
+          <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
+            <div style={styles.statIconWrapper}>
+              <FaCheckCircle size={18} />
+            </div>
+            <div style={styles.statContent}>
+              <span style={styles.statValue}>{stats.completed}</span>
+              <span style={styles.statLabel}>Completed</span>
+            </div>
+          </motion.div>
+        )}
       </motion.div>
 
       {/* Filter Bar */}
@@ -473,7 +587,7 @@ const InterviewsManager = ({ token }) => {
           <FaSearch size={14} style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search by candidate, email, or position..."
+            placeholder={isMobile ? "Search..." : "Search by candidate, email, or position..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             style={styles.searchInput}
@@ -484,34 +598,74 @@ const InterviewsManager = ({ token }) => {
             </button>
           )}
         </div>
-        <div style={styles.filterGroup}>
-          <FaFilter size={14} style={styles.filterIcon} />
-          <select
-            style={styles.filterSelect}
-            value={statusFilter}
-            onChange={(e) => setStatusFilter(e.target.value)}
-          >
-            <option value="">All Status</option>
-            <option value="pending">⏳ Pending</option>
-            <option value="reviewed">👀 Reviewed</option>
-            <option value="shortlisted">⭐ Shortlisted</option>
-            <option value="interview">🎯 Scheduled</option>
-            <option value="completed">✅ Completed</option>
-            <option value="hired">🎉 Hired</option>
-            <option value="rejected">❌ Rejected</option>
-          </select>
-        </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          style={styles.clearBtn}
-          onClick={() => { setSearchTerm(""); setStatusFilter(""); }}
-        >
-          <FaTimes size={12} /> Clear
-        </motion.button>
+
+        {isMobile ? (
+          <button style={styles.mobileFilterToggle} onClick={() => setIsFilterOpen(!isFilterOpen)}>
+            <FaFilter size={14} /> Filters <FaChevronDown size={12} />
+          </button>
+        ) : (
+          <>
+            <div style={styles.filterGroup}>
+              <FaFilter size={14} style={styles.filterIcon} />
+              <select
+                style={styles.filterSelect}
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="pending">⏳ Pending</option>
+                <option value="reviewed">👀 Reviewed</option>
+                <option value="shortlisted">⭐ Shortlisted</option>
+                <option value="interview">🎯 Scheduled</option>
+                <option value="completed">✅ Completed</option>
+                <option value="hired">🎉 Hired</option>
+                <option value="rejected">❌ Rejected</option>
+              </select>
+            </div>
+            <motion.button
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+              style={styles.clearBtn}
+              onClick={() => { setSearchTerm(""); setStatusFilter(""); }}
+            >
+              <FaTimes size={12} /> Clear
+            </motion.button>
+          </>
+        )}
       </motion.div>
 
-      {/* Table */}
+      {/* Mobile Filters */}
+      {isMobile && isFilterOpen && (
+        <motion.div
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          style={styles.mobileFilters}
+        >
+          <div style={styles.mobileFilterGroup}>
+            <label style={styles.mobileFilterLabel}>Status</label>
+            <select
+              style={styles.mobileFilterSelect}
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="pending">Pending</option>
+              <option value="reviewed">Reviewed</option>
+              <option value="shortlisted">Shortlisted</option>
+              <option value="interview">Scheduled</option>
+              <option value="completed">Completed</option>
+              <option value="hired">Hired</option>
+              <option value="rejected">Rejected</option>
+            </select>
+          </div>
+          <button style={styles.mobileClearBtn} onClick={() => { setSearchTerm(""); setStatusFilter(""); setIsFilterOpen(false); }}>
+            Clear All Filters
+          </button>
+        </motion.div>
+      )}
+
+      {/* Content */}
       {interviews.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
@@ -547,132 +701,141 @@ const InterviewsManager = ({ token }) => {
               <span style={styles.tableCount}>{filteredInterviews.length}</span>
             </div>
           </div>
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr style={styles.tableHead}>
-                  <th style={{ minWidth: "220px" }}>Candidate</th>
-                  <th style={{ minWidth: "160px" }}>Position</th>
-                  <th style={{ minWidth: "180px" }}>Interview Date</th>
-                  <th style={{ minWidth: "120px" }}>Meeting</th>
-                  <th style={{ minWidth: "110px" }}>Status</th>
-                  <th style={{ minWidth: "240px" }}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((interview, index) => {
-                  const statusConfig = getStatusConfig(interview.status);
-                  const upcoming = isUpcoming(interview.interviewDate);
-                  const today = isToday(interview.interviewDate);
-                  
-                  return (
-                    <motion.tr
-                      key={interview._id}
-                      initial={{ opacity: 0, y: 10 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      whileHover={{ backgroundColor: "#fafafa" }}
-                      style={styles.tableRow}
-                    >
-                      <td>
-                        <div style={styles.candidateCell}>
-                          <div style={styles.candidateAvatar}>
-                            {interview.fullName?.charAt(0) || "A"}
-                            {today && upcoming && <span style={styles.todayBadge}>Today</span>}
-                          </div>
-                          <div>
-                            <div style={styles.candidateName}>{interview.fullName}</div>
-                            <div style={styles.candidateEmail}>
-                              <FaEnvelope size={10} /> {interview.email}
+
+          {!isMobile ? (
+            <div style={styles.tableWrapper}>
+              <table style={styles.table}>
+                <thead>
+                  <tr style={styles.tableHead}>
+                    <th style={{ minWidth: isTablet ? "180px" : "220px" }}>Candidate</th>
+                    <th style={{ minWidth: isTablet ? "130px" : "160px" }}>Position</th>
+                    <th style={{ minWidth: isTablet ? "150px" : "180px" }}>Interview Date</th>
+                    <th style={{ minWidth: "100px" }}>Meeting</th>
+                    <th style={{ minWidth: "100px" }}>Status</th>
+                    <th style={{ minWidth: isTablet ? "180px" : "240px" }}>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {currentItems.map((interview, index) => {
+                    const statusConfig = getStatusConfig(interview.status);
+                    const upcoming = isUpcoming(interview.interviewDate);
+                    const today = isToday(interview.interviewDate);
+                    
+                    return (
+                      <motion.tr
+                        key={interview._id}
+                        initial={{ opacity: 0, y: 10 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.03 }}
+                        whileHover={{ backgroundColor: "#fafafa" }}
+                        style={styles.tableRow}
+                      >
+                        <td>
+                          <div style={styles.candidateCell}>
+                            <div style={styles.candidateAvatar}>
+                              {interview.fullName?.charAt(0) || "A"}
+                              {today && upcoming && <span style={styles.todayBadge}>Today</span>}
                             </div>
-                          </div>
-                        </div>
-                      </td>
-                      <td>
-                        <div style={styles.jobTitle}>{interview.jobId?.title || "N/A"}</div>
-                        <div style={styles.jobDept}>
-                          <FaBuilding size={10} /> {interview.jobId?.department || ""}
-                        </div>
-                      </td>
-                      <td>
-                        {interview.interviewDate ? (
-                          <div>
-                            <div style={styles.interviewDate}>
-                              <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
-                            </div>
-                            <div style={styles.interviewTime}>
-                              <FaClock size={12} /> {formatTime(interview.interviewDate)}
-                            </div>
-                            {upcoming && (
-                              <div style={styles.timeRemaining}>
-                                <span style={styles.timeDot} /> {getTimeRemaining(interview.interviewDate)}
+                            <div>
+                              <div style={styles.candidateName}>{interview.fullName}</div>
+                              <div style={styles.candidateEmail}>
+                                <FaEnvelope size={10} /> {interview.email}
                               </div>
-                            )}
+                            </div>
                           </div>
-                        ) : (
-                          <span style={{ color: "#94a3b8" }}>Not scheduled</span>
-                        )}
-                      </td>
-                      <td>
-                        {interview.meetingLink ? (
-                          <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.meetingLink}>
-                            <FaVideo size={12} /> Join
-                          </a>
-                        ) : (
-                          <span style={{ color: "#94a3b8", fontSize: "12px" }}>No link</span>
-                        )}
-                      </td>
-                      <td>
-                        <span style={{
-                          ...styles.statusBadge,
-                          background: statusConfig.bg,
-                          color: statusConfig.color,
-                        }}>
-                          {statusConfig.icon} {statusConfig.label}
-                        </span>
-                      </td>
-                      <td>
-                        <div style={styles.actionButtons}>
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            style={styles.actionBtn}
-                            onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
-                            disabled={actionInProgress === interview._id}
-                          >
-                            {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaEdit size={12} />}
-                            Reschedule
-                          </motion.button>
-                          {interview.status !== "completed" && interview.status !== "hired" && (
+                        </td>
+                        <td>
+                          <div style={styles.jobTitle}>{interview.jobId?.title || "N/A"}</div>
+                          <div style={styles.jobDept}>
+                            <FaBuilding size={10} /> {interview.jobId?.department || ""}
+                          </div>
+                        </td>
+                        <td>
+                          {interview.interviewDate ? (
+                            <div>
+                              <div style={styles.interviewDate}>
+                                <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
+                              </div>
+                              <div style={styles.interviewTime}>
+                                <FaClock size={12} /> {formatTime(interview.interviewDate)}
+                              </div>
+                              {upcoming && (
+                                <div style={styles.timeRemaining}>
+                                  <span style={styles.timeDot} /> {getTimeRemaining(interview.interviewDate)}
+                                </div>
+                              )}
+                            </div>
+                          ) : (
+                            <span style={{ color: "#94a3b8" }}>Not scheduled</span>
+                          )}
+                        </td>
+                        <td>
+                          {interview.meetingLink ? (
+                            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.meetingLink}>
+                              <FaVideo size={12} /> Join
+                            </a>
+                          ) : (
+                            <span style={{ color: "#94a3b8", fontSize: "12px" }}>No link</span>
+                          )}
+                        </td>
+                        <td>
+                          <span style={{
+                            ...styles.statusBadge,
+                            background: statusConfig.bg,
+                            color: statusConfig.color,
+                          }}>
+                            {statusConfig.icon} {statusConfig.label}
+                          </span>
+                        </td>
+                        <td>
+                          <div style={styles.actionButtons}>
                             <motion.button
                               whileHover={{ scale: 1.02 }}
                               whileTap={{ scale: 0.98 }}
-                              style={{ ...styles.actionBtn, background: "#10b981", color: "#fff" }}
-                              onClick={() => completeInterview(interview._id, interview.fullName)}
+                              style={styles.actionBtn}
+                              onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
                               disabled={actionInProgress === interview._id}
                             >
-                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaCheck size={12} />}
-                              Complete
+                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaEdit size={12} />}
+                              {!isTablet && "Reschedule"}
                             </motion.button>
-                          )}
-                          <motion.button
-                            whileHover={{ scale: 1.02 }}
-                            whileTap={{ scale: 0.98 }}
-                            style={{ ...styles.actionBtn, background: "#ef4444", color: "#fff" }}
-                            onClick={() => cancelInterview(interview._id, interview.fullName)}
-                            disabled={actionInProgress === interview._id}
-                          >
-                            {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaTrash size={12} />}
-                            Cancel
-                          </motion.button>
-                        </div>
-                      </td>
-                    </motion.tr>
-                  );
-                })}
-              </tbody>
-            </table>
-          </div>
+                            {interview.status !== "completed" && interview.status !== "hired" && (
+                              <motion.button
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                style={{ ...styles.actionBtn, background: "#10b981", color: "#fff" }}
+                                onClick={() => completeInterview(interview._id, interview.fullName)}
+                                disabled={actionInProgress === interview._id}
+                              >
+                                {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaCheck size={12} />}
+                                {!isTablet && "Complete"}
+                              </motion.button>
+                            )}
+                            <motion.button
+                              whileHover={{ scale: 1.02 }}
+                              whileTap={{ scale: 0.98 }}
+                              style={{ ...styles.actionBtn, background: "#ef4444", color: "#fff" }}
+                              onClick={() => cancelInterview(interview._id, interview.fullName)}
+                              disabled={actionInProgress === interview._id}
+                            >
+                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaTrash size={12} />}
+                              {!isTablet && "Cancel"}
+                            </motion.button>
+                          </div>
+                        </td>
+                      </motion.tr>
+                    );
+                  })}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div style={styles.mobileCardList}>
+              {currentItems.map((interview) => (
+                <MobileInterviewCard key={interview._id} interview={interview} />
+              ))}
+            </div>
+          )}
 
           {/* Pagination */}
           {filteredInterviews.length > itemsPerPage && (
@@ -684,7 +847,7 @@ const InterviewsManager = ({ token }) => {
                 onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
                 disabled={currentPage === 1}
               >
-                <FaArrowLeft size={12} /> Previous
+                <FaArrowLeft size={12} /> {!isMobile && "Previous"}
               </motion.button>
               <div style={styles.pageInfo}>
                 <span style={styles.pageCurrent}>{currentPage}</span>
@@ -698,14 +861,14 @@ const InterviewsManager = ({ token }) => {
                 onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
                 disabled={currentPage === totalPages}
               >
-                Next <FaArrowRight size={12} />
+                {!isMobile && "Next"} <FaArrowRight size={12} />
               </motion.button>
             </div>
           )}
         </motion.div>
       )}
 
-      {/* Schedule Interview Modal */}
+      {/* Schedule Interview Modal - Responsive */}
       <AnimatePresence>
         {showScheduleModal && (
           <motion.div
@@ -720,13 +883,17 @@ const InterviewsManager = ({ token }) => {
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.9, opacity: 0, y: 20 }}
               transition={{ type: "spring", damping: 25 }}
-              style={styles.modalContent}
+              style={isMobile ? styles.mobileModalContent : styles.modalContent}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <div>
-                  <h2 style={styles.modalTitle}>Schedule Interview</h2>
-                  <p style={styles.modalSubtitle}>Select a candidate and set up interview details</p>
+                  <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>
+                    Schedule Interview
+                  </h2>
+                  <p style={styles.modalSubtitle}>
+                    {isMobile ? "Set up interview details" : "Select a candidate and set up interview details"}
+                  </p>
                 </div>
                 <motion.button
                   whileHover={{ scale: 1.1 }}
@@ -773,7 +940,7 @@ const InterviewsManager = ({ token }) => {
                   <label style={styles.formLabel}>Meeting Link</label>
                   <input
                     type="url"
-                    placeholder="https://meet.google.com/... or https://zoom.us/j/..."
+                    placeholder={isMobile ? "Meeting URL..." : "https://meet.google.com/... or https://zoom.us/j/..."}
                     value={meetingLink}
                     onChange={(e) => setMeetingLink(e.target.value)}
                     style={styles.formInput}
@@ -783,7 +950,7 @@ const InterviewsManager = ({ token }) => {
                 <div style={styles.formGroup}>
                   <label style={styles.formLabel}>Interview Notes</label>
                   <textarea
-                    rows="3"
+                    rows={isMobile ? "2" : "3"}
                     placeholder="Add any notes or instructions..."
                     value={interviewNotes}
                     onChange={(e) => setInterviewNotes(e.target.value)}
@@ -792,7 +959,7 @@ const InterviewsManager = ({ token }) => {
                 </div>
               </div>
 
-              <div style={styles.modalFooter}>
+              <div style={isMobile ? styles.mobileModalFooter : styles.modalFooter}>
                 <motion.button
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -814,7 +981,7 @@ const InterviewsManager = ({ token }) => {
                     </>
                   ) : (
                     <>
-                      <FaCalendarCheck size={14} /> Schedule Interview
+                      <FaCalendarCheck size={14} /> Schedule
                     </>
                   )}
                 </motion.button>
@@ -829,10 +996,6 @@ const InterviewsManager = ({ token }) => {
           @keyframes spin {
             from { transform: rotate(0deg); }
             to { transform: rotate(360deg); }
-          }
-          @keyframes fadeInUp {
-            from { opacity: 0; transform: translateY(10px); }
-            to { opacity: 1; transform: translateY(0); }
           }
 
           .spinner {
@@ -851,13 +1014,50 @@ const InterviewsManager = ({ token }) => {
             background: #f9c349;
             border-radius: 10px;
           }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #e8a800;
-          }
 
           input:focus, select:focus, textarea:focus {
             border-color: #f9c349 !important;
             outline: none !important;
+          }
+
+          @media (max-width: 768px) {
+            .stat-card {
+              padding: 10px 12px !important;
+            }
+            .stat-value {
+              font-size: 16px !important;
+            }
+            .stat-icon-wrapper {
+              width: 32px !important;
+              height: 32px !important;
+            }
+            .stat-label {
+              font-size: 9px !important;
+            }
+            .action-btn {
+              padding: 4px 8px !important;
+              font-size: 11px !important;
+            }
+          }
+
+          @media (max-width: 480px) {
+            .stat-card {
+              padding: 8px 10px !important;
+              gap: 8px !important;
+            }
+            .stat-value {
+              font-size: 14px !important;
+            }
+            .stat-icon-wrapper {
+              width: 28px !important;
+              height: 28px !important;
+            }
+            .stat-icon-wrapper svg {
+              font-size: 12px !important;
+            }
+            .stat-label {
+              font-size: 8px !important;
+            }
           }
         `}
       </style>
@@ -867,32 +1067,34 @@ const InterviewsManager = ({ token }) => {
 
 const styles = {
   container: {
-    padding: "24px 32px",
+    padding: "16px 20px",
     width: "100%",
     minHeight: "100vh",
     background: "#f8fafc",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
+    maxWidth: "1400px",
+    margin: "0 auto",
   },
   toast: {
     position: "fixed",
     top: "20px",
     left: "50%",
     transform: "translateX(-50%)",
-    padding: "12px 24px",
+    padding: "10px 20px",
     background: "#fff",
     borderRadius: "12px",
     boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
     display: "flex",
     alignItems: "center",
-    gap: "12px",
+    gap: "10px",
     zIndex: 9999,
     border: "1px solid #e5e7eb",
   },
   toastIcon: {
-    fontSize: "18px",
+    fontSize: "16px",
   },
   toastMessage: {
-    fontSize: "14px",
+    fontSize: "13px",
     fontWeight: "500",
     color: "#0f172a",
   },
@@ -926,24 +1128,25 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    marginBottom: "24px",
+    marginBottom: "20px",
     flexWrap: "wrap",
-    gap: "12px",
+    gap: "10px",
   },
   headerLeft: {
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
   },
   headerIconWrapper: {
-    width: "48px",
-    height: "48px",
+    width: "44px",
+    height: "44px",
     borderRadius: "12px",
     background: "#f9c349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     color: "#fff",
+    flexShrink: 0,
   },
   title: {
     fontSize: "24px",
@@ -952,8 +1155,20 @@ const styles = {
     margin: 0,
     letterSpacing: "-0.3px",
   },
+  mobileTitle: {
+    fontSize: "18px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+    letterSpacing: "-0.3px",
+  },
   subtitle: {
     fontSize: "13px",
+    color: "#64748b",
+    marginTop: "2px",
+  },
+  mobileSubtitle: {
+    fontSize: "11px",
     color: "#64748b",
     marginTop: "2px",
   },
@@ -971,27 +1186,40 @@ const styles = {
     fontSize: "14px",
     transition: "all 0.2s ease",
   },
+  mobileScheduleBtn: {
+    background: "#f9c349",
+    color: "#0f172a",
+    border: "none",
+    padding: "8px 14px",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    cursor: "pointer",
+    fontWeight: "600",
+    fontSize: "12px",
+    transition: "all 0.2s ease",
+  },
   statsGrid: {
     display: "grid",
-    gridTemplateColumns: "repeat(5, 1fr)",
-    gap: "12px",
-    marginBottom: "24px",
+    gap: "10px",
+    marginBottom: "20px",
   },
   statCard: {
     background: "#fff",
-    padding: "16px 20px",
+    padding: "12px 16px",
     borderRadius: "10px",
     display: "flex",
     alignItems: "center",
-    gap: "14px",
+    gap: "12px",
     border: "1px solid #e5e7eb",
     transition: "all 0.2s ease",
     cursor: "default",
   },
   statIconWrapper: {
-    width: "40px",
-    height: "40px",
-    borderRadius: "10px",
+    width: "36px",
+    height: "36px",
+    borderRadius: "8px",
     background: "#f8fafc",
     display: "flex",
     alignItems: "center",
@@ -1004,31 +1232,29 @@ const styles = {
     flexDirection: "column",
   },
   statValue: {
-    fontSize: "22px",
     fontWeight: "700",
     color: "#0f172a",
   },
   statLabel: {
-    fontSize: "12px",
     color: "#64748b",
     fontWeight: "500",
   },
   filterBar: {
     display: "flex",
-    gap: "10px",
-    marginBottom: "20px",
+    gap: "8px",
+    marginBottom: "16px",
     flexWrap: "wrap",
     alignItems: "center",
   },
   searchBox: {
     flex: 1,
-    minWidth: "220px",
+    minWidth: "150px",
     display: "flex",
     alignItems: "center",
-    gap: "10px",
-    padding: "8px 14px",
+    gap: "8px",
+    padding: "6px 12px",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
+    borderRadius: "8px",
     background: "#fff",
     transition: "all 0.2s ease",
   },
@@ -1054,39 +1280,95 @@ const styles = {
   filterGroup: {
     display: "flex",
     alignItems: "center",
-    gap: "8px",
-    padding: "0 14px",
+    gap: "6px",
+    padding: "0 12px",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
+    borderRadius: "8px",
     background: "#fff",
-    minWidth: "140px",
+    minWidth: "120px",
   },
   filterIcon: {
     color: "#94a3b8",
   },
   filterSelect: {
-    padding: "10px 4px",
+    padding: "8px 4px",
     border: "none",
     outline: "none",
     fontSize: "13px",
     background: "transparent",
     color: "#0f172a",
     cursor: "pointer",
-    minWidth: "120px",
+    minWidth: "110px",
     fontFamily: "'Inter', sans-serif",
   },
   clearBtn: {
-    padding: "8px 16px",
+    padding: "6px 14px",
     background: "#f1f5f9",
     color: "#475569",
     border: "1px solid #e5e7eb",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     fontSize: "13px",
     transition: "all 0.2s ease",
+    fontFamily: "'Inter', sans-serif",
+  },
+  mobileFilterToggle: {
+    padding: "6px 14px",
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    cursor: "pointer",
+    fontSize: "13px",
+    fontWeight: "500",
+    color: "#0f172a",
+    fontFamily: "'Inter', sans-serif",
+  },
+  mobileFilters: {
+    background: "#fff",
+    padding: "14px",
+    borderRadius: "10px",
+    marginBottom: "14px",
+    border: "1px solid #e5e7eb",
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+  },
+  mobileFilterGroup: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+  },
+  mobileFilterLabel: {
+    fontSize: "12px",
+    fontWeight: "600",
+    color: "#475569",
+  },
+  mobileFilterSelect: {
+    padding: "8px 12px",
+    border: "1px solid #e5e7eb",
+    borderRadius: "8px",
+    fontSize: "13px",
+    background: "#fff",
+    color: "#0f172a",
+    cursor: "pointer",
+    fontFamily: "'Inter', sans-serif",
+    width: "100%",
+  },
+  mobileClearBtn: {
+    padding: "8px",
+    background: "#f9c349",
+    border: "none",
+    borderRadius: "8px",
+    color: "#0f172a",
+    fontWeight: "600",
+    cursor: "pointer",
+    fontSize: "13px",
     fontFamily: "'Inter', sans-serif",
   },
   tableContainer: {
@@ -1096,7 +1378,7 @@ const styles = {
     overflow: "hidden",
   },
   tableHeader: {
-    padding: "14px 20px",
+    padding: "10px 16px",
     borderBottom: "1px solid #e5e7eb",
     background: "#f8fafc",
   },
@@ -1125,7 +1407,7 @@ const styles = {
   table: {
     width: "100%",
     borderCollapse: "collapse",
-    minWidth: "900px",
+    minWidth: "750px",
   },
   tableHead: {
     borderBottom: "1px solid #e5e7eb",
@@ -1139,12 +1421,12 @@ const styles = {
   candidateCell: {
     display: "flex",
     alignItems: "center",
-    gap: "12px",
-    padding: "10px 0",
+    gap: "10px",
+    padding: "8px 0",
   },
   candidateAvatar: {
-    width: "38px",
-    height: "38px",
+    width: "36px",
+    height: "36px",
     borderRadius: "50%",
     background: "#f9c349",
     display: "flex",
@@ -1152,7 +1434,7 @@ const styles = {
     justifyContent: "center",
     fontWeight: "600",
     color: "#fff",
-    fontSize: "15px",
+    fontSize: "14px",
     flexShrink: 0,
     position: "relative",
   },
@@ -1242,14 +1524,14 @@ const styles = {
   },
   actionButtons: {
     display: "flex",
-    gap: "6px",
+    gap: "4px",
     flexWrap: "wrap",
   },
   actionBtn: {
-    padding: "5px 12px",
+    padding: "4px 10px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "6px",
     color: "#475569",
     fontSize: "12px",
     cursor: "pointer",
@@ -1264,19 +1546,19 @@ const styles = {
     display: "flex",
     justifyContent: "center",
     alignItems: "center",
-    gap: "16px",
-    padding: "14px 20px",
+    gap: "12px",
+    padding: "12px 16px",
     borderTop: "1px solid #e5e7eb",
   },
   pageBtn: {
-    padding: "6px 16px",
+    padding: "6px 12px",
     background: "#f1f5f9",
     border: "none",
-    borderRadius: "8px",
+    borderRadius: "6px",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
-    gap: "6px",
+    gap: "4px",
     fontSize: "13px",
     fontWeight: "500",
     color: "#475569",
@@ -1303,40 +1585,40 @@ const styles = {
   },
   emptyState: {
     textAlign: "center",
-    padding: "60px 20px",
+    padding: "40px 20px",
     background: "#fff",
     borderRadius: "12px",
     border: "1px solid #e5e7eb",
   },
   emptyIcon: {
-    width: "72px",
-    height: "72px",
+    width: "64px",
+    height: "64px",
     borderRadius: "50%",
     background: "#f1f5f9",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    margin: "0 auto 16px",
+    margin: "0 auto 12px",
     color: "#94a3b8",
   },
   emptyTitle: {
-    fontSize: "20px",
+    fontSize: "18px",
     fontWeight: "700",
     color: "#0f172a",
     margin: 0,
-    marginBottom: "6px",
+    marginBottom: "4px",
   },
   emptyText: {
     fontSize: "14px",
     color: "#64748b",
-    marginBottom: "20px",
+    marginBottom: "16px",
   },
   emptyBtn: {
-    padding: "10px 24px",
+    padding: "8px 20px",
     background: "#f9c349",
     color: "#0f172a",
     border: "none",
-    borderRadius: "10px",
+    borderRadius: "8px",
     cursor: "pointer",
     fontWeight: "600",
     fontSize: "14px",
@@ -1357,6 +1639,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     zIndex: 1000,
+    padding: "16px",
   },
   modalContent: {
     background: "#fff",
@@ -1367,8 +1650,17 @@ const styles = {
     overflow: "hidden",
     boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
   },
+  mobileModalContent: {
+    background: "#fff",
+    borderRadius: "14px",
+    maxWidth: "98%",
+    width: "100%",
+    maxHeight: "95vh",
+    overflow: "hidden",
+    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
+  },
   modalHeader: {
-    padding: "20px 24px",
+    padding: "16px 20px",
     borderBottom: "1px solid #e5e7eb",
     display: "flex",
     justifyContent: "space-between",
@@ -1380,8 +1672,14 @@ const styles = {
     color: "#0f172a",
     margin: 0,
   },
+  mobileModalTitle: {
+    fontSize: "16px",
+    fontWeight: "700",
+    color: "#0f172a",
+    margin: 0,
+  },
   modalSubtitle: {
-    fontSize: "13px",
+    fontSize: "12px",
     color: "#64748b",
     marginTop: "2px",
   },
@@ -1400,11 +1698,11 @@ const styles = {
     flexShrink: 0,
   },
   modalBody: {
-    padding: "24px",
+    padding: "20px",
     overflowY: "auto",
   },
   formGroup: {
-    marginBottom: "18px",
+    marginBottom: "16px",
   },
   formLabel: {
     display: "block",
@@ -1415,7 +1713,7 @@ const styles = {
   },
   formSelect: {
     width: "100%",
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "1px solid #e5e7eb",
     borderRadius: "8px",
     fontSize: "13px",
@@ -1428,7 +1726,7 @@ const styles = {
   },
   formInput: {
     width: "100%",
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "1px solid #e5e7eb",
     borderRadius: "8px",
     fontSize: "13px",
@@ -1439,11 +1737,11 @@ const styles = {
   },
   formTextarea: {
     width: "100%",
-    padding: "10px 14px",
+    padding: "8px 12px",
     border: "1px solid #e5e7eb",
     borderRadius: "8px",
     fontSize: "13px",
-    minHeight: "80px",
+    minHeight: "60px",
     resize: "vertical",
     color: "#0f172a",
     outline: "none",
@@ -1456,14 +1754,21 @@ const styles = {
     marginTop: "4px",
   },
   modalFooter: {
-    padding: "16px 24px",
+    padding: "14px 20px",
     borderTop: "1px solid #e5e7eb",
     display: "flex",
     gap: "10px",
   },
+  mobileModalFooter: {
+    padding: "12px 16px",
+    borderTop: "1px solid #e5e7eb",
+    display: "flex",
+    flexDirection: "column",
+    gap: "8px",
+  },
   cancelModalBtn: {
     flex: 1,
-    padding: "10px",
+    padding: "8px",
     background: "#f1f5f9",
     border: "none",
     borderRadius: "8px",
@@ -1476,7 +1781,7 @@ const styles = {
   },
   submitModalBtn: {
     flex: 1,
-    padding: "10px",
+    padding: "8px",
     background: "#f9c349",
     color: "#0f172a",
     border: "none",
@@ -1490,6 +1795,130 @@ const styles = {
     gap: "8px",
     transition: "all 0.2s ease",
     fontFamily: "'Inter', sans-serif",
+  },
+  // Mobile Card Styles
+  mobileCardList: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "10px",
+    padding: "12px",
+  },
+  mobileCard: {
+    background: "#fff",
+    border: "1px solid #e5e7eb",
+    borderRadius: "10px",
+    padding: "12px",
+    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
+  },
+  mobileCardHeader: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "8px",
+  },
+  mobileCardUser: {
+    display: "flex",
+    alignItems: "center",
+    gap: "10px",
+    flex: 1,
+  },
+  mobileCardAvatar: {
+    width: "36px",
+    height: "36px",
+    borderRadius: "50%",
+    background: "#f9c349",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "600",
+    color: "#fff",
+    fontSize: "14px",
+    flexShrink: 0,
+    position: "relative",
+  },
+  mobileTodayBadge: {
+    position: "absolute",
+    top: "-4px",
+    right: "-8px",
+    fontSize: "7px",
+    background: "#10b981",
+    color: "#fff",
+    padding: "1px 6px",
+    borderRadius: "8px",
+    fontWeight: "600",
+  },
+  mobileCardUserInfo: {
+    flex: 1,
+  },
+  mobileCardName: {
+    fontWeight: "600",
+    color: "#0f172a",
+    fontSize: "14px",
+  },
+  mobileCardEmail: {
+    fontSize: "11px",
+    color: "#64748b",
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+  },
+  mobileCardDetails: {
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: "6px",
+    padding: "8px 0",
+    borderTop: "1px solid #f1f5f9",
+    borderBottom: "1px solid #f1f5f9",
+    marginBottom: "8px",
+  },
+  mobileCardDetail: {
+    display: "flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "12px",
+    color: "#475569",
+  },
+  mobileTimeRemaining: {
+    fontSize: "11px",
+    color: "#f59e0b",
+    fontWeight: "500",
+  },
+  mobileCardActions: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: "8px",
+  },
+  mobileMeetingLink: {
+    color: "#f9c349",
+    textDecoration: "none",
+    fontSize: "12px",
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    fontWeight: "500",
+    padding: "4px 10px",
+    background: "#fef3c7",
+    borderRadius: "6px",
+  },
+  mobileActionGroup: {
+    display: "flex",
+    gap: "4px",
+  },
+  mobileActionBtn: {
+    padding: "4px 8px",
+    background: "#f1f5f9",
+    border: "none",
+    borderRadius: "6px",
+    color: "#475569",
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontSize: "12px",
+    transition: "all 0.2s ease",
+    width: "30px",
+    height: "30px",
   },
 };
 

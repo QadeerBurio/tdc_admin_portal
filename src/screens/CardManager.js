@@ -7,7 +7,8 @@ import {
   Clock, Users, Wallet, CreditCard, Shield, Search, 
   Filter, ChevronDown, ChevronUp, Eye, RefreshCw,
   Printer, MapPin, Phone, Mail, User, Award,
-  TrendingUp, BarChart3, Sparkles, Zap
+  TrendingUp, BarChart3, Sparkles, Zap,
+  Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -22,6 +23,9 @@ const CardManager = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedUser, setSelectedUser] = useState(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
+  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
+  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
+  const [isFilterOpen, setIsFilterOpen] = useState(false);
   
   const [stats, setStats] = useState({ 
     printing: 0, shipped: 0, delivered: 0, pending: 0, 
@@ -30,6 +34,15 @@ const CardManager = () => {
 
   const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
   const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  useEffect(() => {
+    const handleResize = () => {
+      setIsMobile(window.innerWidth <= 768);
+      setIsTablet(window.innerWidth <= 1024);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
 
   const fetchStats = async () => {
     try {
@@ -107,8 +120,131 @@ const CardManager = () => {
     item.email?.toLowerCase().includes(searchTerm.toLowerCase())
   );
 
+  // Mobile Payment Card Component
+  const MobilePaymentCard = ({ req }) => (
+    <motion.div 
+      style={styles.mobileCard}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div style={styles.mobileCardHeader}>
+        <div style={styles.mobileCardUser}>
+          <div style={styles.cardAvatar}>
+            {req.name?.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <h3 style={styles.mobileCardName}>{req.name}</h3>
+            <span style={styles.mobileRollBadge}>🎓 {req.rollNo}</span>
+          </div>
+        </div>
+        <button style={styles.mobileViewBtn} onClick={() => openUserDetail(req)}>
+          <Eye size={16} />
+        </button>
+      </div>
+      
+      <div style={styles.mobileImageContainer} onClick={() => window.open(req.paymentReceipt, '_blank')}>
+        <img src={req.paymentReceipt} alt="Receipt" style={styles.mobileReceiptImg} />
+        <div style={styles.mobileImgOverlay}>
+          <Eye size={14} /> View
+        </div>
+      </div>
+      
+      <div style={styles.mobileCardFooter}>
+        <div style={styles.mobileCardInfo}>
+          <span style={styles.mobileCardInfoLabel}>Amount</span>
+          <span style={styles.mobileCardInfoValue}>₨ {req.amount || 500}</span>
+        </div>
+        <div style={styles.mobileCardInfo}>
+          <span style={styles.mobileCardInfoLabel}>Date</span>
+          <span style={styles.mobileCardInfoValue}>
+            {new Date(req.createdAt).toLocaleDateString()}
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.mobileActionRow}>
+        <button style={styles.mobileApproveBtn} onClick={() => handlePaymentAction(req._id, 'approve')}>
+          <CheckCircle size={16} /> Approve
+        </button>
+        <button style={styles.mobileRejectBtn} onClick={() => handlePaymentAction(req._id, 'reject')}>
+          <XCircle size={16} />
+        </button>
+      </div>
+    </motion.div>
+  );
+
+  // Mobile Logistics Card Component
+  const MobileLogisticsCard = ({ order }) => (
+    <motion.div 
+      style={styles.mobileLogisticsCard}
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3 }}
+    >
+      <div style={styles.mobileLogisticsHeader}>
+        <div style={styles.mobileCardUser}>
+          <div style={styles.cardAvatar}>
+            {order.name?.charAt(0).toUpperCase()}
+          </div>
+          <div>
+            <div style={styles.mobileMemberName}>{order.name}</div>
+            <div style={styles.mobileMemberRoll}>{order.rollNo}</div>
+          </div>
+        </div>
+        <div style={styles.mobileLogisticsStatus}>
+          <input 
+            type="checkbox" 
+            checked={selectedIds.includes(order._id)} 
+            onChange={() => setSelectedIds(prev => 
+              prev.includes(order._id) ? prev.filter(id => id !== order._id) : [...prev, order._id]
+            )}
+            style={styles.mobileCheckbox}
+          />
+        </div>
+      </div>
+
+      <div style={styles.mobileLogisticsDetails}>
+        <div style={styles.mobileLogisticsDetail}>
+          <Phone size={12} color="#94a3b8" />
+          <span>{order.shippingDetails?.phone || 'N/A'}</span>
+        </div>
+        <div style={styles.mobileLogisticsDetail}>
+          <Mail size={12} color="#94a3b8" />
+          <span>{order.email || 'N/A'}</span>
+        </div>
+        <div style={styles.mobileLogisticsDetail}>
+          <MapPin size={12} color="#94a3b8" />
+          <span>{order.shippingDetails?.city || 'N/A'}</span>
+        </div>
+        <div style={styles.mobileLogisticsDetail}>
+          <span style={styles.mobileLogisticsAddress}>
+            {order.shippingDetails?.address || 'No address'}
+          </span>
+        </div>
+      </div>
+
+      <div style={styles.mobileLogisticsFooter}>
+        <span style={{
+          ...styles.mobileStatusBadge,
+          backgroundColor: getStatusBg(order.cardStatus),
+          color: getStatusColor(order.cardStatus)
+        }}>
+          {order.cardStatus}
+        </span>
+        <button style={styles.mobileViewBtnSmall} onClick={() => openUserDetail(order)}>
+          <Eye size={14} />
+        </button>
+      </div>
+    </motion.div>
+  );
+
   return (
-    <div style={styles.pageWrapper}>
+    <div style={{
+      ...styles.pageWrapper,
+      padding: isMobile ? '12px 16px' : isTablet ? '16px 24px' : '25px 35px',
+      borderRadius: isMobile ? '16px' : isTablet ? '24px' : '32px',
+    }}>
       {/* Decorative Background */}
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
@@ -117,51 +253,114 @@ const CardManager = () => {
       <div style={styles.maxWidthContainer}>
         {/* HEADER SECTION */}
         <motion.header 
-          style={styles.header}
+          style={{
+            ...styles.header,
+            flexDirection: isMobile ? 'column' : 'row',
+            alignItems: isMobile ? 'stretch' : 'center',
+            gap: isMobile ? '16px' : '16px',
+          }}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
           <div>
             <div style={styles.headerBadge}>
-              <CreditCard size={14} />
+              <CreditCard size={isMobile ? 12 : 14} />
               <span>Card Management</span>
             </div>
-            <h1 style={styles.title}>Card Command Center</h1>
-            <p style={styles.subtitle}>Streamline verification and physical card distribution</p>
+            <h1 style={{
+              ...styles.title,
+              fontSize: isMobile ? '22px' : isTablet ? '24px' : '28px',
+            }}>Card Command Center</h1>
+            <p style={{
+              ...styles.subtitle,
+              fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
+            }}>
+              {isMobile ? 'Manage cards & distribution' : 'Streamline verification and physical card distribution'}
+            </p>
           </div>
           
           <motion.div 
-            style={styles.statsRow}
+            style={{
+              ...styles.statsRow,
+              flexWrap: isMobile ? 'wrap' : 'nowrap',
+              justifyContent: isMobile ? 'center' : 'flex-start',
+              width: isMobile ? '100%' : 'auto',
+            }}
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.5, delay: 0.1 }}
           >
-            <StatCard label="Total Issued" value={stats.approvedTotal} icon={<Users size={18}/>} color="#10b981" bg="#d1fae5" />
-            <StatCard label="Net Revenue" value={`₨ ${stats.totalRevenue.toLocaleString()}`} icon={<Wallet size={18}/>} color="#3b82f6" bg="#dbeafe" />
-            <StatCard label="Awaiting" value={stats.pending} icon={<Clock size={18}/>} color="#f59e0b" bg="#fef3c7" />
+            <StatCard 
+              label="Total Issued" 
+              value={stats.approvedTotal} 
+              icon={<Users size={isMobile ? 14 : 18}/>} 
+              color="#10b981" 
+              bg="#d1fae5" 
+              isMobile={isMobile}
+            />
+            <StatCard 
+              label="Net Revenue" 
+              value={`₨ ${stats.totalRevenue.toLocaleString()}`} 
+              icon={<Wallet size={isMobile ? 14 : 18}/>} 
+              color="#3b82f6" 
+              bg="#dbeafe"
+              isMobile={isMobile}
+            />
+            <StatCard 
+              label="Awaiting" 
+              value={stats.pending} 
+              icon={<Clock size={isMobile ? 14 : 18}/>} 
+              color="#f59e0b" 
+              bg="#fef3c7"
+              isMobile={isMobile}
+            />
           </motion.div>
         </motion.header>
 
         {/* MAIN NAVIGATION */}
         <motion.div 
-          style={styles.tabContainer}
+          style={{
+            ...styles.tabContainer,
+            flexDirection: isMobile ? 'column' : 'row',
+            gap: isMobile ? '8px' : '30px',
+            borderBottom: isMobile ? 'none' : '2px solid #e2e8f0',
+            marginBottom: isMobile ? '16px' : '24px',
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
           <button 
             onClick={() => setActiveTab('payments')} 
-            style={activeTab === 'payments' ? styles.activeTab : styles.tab}
+            style={{
+              ...(activeTab === 'payments' ? styles.activeTab : styles.tab),
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: 'center',
+              padding: isMobile ? '12px 16px' : '12px 0',
+              borderRadius: isMobile ? '10px' : '0',
+              background: isMobile && activeTab === 'payments' ? '#08634f' : 'transparent',
+              color: isMobile && activeTab === 'payments' ? '#fff' : '#64748b',
+            }}
           >
-            <Shield size={16} /> Verification Queue
+            <Shield size={isMobile ? 16 : 16} /> 
+            {isMobile ? 'Verification' : 'Verification Queue'}
             {stats.pending > 0 && <span style={styles.tabBadge}>{stats.pending}</span>}
           </button>
           <button 
             onClick={() => setActiveTab('logistics')} 
-            style={activeTab === 'logistics' ? styles.activeTab : styles.tab}
+            style={{
+              ...(activeTab === 'logistics' ? styles.activeTab : styles.tab),
+              width: isMobile ? '100%' : 'auto',
+              justifyContent: 'center',
+              padding: isMobile ? '12px 16px' : '12px 0',
+              borderRadius: isMobile ? '10px' : '0',
+              background: isMobile && activeTab === 'logistics' ? '#08634f' : 'transparent',
+              color: isMobile && activeTab === 'logistics' ? '#fff' : '#64748b',
+            }}
           >
-            <Package size={16} /> Logistics Pipeline
+            <Package size={isMobile ? 16 : 16} /> 
+            {isMobile ? 'Logistics' : 'Logistics Pipeline'}
           </button>
         </motion.div>
 
@@ -180,18 +379,26 @@ const CardManager = () => {
 
         {/* Search Bar */}
         <motion.div 
-          style={styles.searchBar}
+          style={{
+            ...styles.searchBar,
+            maxWidth: isMobile ? '100%' : '400px',
+            marginBottom: isMobile ? '16px' : '24px',
+          }}
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, delay: 0.25 }}
         >
-          <Search size={18} style={styles.searchIcon} />
+          <Search size={isMobile ? 16 : 18} style={styles.searchIcon} />
           <input
             type="text"
-            placeholder="Search by name, roll number or email..."
+            placeholder={isMobile ? "Search..." : "Search by name, roll number or email..."}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
+            style={{
+              ...styles.searchInput,
+              padding: isMobile ? '8px 32px 8px 36px' : '10px 40px 10px 40px',
+              fontSize: isMobile ? '13px' : '14px',
+            }}
           />
           {searchTerm && (
             <button style={styles.clearSearch} onClick={() => setSearchTerm("")}>
@@ -208,76 +415,84 @@ const CardManager = () => {
             animate={{ opacity: 1 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <div style={styles.gridStyle}>
-              {filteredData.map((req, index) => (
-                <motion.div 
-                  key={req._id} 
-                  style={styles.cardItem}
-                  initial={{ opacity: 0, y: 30 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4, delay: index * 0.05 }}
-                  whileHover={{ y: -8, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
-                >
-                  <div style={styles.cardHeader}>
-                    <div style={styles.cardUser}>
-                      <div style={styles.cardAvatar}>
-                        {req.name?.charAt(0).toUpperCase()}
+            {isMobile ? (
+              // Mobile Grid View
+              <div style={styles.mobileGrid}>
+                {filteredData.map((req) => (
+                  <MobilePaymentCard key={req._id} req={req} />
+                ))}
+                {filteredData.length === 0 && !loading && <EmptyState message="The queue is empty. Great job!" isMobile={isMobile} />}
+              </div>
+            ) : (
+              // Desktop Grid View
+              <div style={styles.gridStyle}>
+                {filteredData.map((req, index) => (
+                  <motion.div 
+                    key={req._id} 
+                    style={styles.cardItem}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ duration: 0.4, delay: index * 0.05 }}
+                    whileHover={{ y: -8, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
+                  >
+                    <div style={styles.cardHeader}>
+                      <div style={styles.cardUser}>
+                        <div style={styles.cardAvatar}>
+                          {req.name?.charAt(0).toUpperCase()}
+                        </div>
+                        <div>
+                          <h3 style={styles.cardName}>{req.name}</h3>
+                          <span style={styles.rollBadge}>🎓 {req.rollNo}</span>
+                        </div>
                       </div>
-                      <div>
-                        <h3 style={styles.cardName}>{req.name}</h3>
-                        <span style={styles.rollBadge}>🎓 {req.rollNo}</span>
+                      <button style={styles.viewBtn} onClick={() => openUserDetail(req)}>
+                        <Eye size={14} />
+                      </button>
+                    </div>
+                    
+                    <div style={styles.imageContainer} onClick={() => window.open(req.paymentReceipt, '_blank')}>
+                      <img src={req.paymentReceipt} alt="Receipt" style={styles.receiptImg} />
+                      <div style={styles.imgOverlay}>
+                        <Eye size={14} /> View Receipt
                       </div>
                     </div>
-                    <button 
-                      style={styles.viewBtn}
-                      onClick={() => openUserDetail(req)}
-                    >
-                      <Eye size={14} />
-                    </button>
-                  </div>
-                  
-                  <div style={styles.imageContainer} onClick={() => window.open(req.paymentReceipt, '_blank')}>
-                    <img src={req.paymentReceipt} alt="Receipt" style={styles.receiptImg} />
-                    <div style={styles.imgOverlay}>
-                      <Eye size={14} /> View Receipt
+                    
+                    <div style={styles.cardFooter}>
+                      <div style={styles.cardInfo}>
+                        <span style={styles.cardInfoLabel}>Amount</span>
+                        <span style={styles.cardInfoValue}>₨ {req.amount || 500}</span>
+                      </div>
+                      <div style={styles.cardInfo}>
+                        <span style={styles.cardInfoLabel}>Date</span>
+                        <span style={styles.cardInfoValue}>
+                          {new Date(req.createdAt).toLocaleDateString()}
+                        </span>
+                      </div>
                     </div>
-                  </div>
-                  
-                  <div style={styles.cardFooter}>
-                    <div style={styles.cardInfo}>
-                      <span style={styles.cardInfoLabel}>Amount</span>
-                      <span style={styles.cardInfoValue}>₨ {req.amount || 500}</span>
-                    </div>
-                    <div style={styles.cardInfo}>
-                      <span style={styles.cardInfoLabel}>Date</span>
-                      <span style={styles.cardInfoValue}>
-                        {new Date(req.createdAt).toLocaleDateString()}
-                      </span>
-                    </div>
-                  </div>
 
-                  <div style={styles.actionRow}>
-                    <motion.button 
-                      onClick={() => handlePaymentAction(req._id, 'approve')} 
-                      style={styles.approveBtn}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <CheckCircle size={16} /> Approve
-                    </motion.button>
-                    <motion.button 
-                      onClick={() => handlePaymentAction(req._id, 'reject')} 
-                      style={styles.rejectBtn}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                    >
-                      <XCircle size={16} />
-                    </motion.button>
-                  </div>
-                </motion.div>
-              ))}
-              {filteredData.length === 0 && !loading && <EmptyState message="The queue is empty. Great job!" />}
-            </div>
+                    <div style={styles.actionRow}>
+                      <motion.button 
+                        onClick={() => handlePaymentAction(req._id, 'approve')} 
+                        style={styles.approveBtn}
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <CheckCircle size={16} /> Approve
+                      </motion.button>
+                      <motion.button 
+                        onClick={() => handlePaymentAction(req._id, 'reject')} 
+                        style={styles.rejectBtn}
+                        whileHover={{ scale: 1.05 }}
+                        whileTap={{ scale: 0.95 }}
+                      >
+                        <XCircle size={16} />
+                      </motion.button>
+                    </div>
+                  </motion.div>
+                ))}
+                {filteredData.length === 0 && !loading && <EmptyState message="The queue is empty. Great job!" isMobile={isMobile} />}
+              </div>
+            )}
           </motion.div>
         ) : (
           <motion.div 
@@ -286,136 +501,189 @@ const CardManager = () => {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: 0.3 }}
           >
-            <div style={styles.tableHeaderActions}>
-              <div style={styles.subFilterRow}>
+            <div style={{
+              ...styles.tableHeaderActions,
+              flexDirection: isMobile ? 'column' : 'row',
+              padding: isMobile ? '12px 16px' : '16px 20px',
+              gap: isMobile ? '12px' : '12px',
+            }}>
+              <div style={{
+                ...styles.subFilterRow,
+                flexWrap: isMobile ? 'wrap' : 'nowrap',
+                justifyContent: isMobile ? 'center' : 'flex-start',
+                width: isMobile ? '100%' : 'auto',
+              }}>
                 {[
-                  { id: 'Printing', icon: <Printer size={14}/> },
-                  { id: 'Shipped', icon: <Truck size={14}/> },
-                  { id: 'Delivered', icon: <Check size={14}/> }
+                  { id: 'Printing', icon: <Printer size={isMobile ? 12 : 14}/> },
+                  { id: 'Shipped', icon: <Truck size={isMobile ? 12 : 14}/> },
+                  { id: 'Delivered', icon: <Check size={isMobile ? 12 : 14}/> }
                 ].map(s => (
                   <motion.button 
                     key={s.id} 
                     onClick={() => setLogisticsFilter(s.id)} 
-                    style={logisticsFilter === s.id ? styles.subTabActive : styles.subTab}
+                    style={{
+                      ...(logisticsFilter === s.id ? styles.subTabActive : styles.subTab),
+                      padding: isMobile ? '6px 12px' : '8px 16px',
+                      fontSize: isMobile ? '11px' : '12px',
+                      flex: isMobile ? 1 : 'auto',
+                      justifyContent: 'center',
+                    }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    {s.icon} {s.id} <span style={styles.countBadge}>{stats[s.id.toLowerCase()] || 0}</span>
+                    {s.icon} {isMobile ? '' : s.id} 
+                    <span style={styles.countBadge}>{stats[s.id.toLowerCase()] || 0}</span>
                   </motion.button>
                 ))}
               </div>
 
-              <div style={styles.actionButtons}>
+              <div style={{
+                ...styles.actionButtons,
+                flexWrap: isMobile ? 'wrap' : 'nowrap',
+                justifyContent: isMobile ? 'center' : 'flex-end',
+                width: isMobile ? '100%' : 'auto',
+              }}>
                 <motion.button 
                   onClick={exportToCSV} 
-                  style={styles.btnExport}
+                  style={{
+                    ...styles.btnExport,
+                    padding: isMobile ? '6px 12px' : '8px 16px',
+                    fontSize: isMobile ? '11px' : '12px',
+                    flex: isMobile ? 1 : 'auto',
+                    justifyContent: 'center',
+                  }}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.95 }}
                 >
-                  <Download size={16}/> CSV
+                  <Download size={isMobile ? 14 : 16}/> {isMobile ? 'Export' : 'CSV'}
                 </motion.button>
                 {logisticsFilter === 'Printing' && (
                   <motion.button 
                     onClick={() => handleBulkUpdate('Shipped')} 
-                    style={styles.shipBtn}
+                    style={{
+                      ...styles.shipBtn,
+                      padding: isMobile ? '6px 12px' : '8px 16px',
+                      fontSize: isMobile ? '11px' : '12px',
+                      flex: isMobile ? 1 : 'auto',
+                      justifyContent: 'center',
+                    }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Truck size={16} /> Dispatch Selected
+                    <Truck size={isMobile ? 14 : 16} /> 
+                    {isMobile ? 'Dispatch' : 'Dispatch Selected'}
                   </motion.button>
                 )}
                 {logisticsFilter === 'Shipped' && (
                   <motion.button 
                     onClick={() => handleBulkUpdate('Delivered')} 
-                    style={styles.deliveredBtn}
+                    style={{
+                      ...styles.deliveredBtn,
+                      padding: isMobile ? '6px 12px' : '8px 16px',
+                      fontSize: isMobile ? '11px' : '12px',
+                      flex: isMobile ? 1 : 'auto',
+                      justifyContent: 'center',
+                    }}
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.95 }}
                   >
-                    <Check size={16} /> Mark Delivered
+                    <Check size={isMobile ? 14 : 16} /> 
+                    {isMobile ? 'Deliver' : 'Mark Delivered'}
                   </motion.button>
                 )}
               </div>
             </div>
 
-            <div style={styles.tableResponsive}>
-              <table style={styles.table}>
-                <thead>
-                  <tr>
-                    <th style={styles.th}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? data.map(o=>o._id) : [])} checked={selectedIds.length === data.length && data.length > 0} /></th>
-                    <th style={styles.th}>Member Details</th>
-                    <th style={styles.th}>Contact</th>
-                    <th style={styles.th}>Location</th>
-                    <th style={styles.th}>Status</th>
-                    <th style={{...styles.th, textAlign: 'center'}}>Actions</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {filteredData.map((order, index) => (
-                    <motion.tr 
-                      key={order._id} 
-                      style={styles.tr}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.3, delay: index * 0.03 }}
-                      whileHover={{ backgroundColor: '#f8fafc' }}
-                    >
-                      <td style={styles.td}><input type="checkbox" checked={selectedIds.includes(order._id)} onChange={() => setSelectedIds(prev => prev.includes(order._id) ? prev.filter(id => id !== order._id) : [...prev, order._id])} /></td>
-                      <td style={styles.td}>
-                        <div style={styles.memberCell}>
-                          <div style={styles.memberAvatar}>
-                            {order.name?.charAt(0).toUpperCase()}
+            {isMobile ? (
+              // Mobile Logistics Cards
+              <div style={styles.mobileLogisticsList}>
+                {filteredData.map((order) => (
+                  <MobileLogisticsCard key={order._id} order={order} />
+                ))}
+                {filteredData.length === 0 && !loading && <EmptyState message="No records found in this stage." isMobile={isMobile} />}
+              </div>
+            ) : (
+              // Desktop Table
+              <div style={styles.tableResponsive}>
+                <table style={styles.table}>
+                  <thead>
+                    <tr>
+                      <th style={styles.th}><input type="checkbox" onChange={(e) => setSelectedIds(e.target.checked ? data.map(o=>o._id) : [])} checked={selectedIds.length === data.length && data.length > 0} /></th>
+                      <th style={styles.th}>Member Details</th>
+                      <th style={styles.th}>Contact</th>
+                      <th style={styles.th}>Location</th>
+                      <th style={styles.th}>Status</th>
+                      <th style={{...styles.th, textAlign: 'center'}}>Actions</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filteredData.map((order, index) => (
+                      <motion.tr 
+                        key={order._id} 
+                        style={styles.tr}
+                        initial={{ opacity: 0, x: -20 }}
+                        animate={{ opacity: 1, x: 0 }}
+                        transition={{ duration: 0.3, delay: index * 0.03 }}
+                        whileHover={{ backgroundColor: '#f8fafc' }}
+                      >
+                        <td style={styles.td}><input type="checkbox" checked={selectedIds.includes(order._id)} onChange={() => setSelectedIds(prev => prev.includes(order._id) ? prev.filter(id => id !== order._id) : [...prev, order._id])} /></td>
+                        <td style={styles.td}>
+                          <div style={styles.memberCell}>
+                            <div style={styles.memberAvatar}>
+                              {order.name?.charAt(0).toUpperCase()}
+                            </div>
+                            <div>
+                              <div style={styles.memberName}>{order.name}</div>
+                              <div style={styles.memberRoll}>{order.rollNo}</div>
+                            </div>
                           </div>
-                          <div>
-                            <div style={styles.memberName}>{order.name}</div>
-                            <div style={styles.memberRoll}>{order.rollNo}</div>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={styles.contactCell}>
+                            <Phone size={12} color="#94a3b8" />
+                            <span>{order.shippingDetails?.phone || 'N/A'}</span>
                           </div>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.contactCell}>
-                          <Phone size={12} color="#94a3b8" />
-                          <span>{order.shippingDetails?.phone || 'N/A'}</span>
-                        </div>
-                        <div style={styles.contactCell}>
-                          <Mail size={12} color="#94a3b8" />
-                          <span>{order.email || 'N/A'}</span>
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <div style={styles.locationCell}>
-                          <MapPin size={12} color="#94a3b8" />
-                          <span>{order.shippingDetails?.city || 'N/A'}</span>
-                        </div>
-                        <div style={styles.locationAddress}>
-                          {order.shippingDetails?.address || 'No address'}
-                        </div>
-                      </td>
-                      <td style={styles.td}>
-                        <span style={{...styles.statusBadge, backgroundColor: getStatusBg(order.cardStatus), color: getStatusColor(order.cardStatus)}}>
-                          {order.cardStatus}
-                        </span>
-                      </td>
-                      <td style={{...styles.td, textAlign: 'center'}}>
-                        <motion.button 
-                          style={styles.viewBtnSmall}
-                          onClick={() => openUserDetail(order)}
-                          whileHover={{ scale: 1.1 }}
-                          whileTap={{ scale: 0.9 }}
-                        >
-                          <Eye size={14} />
-                        </motion.button>
-                      </td>
-                    </motion.tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-            {filteredData.length === 0 && !loading && <EmptyState message="No records found in this stage." />}
+                          <div style={styles.contactCell}>
+                            <Mail size={12} color="#94a3b8" />
+                            <span>{order.email || 'N/A'}</span>
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <div style={styles.locationCell}>
+                            <MapPin size={12} color="#94a3b8" />
+                            <span>{order.shippingDetails?.city || 'N/A'}</span>
+                          </div>
+                          <div style={styles.locationAddress}>
+                            {order.shippingDetails?.address || 'No address'}
+                          </div>
+                        </td>
+                        <td style={styles.td}>
+                          <span style={{...styles.statusBadge, backgroundColor: getStatusBg(order.cardStatus), color: getStatusColor(order.cardStatus)}}>
+                            {order.cardStatus}
+                          </span>
+                        </td>
+                        <td style={{...styles.td, textAlign: 'center'}}>
+                          <motion.button 
+                            style={styles.viewBtnSmall}
+                            onClick={() => openUserDetail(order)}
+                            whileHover={{ scale: 1.1 }}
+                            whileTap={{ scale: 0.9 }}
+                          >
+                            <Eye size={14} />
+                          </motion.button>
+                        </td>
+                      </motion.tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            {filteredData.length === 0 && !loading && !isMobile && <EmptyState message="No records found in this stage." isMobile={isMobile} />}
           </motion.div>
         )}
       </div>
 
-      {/* User Detail Modal */}
+      {/* User Detail Modal - Responsive */}
       <AnimatePresence>
         {showDetailModal && selectedUser && (
           <motion.div 
@@ -426,20 +694,36 @@ const CardManager = () => {
             onClick={closeUserDetail}
           >
             <motion.div 
-              style={styles.modalContent}
+              style={{
+                ...styles.modalContent,
+                maxWidth: isMobile ? '95%' : '600px',
+                maxHeight: isMobile ? '95vh' : '90vh',
+                borderRadius: isMobile ? '16px' : '24px',
+              }}
               initial={{ scale: 0.9, y: 30, opacity: 0 }}
               animate={{ scale: 1, y: 0, opacity: 1 }}
               exit={{ scale: 0.9, y: 30, opacity: 0 }}
               transition={{ type: "spring", damping: 25 }}
               onClick={e => e.stopPropagation()}
             >
-              <div style={styles.modalHeader}>
+              <div style={{
+                ...styles.modalHeader,
+                padding: isMobile ? '16px 20px' : '20px 24px',
+              }}>
                 <div style={styles.modalHeaderLeft}>
-                  <div style={styles.modalAvatar}>
+                  <div style={{
+                    ...styles.modalAvatar,
+                    width: isMobile ? '40px' : '48px',
+                    height: isMobile ? '40px' : '48px',
+                    fontSize: isMobile ? '16px' : '20px',
+                  }}>
                     {selectedUser.name?.charAt(0).toUpperCase()}
                   </div>
                   <div>
-                    <h2 style={styles.modalTitle}>{selectedUser.name}</h2>
+                    <h2 style={{
+                      ...styles.modalTitle,
+                      fontSize: isMobile ? '16px' : '18px',
+                    }}>{selectedUser.name}</h2>
                     <p style={styles.modalSubtitle}>Roll No: {selectedUser.rollNo}</p>
                   </div>
                 </div>
@@ -453,11 +737,18 @@ const CardManager = () => {
                 </motion.button>
               </div>
 
-              <div style={styles.modalBody}>
-                <div style={styles.modalGrid}>
+              <div style={{
+                ...styles.modalBody,
+                padding: isMobile ? '16px' : '24px',
+              }}>
+                <div style={{
+                  ...styles.modalGrid,
+                  gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr',
+                  gap: isMobile ? '12px' : '16px',
+                }}>
                   <div style={styles.modalSection}>
                     <h4 style={styles.modalSectionTitle}>
-                      <User size={14} /> Personal Information
+                      <User size={isMobile ? 12 : 14} /> Personal Information
                     </h4>
                     <div style={styles.modalDetail}>
                       <span style={styles.modalLabel}>Full Name</span>
@@ -479,7 +770,7 @@ const CardManager = () => {
 
                   <div style={styles.modalSection}>
                     <h4 style={styles.modalSectionTitle}>
-                      <MapPin size={14} /> Shipping Details
+                      <MapPin size={isMobile ? 12 : 14} /> Shipping Details
                     </h4>
                     <div style={styles.modalDetail}>
                       <span style={styles.modalLabel}>City</span>
@@ -493,7 +784,7 @@ const CardManager = () => {
 
                   <div style={styles.modalSection}>
                     <h4 style={styles.modalSectionTitle}>
-                      <CreditCard size={14} /> Card Status
+                      <CreditCard size={isMobile ? 12 : 14} /> Card Status
                     </h4>
                     <div style={styles.modalDetail}>
                       <span style={styles.modalLabel}>Current Status</span>
@@ -521,21 +812,33 @@ const CardManager = () => {
                 {selectedUser.paymentReceipt && (
                   <div style={styles.modalReceipt}>
                     <h4 style={styles.modalSectionTitle}>
-                      <Eye size={14} /> Payment Receipt
+                      <Eye size={isMobile ? 12 : 14} /> Payment Receipt
                     </h4>
                     <img 
                       src={selectedUser.paymentReceipt} 
                       alt="Receipt" 
-                      style={styles.modalReceiptImg} 
+                      style={{
+                        ...styles.modalReceiptImg,
+                        maxHeight: isMobile ? '150px' : '200px',
+                      }}
                       onClick={() => window.open(selectedUser.paymentReceipt, '_blank')}
                     />
                   </div>
                 )}
               </div>
 
-              <div style={styles.modalFooter}>
+              <div style={{
+                ...styles.modalFooter,
+                padding: isMobile ? '12px 16px' : '16px 24px',
+                flexDirection: isMobile ? 'column' : 'row',
+                gap: isMobile ? '8px' : '12px',
+              }}>
                 <motion.button 
-                  style={styles.modalCloseBtn}
+                  style={{
+                    ...styles.modalCloseBtn,
+                    width: isMobile ? '100%' : 'auto',
+                    justifyContent: 'center',
+                  }}
                   onClick={closeUserDetail}
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
@@ -544,7 +847,11 @@ const CardManager = () => {
                 </motion.button>
                 {activeTab === 'payments' && selectedUser.paymentStatus !== 'Verified' && (
                   <motion.button 
-                    style={styles.modalApproveBtn}
+                    style={{
+                      ...styles.modalApproveBtn,
+                      width: isMobile ? '100%' : 'auto',
+                      justifyContent: 'center',
+                    }}
                     onClick={() => {
                       handlePaymentAction(selectedUser._id, 'approve');
                       closeUserDetail();
@@ -552,7 +859,7 @@ const CardManager = () => {
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
-                    <CheckCircle size={16} /> Approve Payment
+                    <CheckCircle size={isMobile ? 16 : 16} /> Approve Payment
                   </motion.button>
                 )}
               </div>
@@ -648,6 +955,75 @@ const CardManager = () => {
               max-height: 95vh !important;
             }
           }
+
+          @media (max-width: 480px) {
+            .pageWrapper {
+              padding: 8px 12px !important;
+              border-radius: 12px !important;
+            }
+            .title {
+              font-size: 18px !important;
+            }
+            .subtitle {
+              font-size: 11px !important;
+            }
+            .statBox {
+              padding: 8px 12px !important;
+              min-width: unset !important;
+              flex: 1 !important;
+            }
+            .statValue {
+              font-size: 14px !important;
+            }
+            .statLabel {
+              font-size: 9px !important;
+            }
+            .statIconBox {
+              width: 28px !important;
+              height: 28px !important;
+            }
+            .statIconBox svg {
+              width: 14px !important;
+              height: 14px !important;
+            }
+            .mobileCard {
+              padding: 12px !important;
+            }
+            .mobileCardName {
+              font-size: 14px !important;
+            }
+            .mobileCardInfoValue {
+              font-size: 13px !important;
+            }
+            .mobileLogisticsCard {
+              padding: 10px !important;
+            }
+            .mobileMemberName {
+              font-size: 13px !important;
+            }
+            .mobileLogisticsDetail {
+              font-size: 11px !important;
+            }
+            .modalContent {
+              max-width: 98% !important;
+              border-radius: 12px !important;
+            }
+            .modalTitle {
+              font-size: 14px !important;
+            }
+            .modalSubtitle {
+              font-size: 11px !important;
+            }
+            .modalDetail {
+              font-size: 10px !important;
+            }
+            .modalLabel {
+              font-size: 10px !important;
+            }
+            .modalValue {
+              font-size: 10px !important;
+            }
+          }
         `}
       </style>
     </div>
@@ -655,31 +1031,61 @@ const CardManager = () => {
 };
 
 // --- COMPONENTS ---
-const StatCard = ({ label, value, icon, color, bg }) => (
+const StatCard = ({ label, value, icon, color, bg, isMobile }) => (
   <motion.div 
     className="stat-card" 
-    style={styles.statBox}
+    style={{
+      ...styles.statBox,
+      padding: isMobile ? '10px 14px' : '14px 20px',
+      minWidth: isMobile ? 'auto' : '140px',
+      flex: isMobile ? 1 : 'none',
+    }}
     whileHover={{ y: -3, boxShadow: "0 8px 25px rgba(0,0,0,0.08)" }}
   >
-    <div style={{...styles.statIconBox, background: bg, color: color}}>
+    <div style={{
+      ...styles.statIconBox,
+      width: isMobile ? '32px' : '36px',
+      height: isMobile ? '32px' : '36px',
+      background: bg,
+      color: color,
+    }}>
       {icon}
     </div>
     <div>
-      <div style={styles.statLabel}>{label}</div>
-      <div style={{...styles.statValue, color: color}}>{value}</div>
+      <div style={{
+        ...styles.statLabel,
+        fontSize: isMobile ? '9px' : '11px',
+      }}>{label}</div>
+      <div style={{
+        ...styles.statValue,
+        fontSize: isMobile ? '16px' : '20px',
+        color: color,
+      }}>{value}</div>
     </div>
   </motion.div>
 );
 
-const EmptyState = ({ message }) => (
+const EmptyState = ({ message, isMobile }) => (
   <motion.div 
-    style={styles.emptyContainer}
+    style={{
+      ...styles.emptyContainer,
+      padding: isMobile ? '30px 16px' : '60px 20px',
+    }}
     initial={{ opacity: 0, scale: 0.9 }}
     animate={{ opacity: 1, scale: 1 }}
   >
-    <div style={styles.emptyIcon}>🌟</div>
-    <div style={styles.emptyText}>{message}</div>
-    <p style={styles.emptySubtext}>Everything is up to date</p>
+    <div style={{
+      ...styles.emptyIcon,
+      fontSize: isMobile ? '32px' : '48px',
+    }}>🌟</div>
+    <div style={{
+      ...styles.emptyText,
+      fontSize: isMobile ? '15px' : '18px',
+    }}>{message}</div>
+    <p style={{
+      ...styles.emptySubtext,
+      fontSize: isMobile ? '12px' : '13px',
+    }}>Everything is up to date</p>
   </motion.div>
 );
 
@@ -889,6 +1295,11 @@ const styles = {
     display: 'grid',
     gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
     gap: '20px'
+  },
+  mobileGrid: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '12px',
   },
   cardItem: {
     backgroundColor: '#fff',
@@ -1414,7 +1825,212 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     transition: 'all 0.2s ease'
-  }
+  },
+  // Mobile specific styles
+  mobileCard: {
+    backgroundColor: '#fff',
+    borderRadius: '16px',
+    padding: '16px',
+    border: '1px solid #e2e8f0',
+    boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
+  },
+  mobileCardHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '12px',
+  },
+  mobileCardUser: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '10px',
+  },
+  mobileCardName: {
+    margin: 0,
+    fontSize: '15px',
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  mobileRollBadge: {
+    fontSize: '10px',
+    fontWeight: '600',
+    color: '#08634f',
+    background: '#ecfdf5',
+    padding: '2px 10px',
+    borderRadius: '12px',
+    display: 'inline-block',
+  },
+  mobileViewBtn: {
+    padding: '6px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    cursor: 'pointer',
+    color: '#64748b',
+    transition: 'all 0.2s ease',
+  },
+  mobileImageContainer: {
+    height: '120px',
+    borderRadius: '10px',
+    overflow: 'hidden',
+    position: 'relative',
+    cursor: 'pointer',
+    border: '1px solid #f1f5f9',
+    marginBottom: '12px',
+  },
+  mobileReceiptImg: {
+    width: '100%',
+    height: '100%',
+    objectFit: 'cover',
+  },
+  mobileImgOverlay: {
+    position: 'absolute',
+    bottom: 0,
+    width: '100%',
+    padding: '6px',
+    background: 'rgba(0,0,0,0.7)',
+    textAlign: 'center',
+    fontSize: '11px',
+    fontWeight: '600',
+    color: '#fff',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '4px',
+  },
+  mobileCardFooter: {
+    display: 'flex',
+    gap: '12px',
+    marginBottom: '12px',
+    padding: '10px',
+    background: '#f8fafc',
+    borderRadius: '10px',
+  },
+  mobileCardInfo: {
+    flex: 1,
+    display: 'flex',
+    flexDirection: 'column',
+  },
+  mobileCardInfoLabel: {
+    fontSize: '9px',
+    color: '#94a3b8',
+    fontWeight: '600',
+    textTransform: 'uppercase',
+  },
+  mobileCardInfoValue: {
+    fontSize: '14px',
+    fontWeight: '700',
+    color: '#0f172a',
+  },
+  mobileActionRow: {
+    display: 'flex',
+    gap: '6px',
+  },
+  mobileApproveBtn: {
+    flex: 1,
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: '6px',
+    padding: '10px',
+    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    color: '#fff',
+    border: 'none',
+    borderRadius: '8px',
+    fontWeight: '700',
+    cursor: 'pointer',
+    fontSize: '13px',
+  },
+  mobileRejectBtn: {
+    padding: '10px 12px',
+    background: '#fff',
+    color: '#ef4444',
+    border: '1px solid #fee2e2',
+    borderRadius: '8px',
+    cursor: 'pointer',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  mobileLogisticsList: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '10px',
+    padding: '12px',
+  },
+  mobileLogisticsCard: {
+    backgroundColor: '#fff',
+    borderRadius: '14px',
+    padding: '14px',
+    border: '1px solid #e2e8f0',
+  },
+  mobileLogisticsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
+    marginBottom: '10px',
+  },
+  mobileMemberName: {
+    fontWeight: '600',
+    color: '#0f172a',
+    fontSize: '14px',
+  },
+  mobileMemberRoll: {
+    fontSize: '11px',
+    color: '#94a3b8',
+  },
+  mobileLogisticsStatus: {
+    display: 'flex',
+    alignItems: 'center',
+  },
+  mobileCheckbox: {
+    width: '18px',
+    height: '18px',
+    cursor: 'pointer',
+    accentColor: '#08634f',
+  },
+  mobileLogisticsDetails: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    marginBottom: '10px',
+    padding: '8px 0',
+    borderTop: '1px solid #f1f5f9',
+    borderBottom: '1px solid #f1f5f9',
+  },
+  mobileLogisticsDetail: {
+    display: 'flex',
+    alignItems: 'center',
+    gap: '6px',
+    fontSize: '12px',
+    color: '#475569',
+  },
+  mobileLogisticsAddress: {
+    fontSize: '11px',
+    color: '#94a3b8',
+    marginLeft: '20px',
+  },
+  mobileLogisticsFooter: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  mobileStatusBadge: {
+    padding: '3px 10px',
+    borderRadius: '6px',
+    fontSize: '10px',
+    fontWeight: '700',
+    display: 'inline-block',
+  },
+  mobileViewBtnSmall: {
+    padding: '6px',
+    borderRadius: '8px',
+    border: '1px solid #e2e8f0',
+    background: '#fff',
+    cursor: 'pointer',
+    color: '#64748b',
+    transition: 'all 0.2s ease',
+  },
 };
 
 // Helper functions
