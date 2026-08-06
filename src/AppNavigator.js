@@ -41,6 +41,7 @@ import AppStoreReviews from "./screens/roles/AppStoreReviews";
 import EventManagement from "./screens/EventManagement";
 import Discount from "./screens/Discount";
 import UniversitiesSection from "./screens/roles/UniversitiesSection";
+import BrandApprovalScreen from "./screens/BrandApprovalScreen";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -79,6 +80,7 @@ export default function AppNavigator() {
         <Route path="/package" element={<AdminPackageScreen />} />
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
+        <Route path="/BrandApprovalScreen" element={<BrandApprovalScreen />} />
         <Route path="/eventmanagement" element={<EventManagement />} />
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />

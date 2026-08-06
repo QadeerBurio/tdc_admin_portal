@@ -33,6 +33,9 @@ import CardManager from "./CardManager";
 import AdminPackage from "./AdminPackage";
 import EventManagement from "./EventManagement";
 
+// Import the component
+import BrandApprovalScreen from "./BrandApprovalScreen";
+
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -245,6 +248,12 @@ export default function AdminDashboard() {
       icon: <CalendarCheck size={20} />,
       section: "content"
     },
+     { 
+    id: "brand_approval", 
+    label: "Brand Approvals", 
+    icon: <UserCheck size={20} />,
+    section: "content"
+  },
     { 
       id: "students", 
       label: "All Students", 
@@ -506,6 +515,8 @@ export default function AdminDashboard() {
         return <AdminUserList role="employee" title="Employee Management" />;
       case "travelers": 
         return <AdminUserList role="traveler" title="Traveler Management" />;
+        case "brand_approval":
+  return <BrandApprovalScreen />;
       default: 
         return <div style={styles.placeholderSection}><h2>Section Under Construction</h2></div>;
     }
