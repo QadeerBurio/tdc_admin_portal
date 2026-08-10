@@ -165,9 +165,7 @@ body {
 .nav-logo:hover  {
   color: #E5B63E;
 }
-.logo-text:hover {
-  color: black;
-}
+.logo-text:hover
 
 .logo-suffix {
   background: '#000'

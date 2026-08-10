@@ -1,4 +1,4 @@
-// Signup.jsx - No Logo Upload Version
+// Signup.jsx - No Address Field Version
 import React, { useState } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
@@ -20,7 +20,6 @@ export default function Signup() {
     brandName: "",
     email: "",
     phone: "",
-    address: "",
     password: "",
     confirmPassword: "",
   });
@@ -135,13 +134,12 @@ export default function Signup() {
     try {
       setLoading(true);
 
-      // Create data object (no FormData needed since no file upload)
+      // Create data object without address
       const data = {
         role,
         email: formData.email,
         password: formData.password,
         phone: formData.phone,
-        address: formData.address || "",
       };
 
       // Add role-specific fields
@@ -209,7 +207,6 @@ export default function Signup() {
       <div className="signup-wrapper">
         <div className="signup-card">
           <div className="brand-section">
-            
             <h2 className="brand-title">The Deft <span className="brand-suffix">Crew</span></h2>
             <p className="brand-subtitle">Create your account and join the network</p>
           </div>
@@ -233,7 +230,6 @@ export default function Signup() {
                   <option value="">-- Choose Your Role --</option>
                   <option value="brand">Brand</option>
                   <option value="employee">Employer</option>
-                  
                 </select>
                 <div className="select-arrow">
                   <i className="fas fa-chevron-down"></i>
@@ -326,27 +322,6 @@ export default function Signup() {
                   Must be 11 digits starting with 0 (e.g., 03001234567)
                 </div>
               )}
-            </div>
-
-            {/* Address Field */}
-            <div className="input-group">
-              <label className={focusedField === 'address' ? 'focused' : ''}>
-                <i className="fas fa-map-marker-alt"></i>
-                Address
-              </label>
-              <div className="input-wrapper">
-                <input
-                  type="text"
-                  name="address"
-                  placeholder="Your location"
-                  value={formData.address}
-                  onChange={handleChange}
-                  onFocus={() => handleFocus('address')}
-                  onBlur={() => handleBlur('address')}
-                  className={focusedField === 'address' ? 'focused' : ''}
-                />
-                <div className="input-highlight"></div>
-              </div>
             </div>
 
             {/* Password Field */}
