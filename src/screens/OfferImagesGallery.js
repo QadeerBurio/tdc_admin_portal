@@ -8,6 +8,7 @@ const OfferImagesGallery = () => {
   const [error, setError] = useState(null);
   const [selectedOffer, setSelectedOffer] = useState(null);
   const [hoveredOffer, setHoveredOffer] = useState(null);
+  const [showAllBrands, setShowAllBrands] = useState(false);
   const scrollRef = useRef(null);
   const [isDragging, setIsDragging] = useState(false);
   const [startX, setStartX] = useState(0);
@@ -36,7 +37,6 @@ const OfferImagesGallery = () => {
         }
       );
 
-      // Filter out offers that don't have images or are invalid
       const validOffers = (response.data.offers || []).filter(offer => 
         offer.image && 
         offer.image !== null && 
@@ -61,6 +61,16 @@ const OfferImagesGallery = () => {
 
   const closeModal = () => {
     setSelectedOffer(null);
+    document.body.style.overflow = 'auto';
+  };
+
+  const handleViewAll = () => {
+    setShowAllBrands(true);
+    document.body.style.overflow = 'hidden';
+  };
+
+  const closeAllBrands = () => {
+    setShowAllBrands(false);
     document.body.style.overflow = 'auto';
   };
 
@@ -96,7 +106,7 @@ const OfferImagesGallery = () => {
   };
 
   useEffect(() => {
-    if (!autoScroll || offers.length === 0) return;
+    if (!autoScroll || offers.length === 0 || showAllBrands) return;
 
     const container = scrollRef.current;
     if (!container) return;
@@ -113,7 +123,7 @@ const OfferImagesGallery = () => {
     }, 30);
 
     return () => clearInterval(interval);
-  }, [offers, autoScroll]);
+  }, [offers, autoScroll, showAllBrands]);
 
   if (loading) {
     return (
@@ -161,7 +171,14 @@ const OfferImagesGallery = () => {
           <h2 className="gallery-title">Trusted By Industries Brands</h2>
           <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
         </div>
-        
+        <div className="header-actions">
+          <button className="view-all-btn" onClick={handleViewAll}>
+            <span>View All</span>
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="gallery-wrapper">
@@ -210,7 +227,60 @@ const OfferImagesGallery = () => {
         </div>
       </div>
 
-      {/* Modal */}
+      {/* All Brands Modal */}
+      {showAllBrands && (
+        <div className="modal-overlay" onClick={closeAllBrands}>
+          <div className="modal-content all-brands-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="all-brands-header">
+              <div className="all-brands-title-section">
+                <span className="all-brands-badge">All Brands</span>
+                <h2 className="all-brands-title">Our Partner Brands</h2>
+                <p className="all-brands-subtitle">{offers.length} trusted brands</p>
+              </div>
+              <button className="modal-close all-brands-close" onClick={closeAllBrands}>
+                <svg viewBox="0 0 24 24" width="24" height="24">
+                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                </svg>
+              </button>
+            </div>
+            
+            <div className="all-brands-grid">
+              {offers.map((offer, index) => (
+                <div 
+                  key={offer.offerId || index} 
+                  className="all-brand-item"
+                  onClick={() => {
+                    closeAllBrands();
+                    handleImageClick(offer);
+                  }}
+                  style={{ animationDelay: `${index * 0.03}s` }}
+                >
+                  <div className="all-brand-image-wrapper">
+                    <img 
+                      src={offer.image} 
+                      alt={offer.title || 'Brand'}
+                      className="all-brand-image"
+                      loading="lazy"
+                      onError={(e) => {
+                        e.target.src = 'https://via.placeholder.com/120x120?text=Brand';
+                      }}
+                    />
+                    
+                  </div>
+                  <h4 className="all-brand-name">{offer.title || 'Brand'}</h4>
+                  <span className="all-brand-category">{offer.category || 'General'}</span>
+                </div>
+              ))}
+            </div>
+
+            <div className="all-brands-footer">
+              <span className="all-brands-count">{offers.length} Brands Available</span>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Single Offer Modal */}
       {selectedOffer && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
@@ -221,7 +291,6 @@ const OfferImagesGallery = () => {
             </button>
             
             <div className="modal-image-container">
-            
               <div className="modal-image-wrapper">
                 <img 
                   src={selectedOffer.image} 
@@ -230,7 +299,6 @@ const OfferImagesGallery = () => {
                   onError={(e) => {
                     e.target.src = 'https://via.placeholder.com/400x400?text=Offer';
                   }}
-                  
                 />
                 <div className="modal-floating-badge">
                   <span className="badge-discount">{selectedOffer.discountPercentage || 0}% OFF</span>
@@ -241,8 +309,6 @@ const OfferImagesGallery = () => {
             <div className="modal-details">
               <div className="modal-category-tag">{selectedOffer.category || 'General'}</div>
               <h2 className="modal-title">{selectedOffer.title || 'Offer'}</h2>
-              
-              
               
               <button className="modal-action-btn">
                 <span>View Brands</span>
