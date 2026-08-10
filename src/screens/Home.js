@@ -231,7 +231,7 @@ export default function Home() {
 
   const handleCloseDiscountModal = () => {
     if (!hasOffers) {
-      setNotificationMessage("Please create your first offer to get started!");
+      setNotificationMessage("Please create your first Discount to get started!");
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 4000);
       return;
@@ -933,8 +933,8 @@ export default function Home() {
                     <FaRocket size={24} color="#d97706" />
                   </div>
                   <div>
-                    <h2 style={styles.discountModalTitle}>Create Your First Offer! 🎯</h2>
-                    <p style={styles.discountModalSubtitle}>You haven't created any offers yet</p>
+                    <h2 style={styles.discountModalTitle}>Create Your First Discount!</h2>
+                    <p style={styles.discountModalSubtitle}>You haven't created any Discount Offer yet</p>
                   </div>
                 </div>
                 <button style={styles.discountModalClose} onClick={handleCloseDiscountModal}>

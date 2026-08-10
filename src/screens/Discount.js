@@ -24,7 +24,7 @@ import {
   FaSignOutAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
-import { AuthContext } from "../context/AuthContext"; // Adjust the import path as needed
+import { AuthContext } from "../context/AuthContext";
 
 const API_BASE_URL = "https://the-deft-crew-production.up.railway.app/api/offers";
 const CATEGORIES = [
@@ -51,15 +51,12 @@ const CATEGORIES = [
   "Others"
 ];
 
-// Discount policy constants
 const MIN_DISCOUNT = 15;
 const MAX_DISCOUNT = 60;
-
-// Discount percentage options
 const DISCOUNT_OPTIONS = [15, 20, 25, 30, 35, 40, 45, 50, 60];
 
 const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the Offers section.
-2. Browse Brand and select the offer you want.
+2. Browse Brand and select the Discount you want.
 3. Save the discount offer in the app.
 4. Visit the participating brand/store offering the discount.
 5. Ask the staff to scan your TDC QR code to verify your discount.
@@ -68,7 +65,7 @@ const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the
 
 export default function Discount({ onOfferCreated }) {
   const navigate = useNavigate();
-  const { logout } = useContext(AuthContext); // Use AuthContext for logout
+  const { logout } = useContext(AuthContext);
   
   const [form, setForm] = useState({
     title: "",
@@ -90,9 +87,7 @@ export default function Discount({ onOfferCreated }) {
   const [focusedField, setFocusedField] = useState(null);
   const [showErrorSummary, setShowErrorSummary] = useState(false);
 
-  // Logout handler using AuthContext
   const handleLogout = () => {
-    // Call the logout function from AuthContext
     logout();
   };
 
@@ -100,19 +95,16 @@ export default function Discount({ onOfferCreated }) {
     const newErrors = {};
     let hasError = false;
 
-    // Brand Name validation
     if (!form.title.trim()) {
       newErrors.title = "Brand name is required";
       hasError = true;
     }
 
-    // Description validation
     if (!form.description.trim()) {
       newErrors.description = "Description is required";
       hasError = true;
     }
 
-    // Discount Percentage validation
     if (!form.discountPercentage) {
       newErrors.discountPercentage = "Discount percentage is required";
       hasError = true;
@@ -130,31 +122,26 @@ export default function Discount({ onOfferCreated }) {
       }
     }
 
-    // Category validation
     if (!form.category) {
       newErrors.category = "Category is required";
       hasError = true;
     }
 
-    // Image validation
     if (!image) {
       newErrors.image = "Brand Logo is required";
       hasError = true;
     }
 
-    // Location validation
     if (!form.location.trim()) {
       newErrors.location = "Store location is required";
       hasError = true;
     }
 
-    // Availability validation - at least one must be selected
     if (!form.isOnline && !form.isInStore) {
       newErrors.availability = "Please select at least one availability option (Online or In-Store)";
       hasError = true;
     }
 
-    // Redemption Instructions validation
     if (!form.redeemInstructions.trim()) {
       newErrors.redeemInstructions = "Redemption instructions are required";
       hasError = true;
@@ -164,7 +151,6 @@ export default function Discount({ onOfferCreated }) {
     setShowErrorSummary(hasError);
     
     if (hasError) {
-      // Scroll to first error
       const firstErrorField = document.querySelector('.error-text');
       if (firstErrorField) {
         setTimeout(() => {
@@ -219,19 +205,16 @@ export default function Discount({ onOfferCreated }) {
       setUploadProgress(100);
       setShowSuccess(true);
 
-      // Call the callback prop if provided (for modal usage)
       if (onOfferCreated) {
         setTimeout(() => {
           onOfferCreated();
         }, 500);
       } else {
-        // If not in modal, navigate to home after success
         setTimeout(() => {
           navigate("/home");
         }, 1500);
       }
 
-      // Reset form after success
       setTimeout(() => {
         setForm({
           title: "", description: "", discountPercentage: "", category: "",
@@ -248,7 +231,7 @@ export default function Discount({ onOfferCreated }) {
 
     } catch (error) {
       console.error("Upload Error:", error.response?.data || error.message);
-      alert(error.response?.data?.message || "Error creating offer. Please try again.");
+      alert(error.response?.data?.message || "Error creating Discount. Please try again.");
     } finally {
       setLoading(false);
     }
@@ -267,7 +250,6 @@ export default function Discount({ onOfferCreated }) {
     if (errors[id]) {
       setErrors({ ...errors, [id]: undefined });
     }
-    // Clear error summary when user starts fixing errors
     if (showErrorSummary) {
       const remainingErrors = { ...errors };
       delete remainingErrors[id];
@@ -292,8 +274,6 @@ export default function Discount({ onOfferCreated }) {
   };
 
   const isFocused = (field) => focusedField === field;
-
-  // Count total errors
   const totalErrors = Object.keys(errors).length;
 
   return (
@@ -323,7 +303,6 @@ export default function Discount({ onOfferCreated }) {
         )}
       </AnimatePresence>
 
-      {/* Error Summary Banner */}
       <AnimatePresence>
         {showErrorSummary && totalErrors > 0 && (
           <motion.div
@@ -349,7 +328,6 @@ export default function Discount({ onOfferCreated }) {
         )}
       </AnimatePresence>
 
-      {/* Header */}
       <div style={styles.header}>
         <div style={styles.headerLeft}>
           <div style={styles.headerIcon}>
@@ -383,7 +361,6 @@ export default function Discount({ onOfferCreated }) {
         </div>
       </div>
 
-      {/* Progress Bar */}
       {loading && (
         <motion.div
           initial={{ opacity: 0, height: 0 }}
@@ -404,10 +381,8 @@ export default function Discount({ onOfferCreated }) {
         </motion.div>
       )}
 
-      {/* Main Form */}
-      <div style={styles.formGrid}>
+      <div style={styles.formWrapper}>
         <div style={styles.formMain}>
-          {/* Image Upload */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Brand Logo <span style={styles.required}>*</span>
@@ -430,7 +405,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.image && <p style={styles.errorText}>{errors.image}</p>}
           </div>
 
-          {/* Brand Name */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Brand Name <span style={styles.required}>*</span>
@@ -449,7 +423,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.title && <p style={styles.errorText}>{errors.title}</p>}
           </div>
 
-          {/* Description */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Description <span style={styles.required}>*</span>
@@ -459,7 +432,7 @@ export default function Discount({ onOfferCreated }) {
                 ...styles.textarea,
                 borderColor: errors.description ? '#ef4444' : isFocused('description') ? '#f59e0b' : '#e2e8f0',
               }}
-              placeholder="Describe your offer in detail..."
+              placeholder="Describe your Discount in detail..."
               rows={3}
               value={form.description}
               onFocus={() => setFocusedField('description')}
@@ -469,7 +442,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.description && <p style={styles.errorText}>{errors.description}</p>}
           </div>
 
-          {/* Category & Discount */}
           <div style={styles.row}>
             <div style={{ ...styles.fieldGroup, flex: 2 }}>
               <label style={styles.label}>
@@ -513,17 +485,16 @@ export default function Discount({ onOfferCreated }) {
                   <option key={value} value={value}>{value}%</option>
                 ))}
               </select>
-              <div style={styles.discountPolicy}>
+              {/* <div style={styles.discountPolicy}>
                 <span style={styles.policyIcon}>ℹ️</span>
                 <span style={styles.policyText}>
                   Must <strong>{MIN_DISCOUNT}%</strong> to <strong>{MAX_DISCOUNT}%</strong>
                 </span>
-              </div>
+              </div> */}
               {errors.discountPercentage && <p style={styles.errorText}>{errors.discountPercentage}</p>}
             </div>
           </div>
 
-          {/* Location */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Store Location <span style={styles.required}>*</span>
@@ -542,7 +513,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.location && <p style={styles.errorText}>{errors.location}</p>}
           </div>
 
-          {/* Availability */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Availability <span style={styles.required}>*</span>
@@ -570,7 +540,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.availability && <p style={styles.errorText}>{errors.availability}</p>}
           </div>
 
-          {/* Redemption Instructions */}
           <div style={styles.fieldGroup}>
             <label style={styles.label}>
               Redemption Instructions <span style={styles.required}>*</span>
@@ -581,7 +550,7 @@ export default function Discount({ onOfferCreated }) {
                 borderColor: errors.redeemInstructions ? '#ef4444' : isFocused('instructions') ? '#f59e0b' : '#e2e8f0',
                 minHeight: '100px',
               }}
-              placeholder="How can students redeem this offer?"
+              placeholder="How can students redeem this Discount?"
               rows={4}
               value={form.redeemInstructions}
               onFocus={() => setFocusedField('instructions')}
@@ -591,7 +560,6 @@ export default function Discount({ onOfferCreated }) {
             {errors.redeemInstructions && <p style={styles.errorText}>{errors.redeemInstructions}</p>}
           </div>
 
-          {/* Submit */}
           <button
             style={{ ...styles.submitBtn, opacity: loading ? 0.6 : 1 }}
             onClick={createOffer}
@@ -604,72 +572,11 @@ export default function Discount({ onOfferCreated }) {
               </>
             ) : (
               <>
-                Publish Offer
+                Publish Discount
                 <FaArrowRight style={styles.btnArrow} />
               </>
             )}
           </button>
-        </div>
-
-        {/* Sidebar */}
-        <div style={styles.sidebar}>
-          {/* Preview Card */}
-          <div style={styles.previewCard}>
-            <div style={styles.previewHeader}>
-              <span>Preview</span>
-            </div>
-            <div style={styles.previewBody}>
-              <div style={styles.previewBadge}>
-                {form.discountPercentage || '0'}% OFF
-              </div>
-              <p style={styles.previewTitle}>
-                {form.title || 'Brand Name'}
-              </p>
-              <p style={styles.previewCategory}>
-                {form.category || 'Category'}
-              </p>
-              <div style={styles.previewTags}>
-                {form.isOnline && <span style={styles.previewTag}>🌐 Online</span>}
-                {form.isInStore && <span style={styles.previewTag}>🏪 In-Store</span>}
-              </div>
-              {!form.isOnline && !form.isInStore && (
-                <p style={styles.previewEmpty}>Select availability</p>
-              )}
-            </div>
-          </div>
-
-          {/* Policy Card */}
-          <div style={styles.policyCard}>
-            <div style={styles.policyCardHeader}>
-              <FaShieldAlt size={16} color="#f59e0b" />
-              <span style={styles.policyCardTitle}>Discount Policy</span>
-            </div>
-            <ul style={styles.policyCardList}>
-              <li>Minimum discount: <strong>{MIN_DISCOUNT}%</strong></li>
-              <li>Maximum discount: <strong>{MAX_DISCOUNT}%</strong></li>
-              <li>Available options: 15%, 20%, 25%, 30%, 35%, 40%, 45%, 50%, 60%</li>
-              <li>Offers must provide meaningful student savings</li>
-              <li>All discounts are verified before publishing</li>
-            </ul>
-          </div>
-
-          {/* Tips */}
-          <div style={styles.tipsCard}>
-            <p style={styles.tipsTitle}>💡 Tips</p>
-            <ul style={styles.tipsList}>
-              <li>Use a clear brand name</li>
-              <li>Add a compelling description</li>
-              <li>Upload a quality image</li>
-              <li>Choose the right category</li>
-              <li>Provide clear redemption instructions</li>
-            </ul>
-          </div>
-
-          {/* Info */}
-          <div style={styles.infoCard}>
-            <FaShieldAlt size={16} color="#f59e0b" />
-            <p style={styles.infoText}>Visible to all students instantly</p>
-          </div>
         </div>
       </div>
 
@@ -709,6 +616,141 @@ export default function Discount({ onOfferCreated }) {
             background-color: #dc2626 !important;
             transform: scale(1.02) !important;
           }
+          
+          /* Mobile responsive styles */
+          @media (max-width: 768px) {
+            .container {
+              margin: 10px !important;
+              border-radius: 8px !important;
+            }
+            .formWrapper {
+              padding: 16px !important;
+            }
+            .row {
+              grid-template-columns: 1fr 1fr !important;
+              gap: 10px !important;
+            }
+            .header {
+              padding: 14px 16px !important;
+            }
+            .headerRight {
+              gap: 8px !important;
+            }
+            .headerBadge {
+              display: none !important;
+            }
+            .mainTitle {
+              font-size: 16px !important;
+            }
+            .subTitle {
+              font-size: 12px !important;
+            }
+            .errorBanner {
+              margin: 0 12px !important;
+            }
+            select {
+              font-size: 14px !important;
+            }
+          }
+          
+          @media (max-width: 480px) {
+            .container {
+              margin: 0 !important;
+              border-radius: 0 !important;
+            }
+            .formWrapper {
+              padding: 12px !important;
+            }
+            .row {
+              grid-template-columns: 1fr !important;
+            }
+            .formMain {
+              gap: 14px !important;
+            }
+            .header {
+              padding: 10px 12px !important;
+            }
+            .headerLeft {
+              gap: 8px !important;
+            }
+            .headerIcon {
+              width: 28px !important;
+              height: 28px !important;
+              font-size: 12px !important;
+            }
+            .mainTitle {
+              font-size: 15px !important;
+            }
+            .subTitle {
+              font-size: 11px !important;
+            }
+            .successModal {
+              padding: 20px !important;
+            }
+            .successTitle {
+              font-size: 18px !important;
+            }
+            .checkboxGroup {
+              flex-direction: column !important;
+              gap: 6px !important;
+            }
+            .checkboxLabel {
+              padding: 8px 12px !important;
+              font-size: 12px !important;
+            }
+            .errorBanner {
+              margin: 0 8px !important;
+              padding: 8px 12px !important;
+            }
+            .errorBannerContent {
+              flex-wrap: wrap !important;
+              gap: 6px !important;
+            }
+            .errorBannerText {
+              font-size: 12px !important;
+            }
+            .logoutBtn {
+              padding: 4px 8px !important;
+              font-size: 11px !important;
+            }
+            .logoutBtn span {
+              display: none !important;
+            }
+            .headerRight {
+              gap: 4px !important;
+            }
+            select {
+              font-size: 13px !important;
+              padding: 8px 10px !important;
+            }
+            input, textarea {
+              font-size: 13px !important;
+              padding: 8px 10px !important;
+            }
+            .label {
+              font-size: 12px !important;
+            }
+            .discountPolicy {
+              font-size: 10px !important;
+              padding: 3px 8px !important;
+            }
+            .uploadBox {
+              padding: 16px !important;
+            }
+            .uploadText {
+              font-size: 12px !important;
+            }
+            .uploadHint {
+              font-size: 10px !important;
+            }
+            .imagePreview {
+              height: 120px !important;
+            }
+            .submitBtn {
+              padding: 8px 16px !important;
+              font-size: 13px !important;
+            }
+          }
         `}
       </style>
     </div>
@@ -717,7 +759,8 @@ export default function Discount({ onOfferCreated }) {
 
 const styles = {
   container: {
-    maxWidth: "980px",
+    maxWidth: "800px",
+    width: "100%",
     margin: "20px auto",
     background: "#ffffff",
     borderRadius: "12px",
@@ -898,22 +941,16 @@ const styles = {
     fontSize: "12px",
     color: "#94a3b8",
   },
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "1.4fr 0.6fr",
-    gap: "28px",
+  formWrapper: {
     padding: "28px",
     background: "#ffffff",
+    maxWidth: "700px",
+    margin: "0 auto",
   },
   formMain: {
     display: "flex",
     flexDirection: "column",
     gap: "18px",
-  },
-  sidebar: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "14px",
   },
   fieldGroup: {
     display: "flex",
@@ -982,18 +1019,6 @@ const styles = {
     display: "grid",
     gridTemplateColumns: "2fr 1fr",
     gap: "14px",
-  },
-  discountWrapper: {
-    position: "relative",
-  },
-  discountSuffix: {
-    position: "absolute",
-    right: "12px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    fontSize: "14px",
-    color: "#94a3b8",
-    fontWeight: "500",
   },
   discountPolicy: {
     display: "flex",
@@ -1104,211 +1129,4 @@ const styles = {
   spinnerIcon: {
     fontSize: "16px",
   },
-  previewCard: {
-    background: "#ffffff",
-    border: "1px solid #f1f5f9",
-    borderRadius: "8px",
-    overflow: "hidden",
-  },
-  previewHeader: {
-    padding: "10px 14px",
-    background: "#fafbfc",
-    borderBottom: "1px solid #f1f5f9",
-    fontSize: "12px",
-    fontWeight: "500",
-    color: "#94a3b8",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  previewBody: {
-    padding: "14px",
-  },
-  previewBadge: {
-    display: "inline-block",
-    background: "#fef3c7",
-    color: "#d97706",
-    padding: "2px 10px",
-    borderRadius: "4px",
-    fontSize: "13px",
-    fontWeight: "600",
-    marginBottom: "6px",
-  },
-  previewTitle: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#0f172a",
-    margin: "0 0 2px 0",
-  },
-  previewCategory: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    margin: 0,
-  },
-  previewTags: {
-    display: "flex",
-    gap: "6px",
-    marginTop: "8px",
-    flexWrap: "wrap",
-  },
-  previewTag: {
-    fontSize: "11px",
-    color: "#64748b",
-    background: "#f1f5f9",
-    padding: "2px 10px",
-    borderRadius: "4px",
-  },
-  previewEmpty: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    margin: "8px 0 0 0",
-    fontStyle: "italic",
-  },
-  policyCard: {
-    background: "#fef3c7",
-    padding: "14px 16px",
-    borderRadius: "8px",
-    border: "1px solid #fde68a",
-  },
-  policyCardHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    marginBottom: "8px",
-  },
-  policyCardTitle: {
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#92400e",
-  },
-  policyCardList: {
-    margin: 0,
-    paddingLeft: "18px",
-    fontSize: "12px",
-    color: "#78350f",
-    lineHeight: "1.8",
-  },
-  tipsCard: {
-    background: "#fafbfc",
-    padding: "14px 16px",
-    borderRadius: "8px",
-    border: "1px solid #f1f5f9",
-  },
-  tipsTitle: {
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#334155",
-    margin: "0 0 6px 0",
-  },
-  tipsList: {
-    margin: 0,
-    paddingLeft: "18px",
-    fontSize: "13px",
-    color: "#64748b",
-    lineHeight: "1.8",
-  },
-  infoCard: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "10px 14px",
-    background: "#fef3c7",
-    borderRadius: "8px",
-    border: "1px solid #fde68a",
-  },
-  infoText: {
-    fontSize: "13px",
-    color: "#92400e",
-    margin: 0,
-  },
 };
-
-// Add responsive styles
-const styleSheet = document.createElement("style");
-styleSheet.textContent = `
-  @media (max-width: 768px) {
-    .formGrid {
-      grid-template-columns: 1fr !important;
-      padding: 16px !important;
-    }
-    .row {
-      grid-template-columns: 1fr 1fr !important;
-    }
-    .header {
-      padding: 16px 20px !important;
-    }
-    .headerRight {
-      width: 100% !important;
-      justify-content: flex-end !important;
-    }
-    .headerBadge {
-      display: none !important;
-    }
-    .mainTitle {
-      font-size: 16px !important;
-    }
-    .subTitle {
-      font-size: 12px !important;
-    }
-    .errorBanner {
-      margin: 0 16px !important;
-    }
-    select {
-      font-size: 14px !important;
-    }
-  }
-  @media (max-width: 480px) {
-    .row {
-      grid-template-columns: 1fr !important;
-    }
-    .formGrid {
-      padding: 12px !important;
-      gap: 16px !important;
-    }
-    .formMain {
-      gap: 12px !important;
-    }
-    .header {
-      padding: 12px 16px !important;
-    }
-    .sidebar {
-      gap: 10px !important;
-    }
-    .successModal {
-      padding: 24px !important;
-    }
-    .successTitle {
-      font-size: 18px !important;
-    }
-    .checkboxGroup {
-      flex-direction: column !important;
-    }
-    .errorBanner {
-      margin: 0 12px !important; 
-    }
-    .errorBannerContent {
-      flex-wrap: wrap !important;
-    }
-    .headerBadge {
-      display: none !important;
-    }
-    .logoutBtn {
-      padding: 5px 10px !important;
-      font-size: 12px !important;
-    }
-    .logoutBtn span {
-      display: none !important;
-    }
-    .headerRight {
-      gap: 6px !important;
-    }
-    select {
-      font-size: 13px !important;
-      padding: 8px 10px !important;
-    }
-    .discountPolicy {
-      font-size: 11px !important;
-      padding: 3px 8px !important;
-    }
-  }
-`;
-document.head.appendChild(styleSheet);
