@@ -450,7 +450,7 @@ const Landing = () => {
               href="/brands"
               onClick={(e) => {
                 e.preventDefault();
-                navigate("/brands");
+                navigate("/signup");
                 setMobileMenuOpen(false);
               }}
             >
@@ -460,7 +460,7 @@ const Landing = () => {
               href="/company_profile"
               onClick={(e) => {
                 e.preventDefault();
-                navigate("/company_profile");
+                navigate("/signup");
                 setMobileMenuOpen(false);
               }}
             >
@@ -468,8 +468,8 @@ const Landing = () => {
             </a>
             <div className="nav-actions">
               <button className="nav-login-btn" onClick={handleLoginClick}>
-                <FaUser />
-                <span>Login</span>
+                <FaUser  />
+                <p>Login</p>
               </button>
             </div>
           </div>

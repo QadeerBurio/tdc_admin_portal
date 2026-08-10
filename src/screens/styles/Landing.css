@@ -162,8 +162,11 @@ body {
   font-weight: 900;
 }
 
-.nav-logo:hover .logo-text {
+.nav-logo:hover  {
   color: #E5B63E;
+}
+.logo-text:hover {
+  color: black;
 }
 
 .logo-suffix {
@@ -307,12 +310,12 @@ body {
 }
 
 /* ── Button Content ──────────────────────────────────────────────────────── */
-.nav-login-btn span,
+/* .nav-login-btn span,
 .nav-login-btn svg {
   position: relative;
   z-index: 1;
   transition: all 0.3s ease;
-}
+} */
 
 .nav-login-btn:hover {
   color: #1a1a1a;
