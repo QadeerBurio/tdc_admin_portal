@@ -171,14 +171,7 @@ const OfferImagesGallery = () => {
           <h2 className="gallery-title">Trusted By Industries Brands</h2>
           <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
         </div>
-        <div className="header-actions">
-          <button className="view-all-btn" onClick={handleViewAll}>
-            <span>View All</span>
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
+       
       </div>
 
       <div className="gallery-wrapper">
@@ -226,6 +219,14 @@ const OfferImagesGallery = () => {
           ))}
         </div>
       </div>
+       <div className="header-actions">
+          <button className="view-all-btn" onClick={handleViewAll}>
+            <span>View All</span>
+            <svg viewBox="0 0 24 24" width="18" height="18">
+              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+            </svg>
+          </button>
+        </div>
 
       {/* All Brands Modal */}
       {showAllBrands && (

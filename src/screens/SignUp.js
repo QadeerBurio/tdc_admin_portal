@@ -1,11 +1,13 @@
-// Signup.jsx - No Address Field Version
-import React, { useState } from "react";
+// Signup.jsx - With Auto-Login and Role-Based Redirect
+import React, { useState, useContext } from "react";
 import axios from "axios";
 import { useNavigate } from "react-router-dom";
+import { AuthContext } from "../context/AuthContext";
 import "./styles/Signup.css";
 import signupImage from "../assets/login.jpeg";
 
 export default function Signup() {
+  const { setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
@@ -14,6 +16,7 @@ export default function Signup() {
   const [focusedField, setFocusedField] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
+  const [error, setError] = useState("");
 
   const [formData, setFormData] = useState({
     fullName: "",
@@ -33,6 +36,7 @@ export default function Signup() {
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+    setError("");
   };
 
   const handleBlur = (field) => {
@@ -42,6 +46,7 @@ export default function Signup() {
 
   const handleFocus = (field) => {
     setFocusedField(field);
+    setError("");
   };
 
   const isFieldValid = (field) => {
@@ -95,8 +100,33 @@ export default function Signup() {
     }
   };
 
+  // Auto-login function
+  const autoLogin = async (email, password) => {
+    try {
+      const res = await axios.post(
+        "https://the-deft-crew-production.up.railway.app/api/auth/login",
+        { email, password }
+      );
+
+      const { token, user } = res.data;
+
+      // Set authorization header
+      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+
+      // Update auth context
+      setToken(token);
+      setUser(user);
+
+      return { success: true, user };
+    } catch (error) {
+      console.error("Auto-login failed:", error);
+      return { success: false, error: error.response?.data?.message || "Auto-login failed" };
+    }
+  };
+
   const handleSignup = async (e) => {
     e.preventDefault();
+    setError("");
 
     // Validate all fields
     const allFields = {
@@ -127,7 +157,7 @@ export default function Signup() {
     if (!agreeTerms) errors.push("Please agree to the Terms & Conditions");
 
     if (errors.length > 0) {
-      alert(errors.join("\n"));
+      setError(errors.join("\n"));
       return;
     }
 
@@ -156,6 +186,7 @@ export default function Signup() {
         password: '[HIDDEN]'
       });
 
+      // Signup API call
       const response = await axios.post(
         "https://the-deft-crew-production.up.railway.app/api/auth/signup",
         data,
@@ -167,14 +198,36 @@ export default function Signup() {
       );
 
       console.log("✅ Signup successful:", response.data);
-      alert(`${role.charAt(0).toUpperCase() + role.slice(1)} account created successfully!`);
-      navigate("/login");
+
+      // Try auto-login
+      const loginResult = await autoLogin(formData.email, formData.password);
+
+      if (loginResult.success) {
+        const { user } = loginResult;
+        
+        // Redirect based on role
+        if (user.role === "admin") {
+          navigate("/admin");
+        } else if (user.role === "brand") {
+          navigate("/discount");
+        } else if (user.role === "employee") {
+          navigate("/employee-dashboard");
+        } else if (user.role === "traveler") {
+          navigate("/traveler-dashboard");
+        } else {
+          navigate("/home");
+        }
+      } else {
+        // If auto-login fails, redirect to login page
+        alert(`${role.charAt(0).toUpperCase() + role.slice(1)} account created successfully! Please login.`);
+        navigate("/login");
+      }
 
     } catch (err) {
       console.error("❌ Signup error:", err);
       console.error("Error response:", err.response?.data);
       const errorMessage = err.response?.data?.error || err.response?.data?.message || "Signup failed";
-      alert(`❌ ${errorMessage}`);
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
@@ -210,6 +263,13 @@ export default function Signup() {
             <h2 className="brand-title">The Deft <span className="brand-suffix">Crew</span></h2>
             <p className="brand-subtitle">Create your account and join the network</p>
           </div>
+
+          {error && (
+            <div className="error-message-global">
+              <i className="fas fa-exclamation-circle"></i>
+              {error}
+            </div>
+          )}
 
           <form className="signup-form" onSubmit={handleSignup} noValidate>
             {/* Role Selection */}
