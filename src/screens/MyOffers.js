@@ -8,7 +8,7 @@ import {
   FaArrowRight, FaPercent, FaSpinner, FaEye,
   FaSearch, FaGlobe, FaInfoCircle, FaThList, FaThLarge,
   FaChartLine, FaUsers, FaClock, FaGift, FaStar, FaTag,
-  FaArrowUp, FaFilter, FaChevronDown, FaCrown
+  FaArrowUp, FaFilter, FaChevronDown, FaCrown, FaDownload
 } from "react-icons/fa";
 import { MdVerified, MdOutlineDashboard } from "react-icons/md";
 import { HiOutlineTrendingUp, HiOutlineSparkles } from "react-icons/hi";
@@ -32,6 +32,7 @@ export default function MyOffers() {
   const [discountError, setDiscountError] = useState("");
   const [viewMode, setViewMode] = useState("grid");
   const [showFilters, setShowFilters] = useState(false);
+  const [downloading, setDownloading] = useState(null);
 
   // Discount options for dropdown
   const discountOptions = [15, 20, 25, 30, 35, 40, 45, 50, 60];
@@ -70,6 +71,36 @@ export default function MyOffers() {
       return `https://res.cloudinary.com/${CLOUDINARY_NAME}/image/upload/${imagePath}`;
     }
     return `${BASE_URL}/uploads/offers/${imagePath}`;
+  };
+
+  const downloadImage = async (offerId, imageUrl, title) => {
+    setDownloading(offerId);
+    try {
+      // Fetch the image as a blob
+      const response = await fetch(imageUrl);
+      const blob = await response.blob();
+      
+      // Create a download link
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(blob);
+      
+      // Create filename from offer title
+      const sanitizedTitle = title?.replace(/[^a-z0-9]/gi, '_').toLowerCase() || 'offer';
+      link.download = `${sanitizedTitle}_${offerId}.jpg`;
+      
+      // Trigger download
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      
+      // Clean up the URL object
+      setTimeout(() => URL.revokeObjectURL(link.href), 100);
+    } catch (error) {
+      console.error("Download failed:", error);
+      alert("Failed to download image. Please try again.");
+    } finally {
+      setDownloading(null);
+    }
   };
 
   const openEditModal = (offer) => {
@@ -346,6 +377,19 @@ export default function MyOffers() {
                   <span style={styles.statusDot}></span>
                   <span>Active</span>
                 </div>
+                {/* Download Button */}
+                <button 
+                  style={styles.downloadBtn}
+                  onClick={() => downloadImage(offer._id, getImageUrl(offer.image), offer.title)}
+                  disabled={downloading === offer._id}
+                  title="Download image"
+                >
+                  {downloading === offer._id ? (
+                    <FaSpinner size={14} style={{animation: 'spin 1s linear infinite'}} />
+                  ) : (
+                    <FaDownload size={14} />
+                  )}
+                </button>
               </div>
               <div style={styles.cardBody}>
                 <div style={styles.cardTop}>
@@ -1022,6 +1066,26 @@ const styles = {
     borderRadius: "50%",
     background: "#fff",
     animation: "pulse 2s ease-in-out infinite"
+  },
+  downloadBtn: {
+    position: "absolute",
+    bottom: "12px",
+    right: "12px",
+    background: "rgba(15, 23, 42, 0.85)",
+    color: "#fff",
+    border: "none",
+    borderRadius: "50%",
+    width: "36px",
+    height: "36px",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    cursor: "pointer",
+    transition: "all 0.3s ease",
+    backdropFilter: "blur(8px)",
+    boxShadow: "0 4px 12px rgba(0,0,0,0.2)",
+    zIndex: 2,
+    border: "1px solid rgba(255,255,255,0.1)"
   },
   cardBody: {
     padding: "16px",
