@@ -24,35 +24,69 @@ const OfferImagesGallery = () => {
   }, []);
 
   const fetchAllOfferImages = async () => {
-    try {
-      setLoading(true);
-      const token = getToken();
-      
-      const response = await axios.get(
-        'https://the-deft-crew-production.up.railway.app/api/offers/images/all',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
+  try {
+    setLoading(true);
+    const token = getToken();
+    
+    const response = await axios.get(
+      'http://localhost:5000/api/offers/images/all',
+      {
+        headers: {
+          'Authorization': `Bearer ${token}`
         }
-      );
+      }
+    );
 
-      const validOffers = (response.data.offers || []).filter(offer => 
-        offer.image && 
-        offer.image !== null && 
-        offer.image !== '' &&
-        offer.image !== 'https://via.placeholder.com/120x120?text=Logo'
-      );
+    // Get all offers from response
+    const allOffers = response.data.offers || [];
+    const totalOffers = response.data.totalOffers || allOffers.length;
+    const approvedOffers = response.data.approvedBrandOffers || allOffers.length;
+    
+    // Log for debugging
+    console.log(`Total offers in response: ${totalOffers}`);
+    console.log(`Approved brand offers: ${approvedOffers}`);
+    console.log(`Offers received: ${allOffers.length}`);
+    
+    // Filter out invalid offers (backend already filters approved brands)
+    const validOffers = allOffers.filter(offer => {
+      // Check if offer has required data
+      if (!offer || !offer.offerId) {
+        return false;
+      }
       
-      setOffers(validOffers);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching offer images:', err);
-      setError(err.response?.data?.message || 'Failed to load offer images');
-    } finally {
-      setLoading(false);
-    }
-  };
+      // Check if image exists and is valid
+      if (!offer.image || 
+          offer.image === null || 
+          offer.image === '' ||
+          offer.image === 'https://via.placeholder.com/120x120?text=Logo') {
+        return false;
+      }
+      
+      // Check if brand exists and is approved
+      if (!offer.brand || !offer.brand.id) {
+        return false;
+      }
+      
+      // Double-check brand approval (backend already filters)
+      if (offer.brand.approved === false) {
+        return false;
+      }
+      
+      return true;
+    });
+
+    console.log(`Valid offers after frontend filtering: ${validOffers.length}`);
+    console.log(`Filtered out: ${allOffers.length - validOffers.length} offers`);
+
+    setOffers(validOffers);
+    setError(null);
+  } catch (err) {
+    console.error('Error fetching offer images:', err);
+    setError(err.response?.data?.message || 'Failed to load offer images');
+  } finally {
+    setLoading(false);
+  }
+};
 
   const handleImageClick = (offer) => {
     setSelectedOffer(offer);

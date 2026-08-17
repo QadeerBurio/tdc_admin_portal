@@ -11,6 +11,7 @@ import {
   FaWhatsapp, FaTelegram, FaShareAlt, FaFire, FaBolt
 } from 'react-icons/fa';
 import './BrandsProfile.css';
+import OfferImagesGallery from '../OfferImagesGallery'
 
 // Counter Component
 const AnimatedCounter = ({ target, suffix = '', prefix = '', duration = 2000 }) => {
@@ -607,6 +608,8 @@ const BrandsProfile = () => {
           </motion.div>
         </div>
       </section>
+      <OfferImagesGallery/>
+      
 
       {/* FINAL CTA SECTION */}
       <section ref={sectionRefs.finalCta} className="finalcta-section">
