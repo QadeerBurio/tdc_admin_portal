@@ -30,7 +30,7 @@ import QRCode from "qrcode";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
-  const [activeTab, setActiveTab] = useState('students'); // Changed default to 'students'
+  const [activeTab, setActiveTab] = useState('students');
   const [showStudentAlert, setShowStudentAlert] = useState(false);
   const [scannedStudent, setScannedStudent] = useState(null);
   const [alertMessage, setAlertMessage] = useState('');
@@ -178,7 +178,8 @@ const VerifyClaim = () => {
             offerTitle: scan.offerTitle || 'Offer',
             discountPercentage: scan.discountPercentage || 0,
             scannedAt: scan.scannedAt,
-            status: scan.status
+            status: scan.status,
+            offerId: scan.offerId || '' // Make sure offerId is included
           });
         }
       });
@@ -228,7 +229,7 @@ const VerifyClaim = () => {
             rollNo: studentData.rollNo || 'N/A',
             university: universityName,
             universityName: universityName,
-            offerId: studentData.offerId || '',
+            offerId: studentData.offerId || '', // Include offerId
             offerTitle: studentData.offerTitle || 'Offer',
             discountPercentage: studentData.discountPercentage || 0,
             scannedAt: studentData.scannedAt || new Date().toISOString()
@@ -269,7 +270,12 @@ const VerifyClaim = () => {
       );
 
       if (found) {
-        setResult(found);
+        // Merge the found data with the scanned data to preserve offerId
+        const mergedResult = {
+          ...found,
+          offerId: studentData.offerId || found.offerId || '' // Preserve offerId from scan
+        };
+        setResult(mergedResult);
         setBill("");
         setPaymentInfo(null);
         setAlertMessage(`✅ Student ${found.name} verified successfully!`);
@@ -490,8 +496,28 @@ const VerifyClaim = () => {
   };
 
   const handleProcessPayment = async () => {
-    if (!result || result === "not_found" || !paymentInfo) {
-      alert("Please verify student and calculate payment first");
+    // Get the offerId from result or scannedStudent
+    const offerId = result?.offerId || scannedStudent?.offerId || selectedStudent?.offerId;
+    const userId = result?._id || scannedStudent?.studentId || selectedStudent?._id;
+    
+    // Validate required fields
+    if (!offerId) {
+      alert("Missing offer ID. Please re-scan the student.");
+      return;
+    }
+    
+    if (!userId) {
+      alert("Missing student ID. Please re-scan the student.");
+      return;
+    }
+    
+    if (!result || result === "not_found") {
+      alert("Please verify student first");
+      return;
+    }
+    
+    if (!paymentInfo) {
+      alert("Please calculate payment first");
       return;
     }
 
@@ -505,15 +531,16 @@ const VerifyClaim = () => {
       await axios.post(
         "https://the-deft-crew-production.up.railway.app/api/offers/redeem-payment",
         {
-          offerId: result.offerId,
-          userId: result._id,
+          offerId: offerId,
+          userId: userId,
           billAmount: Number(bill),
           savedAmount: Number(paymentInfo.saved)
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
-      const studentId = scannedStudent?.studentId || result._id;
+      // Mark the scan as processed
+      const studentId = userId;
       if (studentId) {
         setProcessedStudentIds(prev => [...prev, studentId]);
         setLastProcessedStudentId(studentId);
@@ -537,6 +564,7 @@ const VerifyClaim = () => {
       await loadPaymentHistory();
 
     } catch (err) {
+      console.error("Payment error:", err);
       alert(err.response?.data?.message || "Payment processing failed");
     } finally {
       setProcessingPayment(false);
@@ -547,7 +575,12 @@ const VerifyClaim = () => {
     if (processingPayment || isProcessingScan) return;
     
     setSelectedStudent(student);
-    setResult(student);
+    // Ensure offerId is preserved when setting result
+    const studentResult = {
+      ...student,
+      offerId: student.offerId || ''
+    };
+    setResult(studentResult);
     setInputs({
       name: student.name || '',
       rollNo: student.rollNo || '',
@@ -831,7 +864,6 @@ const VerifyClaim = () => {
 
       {isBrand && (
         <div className="tab-container">
-          {/* Tab 1: Scanned Students (Active by default) */}
           <button
             className={`tab-btn ${activeTab === 'students' ? 'active' : ''}`}
             onClick={() => handleTabChange('students')}
@@ -839,7 +871,6 @@ const VerifyClaim = () => {
             <FaUsers />
             <span>Verified Students</span>
           </button>
-          {/* Tab 2: QR Generator */}
           <button
             className={`tab-btn ${activeTab === 'qr-generator' ? 'active' : ''}`}
             onClick={() => handleTabChange('qr-generator')}
@@ -847,7 +878,6 @@ const VerifyClaim = () => {
             <FaQrcode />
             <span>QR Generator</span>
           </button>
-          {/* Tab 3: Verify Student */}
           <button
             className={`tab-btn ${activeTab === 'verify' ? 'active' : ''}`}
             onClick={() => handleTabChange('verify')}
@@ -858,10 +888,8 @@ const VerifyClaim = () => {
         </div>
       )}
 
-      {/* Tab 1: Scanned Students (First) */}
       {activeTab === 'students' && isBrand && renderScannedStudents()}
 
-      {/* Tab 2: QR Generator */}
       {activeTab === 'qr-generator' && isBrand ? (
         <div className="qr-generator-container">
           <div className="qr-header">
@@ -970,7 +998,6 @@ const VerifyClaim = () => {
         </div>
       ) : null}
 
-      {/* QR Modal */}
       {showQrModal && (
         <div className="qr-modal-overlay" onClick={() => setShowQrModal(false)}>
           <div className="qr-modal-content" onClick={(e) => e.stopPropagation()}>
@@ -1021,10 +1048,8 @@ const VerifyClaim = () => {
         </div>
       )}
 
-      {/* Tab 3: Verify Student (Last) */}
       {activeTab === 'verify' && (
         <div className="main-grid">
-          {/* Student Details Card */}
           <div className="card animate-card">
             <div className="card-header">
               <FaUserGraduate className="card-header-icon" />
@@ -1157,7 +1182,6 @@ const VerifyClaim = () => {
             )}
           </div>
 
-          {/* Verification Process Card */}
           <div className="card animate-card">
             <div className="card-header">
               <FaEnvelope className="card-header-icon" />
