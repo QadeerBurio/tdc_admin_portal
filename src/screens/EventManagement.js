@@ -73,7 +73,11 @@ import { AuthContext } from "../context/AuthContext";
 import { format } from "date-fns";
 import ".//styles/EventManagement.css";
 
-const API_BASE = "https://the-deft-crew-production.up.railway.app/api/events";
+const API_BASE = process.env.REACT_APP_API_URL 
+  ? `${process.env.REACT_APP_API_URL}/api/events` 
+  : (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
+      ? 'http://localhost:5000/api/events' 
+      : 'https://the-deft-crew-production.up.railway.app/api/events');
 const CATEGORIES = ["Hackathons", "Workshops", "Conferences", "Competitions", "Career Fairs"];
 
 // ─── Loading Spinner ──────────────────────────────────────────────────
@@ -115,7 +119,86 @@ const EventManagement = () => {
   const [imagePreview, setImagePreview] = useState(null);
   const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
   const fileInputRef = useRef(null);
-  
+
+  // CSV/XLSX Upload State
+  const [openCsvDialog, setOpenCsvDialog] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [csvResult, setCsvResult] = useState(null);
+  const [csvError, setCsvError] = useState("");
+  const csvFileInputRef = useRef(null);
+
+  const handleOpenCsvDialog = () => {
+    setCsvFile(null);
+    setCsvResult(null);
+    setCsvError("");
+    setOpenCsvDialog(true);
+  };
+
+  const handleCloseCsvDialog = () => {
+    if (!csvUploading) {
+      setOpenCsvDialog(false);
+      setCsvFile(null);
+      setCsvResult(null);
+      setCsvError("");
+    }
+  };
+
+  const handleCsvFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.csv' && ext !== '.xlsx' && ext !== '.xls') {
+      setCsvError("Invalid file type. Only .csv and .xlsx files are allowed.");
+      setCsvFile(null);
+      return;
+    }
+
+    setCsvError("");
+    setCsvResult(null);
+    setCsvFile(file);
+  };
+
+  const handleUploadCsvSubmit = async (e) => {
+    e.preventDefault();
+    if (!csvFile) {
+      setCsvError("Please select a .csv or .xlsx file.");
+      return;
+    }
+
+    setCsvUploading(true);
+    setCsvError("");
+    setCsvResult(null);
+
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", csvFile);
+
+      const res = await axios.post(`${API_BASE}/admin/import-csv`, uploadData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data && res.data.success) {
+        const { added, skipped } = res.data;
+        setCsvResult({ added, skipped });
+        showSnackbar(`Upload successful — ${added} events added${skipped > 0 ? `, ${skipped} duplicates skipped` : ''}`, "success");
+        fetchDashboardData();
+      } else {
+        setCsvError(res.data?.message || "Upload failed.");
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Error uploading events file.";
+      setCsvError(msg);
+      showSnackbar(msg, "error");
+    } finally {
+      setCsvUploading(false);
+    }
+  };
+
   const [formData, setFormData] = useState({
     title: "",
     organizer: "",
@@ -464,9 +547,14 @@ const EventManagement = () => {
               Manage events and track registrations
             </div>
           </div>
-          <button className="gradient-btn" onClick={handleCreateEvent}>
-            <AddIcon /> Create New Event
-          </button>
+          <div style={{ display: 'flex', gap: '12px' }}>
+            <button className="gradient-btn" onClick={handleOpenCsvDialog} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+              <CloudUploadIcon /> Upload Events CSV
+            </button>
+            <button className="gradient-btn" onClick={handleCreateEvent}>
+              <AddIcon /> Create New Event
+            </button>
+          </div>
         </div>
 
         {/* ─── Stats Cards ───────────────────────────────────────────── */}
@@ -922,9 +1010,103 @@ const EventManagement = () => {
           {snackbar.message}
         </Alert>
       </Snackbar>
+
+      {/* ─── CSV Upload Dialog ────────────────────────────────────────── */}
+      <Dialog open={openCsvDialog} onClose={handleCloseCsvDialog} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CloudUploadIcon sx={{ color: '#10b981' }} /> Upload Events CSV / XLSX
+            </Typography>
+            <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <form onSubmit={handleUploadCsvSubmit}>
+            <Box
+              sx={{
+                border: '2px dashed #cbd5e1',
+                borderRadius: 2,
+                p: 4,
+                textAlign: 'center',
+                backgroundColor: '#f8fafc',
+                cursor: 'pointer',
+                mb: 3,
+                transition: 'all 0.2s',
+                '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#10b981' }
+              }}
+              onClick={() => csvFileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={csvFileInputRef}
+                accept=".csv, .xlsx, .xls"
+                style={{ display: 'none' }}
+                onChange={handleCsvFileChange}
+              />
+              <CloudUploadIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
+              </Typography>
+              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
+                Expected columns: name, date, venue, description, category, source_url
+              </Typography>
+            </Box>
+
+            {csvUploading && (
+              <Box sx={{ textAlign: 'center', my: 2 }}>
+                <CircularProgress size={36} sx={{ color: '#10b981' }} />
+                <Typography variant="body2" sx={{ mt: 1, color: '#64748b' }}>
+                  Processing & importing events...
+                </Typography>
+              </Box>
+            )}
+
+            {csvResult && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Upload successful — {csvResult.added} events added
+                </Typography>
+                {csvResult.skipped > 0 && (
+                  <Typography variant="body2">
+                    {csvResult.skipped} duplicates skipped
+                  </Typography>
+                )}
+              </Alert>
+            )}
+
+            {csvError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {csvError}
+              </Alert>
+            )}
+
+            <DialogActions sx={{ px: 0, pb: 0 }}>
+              <Button onClick={handleCloseCsvDialog} disabled={csvUploading} color="inherit">
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!csvFile || csvUploading}
+                sx={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  '&:hover': { background: '#059669' }
+                }}
+              >
+                {csvUploading ? "Uploading..." : "Upload & Import"}
+              </Button>
+            </DialogActions>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
+
 
 // ─── Event Details View Component ──────────────────────────────────
 
