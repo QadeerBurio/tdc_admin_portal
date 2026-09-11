@@ -33,6 +33,7 @@ const ManageExchange = () => {
   const [autoCreateScholarships, setAutoCreateScholarships] = useState(true);
   const [isUploading, setIsUploading] = useState(false);
   const [uploadComplete, setUploadComplete] = useState(false);
+  const [skippedRows, setSkippedRows] = useState([]);
   const fileInputRef = useRef(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [filterDegree, setFilterDegree] = useState('All');
@@ -81,7 +82,9 @@ const ManageExchange = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  const BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/exchange';
+  const BASE_URL = process.env.REACT_APP_API_URL
+    ? `${process.env.REACT_APP_API_URL}/api/admin/exchange`
+    : 'http://localhost:5000/api/admin/exchange';
   
   const api = axios.create({ 
     headers: { Authorization: `Bearer ${token}` } 
@@ -227,9 +230,14 @@ const ManageExchange = () => {
     const file = e.target.files[0];
     if (!file) return;
     
-    const validTypes = ['application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 'application/vnd.ms-excel'];
-    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls)$/)) {
-      alert('Please upload a valid Excel file (.xlsx or .xls)');
+    const validTypes = [
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', 
+      'application/vnd.ms-excel',
+      'text/csv',
+      'application/csv'
+    ];
+    if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
+      alert('Please upload a valid Excel or CSV file (.xlsx, .xls, or .csv)');
       return;
     }
     
@@ -323,95 +331,52 @@ const ManageExchange = () => {
   };
 
   const uploadExcelData = async () => {
-    if (previewData.length === 0) {
-      alert('No data to upload. Please load an Excel file first.');
+    if (!excelFile) {
+      alert('No file selected. Please choose an Excel or CSV file first.');
       return;
     }
 
     setIsUploading(true);
     setUploadComplete(false);
-    setUploadProgress(0);
-    setUploadStatus('🚀 Starting upload...');
+    setUploadProgress(20);
+    setUploadStatus('🚀 Starting bulk import...');
+    setSkippedRows([]);
 
     try {
-      let successCount = 0;
-      let failCount = 0;
-      const errors = [];
+      const formData = new FormData();
+      formData.append('file', excelFile);
 
-      for (let i = 0; i < previewData.length; i++) {
-        const program = previewData[i];
-        
-        try {
-          const submitData = {
-            title: program.title,
-            university: program.university,
-            location: program.location,
-            degree: program.degree || 'Bachelors',
-            appStart: program.appStart,
-            deadline: program.deadline,
-            duration: program.duration,
-            link: program.link || '',
-            requirements: program.requirements || []
-          };
-
-          if (autoCreateScholarships && program.scholarship?.name) {
-            submitData.scholarship = {
-              name: program.scholarship.name,
-              amount: program.scholarship.amount || '',
-              currency: program.scholarship.currency || 'USD',
-              description: program.scholarship.description || '',
-              deadline: program.scholarship.deadline || '',
-              requirements: program.scholarship.requirements || []
-            };
+      const response = await api.post(`${BASE_URL}/bulk-import`, formData, {
+        headers: {
+          'Content-Type': 'multipart/form-data'
+        },
+        onUploadProgress: (progressEvent) => {
+          if (progressEvent.total) {
+            const percent = Math.round((progressEvent.loaded * 100) / progressEvent.total);
+            setUploadProgress(percent);
           }
-
-          const response = await api.post(`${BASE_URL}/add`, submitData);
-          
-          if (response.status === 201 || response.status === 200) {
-            successCount++;
-          } else {
-            failCount++;
-            errors.push(`Program ${i+1}: ${response.data?.message || 'Unknown error'}`);
-          }
-        } catch (err) {
-          failCount++;
-          const errorMsg = err.response?.data?.message || err.response?.data?.error || err.message || 'Unknown error';
-          errors.push(`Program ${i+1}: ${errorMsg}`);
         }
+      });
 
-        const progress = ((i + 1) / previewData.length) * 100;
-        setUploadProgress(Math.round(progress));
-        setUploadStatus(`📊 ${Math.round(progress)}% - ${i + 1}/${previewData.length} programs (${successCount} ✅, ${failCount} ❌)`);
-      }
+      const { created = 0, skipped = 0, skippedRows: serverSkippedRows = [] } = response.data || {};
 
-      let finalMessage = `✅ Upload Complete! ${successCount} programs added, ${failCount} failed.`;
-      if (errors.length > 0) {
-        finalMessage += `\n\nErrors:\n${errors.slice(0, 5).join('\n')}`;
-        if (errors.length > 5) {
-          finalMessage += `\n... and ${errors.length - 5} more errors`;
-        }
-      }
-      
-      setUploadStatus(finalMessage);
+      setSkippedRows(serverSkippedRows);
       setUploadProgress(100);
       setUploadComplete(true);
 
+      let statusMsg = `Upload successful — ${created} programs added`;
+      if (skipped > 0) {
+        statusMsg += `, ${skipped} rows skipped`;
+      }
+      setUploadStatus(statusMsg);
+
       await fetchPrograms();
 
-      if (failCount > 0) {
-        alert(`📊 Upload Summary:\n✅ ${successCount} programs added\n❌ ${failCount} failed\n\nCheck the status message for details.`);
-      } else {
-        alert(`🎉 All ${successCount} programs uploaded successfully!`);
-      }
-
-      setTimeout(() => {
-        setUploadModalVisible(false);
-        resetUploadState();
-      }, 3000);
-
     } catch (error) {
-      setUploadStatus('❌ Upload failed: ' + error.message);
-      alert('Error uploading programs. Please try again.\n' + error.message);
+      console.error('Bulk upload error:', error);
+      const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Upload failed';
+      setUploadStatus('❌ Upload failed: ' + errorMsg);
+      alert('Error uploading programs: ' + errorMsg);
       setIsUploading(false);
     }
   };
@@ -421,6 +386,7 @@ const ManageExchange = () => {
     setPreviewData([]);
     setUploadProgress(0);
     setUploadStatus('');
+    setSkippedRows([]);
     setIsUploading(false);
     setUploadComplete(false);
     setFileLoaded(false);
@@ -586,13 +552,13 @@ const ManageExchange = () => {
               <div>
                 <div style={styles.modalBadge}>
                   <Globe size={14} />
-                  <span>{editingId ? 'Edit Program' : 'New Exchange Program'}</span>
+                  <span>{editingId ? 'Edit Program' : 'New Scholarship Program'}</span>
                 </div>
                 <h2 style={{
                   ...styles.modalTitle,
                   fontSize: isMobile ? '18px' : '22px',
                 }}>
-                  {editingId ? 'Update Program Details' : 'Create Exchange Program'}
+                  {editingId ? 'Update Program Details' : 'Create Scholarship Program'}
                 </h2>
               </div>
               <button className="close-modal" onClick={() => setModalVisible(false)} style={styles.closeBtn}>
@@ -995,7 +961,7 @@ const ManageExchange = () => {
                 <h2 style={{
                   ...styles.modalTitle,
                   fontSize: isMobile ? '18px' : '22px',
-                }}>Upload Exchange Programs</h2>
+                }}>Upload Scholarships</h2>
               </div>
               <button className="close-modal" onClick={() => setUploadModalVisible(false)} style={styles.closeBtn}>
                 <X size={20} />
@@ -1003,45 +969,52 @@ const ManageExchange = () => {
             </div>
 
             <div style={{
-              padding: isMobile ? '16px' : '24px 28px',
+              padding: isMobile ? '16px' : '20px 28px 24px',
+              overflowY: 'auto',
+              flex: 1,
+              maxHeight: 'calc(90vh - 85px)'
             }}>
               <div style={styles.uploadArea}>
                 <div style={{
                   ...styles.uploadBox,
-                  padding: isMobile ? '24px' : '40px',
+                  padding: isMobile 
+                    ? (fileLoaded ? '16px 12px' : '24px') 
+                    : (fileLoaded ? '20px 24px' : '36px'),
                 }}>
                   <input
                     ref={fileInputRef}
                     type="file"
-                    accept=".xlsx,.xls"
+                    accept=".xlsx,.xls,.csv"
                     onChange={handleFileUpload}
                     style={styles.fileInput}
                     disabled={isUploading}
                   />
                   <div style={styles.uploadIcon}>
-                    <FileSpreadsheet size={isMobile ? 32 : 48} color="#ff961a" />
+                    <FileSpreadsheet size={isMobile ? 28 : (fileLoaded ? 32 : 44)} color="#ff961a" />
                   </div>
-                  <h4 style={{color: '#1e293b', marginBottom: '8px', fontSize: isMobile ? '15px' : '16px'}}>
-                    {fileLoaded ? '📄 File Loaded!' : 'Upload Excel File'}
+                  <h4 style={{color: '#1e293b', marginBottom: '4px', fontSize: isMobile ? '14px' : '16px'}}>
+                    {fileLoaded ? '📄 File Loaded!' : 'Upload Excel or CSV File'}
                   </h4>
-                  <p style={{color: '#94a3b8', fontSize: isMobile ? '13px' : '14px'}}>
+                  <p style={{color: '#94a3b8', fontSize: isMobile ? '12px' : '13px', margin: 0}}>
                     {fileLoaded 
                       ? `${previewData.length} programs found. Click "Upload All Programs" to continue.`
-                      : 'Drag & drop or click to select .xlsx or .xls file'}
+                      : 'Drag & drop or click to select .xlsx, .xls, or .csv file'}
                   </p>
-                  <button 
-                    onClick={downloadTemplate}
-                    style={{
-                      ...styles.smallAddBtn,
-                      background: '#ff961a',
-                      padding: isMobile ? '8px 16px' : '8px 20px',
-                      marginTop: '12px',
-                      fontSize: isMobile ? '12px' : '13px',
-                    }}
-                    disabled={isUploading}
-                  >
-                    <Download size={16} /> Download Template
-                  </button>
+                  {!fileLoaded && (
+                    <button 
+                      onClick={downloadTemplate}
+                      style={{
+                        ...styles.smallAddBtn,
+                        background: '#ff961a',
+                        padding: isMobile ? '8px 16px' : '8px 20px',
+                        marginTop: '12px',
+                        fontSize: isMobile ? '12px' : '13px',
+                      }}
+                      disabled={isUploading}
+                    >
+                      <Download size={16} /> Download Template
+                    </button>
+                  )}
                 </div>
 
                 {previewData.length > 0 && (
@@ -1067,7 +1040,7 @@ const ManageExchange = () => {
                     
                     <div style={{
                       ...styles.previewTable,
-                      maxHeight: isMobile ? '120px' : '200px',
+                      maxHeight: isMobile ? '120px' : '180px',
                       fontSize: isMobile ? '11px' : '13px',
                     }}>
                       <table style={{width: '100%', borderCollapse: 'collapse'}}>
@@ -1132,7 +1105,32 @@ const ManageExchange = () => {
                         </p>
                         {uploadComplete && (
                           <div style={styles.completeBadge}>
-                            ✅ Upload Complete!
+                            ✅ Upload Complete! All valid programs have been processed.
+                          </div>
+                        )}
+                        {skippedRows && skippedRows.length > 0 && (
+                          <div style={{
+                            marginTop: '12px',
+                            padding: '12px',
+                            borderRadius: '12px',
+                            backgroundColor: '#fff7ed',
+                            border: '1px solid #ffedd5'
+                          }}>
+                            <div style={{ fontWeight: 600, color: '#c2410c', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                              <span>⚠️ Skipped Rows Details ({skippedRows.length}):</span>
+                            </div>
+                            <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                              {skippedRows.map((sr, i) => (
+                                <div key={i} style={{ fontSize: '12px', color: '#9a3412', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                  <div>
+                                    <strong>Row {sr.row}</strong>: {sr.title ? `${sr.title}${sr.university ? ` (${sr.university})` : ''}` : 'Untitled Row'}
+                                  </div>
+                                  <span style={{ backgroundColor: '#ffedd5', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500 }}>
+                                    {sr.reason}
+                                  </span>
+                                </div>
+                              ))}
+                            </div>
                           </div>
                         )}
                       </div>
@@ -1141,43 +1139,76 @@ const ManageExchange = () => {
                     <div style={{
                       ...styles.uploadActions,
                       flexDirection: isMobile ? 'column' : 'row',
+                      position: 'sticky',
+                      bottom: 0,
+                      background: '#ffffff',
+                      paddingTop: '14px',
+                      paddingBottom: '4px',
+                      marginTop: '16px',
+                      borderTop: '1px solid #f1f5f9',
+                      zIndex: 10
                     }}>
-                      <button
-                        onClick={resetUploadState}
-                        style={{
-                          ...styles.cancelBtn,
-                          width: isMobile ? '100%' : 'auto',
-                        }}
-                        disabled={isUploading}
-                      >
-                        Clear
-                      </button>
-                      <button
-                        onClick={uploadExcelData}
-                        disabled={isUploading || uploadComplete}
-                        style={{
-                          ...styles.submitBtn,
-                          width: isMobile ? '100%' : 'auto',
-                          justifyContent: 'center',
-                          background: uploadComplete 
-                            ? '#10b981' 
-                            : isUploading 
-                              ? '#94a3b8' 
-                              : '#1e293b',
-                          cursor: uploadComplete || isUploading ? 'default' : 'pointer'
-                        }}
-                      >
-                        {isUploading ? (
-                          <>
-                            <div style={styles.spinnerSmall}></div>
-                            Uploading...
-                          </>
-                        ) : uploadComplete ? (
-                          '✅ Complete'
-                        ) : (
-                          '📤 Upload All Programs'
-                        )}
-                      </button>
+                      {uploadComplete ? (
+                        <>
+                          <button
+                            onClick={resetUploadState}
+                            style={{
+                              ...styles.cancelBtn,
+                              width: isMobile ? '100%' : 'auto',
+                            }}
+                          >
+                            🔄 Upload Another File
+                          </button>
+                          <button
+                            onClick={() => {
+                              setUploadModalVisible(false);
+                              resetUploadState();
+                            }}
+                            style={{
+                              ...styles.submitBtn,
+                              width: isMobile ? '100%' : 'auto',
+                              justifyContent: 'center',
+                              background: '#10b981',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            ✅ Done & Close
+                          </button>
+                        </>
+                      ) : (
+                        <>
+                          <button
+                            onClick={resetUploadState}
+                            style={{
+                              ...styles.cancelBtn,
+                              width: isMobile ? '100%' : 'auto',
+                            }}
+                            disabled={isUploading}
+                          >
+                            Clear
+                          </button>
+                          <button
+                            onClick={uploadExcelData}
+                            disabled={isUploading}
+                            style={{
+                              ...styles.submitBtn,
+                              width: isMobile ? '100%' : 'auto',
+                              justifyContent: 'center',
+                              background: isUploading ? '#94a3b8' : '#1e293b',
+                              cursor: isUploading ? 'default' : 'pointer'
+                            }}
+                          >
+                            {isUploading ? (
+                              <>
+                                <div style={styles.spinnerSmall}></div>
+                                Uploading...
+                              </>
+                            ) : (
+                              '📤 Upload All Programs'
+                            )}
+                          </button>
+                        </>
+                      )}
                     </div>
                   </div>
                 )}
@@ -1220,12 +1251,12 @@ const ManageExchange = () => {
             <h1 style={{
               ...styles.headerTitle,
               fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
-            }}>Exchange Management</h1>
+            }}>Scholarships</h1>
             <p style={{
               ...styles.headerSub,
               fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
             }}>
-              {isMobile ? 'Manage global partnerships' : 'Manage global academic partnerships and application cycles'}
+              {isMobile ? 'Manage scholarships' : 'Manage scholarships and application cycles'}
             </p>
           </div>
           <div style={{
@@ -1427,7 +1458,7 @@ const ManageExchange = () => {
             <div className="loader-container" style={styles.loaderContainer}>
               <div className="spinner" style={styles.spinner}></div>
               <p style={{marginTop: '16px', color: '#64748B', fontWeight: 500, fontSize: isMobile ? '13px' : '14px'}}>
-                Loading exchange programs...
+                Loading scholarship programs...
               </p>
             </div>
           ) : (
@@ -1466,7 +1497,7 @@ const ManageExchange = () => {
                   </h3>
                   <p style={{fontSize: isMobile ? '13px' : '14px'}}>
                     {programs.length === 0 
-                      ? 'Start by adding your first international exchange opportunity'
+                      ? 'Start by adding your first scholarship opportunity'
                       : 'Try adjusting your search filters'}
                   </p>
                 </div>
@@ -1987,6 +2018,8 @@ const styles = {
     maxHeight: '90vh',
     borderRadius: '28px', 
     overflow: 'hidden', 
+    display: 'flex',
+    flexDirection: 'column',
     boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' 
   },
   modalHeader: { 
@@ -1994,7 +2027,8 @@ const styles = {
     borderBottom: '2px solid #f1f5f9', 
     display: 'flex', 
     justifyContent: 'space-between', 
-    alignItems: 'flex-start' 
+    alignItems: 'flex-start',
+    flexShrink: 0
   },
   modalBadge: {
     display: 'inline-flex',

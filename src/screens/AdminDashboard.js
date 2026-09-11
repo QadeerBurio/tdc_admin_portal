@@ -232,7 +232,7 @@ export default function AdminDashboard() {
     },
     { 
       id: "exchange_program", 
-      label: "Exchange", 
+      label: "Scholarships", 
       icon: <Repeat size={20} />,
       section: "content"
     },
@@ -364,7 +364,7 @@ export default function AdminDashboard() {
     },
     { 
       id: "exchange_program", 
-      label: "Exchange Programs", 
+      label: "Scholarships", 
       value: stats.exchange, 
       icon: <Globe size={28} />, 
       trend: "Global study", 

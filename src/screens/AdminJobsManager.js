@@ -1,5 +1,20 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
+import {
+  Dialog,
+  DialogContent,
+  DialogActions,
+  Typography,
+  Box,
+  Button,
+  IconButton,
+  CircularProgress,
+  Alert,
+} from "@mui/material";
+import {
+  CloudUpload as CloudUploadIcon,
+  Close as CloseIcon,
+} from "@mui/icons-material";
 
 // Icons
 import {
@@ -125,8 +140,91 @@ const AdminJobsManager = ({ userRole, userName }) => {
   });
 
   const token = localStorage.getItem("token");
-  const API_URL = "https://the-deft-crew-production.up.railway.app/api/jobs";
+  const API_URL = process.env.REACT_APP_API_URL
+    ? `${process.env.REACT_APP_API_URL}/api/jobs`
+    : "http://localhost:5000/api/jobs";
   const config = { headers: { Authorization: `Bearer ${token}` } };
+
+  // CSV/XLSX Upload State
+  const [openCsvDialog, setOpenCsvDialog] = useState(false);
+  const [csvFile, setCsvFile] = useState(null);
+  const [csvUploading, setCsvUploading] = useState(false);
+  const [csvResult, setCsvResult] = useState(null);
+  const [csvError, setCsvError] = useState("");
+  const csvFileInputRef = useRef(null);
+
+  const handleOpenCsvDialog = () => {
+    setCsvFile(null);
+    setCsvResult(null);
+    setCsvError("");
+    setOpenCsvDialog(true);
+  };
+
+  const handleCloseCsvDialog = () => {
+    if (!csvUploading) {
+      setOpenCsvDialog(false);
+      setCsvFile(null);
+      setCsvResult(null);
+      setCsvError("");
+    }
+  };
+
+  const handleCsvFileChange = (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const ext = file.name.substring(file.name.lastIndexOf('.')).toLowerCase();
+    if (ext !== '.csv' && ext !== '.xlsx' && ext !== '.xls') {
+      setCsvError("Invalid file type. Only .csv and .xlsx files are allowed.");
+      setCsvFile(null);
+      return;
+    }
+
+    setCsvError("");
+    setCsvResult(null);
+    setCsvFile(file);
+  };
+
+  const handleUploadCsvSubmit = async (e) => {
+    e.preventDefault();
+    if (!csvFile) {
+      setCsvError("Please select a .csv or .xlsx file.");
+      return;
+    }
+
+    setCsvUploading(true);
+    setCsvError("");
+    setCsvResult(null);
+
+    const targetUrl = `${API_URL}/admin/import-csv`;
+    console.log("Submitting CSV import to URL:", targetUrl);
+
+    try {
+      const uploadData = new FormData();
+      uploadData.append("file", csvFile);
+
+      const res = await axios.post(targetUrl, uploadData, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "multipart/form-data",
+        },
+      });
+
+      if (res.data && res.data.success) {
+        const { created, updated, skipped } = res.data;
+        setCsvResult({ created, updated, skipped });
+        fetchJobs();
+        fetchStats();
+      } else {
+        setCsvError(res.data?.message || "Upload failed.");
+      }
+    } catch (err) {
+      const msg = err.response?.data?.message || err.message || "Error uploading jobs file.";
+      setCsvError(msg);
+    } finally {
+      setCsvUploading(false);
+    }
+  };
 
   useEffect(() => {
     const handleResize = () => {
@@ -476,12 +574,26 @@ const AdminJobsManager = ({ userRole, userName }) => {
               : `Welcome back, ${userName}! Manage your job postings`}
           </p>
         </div>
-        <button style={isMobile ? styles.mobileCreateBtn : styles.createBtn} className="pulse-btn" onClick={() => {
-          resetForm();
-          setShowJobModal(true);
-        }}>
-          <FaPlus /> {isMobile ? "New" : "Post New Job"}
-        </button>
+        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
+          <button
+            style={{
+              ...(isMobile ? styles.mobileCreateBtn : styles.createBtn),
+              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+            }}
+            className="pulse-btn"
+            onClick={handleOpenCsvDialog}
+          >
+            <CloudUploadIcon style={{ marginRight: '6px', fontSize: '18px' }} /> {isMobile ? "CSV" : "Upload Jobs CSV"}
+          </button>
+
+          <button style={isMobile ? styles.mobileCreateBtn : styles.createBtn} className="pulse-btn" onClick={() => {
+            resetForm();
+            setShowJobModal(true);
+          }}>
+            <FaPlus /> {isMobile ? "New" : "Post New Job"}
+          </button>
+        </div>
       </div>
 
       {/* Stats Grid - Responsive */}
@@ -1558,6 +1670,98 @@ const AdminJobsManager = ({ userRole, userName }) => {
           }
         `}
       </style>
+      {/* ─── CSV Upload Dialog ────────────────────────────────────────── */}
+      <Dialog open={openCsvDialog} onClose={handleCloseCsvDialog} maxWidth="sm" fullWidth>
+        <DialogContent sx={{ p: 3 }}>
+          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
+            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
+              <CloudUploadIcon sx={{ color: '#10b981' }} /> Upload Jobs CSV / XLSX
+            </Typography>
+            <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
+              <CloseIcon />
+            </IconButton>
+          </Box>
+
+          <form onSubmit={handleUploadCsvSubmit}>
+            <Box
+              sx={{
+                border: '2px dashed #cbd5e1',
+                borderRadius: 2,
+                p: 4,
+                textAlign: 'center',
+                backgroundColor: '#f8fafc',
+                cursor: 'pointer',
+                mb: 3,
+                transition: 'all 0.2s',
+                '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#10b981' }
+              }}
+              onClick={() => csvFileInputRef.current?.click()}
+            >
+              <input
+                type="file"
+                ref={csvFileInputRef}
+                accept=".csv, .xlsx, .xls"
+                style={{ display: 'none' }}
+                onChange={handleCsvFileChange}
+              />
+              <CloudUploadIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+                {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
+              </Typography>
+              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
+                Expected columns: Company, Job Title, Department, Job Type, Target Audience, Application Link, Location
+              </Typography>
+            </Box>
+
+            {csvUploading && (
+              <Box sx={{ textAlign: 'center', my: 2 }}>
+                <CircularProgress size={36} sx={{ color: '#10b981' }} />
+                <Typography variant="body2" sx={{ mt: 1, color: '#64748b' }}>
+                  Processing & importing jobs...
+                </Typography>
+              </Box>
+            )}
+
+            {csvResult && (
+              <Alert severity="success" sx={{ mb: 2 }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
+                  Upload successful — {csvResult.created} jobs created, {csvResult.updated} updated
+                </Typography>
+                {csvResult.skipped > 0 && (
+                  <Typography variant="body2">
+                    {csvResult.skipped} duplicates skipped
+                  </Typography>
+                )}
+              </Alert>
+            )}
+
+            {csvError && (
+              <Alert severity="error" sx={{ mb: 2 }}>
+                {csvError}
+              </Alert>
+            )}
+
+            <DialogActions sx={{ px: 0, pb: 0 }}>
+              <Button onClick={handleCloseCsvDialog} disabled={csvUploading} color="inherit">
+                Cancel
+              </Button>
+              <Button
+                type="submit"
+                variant="contained"
+                disabled={!csvFile || csvUploading}
+                sx={{
+                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  color: '#fff',
+                  fontWeight: 600,
+                  '&:hover': { background: '#059669' }
+                }}
+              >
+                {csvUploading ? "Uploading..." : "Upload & Import"}
+              </Button>
+            </DialogActions>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
