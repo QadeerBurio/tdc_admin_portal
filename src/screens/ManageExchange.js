@@ -82,10 +82,16 @@ const ManageExchange = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
+<<<<<<< HEAD
   const BASE_URL = process.env.REACT_APP_API_URL
     ? `${process.env.REACT_APP_API_URL}/api/admin/exchange`
     : 'http://localhost:5000/api/admin/exchange';
   
+=======
+  //const BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/exchange';
+  const BASE_URL = 'http://localhost:5000/api/admin/exchange';
+
+>>>>>>> dc71f78 (Changes address urls to local machine testing urls)
   const api = axios.create({ 
     headers: { Authorization: `Bearer ${token}` } 
   });

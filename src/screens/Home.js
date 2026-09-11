@@ -137,7 +137,8 @@ export default function Home() {
   const fetchOffers = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        //"https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        "http://localhost:5000/api/offers/my-offers",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -166,7 +167,8 @@ export default function Home() {
   const fetchBrandData = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/auth/me",
+        //"https://the-deft-crew-production.up.railway.app/api/auth/me",
+        "http://localhost:5000/api/auth/me",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -192,13 +194,15 @@ export default function Home() {
   const fetchStats = async () => {
     try {
       const leadRes = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        //"https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        "http://localhost:5000/api/offers/claimed-users",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
       const savingRes = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        //"https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        "http://localhost:5000/api/offers/savings-report",
         {
           headers: { Authorization: `Bearer ${token}` }
         }

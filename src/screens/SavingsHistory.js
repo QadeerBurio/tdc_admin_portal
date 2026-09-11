@@ -79,7 +79,8 @@ const SavingsHistory = () => {
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/savings-report", {
+      const res = await axios.get(//"https://the-deft-crew-production.up.railway.app/api/offers/savings-report", 
+        "http://localhost:5000/api/offers/savings-report", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setHistory(res.data);

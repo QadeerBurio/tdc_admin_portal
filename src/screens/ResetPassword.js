@@ -101,7 +101,8 @@ export default function ResetPassword() {
 
     try {
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/reset-password",
+        //"https://the-deft-crew-production.up.railway.app/api/auth/reset-password",
+        `http://localhost:5000/api/auth/reset-password`,
         { 
           resetToken, 
           newPassword: password,

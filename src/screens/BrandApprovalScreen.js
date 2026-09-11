@@ -10,11 +10,12 @@ import {
   Calendar, Hash, Link2, UserPlus, Award, Sparkles, Crown,
   Flame, TrendingUp, RefreshCw, ShoppingBag, FileText,
   Briefcase, Ticket, FileCheck, Users, Layers, Zap,
-  ArrowUpRight, ChevronDown, ChevronUp, BarChart3, LogIn
+  ArrowUpRight, ChevronDown, ChevronUp, BarChart4, LogIn
 } from 'lucide-react';
 import './styles/Brands.css';
 
-const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
+//const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
+const API_BASE = 'http://localhost:5000/api';
 
 const BrandApprovalScreen = () => {
   const { token, user, login } = useContext(AuthContext);

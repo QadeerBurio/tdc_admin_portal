@@ -7,7 +7,7 @@ import {
   Clock, Users, Wallet, CreditCard, Shield, Search, 
   Filter, ChevronDown, ChevronUp, Eye, RefreshCw,
   Printer, MapPin, Phone, Mail, User, Award,
-  TrendingUp, BarChart3, Sparkles, Zap,
+  TrendingUp, BarChart4, Sparkles, Zap,
   Menu, X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -32,7 +32,8 @@ const CardManager = () => {
     approvedTotal: 0, totalRevenue: 0 
   });
 
-  const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
+  //const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
+  const API_BASE = "http://localhost:5000/api/admin";
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {

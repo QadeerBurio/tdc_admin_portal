@@ -34,7 +34,8 @@ export default function AdminOffers() {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/all?type=${filter}`);
+      //const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/all?type=${filter}`);
+       const response = await fetch(`http://localhost:5000/api/admin/all?type=${filter}`);
       const data = await response.json();
       setItems(data);
     } catch (error) {
@@ -51,7 +52,8 @@ export default function AdminOffers() {
   const handleToggle = async (id) => {
     setTogglingId(id);
     try {
-      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/toggle/${id}`, { method: "PATCH" });
+      //await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/toggle/${id}`, { method: "PATCH" });
+       await fetch(`http://localhost:5000/api/admin/toggle/${id}`, { method: "PATCH" });
       await fetchItems();
     } catch (error) {
       alert("Failed to update status");
@@ -64,7 +66,8 @@ export default function AdminOffers() {
     if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
     setDeletingId(id);
     try {
-      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
+      //await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
+       await fetch(`http://localhost:5000/api/admin/delete/${id}`, { 
         method: "DELETE",
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

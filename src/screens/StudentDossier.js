@@ -6,7 +6,7 @@ import {
   ExternalLink, Award, Calendar, User, ShieldCheck,
   Loader2, AlertCircle, Store, Plane, Building,
   CreditCard, Gift, Ticket, FileCheck, Users,
-  Link2, Crown, Star, Clock, CheckCircle, XCircle,
+  Link2, Crown, Clock, CheckCircle, XCircle,
   Eye, Key, Hash, UserPlus, TrendingUp, Flame
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';

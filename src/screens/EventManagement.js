@@ -73,11 +73,15 @@ import { AuthContext } from "../context/AuthContext";
 import { format } from "date-fns";
 import ".//styles/EventManagement.css";
 
+<<<<<<< HEAD
 const API_BASE = process.env.REACT_APP_API_URL 
   ? `${process.env.REACT_APP_API_URL}/api/events` 
   : (typeof window !== 'undefined' && (window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1')
       ? 'http://localhost:5000/api/events' 
       : 'https://the-deft-crew-production.up.railway.app/api/events');
+=======
+const API_BASE = "https://localhost:5000/api/events";
+>>>>>>> dc71f78 (Changes address urls to local machine testing urls)
 const CATEGORIES = ["Hackathons", "Workshops", "Conferences", "Competitions", "Career Fairs"];
 
 // ─── Loading Spinner ──────────────────────────────────────────────────

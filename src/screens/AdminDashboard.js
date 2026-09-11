@@ -1,26 +1,56 @@
 import React, { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { 
-  LayoutDashboard, PlusCircle, Tag, Briefcase, 
-  Repeat, Building2, GraduationCap, LogOut,
-  ChevronRight, Globe, Plane, Loader2, CreditCard,
-  ShoppingCart, BookOpen, Sparkles, TrendingUp,
-  Users, Award, Calendar, Bell, Settings, HelpCircle,
-  Menu, X, UserCircle, Home, BarChart3, 
-  FileText, Gift, Star, Clock, CheckCircle,
-  User, Mail, Phone, MapPin, CalendarDays,
-  Shield, Edit, Lock, ChevronDown,
-  ArrowUpRight, Activity, Zap, 
-  Calendar as CalendarIcon, BarChart4,
-  HardHat, UsersRound, BriefcaseBusiness, UserCog,
-  Store, GraduationCap as GraduationCapIcon, 
-  Building, UserPlus, UserCheck, UserX,
-  PlaneTakeoff, Luggage, Compass, CalendarCheck,
-  Map, Clock as ClockIcon, Users as UsersIcon,
-  Trophy, Sparkle
-} from "lucide-react";
-import { motion, AnimatePresence } from "framer-motion";
+import {
+  LayoutDashboard,
+  PlusCircle,
+  Tag,
+  Briefcase,
+  Repeat,
+  GraduationCapIcon,
+  HardHat,
+  CalendarIcon,
+  LogOut,
+  ChevronRight,
+  Globe,
+  Plane,
+  Loader2,
+  CreditCard,
+  ShoppingCart,
+  Sparkles,
+  TrendingUp,
+  Users,
+  Award,
+  Calendar,
+  Bell,
+  Settings,
+  Menu,
+  X,
+  UserCircle,
+  BarChart4,
+  FileText,
+  Gift,
+  Clock,
+  CheckCircle,
+  User,
+  Mail,
+  Phone,
+  MapPin,
+  CalendarDays,
+  Shield,
+  Edit,
+  Lock,
+  ChevronDown,
+  ArrowUpRight,
+  Activity,
+  Store,
+  Building,
+  UserPlus,
+  UserCheck,
+  UserX,
+  Compass,
+  CalendarCheck
+} from "lucide-react";import { motion, AnimatePresence } from "framer-motion";
 import "./styles/AdminDashboard.css";
 // Sub-Components
 import CreateOfferAdmin from "./CreateOfferAdmin";
@@ -80,7 +110,8 @@ export default function AdminDashboard() {
   const [recentEvents, setRecentEvents] = useState([]);
 
   // API Base URL
-  const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
+  //const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
+  const API_BASE = "http://localhost:5000/api";
 
   useEffect(() => {
     const hour = new Date().getHours();

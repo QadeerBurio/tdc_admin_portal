@@ -8,10 +8,10 @@ import {
   ChevronRight, TrendingUp, Award, Sparkles, Eye,
   UserPlus, Link2, Phone, MapPin, Calendar, Star,
   CreditCard, Hash, User, GraduationCap, FileText,
-  Crown, Zap, BarChart3, Gift, Trophy, Flame,
+  Crown, Zap, BarChart4, Gift, Trophy, Flame,
   ChevronDown, ChevronUp, RefreshCw, ArrowUpRight,
   Briefcase, HardHat, Plane, Store, Settings, Key,
-  Image, Layers, PieChart, BookOpen, Briefcase as BriefcaseIcon,
+  Image, Layers, PieChart, Briefcase as BriefcaseIcon,
   Ticket, ShoppingBag, FileCheck, Users as UsersIcon,
   QrCode, Copy, Download as DownloadIcon, Share2,
   ChevronLeft, ChevronsLeft, ChevronsRight, Menu
@@ -106,7 +106,8 @@ export default function AdminUserList({ role, title }) {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
+       // `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
+        `http://localhost:5000/api/admin/users/${role}`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -156,7 +157,8 @@ export default function AdminUserList({ role, title }) {
     setTogglingId(id);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
+      //  `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
+        `http://localhost:5000/api/admin/approve-user/${id}`,
         { method: "POST", headers: getAuthHeaders() }
       );
       if (res.ok) fetchUsers();
@@ -215,7 +217,8 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'brand') {
         try {
           const offersRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
+            //`https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
+            `http://localhost:5000/api/offers/brand/${user._id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const offersData = await offersRes.json();
@@ -228,7 +231,8 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'employee') {
         try {
           const jobsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
+           //`https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
+            `http://localhost:5000/api/jobs/my-jobs`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const jobsData = await jobsRes.json();
@@ -241,28 +245,32 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'student') {
         try {
           const claimedRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
+            //`https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
+            `http://localhost:5000/api/offers/claimed`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const claimedData = await claimedRes.json();
           details.claimedOffers = Array.isArray(claimedData) ? claimedData : [];
           
           const savingsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
+            //`https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
+            `http://localhost:5000/api/offers/my-total-savings`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const savingsData = await savingsRes.json();
           details.savings = savingsData || { totalSaved: 0, redemptionCount: 0 };
           
           const jobAppsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
+            //`https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
+            `http://localhost:5000/api/jobs/my-applications`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const jobAppsData = await jobAppsRes.json();
           details.applications = Array.isArray(jobAppsData) ? jobAppsData : [];
           
           const resumeRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/resume/primary`,
+            //`https://the-deft-crew-production.up.railway.app/api/resume/primary`,
+            `http://localhost:5000/api/resume/primary`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const resumeData = await resumeRes.json();
@@ -303,7 +311,8 @@ export default function AdminUserList({ role, title }) {
     setLoadingPassword(prev => ({ ...prev, [userId]: true }));
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
+       //`https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
+        `http://localhost:5000/api/admin/users/password/${userId}`,
         { headers: getAuthHeaders() }
       );
       
