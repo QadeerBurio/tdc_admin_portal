@@ -56,8 +56,7 @@ export default function VerifyOTP() {
 
     try {
       const res = await axios.post(
-        //"https://the-deft-crew-production.up.railway.app/api/auth/verify-otp",
-        "http://localhost:5000/api/auth/verify-otp",
+        "https://the-deft-crew-production.up.railway.app/api/auth/verify-otp",
         { 
           userId, 
           otp: otp.trim() 
@@ -105,8 +104,7 @@ export default function VerifyOTP() {
 
     try {
       const res = await axios.post(
-        //"https://the-deft-crew-production.up.railway.app/api/auth/resend-otp",
-        "http://localhost:5000/api/auth/resend-otp",
+        "https://the-deft-crew-production.up.railway.app/api/auth/resend-otp",
         { 
           userId,
           emailOrPhone: emailOrPhone 

@@ -51,8 +51,7 @@ const ReportsManager = ({ token, stats }) => {
   });
   const [recentApplications, setRecentApplications] = useState([]);
 
-  //const API_URL = "https://the-deft-crew-production.up.railway.app/api";
-  const API_URL = "http://localhost:5000/api";
+  const API_URL = "https://the-deft-crew-production.up.railway.app/api";
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {

@@ -88,8 +88,7 @@ const InterviewsManager = ({ token }) => {
   const fetchInterviews = async () => {
     try {
       setLoading(true);
-      const res = await axios.get(//"https://the-deft-crew-production.up.railway.app/api/jobs/interviews/all",
-        "http://localhost:5000/api/jobs/interviews/all",{
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/interviews/all",{
         headers: { Authorization: `Bearer ${token}` }
       });
       setInterviews(res.data);
@@ -129,8 +128,7 @@ const InterviewsManager = ({ token }) => {
 
   const fetchApplicationsForScheduling = async () => {
     try {
-      const res = await axios.get(//"https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all?status=shortlisted", 
-        "http://localhost:5000/api/jobs/candidates/all?status=shortlisted", {
+      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all?status=shortlisted", {
         headers: { Authorization: `Bearer ${token}` }
       });
       setApplications(res.data);
@@ -153,8 +151,7 @@ const InterviewsManager = ({ token }) => {
     setSubmitting(true);
     try {
       await axios.post(
-        //`https://the-deft-crew-production.up.railway.app/api/jobs/interviews/schedule`,
-        `http://localhost:5000/api/jobs/interviews/schedule`,
+        `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/schedule`,
         {
           applicationId: selectedApplication,
           interviewDate: new Date(interviewDate).toISOString(),
@@ -198,8 +195,7 @@ const InterviewsManager = ({ token }) => {
         }
         
         await axios.put(
-          //`https://the-deft-crew-production.up.railway.app/api/jobs/interviews/reschedule/${interviewId}`,
-          `http://localhost:5000/api/jobs/interviews/reschedule/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/reschedule/${interviewId}`,
           {
             interviewDate: formattedDate.toISOString(),
             interviewNotes: "Interview rescheduled"
@@ -222,8 +218,7 @@ const InterviewsManager = ({ token }) => {
       setActionInProgress(interviewId);
       try {
         await axios.delete(
-          //`https://the-deft-crew-production.up.railway.app/api/jobs/interviews/cancel/${interviewId}`,
-          `http://localhost:5000/api/jobs/interviews/cancel/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/cancel/${interviewId}`,
           { headers: { Authorization: `Bearer ${token}` } }
         );
         showNotification("Interview cancelled successfully", "success");
@@ -243,8 +238,7 @@ const InterviewsManager = ({ token }) => {
       setActionInProgress(interviewId);
       try {
         await axios.patch(
-          //`https://the-deft-crew-production.up.railway.app/api/jobs/interviews/complete/${interviewId}`,
-          `http://localhost:5000/api/jobs/interviews/complete/${interviewId}`,
+          `https://the-deft-crew-production.up.railway.app/api/jobs/interviews/complete/${interviewId}`,
           { feedback },
           { headers: { Authorization: `Bearer ${token}` } }
         );

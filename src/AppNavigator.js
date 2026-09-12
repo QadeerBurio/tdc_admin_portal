@@ -43,6 +43,8 @@ import Discount from "./screens/Discount";
 import UniversitiesSection from "./screens/roles/UniversitiesSection";
 import BrandApprovalScreen from "./screens/BrandApprovalScreen";
 import BrandVerifyScreen from "./screens/BrandVerifyScreen";
+import AllBrandsRevenue from "./screens/AllBrandsRevenue";
+import Branches from "./screens/Branches";
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -82,6 +84,7 @@ export default function AppNavigator() {
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
         <Route path="/BrandApprovalScreen" element={<BrandApprovalScreen />} />
+        <Route path="/admin/brands-revenue" element={<AllBrandsRevenue />} />
         <Route path="/eventmanagement" element={<EventManagement />} />
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
@@ -125,6 +128,7 @@ export default function AppNavigator() {
       <Route path="/verifyclaim" element={<VerifyClaim />} />
       <Route path="/savinghistory" element={<SavingsHistory />} />
       <Route path="/BrandVerifyScreen" element={<BrandVerifyScreen/>} />
+      <Route path="/Branches" element={<Branches/>} />
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>

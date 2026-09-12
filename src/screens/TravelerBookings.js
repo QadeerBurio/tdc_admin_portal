@@ -45,8 +45,8 @@ const TravelerBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get(//'https://the-deft-crew-production.up.railway.app/api/traveler/bookings', 
-        "http://localhost:5000/api/traveler/bookings", {
+      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/bookings', 
+         {
         headers: { Authorization: `Bearer ${token}` }
       });
       setBookings(response.data);
@@ -62,8 +62,8 @@ const TravelerBookings = () => {
     
     setCancellingId(bookingId);
     try {
-      await axios.put(//`https://the-deft-crew-production.up.railway.app/api/traveler/bookings/${bookingId}/cancel`, {},
-        "http://localhost:5000/api/traveler/bookings/" + bookingId + "/cancel", {
+      await axios.put(`https://the-deft-crew-production.up.railway.app/api/traveler/bookings/${bookingId}/cancel`, {},
+         {
         headers: { Authorization: `Bearer ${token}` }
       });
       fetchBookings();

@@ -1,3 +1,4 @@
+// AdminDashboard.js - Complete with Events + All Brands Revenue
 import React, { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
@@ -50,26 +51,27 @@ import {
   UserX,
   Compass,
   CalendarCheck
-} from "lucide-react";import { motion, AnimatePresence } from "framer-motion";
+} from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import "./styles/AdminDashboard.css";
+
 // Sub-Components
 import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
 import AdminUserList from "./AdminUserList";
-import AdminJobManager from "./AdminJobsManager"; 
+import AdminJobManager from "./AdminJobsManager";
 import ManageExchange from "./ManageExchange";
 import AdminPackageScreen from "./Traveling";
 import CardManager from "./CardManager";
 import AdminPackage from "./AdminPackage";
 import EventManagement from "./EventManagement";
-
-// Import the component
 import BrandApprovalScreen from "./BrandApprovalScreen";
+import AllBrandsRevenue from "./AllBrandsRevenue";
 
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
-  
+
   const [activePage, setActivePage] = useState("dashboard");
   const [hoveredItem, setHoveredItem] = useState(null);
   const [isFetching, setIsFetching] = useState(false);
@@ -103,15 +105,16 @@ export default function AdminDashboard() {
     bookings: 0,
     courses: 0,
     events: 0,
-    eventRegistrations: 0
+    eventRegistrations: 0,
+    totalRevenue: 0,
   });
 
   // Recent Events State
   const [recentEvents, setRecentEvents] = useState([]);
 
   // API Base URL
-  //const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
-  const API_BASE = "http://localhost:5000/api";
+  const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
+  // const API_BASE = "http://localhost:5000/api";
 
   useEffect(() => {
     const hour = new Date().getHours();
@@ -148,7 +151,7 @@ export default function AdminDashboard() {
   const fetchDashboardStats = useCallback(async () => {
     if (!token) return;
     setIsFetching(true);
-    
+
     try {
       const headers = { "Authorization": `Bearer ${token}` };
       const adminAPI = `${API_BASE}/admin`;
@@ -167,12 +170,47 @@ export default function AdminDashboard() {
       ];
 
       const responses = await Promise.all(
-        endpoints.map(url => 
+        endpoints.map(url =>
           fetch(url, { headers })
             .then(res => res.ok ? res.json() : [])
             .catch(() => [])
         )
       );
+
+      // Fetch total brands revenue separately
+      let totalRevenue = 0;
+      try {
+        const revenueRes = await fetch(`${API_BASE}/offers/admin/brands-revenue`, { headers });
+        const revenueData = await revenueRes.json();
+        if (revenueData.success && revenueData.summary) {
+          totalRevenue = revenueData.summary.totalRevenue || 0;
+        }
+      } catch (revErr) {
+        console.error("Revenue fetch failed:", revErr);
+      }
+
+      // Fetch events stats
+      let eventsCount = 0;
+      let eventsRegistrations = 0;
+      try {
+        const eventsRes = await fetch(`${API_BASE}/events/my-events`, { headers });
+        const eventsData = await eventsRes.json();
+        if (Array.isArray(eventsData)) {
+          eventsCount = eventsData.length;
+          // Get registrations count from each event
+          const regCounts = await Promise.all(
+            eventsData.map(ev =>
+              fetch(`${API_BASE}/events/registrations/${ev._id}`, { headers })
+                .then(r => r.json())
+                .then(data => Array.isArray(data) ? data.length : 0)
+                .catch(() => 0)
+            )
+          );
+          eventsRegistrations = regCounts.reduce((sum, c) => sum + c, 0);
+        }
+      } catch (evErr) {
+        console.error("Events fetch failed:", evErr);
+      }
 
       setStats({
         offers: Array.isArray(responses[0]) ? responses[0].length : 0,
@@ -187,8 +225,9 @@ export default function AdminDashboard() {
         approvedCards: responses[8]?.approvedTotal || 0,
         bookings: responses[9]?.totalBookings || 0,
         courses: Array.isArray(responses[10]) ? responses[10].length : 0,
-        events: responses[11]?.totalEvents || 0,
-        eventRegistrations: responses[11]?.totalRegistrations || 0
+        events: eventsCount,
+        eventRegistrations: eventsRegistrations,
+        totalRevenue: totalRevenue,
       });
     } catch (err) {
       console.error("Dashboard Stats Sync Error:", err);
@@ -202,10 +241,10 @@ export default function AdminDashboard() {
     try {
       const headers = { "Authorization": `Bearer ${token}` };
       const eventsAPI = `${API_BASE}/events`;
-      
+
       const res = await fetch(`${eventsAPI}/my-events`, { headers });
       const data = await res.json();
-      
+
       if (Array.isArray(data)) {
         const eventsWithRegistrations = await Promise.all(
           data.slice(0, 5).map(async (event) => {
@@ -237,75 +276,81 @@ export default function AdminDashboard() {
 
   // Menu Items
   const menuItems = [
-    { 
-      id: "dashboard", 
-      label: "Dashboard", 
+    {
+      id: "dashboard",
+      label: "Dashboard",
       icon: <LayoutDashboard size={20} />,
       section: "main"
     },
-    { 
-      id: "offer", 
-      label: "Create Offer", 
+    {
+      id: "offer",
+      label: "Create Offer",
       icon: <PlusCircle size={20} />,
       section: "content"
     },
-    { 
-      id: "all offer", 
-      label: "Manage Offers", 
+    {
+      id: "all offer",
+      label: "Manage Offers",
       icon: <Tag size={20} />,
       section: "content"
     },
-    { 
-      id: "manage_jobs", 
-      label: "Career Portal", 
+    {
+      id: "manage_jobs",
+      label: "Career Portal",
       icon: <Briefcase size={20} />,
       section: "content"
     },
-    { 
-      id: "exchange_program", 
-      label: "Scholarships", 
+    {
+      id: "exchange_program",
+      label: "Scholarships",
       icon: <Repeat size={20} />,
       section: "content"
     },
-    { 
-      id: "traveling", 
-      label: "Traveling", 
+    {
+      id: "traveling",
+      label: "Traveling",
       icon: <Plane size={20} />,
       section: "content"
     },
-    { 
-      id: "events", 
-      label: "Events", 
+    {
+      id: "events",
+      label: "Events",
       icon: <CalendarCheck size={20} />,
       section: "content"
     },
-     { 
-    id: "brand_approval", 
-    label: "Brand Approvals", 
-    icon: <UserCheck size={20} />,
-    section: "content"
-  },
-    { 
-      id: "students", 
-      label: "All Students", 
+    {
+      id: "all_brands_revenue",
+      label: "Brands Revenue",
+      icon: <BarChart4 size={20} />,
+      section: "content"
+    },
+    {
+      id: "brand_approval",
+      label: "Brand Approvals",
+      icon: <UserCheck size={20} />,
+      section: "content"
+    },
+    {
+      id: "students",
+      label: "All Students",
       icon: <GraduationCapIcon size={20} />,
       section: "users"
     },
-    { 
-      id: "brands", 
-      label: "All Brands", 
+    {
+      id: "brands",
+      label: "All Brands",
       icon: <Store size={20} />,
       section: "users"
     },
-    { 
-      id: "employees", 
-      label: "All Employees", 
+    {
+      id: "employees",
+      label: "All Employees",
       icon: <HardHat size={20} />,
       section: "users"
     },
-    { 
-      id: "travelers", 
-      label: "All Travelers", 
+    {
+      id: "travelers",
+      label: "All Travelers",
       icon: <Compass size={20} />,
       section: "users"
     },
@@ -313,95 +358,117 @@ export default function AdminDashboard() {
 
   // Card Data
   const cardData = [
-    { 
-      id: "students", 
-      label: "Total Students", 
-      value: stats.students, 
-      icon: <GraduationCapIcon size={28} />, 
-      trend: "+12% this month", 
-      color: "#10b981", 
-      bg: "#ecfdf5", 
-      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)" 
+    {
+      id: "students",
+      label: "Total Students",
+      value: stats.students,
+      icon: <GraduationCapIcon size={28} />,
+      trend: "+12% this month",
+      color: "#10b981",
+      bg: "#ecfdf5",
+      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)"
     },
-    { 
-      id: "brands", 
-      label: "Active Brands", 
-      value: stats.brands, 
-      icon: <Store size={28} />, 
-      trend: "+5 new", 
-      color: "#8b5cf6", 
-      bg: "#f5f3ff", 
-      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
+    {
+      id: "brands",
+      label: "Active Brands",
+      value: stats.brands,
+      icon: <Store size={28} />,
+      trend: "+5 new",
+      color: "#8b5cf6",
+      bg: "#f5f3ff",
+      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)"
     },
-    { 
-      id: "employees", 
-      label: "Employees", 
-      value: stats.employees, 
-      icon: <HardHat size={28} />, 
-      trend: "This month", 
-      color: "#06b6d4", 
-      bg: "#ecfeff", 
-      gradient: "linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)" 
+    {
+      id: "employees",
+      label: "Employer",
+      value: stats.employees,
+      icon: <HardHat size={28} />,
+      trend: "Companies",
+      color: "#06b6d4",
+      bg: "#ecfeff",
+      gradient: "linear-gradient(135deg, #06b6d4 0%, #22d3ee 100%)"
     },
-    { 
-      id: "travelers", 
-      label: "Travelers", 
-      value: stats.travelers, 
-      icon: <Compass size={28} />, 
-      trend: "Global", 
-      color: "#f43f5e", 
-      bg: "#fff1f2", 
-      gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)" 
+    {
+      id: "travelers",
+      label: "Travelers",
+      value: stats.travelers,
+      icon: <Compass size={28} />,
+      trend: "Global",
+      color: "#f43f5e",
+      bg: "#fff1f2",
+      gradient: "linear-gradient(135deg, #f43f5e 0%, #fb7185 100%)"
     },
-    { 
-      id: "booking", 
-      label: "Total Bookings", 
-      value: stats.bookings, 
-      icon: <ShoppingCart size={28} />, 
-      trend: "This week", 
-      color: "#f59e0b", 
-      bg: "#fef3c7", 
-      gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)" 
+    {
+      id: "booking",
+      label: "Travel Ai Plan Assisted",
+      value: stats.bookings,
+      icon: <ShoppingCart size={28} />,
+      trend: "This week",
+      color: "#f59e0b",
+      bg: "#fef3c7",
+      gradient: "linear-gradient(135deg, #f59e0b 0%, #fbbf24 100%)"
     },
-    { 
-      id: "card_manager", 
-      label: "Approved Cards", 
-      value: stats.approvedCards, 
-      icon: <CreditCard size={28} />, 
-      trend: `${stats.pendingCards} pending`, 
-      color: "#ec4899", 
-      bg: "#fdf2f8", 
-      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)" 
+    {
+      id: "card_manager",
+      label: "Approved Cards",
+      value: stats.approvedCards,
+      icon: <CreditCard size={28} />,
+      trend: `${stats.pendingCards} pending`,
+      color: "#ec4899",
+      bg: "#fdf2f8",
+      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)"
     },
-    { 
-      id: "all offer", 
-      label: "Total Offers", 
-      value: stats.offers, 
-      icon: <Tag size={28} />, 
-      trend: "Active deals", 
-      color: "#ff961a", 
-      bg: "#fff7ed", 
-      gradient: "linear-gradient(135deg, #ff961a 0%, #fbbf24 100%)" 
+    {
+      id: "all offer",
+      label: "Total Offers",
+      value: stats.offers,
+      icon: <Tag size={28} />,
+      trend: "Active deals",
+      color: "#ff961a",
+      bg: "#fff7ed",
+      gradient: "linear-gradient(135deg, #ff961a 0%, #fbbf24 100%)"
     },
-    { 
-      id: "manage_jobs", 
-      label: "Open Jobs", 
-      value: stats.jobs, 
-      icon: <Briefcase size={28} />, 
-      trend: "New positions", 
-      color: "#3b82f6", 
-      bg: "#eff6ff", 
-      gradient: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)" 
+    {
+      id: "manage_jobs",
+      label: "Open Jobs",
+      value: stats.jobs,
+      icon: <Briefcase size={28} />,
+      trend: "New positions",
+      color: "#3b82f6",
+      bg: "#eff6ff",
+      gradient: "linear-gradient(135deg, #3b82f6 0%, #60a5fa 100%)"
     },
-    { 
-      id: "exchange_program", 
-      label: "Scholarships", 
-      value: stats.exchange, 
-      icon: <Globe size={28} />, 
-      trend: "Global study", 
-      color: "#8b5cf6", 
-      bg: "#f5f3ff", 
-      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)" 
+    {
+      id: "exchange_program",
+      label: "Scholarships",
+      value: stats.exchange,
+      icon: <Globe size={28} />,
+      trend: "Global study",
+      color: "#8b5cf6",
+      bg: "#f5f3ff",
+      gradient: "linear-gradient(135deg, #8b5cf6 0%, #a78bfa 100%)"
+    },
+    // ✅ NEW CARD 1: Events
+    {
+      id: "events",
+      label: "Events",
+      value: stats.events || 0,
+      icon: <CalendarCheck size={28} />,
+      trend: `${stats.eventRegistrations || 0} registrations`,
+      color: "#ec4899",
+      bg: "#fdf2f8",
+      gradient: "linear-gradient(135deg, #ec4899 0%, #f472b6 100%)"
+    },
+    // ✅ NEW CARD 2: All Brands Revenue
+    {
+      id: "all_brands_revenue",
+      label: "All Brands Revenue",
+      value: stats.totalRevenue ? `₨ ${Number(stats.totalRevenue).toLocaleString()}` : "₨ 0",
+      icon: <BarChart4 size={28} />,
+      trend: `${stats.brands || 0} brands tracked`,
+      color: "#10b981",
+      bg: "#ecfdf5",
+      gradient: "linear-gradient(135deg, #10b981 0%, #34d399 100%)"
     },
   ];
 
@@ -411,7 +478,7 @@ export default function AdminDashboard() {
       case "dashboard":
         return (
           <div style={styles.dashboardWrapper}>
-            <motion.div 
+            <motion.div
               style={styles.dashboardHeader}
               initial={{ opacity: 0, y: -20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -440,24 +507,24 @@ export default function AdminDashboard() {
               </div>
             </motion.div>
 
-            <motion.div 
-              className="cards-grid" 
+            <motion.div
+              className="cards-grid"
               style={styles.cardGrid}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               transition={{ duration: 0.5, delay: 0.1 }}
             >
               {cardData.map((item, index) => (
-                <motion.div 
-                  key={item.id} 
+                <motion.div
+                  key={item.id}
                   className="stat-card"
-                  style={styles.statCard} 
+                  style={styles.statCard}
                   onClick={() => setActivePage(item.id)}
                   initial={{ opacity: 0, y: 30 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.5, delay: index * 0.06 + 0.1 }}
-                  whileHover={{ 
-                    y: -10, 
+                  whileHover={{
+                    y: -10,
                     scale: 1.02,
                     boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)"
                   }}
@@ -477,13 +544,13 @@ export default function AdminDashboard() {
                       {item.icon}
                     </div>
                   </div>
-                  <motion.div 
+                  <motion.div
                     style={styles.cardGlow}
-                    animate={{ 
+                    animate={{
                       opacity: [0.3, 0.6, 0.3],
                       scale: [1, 1.05, 1]
                     }}
-                    transition={{ 
+                    transition={{
                       duration: 3,
                       repeat: Infinity,
                       ease: "easeInOut"
@@ -493,7 +560,7 @@ export default function AdminDashboard() {
               ))}
             </motion.div>
 
-            <motion.div 
+            <motion.div
               style={styles.quickStats}
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -521,34 +588,36 @@ export default function AdminDashboard() {
             </motion.div>
           </div>
         );
-      
-      case "events": 
+
+      case "events":
         return <EventManagement />;
-      case "booking": 
+      case "all_brands_revenue":
+        return <AllBrandsRevenue />;
+      case "booking":
         return <AdminPackage />;
-      case "card_manager": 
+      case "card_manager":
         return <CardManager />;
-      case "offer": 
+      case "offer":
         return <CreateOfferAdmin />;
-      case "all offer": 
+      case "all offer":
         return <AdminOffers />;
-      case "manage_jobs": 
+      case "manage_jobs":
         return <AdminJobManager />;
-      case "exchange_program": 
+      case "exchange_program":
         return <ManageExchange />;
-      case "traveling": 
+      case "traveling":
         return <AdminPackageScreen />;
-      case "students": 
+      case "students":
         return <AdminUserList role="student" title="Student Directory" />;
-      case "brands": 
+      case "brands":
         return <AdminUserList role="brand" title="Brand Management" />;
-      case "employees": 
+      case "employees":
         return <AdminUserList role="employee" title="Employee Management" />;
-      case "travelers": 
+      case "travelers":
         return <AdminUserList role="traveler" title="Traveler Management" />;
-        case "brand_approval":
-  return <BrandApprovalScreen />;
-      default: 
+      case "brand_approval":
+        return <BrandApprovalScreen />;
+      default:
         return <div style={styles.placeholderSection}><h2>Section Under Construction</h2></div>;
     }
   };
@@ -556,13 +625,13 @@ export default function AdminDashboard() {
   const unreadCount = notifications.filter(n => !n.read).length;
 
   const markAsRead = (id) => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => n.id === id ? { ...n, read: true } : n)
     );
   };
 
   const markAllAsRead = () => {
-    setNotifications(prev => 
+    setNotifications(prev =>
       prev.map(n => ({ ...n, read: true }))
     );
   };
@@ -603,11 +672,11 @@ export default function AdminDashboard() {
         onMouseLeave={() => setHoveredItem(null)}
         style={{
           ...styles.menuBtn,
-          backgroundColor: isActive 
-            ? "rgba(249, 195, 73, 0.12)" 
+          backgroundColor: isActive
+            ? "rgba(249, 195, 73, 0.12)"
             : (hoveredItem === item.id ? "rgba(255,255,255,0.05)" : "transparent"),
-          borderRight: isActive 
-            ? "3px solid #f9c349" 
+          borderRight: isActive
+            ? "3px solid #f9c349"
             : "3px solid transparent",
         }}
         onClick={() => {
@@ -619,10 +688,10 @@ export default function AdminDashboard() {
         whileHover={{ x: 4 }}
         whileTap={{ scale: 0.98 }}
       >
-        <span style={{...styles.btnIcon, color: isActive ? '#f9c349' : '#94a3b8'}}>
+        <span style={{ ...styles.btnIcon, color: isActive ? '#f9c349' : '#94a3b8' }}>
           {item.icon}
         </span>
-        <span style={{...styles.btnLabel, color: isActive ? '#fff' : '#cbd5e1'}}>
+        <span style={{ ...styles.btnLabel, color: isActive ? '#fff' : '#cbd5e1' }}>
           {item.label}
         </span>
         {isActive && <ChevronRight size={14} style={{ color: '#f9c349', marginLeft: 'auto' }} />}
@@ -661,8 +730,8 @@ export default function AdminDashboard() {
       {/* Mobile Overlay */}
       <AnimatePresence>
         {isMobile && isMobileMenuOpen && (
-          <motion.div 
-            style={styles.mobileOverlay} 
+          <motion.div
+            style={styles.mobileOverlay}
             onClick={closeMobileMenu}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
@@ -691,7 +760,7 @@ export default function AdminDashboard() {
       )}
 
       {/* Sidebar */}
-      <motion.aside 
+      <motion.aside
         className={`sidebar ${isMobile && isMobileMenuOpen ? 'open' : ''}`}
         style={{
           ...styles.sidebar,
@@ -699,14 +768,14 @@ export default function AdminDashboard() {
           position: isMobile ? 'fixed' : 'relative',
         }}
         initial={{ x: -20, opacity: 0 }}
-        animate={{ 
+        animate={{
           x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
-          opacity: 1 
+          opacity: 1
         }}
-        transition={{ 
-          type: "spring", 
-          stiffness: 300, 
-          damping: 30 
+        transition={{
+          type: "spring",
+          stiffness: 300,
+          damping: 30
         }}
       >
         <div style={styles.sidebarContent}>
@@ -719,8 +788,8 @@ export default function AdminDashboard() {
               <p style={styles.logoSubtext}>Management Dashboard</p>
             </div>
             {isMobile && (
-              <button 
-                style={styles.mobileCloseBtn} 
+              <button
+                style={styles.mobileCloseBtn}
                 onClick={closeMobileMenu}
                 className="mobile-close-btn"
               >
@@ -728,16 +797,16 @@ export default function AdminDashboard() {
               </button>
             )}
           </div>
-          
+
           <nav style={styles.menu}>
             {renderSidebarMenu()}
           </nav>
         </div>
-        
+
         {/* User Section */}
         <div style={styles.userSection} ref={userMenuRef}>
-          <div 
-            style={styles.userInfo} 
+          <div
+            style={styles.userInfo}
             onClick={() => setShowUserMenu(!showUserMenu)}
             className="user-info-clickable"
           >
@@ -757,14 +826,14 @@ export default function AdminDashboard() {
 
           <AnimatePresence>
             {showUserMenu && (
-              <motion.div 
+              <motion.div
                 style={styles.userDropdown}
                 initial={{ opacity: 0, y: -10, scale: 0.95 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
                 exit={{ opacity: 0, y: -10, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
               >
-                <div 
+                <div
                   style={styles.dropdownItem}
                   onClick={() => {
                     setShowUserMenu(false);
@@ -774,7 +843,7 @@ export default function AdminDashboard() {
                   <UserCircle size={18} />
                   <span>My Profile</span>
                 </div>
-                <div 
+                <div
                   style={styles.dropdownItem}
                   onClick={() => {
                     setShowUserMenu(false);
@@ -785,7 +854,7 @@ export default function AdminDashboard() {
                   <span>Settings</span>
                 </div>
                 <div style={styles.dropdownDivider} />
-                <div 
+                <div
                   style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
                   onClick={() => {
                     setShowUserMenu(false);
@@ -802,8 +871,8 @@ export default function AdminDashboard() {
       </motion.aside>
 
       <main style={styles.main}>
-        <motion.header 
-          className="main-header" 
+        <motion.header
+          className="main-header"
           style={styles.header}
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -819,18 +888,18 @@ export default function AdminDashboard() {
           </div>
           <div style={styles.headerActions}>
             <div style={styles.notificationWrapper} ref={notificationRef}>
-              <button 
-                className="icon-btn" 
+              <button
+                className="icon-btn"
                 style={styles.notifBtn}
                 onClick={() => setShowNotifications(!showNotifications)}
               >
                 <Bell size={20} />
                 {unreadCount > 0 && <span style={styles.notificationDot}>{unreadCount}</span>}
               </button>
-              
+
               <AnimatePresence>
                 {showNotifications && (
-                  <motion.div 
+                  <motion.div
                     style={styles.notificationDropdown}
                     initial={{ opacity: 0, y: -10, scale: 0.95 }}
                     animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -848,15 +917,15 @@ export default function AdminDashboard() {
                       </div>
                     ) : (
                       notifications.map(notif => (
-                        <div 
-                          key={notif.id} 
-                          style={{...styles.notificationItem, opacity: notif.read ? 0.6 : 1}}
+                        <div
+                          key={notif.id}
+                          style={{ ...styles.notificationItem, opacity: notif.read ? 0.6 : 1 }}
                           onClick={() => markAsRead(notif.id)}
                         >
                           <div style={styles.notificationIcon}>
-                            {notif.id === 1 ? <CalendarCheck size={14} /> : 
-                             notif.id === 2 ? <Users size={14} /> : 
-                             <Briefcase size={14} />}
+                            {notif.id === 1 ? <CalendarCheck size={14} /> :
+                              notif.id === 2 ? <Users size={14} /> :
+                                <Briefcase size={14} />}
                           </div>
                           <div style={styles.notificationContent}>
                             <div style={styles.notificationTitleText}>{notif.title}</div>
@@ -877,9 +946,9 @@ export default function AdminDashboard() {
             </button>
           </div>
         </motion.header>
-        
-        <motion.section 
-          className="content-area" 
+
+        <motion.section
+          className="content-area"
           style={styles.contentArea}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
@@ -924,7 +993,7 @@ export default function AdminDashboard() {
               <div style={styles.modalBody}>
                 <div style={styles.profileStats}>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#eff6ff', color: '#3b82f6'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#eff6ff', color: '#3b82f6' }}>
                       <Users size={18} />
                     </div>
                     <div>
@@ -933,7 +1002,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#f0fdf4', color: '#10b981'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#f0fdf4', color: '#10b981' }}>
                       <Store size={18} />
                     </div>
                     <div>
@@ -942,7 +1011,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#f5f3ff', color: '#8b5cf6'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#f5f3ff', color: '#8b5cf6' }}>
                       <HardHat size={18} />
                     </div>
                     <div>
@@ -951,7 +1020,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#ecfeff', color: '#06b6d4'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#ecfeff', color: '#06b6d4' }}>
                       <Compass size={18} />
                     </div>
                     <div>
@@ -960,7 +1029,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#fff7ed', color: '#ff961a'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#fff7ed', color: '#ff961a' }}>
                       <CalendarCheck size={18} />
                     </div>
                     <div>
@@ -969,7 +1038,7 @@ export default function AdminDashboard() {
                     </div>
                   </div>
                   <div style={styles.profileStat}>
-                    <div style={{...styles.profileStatIcon, background: '#fef3c7', color: '#f59e0b'}}>
+                    <div style={{ ...styles.profileStatIcon, background: '#fef3c7', color: '#f59e0b' }}>
                       <Tag size={18} />
                     </div>
                     <div>
@@ -1061,12 +1130,12 @@ export default function AdminDashboard() {
               initial={{ scale: 0.8, opacity: 0, y: 50 }}
               animate={{ scale: 1, opacity: 1, y: 0 }}
               exit={{ scale: 0.8, opacity: 0, y: 50 }}
-              style={{...styles.modalContent, maxWidth: '500px'}}
+              style={{ ...styles.modalContent, maxWidth: '500px' }}
               onClick={(e) => e.stopPropagation()}
             >
               <div style={styles.modalHeader}>
                 <div style={styles.modalHeaderLeft}>
-                  <div style={{...styles.modalAvatar, background: '#f1f5f9', color: '#ff961a', fontSize: '20px'}}>
+                  <div style={{ ...styles.modalAvatar, background: '#f1f5f9', color: '#ff961a', fontSize: '20px' }}>
                     <Settings size={24} />
                   </div>
                   <div>
@@ -1222,7 +1291,7 @@ export default function AdminDashboard() {
           .mobile-close-btn {
             display: block !important;
           }
-          
+
           .sidebar {
             position: fixed !important;
             top: 0 !important;
@@ -1512,11 +1581,11 @@ export default function AdminDashboard() {
 }
 
 const styles = {
-  layout: { 
-    display: "flex", 
-    height: "100vh", 
-    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)", 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif", 
+  layout: {
+    display: "flex",
+    height: "100vh",
+    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     overflow: "hidden",
     position: "relative",
     width: "100vw",
@@ -1592,14 +1661,14 @@ const styles = {
     padding: "4px",
     marginLeft: "auto",
   },
-  sidebar: { 
-    width: "240px", 
+  sidebar: {
+    width: "240px",
     background: "#0f172a",
-    padding: "24px 16px", 
-    display: "flex", 
-    flexDirection: "column", 
-    justifyContent: "space-between", 
-    color: "#fff", 
+    padding: "24px 16px",
+    display: "flex",
+    flexDirection: "column",
+    justifyContent: "space-between",
+    color: "#fff",
     boxShadow: "0 20px 35px -12px rgba(0, 0, 0, 0.25)",
     position: "relative",
     zIndex: 10,
@@ -1616,24 +1685,24 @@ const styles = {
     flexDirection: "column",
     overflow: "hidden",
   },
-  logoContainer: { 
-    display: "flex", 
-    alignItems: "center", 
-    gap: "12px", 
-    marginBottom: "24px", 
+  logoContainer: {
+    display: "flex",
+    alignItems: "center",
+    gap: "12px",
+    marginBottom: "24px",
     paddingLeft: "8px",
     position: "relative",
     flexShrink: 0,
   },
-  logoBadge: { 
-    width: "44px", 
-    height: "44px", 
-    borderRadius: "14px", 
+  logoBadge: {
+    width: "44px",
+    height: "44px",
+    borderRadius: "14px",
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
-    display: "flex", 
-    alignItems: "center", 
-    justifyContent: "center", 
-    fontWeight: "800", 
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    fontWeight: "800",
     fontSize: "20px",
     color: "#0f172a",
     boxShadow: "0 8px 25px rgba(249, 195, 73, 0.3)",
@@ -1642,10 +1711,10 @@ const styles = {
   logoIcon: {
     transform: "rotate(-5deg)",
   },
-  logoText: { 
-    fontSize: "18px", 
-    margin: 0, 
-    fontWeight: "700", 
+  logoText: {
+    fontSize: "18px",
+    margin: 0,
+    fontWeight: "700",
     color: "#fff",
     letterSpacing: "-0.5px",
     lineHeight: 1.2
@@ -1667,9 +1736,9 @@ const styles = {
     marginTop: "16px",
     flexShrink: 0,
   },
-  menu: { 
-    display: "flex", 
-    flexDirection: "column", 
+  menu: {
+    display: "flex",
+    flexDirection: "column",
     gap: "2px",
     flex: 1,
     overflowY: "auto",
@@ -1686,25 +1755,25 @@ const styles = {
     fontWeight: "600",
     flexShrink: 0,
   },
-  menuBtn: { 
-    border: "none", 
-    display: "flex", 
-    alignItems: "center", 
-    padding: "10px 12px", 
-    borderRadius: "12px", 
-    cursor: "pointer", 
-    transition: "all 0.2s ease", 
-    textAlign: "left", 
-    fontSize: "14px", 
-    fontWeight: "500", 
+  menuBtn: {
+    border: "none",
+    display: "flex",
+    alignItems: "center",
+    padding: "10px 12px",
+    borderRadius: "12px",
+    cursor: "pointer",
+    transition: "all 0.2s ease",
+    textAlign: "left",
+    fontSize: "14px",
+    fontWeight: "500",
     width: "100%",
     background: "transparent",
     position: "relative",
     gap: "12px",
     flexShrink: 0,
   },
-  btnIcon: { 
-    display: "flex", 
+  btnIcon: {
+    display: "flex",
     alignItems: "center",
     transition: "color 0.2s ease",
     flexShrink: 0,
@@ -1789,37 +1858,37 @@ const styles = {
   dropdownLogout: {
     color: "#ef4444",
   },
-  main: { 
-    flex: 1, 
-    padding: "24px 28px", 
+  main: {
+    flex: 1,
+    padding: "24px 28px",
     overflowY: "auto",
     position: "relative",
     zIndex: 10,
     minWidth: 0,
   },
-  header: { 
-    display: "flex", 
-    justifyContent: "space-between", 
-    alignItems: "flex-start", 
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
     marginBottom: "18px",
     flexWrap: "wrap",
     gap: "12px"
   },
   headerLeft: {
     flex: 1,
-    marginLeft:35
+    marginLeft: 35
   },
-  greeting: { 
-    fontSize: "22px", 
-    fontWeight: "700", 
-    color: "#1e293b", 
+  greeting: {
+    fontSize: "22px",
+    fontWeight: "700",
+    color: "#1e293b",
     margin: 0,
     letterSpacing: "-0.5px"
   },
-  dateText: { 
-    color: "#64748b", 
-    marginTop: "2px", 
-    fontSize: "13px" 
+  dateText: {
+    color: "#64748b",
+    marginTop: "2px",
+    fontSize: "13px"
   },
   headerActions: {
     display: "flex",
@@ -1956,7 +2025,7 @@ const styles = {
     justifyContent: "center",
     transition: "all 0.2s ease"
   },
-  contentArea: { 
+  contentArea: {
     flex: 1,
     width: "100%",
   },
@@ -2035,21 +2104,21 @@ const styles = {
     borderRadius: "50%",
     background: "#10b981",
   },
-  cardGrid: { 
-    display: "grid", 
-    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", 
+  cardGrid: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))",
     gap: "20px",
     marginBottom: "24px",
     width: "100%",
   },
-  statCard: { 
-    background: "#fff", 
-    padding: "24px", 
-    borderRadius: "24px", 
-    display: "flex", 
+  statCard: {
+    background: "#fff",
+    padding: "24px",
+    borderRadius: "24px",
+    display: "flex",
     flexDirection: "column",
-    cursor: "pointer", 
-    transition: "all 0.3s ease", 
+    cursor: "pointer",
+    transition: "all 0.3s ease",
     border: "1px solid #e5e7eb",
     boxShadow: "0 2px 8px rgba(0,0,0,0.02)",
     minHeight: "140px",
@@ -2064,37 +2133,37 @@ const styles = {
     position: "relative",
     zIndex: 2
   },
-  cardLabel: { 
-    color: "#64748b", 
-    fontSize: "13px", 
-    fontWeight: "600", 
+  cardLabel: {
+    color: "#64748b",
+    fontSize: "13px",
+    fontWeight: "600",
     margin: "0 0 6px 0",
     textTransform: "uppercase",
     letterSpacing: "0.5px"
   },
-  cardValue: { 
-    fontSize: "32px", 
-    fontWeight: "800", 
-    color: "#1e293b", 
+  cardValue: {
+    fontSize: "32px",
+    fontWeight: "800",
+    color: "#1e293b",
     margin: 0,
     lineHeight: 1.2
   },
-  cardTrend: { 
-    fontSize: "12px", 
-    fontWeight: "600", 
-    marginTop: "8px", 
-    display: "inline-flex", 
+  cardTrend: {
+    fontSize: "12px",
+    fontWeight: "600",
+    marginTop: "8px",
+    display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    padding: "4px 12px", 
-    borderRadius: "20px" 
+    padding: "4px 12px",
+    borderRadius: "20px"
   },
-  cardIconBox: { 
-    width: "56px", 
-    height: "56px", 
-    borderRadius: "16px", 
-    display: "flex", 
-    alignItems: "center", 
+  cardIconBox: {
+    width: "56px",
+    height: "56px",
+    borderRadius: "16px",
+    display: "flex",
+    alignItems: "center",
     justifyContent: "center",
     color: "#fff",
     boxShadow: "0 4px 12px rgba(0,0,0,0.1)"
@@ -2135,11 +2204,11 @@ const styles = {
     height: "24px",
     background: "#e5e7eb"
   },
-  placeholderSection: { 
-    background: "#fff", 
-    padding: "60px", 
-    borderRadius: "24px", 
-    textAlign: "center", 
+  placeholderSection: {
+    background: "#fff",
+    padding: "60px",
+    borderRadius: "24px",
+    textAlign: "center",
     color: "#64748b",
     border: "1px solid #e2e8f0"
   },

@@ -1,9 +1,9 @@
-// AdminUserList.js - Complete Component with Password Management & QR Display
+// AdminUserList.js - Complete Component with Password Management, QR Display & Revenue Drill-Down
 import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
-import { 
-  Users, Download, Search, X, CheckCircle, Clock, 
+import {
+  Users, Download, Search, X, CheckCircle, Clock,
   UserCheck, UserX, Mail, Building, Shield, Filter,
   ChevronRight, TrendingUp, Award, Sparkles, Eye,
   UserPlus, Link2, Phone, MapPin, Calendar, Star,
@@ -14,7 +14,8 @@ import {
   Image, Layers, PieChart, Briefcase as BriefcaseIcon,
   Ticket, ShoppingBag, FileCheck, Users as UsersIcon,
   QrCode, Copy, Download as DownloadIcon, Share2,
-  ChevronLeft, ChevronsLeft, ChevronsRight, Menu
+  ChevronLeft, ChevronsLeft, ChevronsRight, Menu,
+  Globe
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
@@ -46,11 +47,11 @@ export default function AdminUserList({ role, title }) {
   const [activeStatFilter, setActiveStatFilter] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
-  
+
   // Pagination states
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(30);
-  
+
   // QR Code states
   const [showQRModal, setShowQRModal] = useState(false);
   const [qrImage, setQrImage] = useState(null);
@@ -58,13 +59,31 @@ export default function AdminUserList({ role, title }) {
   const [qrData, setQrData] = useState(null);
   const [generatingQR, setGeneratingQR] = useState(false);
   const [copied, setCopied] = useState(false);
-  
+
+  // Brand Redemptions Drill-Down states
+  const [showRedemptionsModal, setShowRedemptionsModal] = useState(false);
+  const [brandRedemptions, setBrandRedemptions] = useState([]);
+  const [brandRedemptionStats, setBrandRedemptionStats] = useState({
+    totalRedemptions: 0,
+    totalRevenue: 0,
+    totalBill: 0,
+    totalSaved: 0,
+    uniqueStudents: 0,
+    onlineCount: 0,
+    inStoreCount: 0,
+    onlineSaved: 0,
+    inStoreSaved: 0
+  });
+  const [loadingRedemptions, setLoadingRedemptions] = useState(false);
+  const [redemptionSearchTerm, setRedemptionSearchTerm] = useState("");
+  const [redemptionFilter, setRedemptionFilter] = useState("all");
+
   // Refs for scroll management
   const modalRef = useRef(null);
   const modalBodyRef = useRef(null);
   const pageWrapperRef = useRef(null);
   const tableContainerRef = useRef(null);
-  
+
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -85,12 +104,10 @@ export default function AdminUserList({ role, title }) {
     fetchUsers();
   }, [role]);
 
-  // Reset to page 1 when filters change
   useEffect(() => {
     setCurrentPage(1);
   }, [searchTerm, filterStatus, filterReferral, sortField, sortDirection]);
 
-  // Scroll to top when modal opens
   useEffect(() => {
     if (showModal && modalBodyRef.current) {
       setTimeout(() => {
@@ -106,8 +123,8 @@ export default function AdminUserList({ role, title }) {
     setLoading(true);
     try {
       const res = await fetch(
-       // `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
-        `http://localhost:5000/api/admin/users/${role}`,
+        `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
+        // `http://localhost:5000/api/admin/users/${role}`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -157,8 +174,8 @@ export default function AdminUserList({ role, title }) {
     setTogglingId(id);
     try {
       const res = await fetch(
-      //  `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
-        `http://localhost:5000/api/admin/approve-user/${id}`,
+        `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
+        // `http://localhost:5000/api/admin/approve-user/${id}`,
         { method: "POST", headers: getAuthHeaders() }
       );
       if (res.ok) fetchUsers();
@@ -203,7 +220,7 @@ export default function AdminUserList({ role, title }) {
     setLoadingDetails(true);
     try {
       const token = localStorage.getItem("token");
-      
+
       let details = {
         offers: [],
         jobs: [],
@@ -217,12 +234,27 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'brand') {
         try {
           const offersRes = await fetch(
-            //`https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
-            `http://localhost:5000/api/offers/brand/${user._id}`,
+            `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
+            // `http://localhost:5000/api/offers/brand/${user._id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const offersData = await offersRes.json();
           details.offers = Array.isArray(offersData) ? offersData : [];
+
+          // Fetch revenue stats for this brand
+          try {
+            const statsRes = await fetch(
+              `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}/redemptions`,
+              // `http://localhost:5000/api/offers/brand/${user._id}/redemptions`,
+              { headers: { Authorization: `Bearer ${token}` } }
+            );
+            const statsData = await statsRes.json();
+            if (statsData.success) {
+              details.stats = statsData.stats;
+            }
+          } catch (statsErr) {
+            console.error("Error fetching brand revenue stats:", statsErr);
+          }
         } catch (err) {
           console.error("Error fetching brand details:", err);
         }
@@ -231,8 +263,8 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'employee') {
         try {
           const jobsRes = await fetch(
-           //`https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
-            `http://localhost:5000/api/jobs/my-jobs`,
+            `https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
+            // `http://localhost:5000/api/jobs/my-jobs`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const jobsData = await jobsRes.json();
@@ -245,32 +277,28 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'student') {
         try {
           const claimedRes = await fetch(
-            //`https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
-            `http://localhost:5000/api/offers/claimed`,
+            `https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const claimedData = await claimedRes.json();
           details.claimedOffers = Array.isArray(claimedData) ? claimedData : [];
-          
+
           const savingsRes = await fetch(
-            //`https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
-            `http://localhost:5000/api/offers/my-total-savings`,
+            `https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const savingsData = await savingsRes.json();
           details.savings = savingsData || { totalSaved: 0, redemptionCount: 0 };
-          
+
           const jobAppsRes = await fetch(
-            //`https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
-            `http://localhost:5000/api/jobs/my-applications`,
+            `https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const jobAppsData = await jobAppsRes.json();
           details.applications = Array.isArray(jobAppsData) ? jobAppsData : [];
-          
+
           const resumeRes = await fetch(
-            //`https://the-deft-crew-production.up.railway.app/api/resume/primary`,
-            `http://localhost:5000/api/resume/primary`,
+            `https://the-deft-crew-production.up.railway.app/api/resume/primary`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const resumeData = await resumeRes.json();
@@ -290,7 +318,7 @@ export default function AdminUserList({ role, title }) {
 
   const togglePasswordVisibility = async (userId, e) => {
     e.stopPropagation();
-    
+
     if (showPassword[userId]) {
       setShowPassword(prev => ({
         ...prev,
@@ -311,17 +339,16 @@ export default function AdminUserList({ role, title }) {
     setLoadingPassword(prev => ({ ...prev, [userId]: true }));
     try {
       const res = await fetch(
-       //`https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
-        `http://localhost:5000/api/admin/users/password/${userId}`,
+        `https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
         { headers: getAuthHeaders() }
       );
-      
+
       if (!res.ok) {
         throw new Error(`HTTP error! status: ${res.status}`);
       }
-      
+
       const data = await res.json();
-      
+
       if (data.success && data.password) {
         setShowPassword(prev => ({
           ...prev,
@@ -375,7 +402,7 @@ export default function AdminUserList({ role, title }) {
     e.stopPropagation();
     setSelectedOfferForQR(offer);
     setGeneratingQR(true);
-    
+
     try {
       const qrPayload = {
         type: 'offer',
@@ -441,7 +468,7 @@ export default function AdminUserList({ role, title }) {
         const response = await fetch(qrImage);
         const blob = await response.blob();
         const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-        
+
         if (navigator.share) {
           await navigator.share({
             title: `${selectedUser?.brandName || 'Brand'} Discount QR Code`,
@@ -458,6 +485,76 @@ export default function AdminUserList({ role, title }) {
     }
   };
 
+  // ========== BRAND REDEMPTIONS DRILL-DOWN ==========
+  const fetchBrandRedemptions = async (brandId) => {
+    setLoadingRedemptions(true);
+    try {
+      const res = await fetch(
+        `https://the-deft-crew-production.up.railway.app/api/offers/brand/${brandId}/redemptions`,
+        // `http://localhost:5000/api/offers/brand/${brandId}/redemptions`,
+        { headers: getAuthHeaders() }
+      );
+      const data = await res.json();
+      if (data.success) {
+        setBrandRedemptions(Array.isArray(data.redemptions) ? data.redemptions : []);
+        setBrandRedemptionStats(data.stats || {});
+      } else {
+        setBrandRedemptions([]);
+        setBrandRedemptionStats({});
+        console.error("Failed to load redemptions:", data.message);
+      }
+    } catch (err) {
+      console.error("Error fetching brand redemptions:", err);
+      setBrandRedemptions([]);
+    } finally {
+      setLoadingRedemptions(false);
+    }
+  };
+
+  const openRedemptionsModal = async (e) => {
+    if (e) e.stopPropagation();
+    if (!selectedUser || selectedUser.role !== 'brand') return;
+    setShowRedemptionsModal(true);
+    setRedemptionSearchTerm("");
+    setRedemptionFilter("all");
+    await fetchBrandRedemptions(selectedUser._id);
+  };
+
+  const closeRedemptionsModal = () => {
+    setShowRedemptionsModal(false);
+    setBrandRedemptions([]);
+    setBrandRedemptionStats({
+      totalRedemptions: 0,
+      totalRevenue: 0,
+      totalBill: 0,
+      totalSaved: 0,
+      uniqueStudents: 0,
+      onlineCount: 0,
+      inStoreCount: 0,
+      onlineSaved: 0,
+      inStoreSaved: 0
+    });
+    setRedemptionSearchTerm("");
+    setRedemptionFilter("all");
+  };
+
+  const filteredRedemptions = brandRedemptions.filter(r => {
+    if (redemptionFilter !== "all" && r.redemptionType !== redemptionFilter) {
+      return false;
+    }
+    if (redemptionSearchTerm) {
+      const term = redemptionSearchTerm.toLowerCase().trim();
+      return (
+        r.studentName?.toLowerCase().includes(term) ||
+        r.rollNo?.toLowerCase().includes(term) ||
+        r.email?.toLowerCase().includes(term) ||
+        r.offerTitle?.toLowerCase().includes(term) ||
+        r.promoCode?.toLowerCase().includes(term)
+      );
+    }
+    return true;
+  });
+
   const handleSort = (field) => {
     if (sortField === field) {
       setSortDirection(sortDirection === "asc" ? "desc" : "asc");
@@ -468,7 +565,7 @@ export default function AdminUserList({ role, title }) {
   };
 
   const getRoleIcon = (role) => {
-    switch(role) {
+    switch (role) {
       case 'student': return <GraduationCap size={14} />;
       case 'brand': return <Store size={14} />;
       case 'employee': return <Briefcase size={14} />;
@@ -479,7 +576,7 @@ export default function AdminUserList({ role, title }) {
   };
 
   const getRoleColor = (role) => {
-    switch(role) {
+    switch (role) {
       case 'student': return '#3b82f6';
       case 'brand': return '#8b5cf6';
       case 'employee': return '#10b981';
@@ -520,7 +617,6 @@ export default function AdminUserList({ role, title }) {
     }
   };
 
-  // Pagination functions
   const goToPage = (page) => {
     setCurrentPage(page);
     if (tableContainerRef.current) {
@@ -531,74 +627,67 @@ export default function AdminUserList({ role, title }) {
   const goToFirstPage = () => goToPage(1);
   const goToLastPage = () => goToPage(totalPages);
   const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      goToPage(currentPage + 1);
-    }
+    if (currentPage < totalPages) goToPage(currentPage + 1);
   };
   const goToPrevPage = () => {
-    if (currentPage > 1) {
-      goToPage(currentPage - 1);
-    }
+    if (currentPage > 1) goToPage(currentPage - 1);
   };
 
-  // Filter and sort users
   const filteredAndSortedUsers = users
     .filter((user) => {
-      const matchesSearch = 
+      const matchesSearch =
         user.name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.email?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.referralCode?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.brandName?.toLowerCase().includes(searchTerm.toLowerCase()) ||
         user.companyName?.toLowerCase().includes(searchTerm.toLowerCase());
-      
-      const matchesStatus = filterStatus === "all" || 
+
+      const matchesStatus = filterStatus === "all" ||
         (filterStatus === "verified" && user.status === "Verified") ||
         (filterStatus === "pending" && user.status !== "Verified");
-      
+
       const matchesReferral = filterReferral === "all" ||
         (filterReferral === "high" && (user.referralCount || 0) >= 10) ||
         (filterReferral === "medium" && (user.referralCount || 0) >= 5 && (user.referralCount || 0) < 10) ||
         (filterReferral === "low" && (user.referralCount || 0) > 0 && (user.referralCount || 0) < 5) ||
         (filterReferral === "none" && (user.referralCount || 0) === 0);
-      
+
       return matchesSearch && matchesStatus && matchesReferral;
     })
     .sort((a, b) => {
       let aVal = a[sortField] || '';
       let bVal = b[sortField] || '';
-      
+
       if (sortField === 'referralCount') {
         aVal = a.referralCount || 0;
         bVal = b.referralCount || 0;
       }
-      
+
       if (typeof aVal === 'string') {
         aVal = aVal.toLowerCase();
         bVal = bVal.toLowerCase();
       }
-      
+
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
 
-  // Get current page users
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
   const currentUsers = filteredAndSortedUsers.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredAndSortedUsers.length / itemsPerPage);
 
-  // Generate page numbers for pagination
   const getPageNumbers = () => {
     const pageNumbers = [];
     const maxPagesToShow = isMobile ? 3 : 5;
     let startPage = Math.max(1, currentPage - Math.floor(maxPagesToShow / 2));
     let endPage = Math.min(totalPages, startPage + maxPagesToShow - 1);
-    
+
     if (endPage - startPage + 1 < maxPagesToShow) {
       startPage = Math.max(1, endPage - maxPagesToShow + 1);
     }
-    
+
     for (let i = startPage; i <= endPage; i++) {
       pageNumbers.push(i);
     }
@@ -617,14 +706,14 @@ export default function AdminUserList({ role, title }) {
 
   if (loading) {
     return (
-      <motion.div 
-        className="loader-container" 
+      <motion.div
+        className="loader-container"
         style={styles.loadingContainer}
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
       >
-        <motion.div 
-          className="spinner" 
+        <motion.div
+          className="spinner"
           style={styles.spinner}
           animate={{ rotate: 360 }}
           transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
@@ -650,8 +739,8 @@ export default function AdminUserList({ role, title }) {
 
       <div style={styles.container}>
         {/* Header Section */}
-        <motion.div 
-          className="animate-header" 
+        <motion.div
+          className="animate-header"
           style={{
             ...styles.header,
             flexDirection: isMobile ? "column" : "row",
@@ -718,8 +807,8 @@ export default function AdminUserList({ role, title }) {
         </motion.div>
 
         {/* Stats Summary - Clickable */}
-        <motion.div 
-          className="stats-group" 
+        <motion.div
+          className="stats-group"
           style={{
             ...styles.statsGrid,
             gridTemplateColumns: isMobile ? "repeat(3, 1fr)" : isTablet ? "repeat(3, 1fr)" : "repeat(auto-fit, minmax(120px, 1fr))",
@@ -730,58 +819,58 @@ export default function AdminUserList({ role, title }) {
           transition={{ duration: 0.5, delay: 0.1 }}
         >
           {[
-            { 
-              icon: <Users size={isMobile ? 14 : 16} />, 
-              label: 'Total', 
-              value: stats.total, 
-              color: '#10b981', 
+            {
+              icon: <Users size={isMobile ? 14 : 16} />,
+              label: 'Total',
+              value: stats.total,
+              color: '#10b981',
               bg: '#ecfdf5',
               filter: 'total'
             },
-            { 
-              icon: <CheckCircle size={isMobile ? 14 : 16} />, 
-              label: 'Verified', 
-              value: stats.verified, 
-              color: '#3b82f6', 
+            {
+              icon: <CheckCircle size={isMobile ? 14 : 16} />,
+              label: 'Verified',
+              value: stats.verified,
+              color: '#3b82f6',
               bg: '#eff6ff',
               filter: 'verified'
             },
-            { 
-              icon: <Clock size={isMobile ? 14 : 16} />, 
-              label: 'Pending', 
-              value: stats.pending, 
-              color: '#f59e0b', 
+            {
+              icon: <Clock size={isMobile ? 14 : 16} />,
+              label: 'Pending',
+              value: stats.pending,
+              color: '#f59e0b',
               bg: '#fef3c7',
               filter: 'pending'
             },
-            { 
-              icon: <Crown size={isMobile ? 14 : 16} />, 
-              label: 'VIP', 
-              value: stats.vip, 
-              color: '#ec4899', 
+            {
+              icon: <Crown size={isMobile ? 14 : 16} />,
+              label: 'VIP',
+              value: stats.vip,
+              color: '#ec4899',
               bg: '#fdf2f8',
               filter: 'vip'
             },
-            { 
-              icon: <Gift size={isMobile ? 14 : 16} />, 
-              label: 'Referrals', 
-              value: stats.totalReferrals, 
-              color: '#eab308', 
+            {
+              icon: <Gift size={isMobile ? 14 : 16} />,
+              label: 'Referrals',
+              value: stats.totalReferrals,
+              color: '#eab308',
               bg: '#fefce8',
               filter: 'referrals'
             },
-            { 
-              icon: <Image size={isMobile ? 14 : 16} />, 
-              label: 'With Logo', 
-              value: stats.withLogo, 
-              color: '#8b5cf6', 
+            {
+              icon: <Image size={isMobile ? 14 : 16} />,
+              label: 'With Logo',
+              value: stats.withLogo,
+              color: '#8b5cf6',
               bg: '#f5f3ff',
               filter: 'logo'
             },
           ].map((stat, index) => (
-            <motion.div 
+            <motion.div
               key={index}
-              className="stat-card" 
+              className="stat-card"
               style={{
                 ...styles.statCard,
                 padding: isMobile ? "8px 10px" : isTablet ? "10px 14px" : "12px 16px",
@@ -792,8 +881,8 @@ export default function AdminUserList({ role, title }) {
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.3, delay: 0.05 + index * 0.03 }}
-              whileHover={{ 
-                y: -2, 
+              whileHover={{
+                y: -2,
                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                 ...(stat.filter !== 'total' && stat.filter !== 'logo' ? { scale: 1.02 } : {})
               }}
@@ -803,7 +892,7 @@ export default function AdminUserList({ role, title }) {
                 ...styles.statIcon,
                 width: isMobile ? "28px" : "32px",
                 height: isMobile ? "28px" : "32px",
-                background: stat.bg, 
+                background: stat.bg,
                 color: stat.color,
                 fontSize: isMobile ? "12px" : "16px",
               }}>
@@ -829,8 +918,8 @@ export default function AdminUserList({ role, title }) {
         </motion.div>
 
         {/* Search and Filter Bar */}
-        <motion.div 
-          className="animate-controls" 
+        <motion.div
+          className="animate-controls"
           style={{
             ...styles.controlsBar,
             gap: isMobile ? "8px" : "12px",
@@ -857,8 +946,8 @@ export default function AdminUserList({ role, title }) {
               }}
             />
             {searchTerm && (
-              <motion.button 
-                onClick={() => setSearchTerm("")} 
+              <motion.button
+                onClick={() => setSearchTerm("")}
                 style={styles.clearSearch}
                 whileHover={{ scale: 1.1 }}
                 whileTap={{ scale: 0.9 }}
@@ -905,7 +994,7 @@ export default function AdminUserList({ role, title }) {
                 }}
                 onClick={() => { setFilterStatus("verified"); setActiveStatFilter('verified'); setCurrentPage(1); }}
               >
-                <CheckCircle size={isMobile ? 10 : 12} /> {isMobile ? "Verified" : "Verified"}
+                <CheckCircle size={isMobile ? 10 : 12} /> Verified
               </button>
               <button
                 className={`filter-btn ${filterStatus === "pending" ? "active" : ""}`}
@@ -917,7 +1006,7 @@ export default function AdminUserList({ role, title }) {
                 }}
                 onClick={() => { setFilterStatus("pending"); setActiveStatFilter('pending'); setCurrentPage(1); }}
               >
-                <Clock size={isMobile ? 10 : 12} /> {isMobile ? "Pending" : "Pending"}
+                <Clock size={isMobile ? 10 : 12} /> Pending
               </button>
             </div>
             <div style={{
@@ -953,7 +1042,7 @@ export default function AdminUserList({ role, title }) {
                 }}
                 onClick={() => { setFilterReferral("high"); setActiveStatFilter('referrals'); setCurrentPage(1); }}
               >
-                <Flame size={isMobile ? 10 : 12} /> {isMobile ? "10+" : "10+"}
+                <Flame size={isMobile ? 10 : 12} /> 10+
               </button>
               <button
                 className={`filter-btn ${filterReferral === "medium" ? "active" : ""}`}
@@ -965,15 +1054,15 @@ export default function AdminUserList({ role, title }) {
                 }}
                 onClick={() => { setFilterReferral("medium"); setActiveStatFilter(null); setCurrentPage(1); }}
               >
-                <TrendingUp size={isMobile ? 10 : 12} /> {isMobile ? "5-9" : "5-9"}
+                <TrendingUp size={isMobile ? 10 : 12} /> 5-9
               </button>
             </div>
           </div>
         </motion.div>
 
-        {/* Table Section - Full Width */}
-        <motion.div 
-          className="table-container" 
+        {/* Table Section */}
+        <motion.div
+          className="table-container"
           style={styles.tableWrapper}
           ref={tableContainerRef}
           initial={{ opacity: 0, scale: 0.98 }}
@@ -984,70 +1073,106 @@ export default function AdminUserList({ role, title }) {
             <table style={{ width: "100%", borderCollapse: "collapse" }}>
               <thead>
                 <tr style={styles.theadRow}>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                  }} onClick={() => handleSort('name')} className="sortable">
-                    USER {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                  }} onClick={() => handleSort('email')} className="sortable">
-                    CONTACT {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
-                  </th>
-                  {(role === "brand" || role === "employee") && (
-                    <th style={{
+                  <th
+                    style={{
                       ...styles.th,
                       padding: isMobile ? "8px 10px" : "12px 16px",
                       fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                    }} onClick={() => handleSort('brandName')} className="sortable">
+                    }}
+                    onClick={() => handleSort('name')}
+                    className="sortable"
+                  >
+                    USER {sortField === 'name' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    }}
+                    onClick={() => handleSort('email')}
+                    className="sortable"
+                  >
+                    CONTACT {sortField === 'email' && (sortDirection === 'asc' ? '↑' : '↓')}
+                  </th>
+                  {(role === "brand" || role === "employee") && (
+                    <th
+                      style={{
+                        ...styles.th,
+                        padding: isMobile ? "8px 10px" : "12px 16px",
+                        fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                      }}
+                      onClick={() => handleSort('brandName')}
+                      className="sortable"
+                    >
                       COMPANY {sortField === 'brandName' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </th>
                   )}
                   {role === "student" && (
-                    <th style={{
-                      ...styles.th,
-                      padding: isMobile ? "8px 10px" : "12px 16px",
-                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                    }} onClick={() => handleSort('university')} className="sortable">
+                    <th
+                      style={{
+                        ...styles.th,
+                        padding: isMobile ? "8px 10px" : "12px 16px",
+                        fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                      }}
+                      onClick={() => handleSort('university')}
+                      className="sortable"
+                    >
                       UNIVERSITY {sortField === 'university' && (sortDirection === 'asc' ? '↑' : '↓')}
                     </th>
                   )}
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                  }} onClick={() => handleSort('referralCount')} className="sortable">
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    }}
+                    onClick={() => handleSort('referralCount')}
+                    className="sortable"
+                  >
                     REFERRAL {sortField === 'referralCount' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                  }} onClick={() => handleSort('status')} className="sortable">
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                    }}
+                    onClick={() => handleSort('status')}
+                    className="sortable"
+                  >
                     STATUS {sortField === 'status' && (sortDirection === 'asc' ? '↑' : '↓')}
                   </th>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                    textAlign: 'center'
-                  }}>LOGO</th>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                    textAlign: 'center'
-                  }}>ROLE</th>
-                  <th style={{
-                    ...styles.th,
-                    padding: isMobile ? "8px 10px" : "12px 16px",
-                    fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
-                    textAlign: 'center'
-                  }}>ACTIONS</th>
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                      textAlign: 'center',
+                    }}
+                  >
+                    LOGO
+                  </th>
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                      textAlign: 'center',
+                    }}
+                  >
+                    ROLE
+                  </th>
+                  <th
+                    style={{
+                      ...styles.th,
+                      padding: isMobile ? "8px 10px" : "12px 16px",
+                      fontSize: isMobile ? "8px" : isTablet ? "9px" : "10px",
+                      textAlign: 'center',
+                    }}
+                  >
+                    ACTIONS
+                  </th>
                 </tr>
               </thead>
               <tbody>
@@ -1056,7 +1181,7 @@ export default function AdminUserList({ role, title }) {
                     const referralLevel = getReferralLevel(u.referralCount);
                     const isTop = u.referralCount >= 10;
                     const roleColor = getRoleColor(u.role);
-                    
+
                     return (
                       <motion.tr
                         key={u._id}
@@ -1109,12 +1234,12 @@ export default function AdminUserList({ role, title }) {
                         }}>
                           <div style={styles.emailCell}>
                             <Mail size={isMobile ? 10 : 12} color="#94a3b8" />
-                            <span style={{fontSize: isMobile ? "10px" : "12px"}}>{u.email}</span>
+                            <span style={{ fontSize: isMobile ? "10px" : "12px" }}>{u.email}</span>
                           </div>
                           {u.phone && (
                             <div style={styles.phoneCell}>
                               <Phone size={isMobile ? 10 : 12} color="#94a3b8" />
-                              <span style={{fontSize: isMobile ? "9px" : "11px"}}>{u.phone}</span>
+                              <span style={{ fontSize: isMobile ? "9px" : "11px" }}>{u.phone}</span>
                             </div>
                           )}
                         </td>
@@ -1176,7 +1301,7 @@ export default function AdminUserList({ role, title }) {
                           <div style={styles.referralInfo}>
                             <div style={styles.referralCode}>
                               <Link2 size={isMobile ? 10 : 12} color="#eab308" />
-                              <code style={{fontSize: isMobile ? "9px" : "11px"}}>{u.referralCode || 'N/A'}</code>
+                              <code style={{ fontSize: isMobile ? "9px" : "11px" }}>{u.referralCode || 'N/A'}</code>
                             </div>
                             <div style={styles.referralStats}>
                               <div style={{
@@ -1222,9 +1347,7 @@ export default function AdminUserList({ role, title }) {
                               ...styles.badge,
                               padding: isMobile ? "2px 8px" : "4px 12px",
                               fontSize: isMobile ? "9px" : "11px",
-                              backgroundColor: u.status === "Verified"
-                                ? "#10b98115"
-                                : "#f59e0b15",
+                              backgroundColor: u.status === "Verified" ? "#10b98115" : "#f59e0b15",
                               color: u.status === "Verified" ? "#10b981" : "#f59e0b",
                             }}
                           >
@@ -1245,12 +1368,12 @@ export default function AdminUserList({ role, title }) {
                           ...styles.td,
                           padding: isMobile ? "8px 10px" : "12px 16px",
                           fontSize: isMobile ? "11px" : "13px",
-                          textAlign: 'center'
+                          textAlign: 'center',
                         }}>
                           {u.logo ? (
-                            <img 
-                              src={u.logo} 
-                              alt="Logo" 
+                            <img
+                              src={u.logo}
+                              alt="Logo"
                               style={{
                                 ...styles.logoThumb,
                                 width: isMobile ? "24px" : "32px",
@@ -1258,18 +1381,18 @@ export default function AdminUserList({ role, title }) {
                               }}
                               onError={(e) => {
                                 e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = '<span style={{color:"#94a3b8"}}>—</span>';
+                                e.target.parentElement.innerHTML = '<span style="color:#94a3b8">—</span>';
                               }}
                             />
                           ) : (
-                            <span style={{color: '#94a3b8', fontSize: isMobile ? "10px" : "12px"}}>—</span>
+                            <span style={{ color: '#94a3b8', fontSize: isMobile ? "10px" : "12px" }}>—</span>
                           )}
                         </td>
                         <td style={{
                           ...styles.td,
                           padding: isMobile ? "8px 10px" : "12px 16px",
                           fontSize: isMobile ? "11px" : "13px",
-                          textAlign: 'center'
+                          textAlign: 'center',
                         }}>
                           <span style={{
                             ...styles.roleBadge,
@@ -1287,7 +1410,7 @@ export default function AdminUserList({ role, title }) {
                           ...styles.td,
                           padding: isMobile ? "8px 10px" : "12px 16px",
                           fontSize: isMobile ? "11px" : "13px",
-                          textAlign: 'center'
+                          textAlign: 'center',
                         }}>
                           <div style={styles.actionGroup}>
                             <motion.button
@@ -1366,7 +1489,7 @@ export default function AdminUserList({ role, title }) {
               </tbody>
             </table>
 
-            {/* Pagination Controls */}
+            {/* Pagination */}
             {filteredAndSortedUsers.length > itemsPerPage && (
               <div style={{
                 ...styles.paginationWrapper,
@@ -1413,7 +1536,7 @@ export default function AdminUserList({ role, title }) {
                   >
                     <ChevronLeft size={isMobile ? 14 : 16} />
                   </button>
-                  
+
                   {getPageNumbers().map(page => (
                     <button
                       key={page}
@@ -1431,7 +1554,7 @@ export default function AdminUserList({ role, title }) {
                       {page}
                     </button>
                   ))}
-                  
+
                   <button
                     onClick={goToNextPage}
                     disabled={currentPage === totalPages}
@@ -1472,19 +1595,19 @@ export default function AdminUserList({ role, title }) {
         </motion.div>
       </div>
 
-      {/* User Details Modal - Modern Design with QR for Brands */}
+      {/* User Details Modal */}
       <AnimatePresence>
         {showModal && selectedUser && (
-          <motion.div 
-            className="modal-overlay" 
+          <motion.div
+            className="modal-overlay"
             style={styles.modalOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeModal}
           >
-            <motion.div 
-              className="modal-content" 
+            <motion.div
+              className="modal-content"
               style={{
                 ...styles.modalContent,
                 maxWidth: isMobile ? "98%" : "820px",
@@ -1513,9 +1636,9 @@ export default function AdminUserList({ role, title }) {
                     fontSize: isMobile ? "16px" : "20px",
                   }}>
                     {selectedUser.logo ? (
-                      <img 
-                        src={selectedUser.logo} 
-                        alt="Logo" 
+                      <img
+                        src={selectedUser.logo}
+                        alt="Logo"
                         style={styles.modalAvatarImg}
                         onError={(e) => {
                           e.target.style.display = 'none';
@@ -1540,8 +1663,8 @@ export default function AdminUserList({ role, title }) {
                     </p>
                   </div>
                 </div>
-                <motion.button 
-                  onClick={closeModal} 
+                <motion.button
+                  onClick={closeModal}
                   style={styles.modalCloseBtn}
                   whileHover={{ scale: 1.1, rotate: 90 }}
                   whileTap={{ scale: 0.9 }}
@@ -1550,13 +1673,13 @@ export default function AdminUserList({ role, title }) {
                 </motion.button>
               </div>
 
-              {/* Modal Body with scroll reference */}
-              <div 
+              {/* Modal Body */}
+              <div
                 style={{
                   ...styles.modalBody,
                   padding: isMobile ? "12px 16px" : "20px 24px",
                   maxHeight: isMobile ? "calc(95vh - 160px)" : "calc(90vh - 180px)",
-                }} 
+                }}
                 ref={modalBodyRef}
                 className="modal-body"
               >
@@ -1645,9 +1768,9 @@ export default function AdminUserList({ role, title }) {
                             <span style={styles.modalDetailValue}>
                               <span style={styles.passwordDisplay}>
                                 {showPassword[selectedUser._id] ? (
-                                  <span 
-                                    style={{ 
-                                      fontFamily: 'monospace', 
+                                  <span
+                                    style={{
+                                      fontFamily: 'monospace',
                                       fontSize: isMobile ? "10px" : "12px",
                                       background: '#f1f5f9',
                                       padding: '2px 8px',
@@ -1655,7 +1778,7 @@ export default function AdminUserList({ role, title }) {
                                       wordBreak: 'break-all',
                                       maxWidth: '150px',
                                       display: 'inline-block',
-                                      cursor: 'pointer'
+                                      cursor: 'pointer',
                                     }}
                                     onClick={(e) => copyToClipboard(showPassword[selectedUser._id], e)}
                                     title="Click to copy password"
@@ -1697,9 +1820,9 @@ export default function AdminUserList({ role, title }) {
                           {selectedUser.logo && (
                             <div style={styles.modalDetailRow}>
                               <span style={styles.modalDetailLabel}>Logo</span>
-                              <img 
-                                src={selectedUser.logo} 
-                                alt="Logo" 
+                              <img
+                                src={selectedUser.logo}
+                                alt="Logo"
                                 style={{
                                   ...styles.modalLogoPreview,
                                   width: isMobile ? "40px" : "60px",
@@ -1827,9 +1950,197 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       </div>
 
-                      {/* BRAND OFFERS WITH QR GENERATION - ONLY FOR BRANDS */}
+                      {/* ✅ BRAND REVENUE & REDEMPTION STATS - CLICKABLE */}
+                      {selectedUser.role === "brand" && (
+                        <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
+                          <h4 style={{
+                            ...styles.modalSectionTitle,
+                            fontSize: isMobile ? "11px" : "12px",
+                          }}>
+                            <BarChart4 size={isMobile ? 12 : 14} /> Revenue & Redemptions
+                          </h4>
+                          <div style={{
+                            display: 'grid',
+                            gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                            gap: isMobile ? '8px' : '12px',
+                            marginTop: '8px'
+                          }}>
+                            {/* Total Revenue - Clickable */}
+                            <motion.div
+                              onClick={openRedemptionsModal}
+                              style={{
+                                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                                padding: isMobile ? '10px' : '14px',
+                                borderRadius: '12px',
+                                border: '1px solid #10b98130',
+                                cursor: 'pointer',
+                                display: 'flex',
+                                flexDirection: 'column',
+                                gap: '4px',
+                              }}
+                              whileHover={{ scale: 1.03, boxShadow: '0 4px 12px rgba(16,185,129,0.15)' }}
+                              whileTap={{ scale: 0.97 }}
+                            >
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <BarChart4 size={isMobile ? 14 : 16} color="#10b981" />
+                                <ArrowUpRight size={isMobile ? 12 : 14} color="#10b981" />
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                fontWeight: '700',
+                                color: '#059669',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
+                              }}>
+                                Total Revenue
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '14px' : '18px',
+                                fontWeight: '800',
+                                color: '#065f46',
+                                wordBreak: 'break-word',
+                              }}>
+                                ₨ {(userDetails.stats?.totalRevenue || 0).toLocaleString()}
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                color: '#047857',
+                                fontWeight: '600',
+                              }}>
+                                From {userDetails.stats?.totalRedemptions || 0} redemptions
+                              </div>
+                            </motion.div>
+
+                            {/* Total Saved */}
+                            <div style={{
+                              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                              padding: isMobile ? '10px' : '14px',
+                              borderRadius: '12px',
+                              border: '1px solid #f59e0b30',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Gift size={isMobile ? 14 : 16} color="#f59e0b" />
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                fontWeight: '700',
+                                color: '#b45309',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
+                              }}>
+                                Total Saved
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '14px' : '18px',
+                                fontWeight: '800',
+                                color: '#78350f',
+                                wordBreak: 'break-word',
+                              }}>
+                                ₨ {(userDetails.stats?.totalSaved || 0).toLocaleString()}
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                color: '#92400e',
+                                fontWeight: '600',
+                              }}>
+                                By students
+                              </div>
+                            </div>
+
+                            {/* Unique Students */}
+                            <div style={{
+                              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                              padding: isMobile ? '10px' : '14px',
+                              borderRadius: '12px',
+                              border: '1px solid #3b82f630',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <UsersIcon size={isMobile ? 14 : 16} color="#3b82f6" />
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                fontWeight: '700',
+                                color: '#1d4ed8',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
+                              }}>
+                                Students
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '14px' : '18px',
+                                fontWeight: '800',
+                                color: '#1e3a8a',
+                              }}>
+                                {userDetails.stats?.uniqueStudents || 0}
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                color: '#1e40af',
+                                fontWeight: '600',
+                              }}>
+                                Unique redeemers
+                              </div>
+                            </div>
+
+                            {/* Online / In-Store Split */}
+                            <div style={{
+                              background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                              padding: isMobile ? '10px' : '14px',
+                              borderRadius: '12px',
+                              border: '1px solid #8b5cf630',
+                              display: 'flex',
+                              flexDirection: 'column',
+                              gap: '4px',
+                            }}>
+                              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+                                <Store size={isMobile ? 14 : 16} color="#8b5cf6" />
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                fontWeight: '700',
+                                color: '#6d28d9',
+                                textTransform: 'uppercase',
+                                letterSpacing: '0.3px',
+                              }}>
+                                Online / Store
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '14px' : '18px',
+                                fontWeight: '800',
+                                color: '#4c1d95',
+                              }}>
+                                {userDetails.stats?.onlineCount || 0} / {userDetails.stats?.inStoreCount || 0}
+                              </div>
+                              <div style={{
+                                fontSize: isMobile ? '8px' : '10px',
+                                color: '#5b21b6',
+                                fontWeight: '600',
+                              }}>
+                                Redemptions
+                              </div>
+                            </div>
+                          </div>
+                          <div style={{
+                            marginTop: '8px',
+                            fontSize: isMobile ? '9px' : '11px',
+                            color: '#64748b',
+                            textAlign: 'center',
+                            fontStyle: 'italic',
+                          }}>
+                            💡 Click on "Total Revenue" to see all students who redeemed
+                          </div>
+                        </div>
+                      )}
+
+                      {/* BRAND OFFERS WITH QR GENERATION */}
                       {selectedUser.role === "brand" && userDetails.offers && userDetails.offers.length > 0 && (
-                        <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                        <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
                           <h4 style={{
                             ...styles.modalSectionTitle,
                             fontSize: isMobile ? "11px" : "12px",
@@ -1862,13 +2173,13 @@ export default function AdminUserList({ role, title }) {
                                 </div>
                                 <div style={styles.offerItemRight}>
                                   {offer.isOnline && offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px"}}>Online & In-Store</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
                                   )}
                                   {offer.isOnline && !offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px"}}>Online</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px" }}>Online</span>
                                   )}
                                   {!offer.isOnline && offer.isInStore && (
-                                    <span style={{...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px"}}>In-Store</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px" }}>In-Store</span>
                                   )}
                                   <motion.button
                                     className="qr-generate-btn"
@@ -1900,9 +2211,9 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       )}
 
-                      {/* Employee Jobs - ONLY EMPLOYEES */}
+                      {/* Employee Jobs */}
                       {selectedUser.role === "employee" && userDetails.jobs && userDetails.jobs.length > 0 && (
-                        <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                        <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
                           <h4 style={{
                             ...styles.modalSectionTitle,
                             fontSize: isMobile ? "11px" : "12px",
@@ -1942,11 +2253,11 @@ export default function AdminUserList({ role, title }) {
                         </div>
                       )}
 
-                      {/* Student Discounts & Applications - ONLY STUDENTS */}
+                      {/* Student Discounts & Applications */}
                       {selectedUser.role === "student" && (
                         <>
                           {userDetails.claimedOffers && userDetails.claimedOffers.length > 0 && (
-                            <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                            <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
                               <h4 style={{
                                 ...styles.modalSectionTitle,
                                 fontSize: isMobile ? "11px" : "12px",
@@ -1983,7 +2294,7 @@ export default function AdminUserList({ role, title }) {
                           )}
 
                           {userDetails.applications && userDetails.applications.length > 0 && (
-                            <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                            <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
                               <h4 style={{
                                 ...styles.modalSectionTitle,
                                 fontSize: isMobile ? "11px" : "12px",
@@ -2036,8 +2347,8 @@ export default function AdminUserList({ role, title }) {
                         </>
                       )}
 
-                      {/* Timestamps - ALL ROLES */}
-                      <div style={{...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2'}}>
+                      {/* Timestamps */}
+                      <div style={{ ...styles.modalSection, gridColumn: isMobile ? '1' : 'span 2' }}>
                         <h4 style={{
                           ...styles.modalSectionTitle,
                           fontSize: isMobile ? "11px" : "12px",
@@ -2077,7 +2388,7 @@ export default function AdminUserList({ role, title }) {
                 flexDirection: isMobile ? "column" : "row",
                 gap: isMobile ? "8px" : "12px",
               }}>
-                <motion.button 
+                <motion.button
                   onClick={() => viewUserDetails(selectedUser._id)}
                   style={{
                     ...styles.modalViewBtn,
@@ -2091,7 +2402,7 @@ export default function AdminUserList({ role, title }) {
                 >
                   View Full Profile <ChevronRight size={isMobile ? 14 : 16} />
                 </motion.button>
-                <motion.button 
+                <motion.button
                   onClick={closeModal}
                   style={{
                     ...styles.modalCloseBtnBottom,
@@ -2111,17 +2422,17 @@ export default function AdminUserList({ role, title }) {
         )}
       </AnimatePresence>
 
-      {/* QR Code Modal - Full Screen Display */}
+      {/* QR Code Modal */}
       <AnimatePresence>
         {showQRModal && qrImage && selectedOfferForQR && (
-          <motion.div 
+          <motion.div
             style={styles.qrModalOverlay}
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={closeQRModal}
           >
-            <motion.div 
+            <motion.div
               style={{
                 ...styles.qrModalContent,
                 maxWidth: isMobile ? "98%" : "520px",
@@ -2152,7 +2463,7 @@ export default function AdminUserList({ role, title }) {
                     {selectedOfferForQR.title} • {selectedOfferForQR.discountPercentage}% OFF
                   </p>
                 </div>
-                <motion.button 
+                <motion.button
                   onClick={closeQRModal}
                   style={styles.qrModalCloseBtn}
                   whileHover={{ scale: 1.1, rotate: 90 }}
@@ -2167,11 +2478,15 @@ export default function AdminUserList({ role, title }) {
                 padding: isMobile ? "16px" : "24px",
               }}>
                 <div style={styles.qrImageContainer}>
-                  <img src={qrImage} alt="QR Code" style={{
-                    ...styles.qrModalImage,
-                    width: isMobile ? "200px" : "280px",
-                    height: isMobile ? "200px" : "280px",
-                  }} />
+                  <img
+                    src={qrImage}
+                    alt="QR Code"
+                    style={{
+                      ...styles.qrModalImage,
+                      width: isMobile ? "200px" : "280px",
+                      height: isMobile ? "200px" : "280px",
+                    }}
+                  />
                 </div>
 
                 <div style={{
@@ -2207,13 +2522,13 @@ export default function AdminUserList({ role, title }) {
                     <span style={styles.qrOfferLabel}>Type:</span>
                     <span style={styles.qrOfferValue}>
                       {selectedOfferForQR.isOnline && selectedOfferForQR.isInStore ? (
-                        <span style={{...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px"}}>Online & In-Store</span>
+                        <span style={{ ...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
                       ) : selectedOfferForQR.isOnline ? (
-                        <span style={{...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px"}}>Online Only</span>
+                        <span style={{ ...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px" }}>Online Only</span>
                       ) : selectedOfferForQR.isInStore ? (
-                        <span style={{...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px"}}>In-Store Only</span>
+                        <span style={{ ...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px" }}>In-Store Only</span>
                       ) : (
-                        <span style={{...styles.badgeSmall, background: '#94a3b8', fontSize: isMobile ? "8px" : "9px"}}>Standard</span>
+                        <span style={{ ...styles.badgeSmall, background: '#94a3b8', fontSize: isMobile ? "8px" : "9px" }}>Standard</span>
                       )}
                     </span>
                   </div>
@@ -2238,7 +2553,7 @@ export default function AdminUserList({ role, title }) {
                   flexDirection: isMobile ? "column" : "row",
                   gap: isMobile ? "6px" : "8px",
                 }}>
-                  <motion.button 
+                  <motion.button
                     style={{
                       ...styles.qrActionBtn,
                       background: '#1e293b',
@@ -2254,7 +2569,7 @@ export default function AdminUserList({ role, title }) {
                   >
                     <DownloadIcon size={isMobile ? 14 : 16} /> Download
                   </motion.button>
-                  <motion.button 
+                  <motion.button
                     style={{
                       ...styles.qrActionBtn,
                       background: '#8b5cf6',
@@ -2270,7 +2585,7 @@ export default function AdminUserList({ role, title }) {
                   >
                     <Share2 size={isMobile ? 14 : 16} /> Share
                   </motion.button>
-                  <motion.button 
+                  <motion.button
                     style={{
                       ...styles.qrActionBtn,
                       background: '#10b981',
@@ -2305,6 +2620,400 @@ export default function AdminUserList({ role, title }) {
                     The QR code contains all necessary information for verification
                   </p>
                 </div>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
+      {/* Brand Redemptions Drill-Down Modal */}
+      <AnimatePresence>
+        {showRedemptionsModal && selectedUser && (
+          <motion.div
+            style={styles.redemptionsOverlay}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            onClick={closeRedemptionsModal}
+          >
+            <motion.div
+              style={{
+                ...styles.redemptionsModal,
+                maxWidth: isMobile ? "98%" : "960px",
+                maxHeight: isMobile ? "95vh" : "90vh",
+              }}
+              initial={{ scale: 0.9, y: 30, opacity: 0 }}
+              animate={{ scale: 1, y: 0, opacity: 1 }}
+              exit={{ scale: 0.9, y: 30, opacity: 0 }}
+              transition={{ type: "spring", damping: 25 }}
+              onClick={e => e.stopPropagation()}
+            >
+              {/* Header */}
+              <div style={{
+                ...styles.redemptionsHeader,
+                padding: isMobile ? "14px 16px" : "20px 24px",
+              }}>
+                <div>
+                  <h3 style={{
+                    ...styles.redemptionsTitle,
+                    fontSize: isMobile ? "16px" : "20px",
+                  }}>
+                    <BarChart4 size={isMobile ? 18 : 22} style={{ marginRight: '8px', color: '#10b981' }} />
+                    Revenue Details
+                  </h3>
+                  <p style={{
+                    ...styles.redemptionsSubtitle,
+                    fontSize: isMobile ? "11px" : "13px",
+                  }}>
+                    {selectedUser.brandName || selectedUser.name} • All students who redeemed
+                  </p>
+                </div>
+                <motion.button
+                  onClick={closeRedemptionsModal}
+                  style={styles.modalCloseBtn}
+                  whileHover={{ scale: 1.1, rotate: 90 }}
+                  whileTap={{ scale: 0.9 }}
+                >
+                  <X size={isMobile ? 16 : 20} />
+                </motion.button>
+              </div>
+
+              {/* Summary Strip */}
+              <div style={{
+                display: 'grid',
+                gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
+                gap: isMobile ? '8px' : '10px',
+                padding: isMobile ? '12px 16px' : '14px 24px',
+                background: '#f8fafc',
+                borderBottom: '1px solid #e5e7eb',
+              }}>
+                <div style={styles.redemptionStatBox}>
+                  <BarChart4 size={isMobile ? 14 : 16} color="#10b981" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#059669' }}>
+                    ₨ {(brandRedemptionStats.totalRevenue || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                    NET REVENUE
+                  </div>
+                </div>
+                <div style={styles.redemptionStatBox}>
+                  <BarChart4 size={isMobile ? 14 : 16} color="#3b82f6" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#1d4ed8' }}>
+                    ₨ {(brandRedemptionStats.totalBill || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                    TOTAL BILLS
+                  </div>
+                </div>
+                <div style={styles.redemptionStatBox}>
+                  <Gift size={isMobile ? 14 : 16} color="#f59e0b" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#d97706' }}>
+                    ₨ {(brandRedemptionStats.totalSaved || 0).toLocaleString()}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                    STUDENT SAVED
+                  </div>
+                </div>
+                <div style={styles.redemptionStatBox}>
+                  <UsersIcon size={isMobile ? 14 : 16} color="#8b5cf6" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#6d28d9' }}>
+                    {brandRedemptionStats.uniqueStudents || 0}
+                  </div>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                    STUDENTS
+                  </div>
+                </div>
+              </div>
+
+              {/* Filters */}
+              <div style={{
+                display: 'flex',
+                gap: isMobile ? '8px' : '10px',
+                padding: isMobile ? '10px 16px' : '12px 24px',
+                borderBottom: '1px solid #f1f5f9',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+              }}>
+                <div style={{ flex: 1, minWidth: isMobile ? '100%' : '200px', position: 'relative' }}>
+                  <Search size={14} style={{
+                    position: 'absolute',
+                    left: '12px',
+                    top: '50%',
+                    transform: 'translateY(-50%)',
+                    color: '#94a3b8',
+                  }} />
+                  <input
+                    type="text"
+                    placeholder="Search by name, roll no, promo code..."
+                    value={redemptionSearchTerm}
+                    onChange={(e) => setRedemptionSearchTerm(e.target.value)}
+                    style={{
+                      width: '100%',
+                      padding: '8px 12px 8px 34px',
+                      borderRadius: '10px',
+                      border: '2px solid #e2e8f0',
+                      fontSize: isMobile ? '12px' : '13px',
+                      fontFamily: 'inherit',
+                      outline: 'none',
+                      background: '#fff',
+                    }}
+                  />
+                </div>
+                <div style={{
+                  display: 'flex',
+                  gap: '4px',
+                  background: '#f1f5f9',
+                  padding: '4px',
+                  borderRadius: '24px',
+                }}>
+                  {[
+                    { key: 'all', label: 'All' },
+                    { key: 'qr', label: '🏪 In-Store' },
+                    { key: 'promo', label: '🌐 Online' },
+                  ].map(f => (
+                    <button
+                      key={f.key}
+                      onClick={() => setRedemptionFilter(f.key)}
+                      style={{
+                        padding: isMobile ? '4px 10px' : '5px 12px',
+                        borderRadius: '20px',
+                        border: 'none',
+                        background: redemptionFilter === f.key ? '#fff' : 'transparent',
+                        color: redemptionFilter === f.key ? '#ff961a' : '#64748b',
+                        fontWeight: 600,
+                        fontSize: isMobile ? '10px' : '12px',
+                        cursor: 'pointer',
+                        boxShadow: redemptionFilter === f.key ? '0 2px 6px rgba(0,0,0,0.05)' : 'none',
+                        transition: 'all 0.2s',
+                      }}
+                    >
+                      {f.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {/* Table */}
+              <div style={{
+                flex: 1,
+                overflowY: 'auto',
+                padding: isMobile ? '8px 12px' : '12px 20px',
+                maxHeight: isMobile ? 'calc(95vh - 340px)' : 'calc(90vh - 360px)',
+              }}>
+                {loadingRedemptions ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                    <div style={styles.spinnerSmall}></div>
+                    <p style={{ marginTop: '12px' }}>Loading redemptions...</p>
+                  </div>
+                ) : filteredRedemptions.length === 0 ? (
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                    <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>💰</div>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
+                      No redemptions found
+                    </p>
+                    <p style={{ fontSize: '12px', marginTop: '4px' }}>
+                      {redemptionSearchTerm ? 'Try a different search' : 'No students have redeemed yet'}
+                    </p>
+                  </div>
+                ) : (
+                  <div style={{ overflowX: 'auto' }}>
+                    <table style={{
+                      width: '100%',
+                      borderCollapse: 'collapse',
+                      minWidth: '700px',
+                    }}>
+                      <thead>
+                        <tr style={{ background: '#f8fafc' }}>
+                          <th style={styles.redemptionTh}>#</th>
+                          <th style={styles.redemptionTh}>STUDENT</th>
+                          <th style={styles.redemptionTh}>TYPE</th>
+                          <th style={styles.redemptionTh}>BILL</th>
+                          <th style={styles.redemptionTh}>SAVED</th>
+                          <th style={styles.redemptionTh}>PAID</th>
+                          <th style={styles.redemptionTh}>DATE</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {filteredRedemptions.map((r, i) => (
+                          <tr
+                            key={i}
+                            style={{
+                              borderBottom: '1px solid #f1f5f9',
+                              transition: 'background 0.2s',
+                            }}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                            onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
+                          >
+                            <td style={styles.redemptionTd}>
+                              <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '12px' }}>
+                                {i + 1}
+                              </span>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              <div>
+                                <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '13px' }}>
+                                  {r.rollNo !== 'N/A' ? r.rollNo : r.studentName}
+                                </div>
+                                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                                  {r.studentName}
+                                  {r.university && r.university !== 'N/A' && ` • ${r.university}`}
+                                </div>
+                                {r.email && (
+                                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                                    {r.email}
+                                  </div>
+                                )}
+                              </div>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              {r.redemptionType === 'promo' ? (
+                                <div>
+                                  <div style={{
+                                    display: 'inline-flex',
+                                    alignItems: 'center',
+                                    gap: '4px',
+                                    background: r.platform === 'shopify' ? '#e8f5e9' :
+                                      r.platform === 'woocommerce' ? '#e3f2fd' : '#ede9fe',
+                                    color: r.platform === 'shopify' ? '#2e7d32' :
+                                      r.platform === 'woocommerce' ? '#1565c0' : '#6d28d9',
+                                    padding: '3px 8px',
+                                    borderRadius: '12px',
+                                    fontSize: '10px',
+                                    fontWeight: 700,
+                                    whiteSpace: 'nowrap',
+                                  }}>
+                                    <Globe size={9} />
+                                    {r.platform === 'shopify' ? 'Shopify' :
+                                      r.platform === 'woocommerce' ? 'WooCommerce' : 'Online'}
+                                  </div>
+                                  {r.promoCode && (
+                                    <div style={{
+                                      marginTop: '3px',
+                                      fontSize: '10px',
+                                      color: '#64748b',
+                                      fontFamily: 'monospace',
+                                      fontWeight: 700,
+                                      background: '#f8fafc',
+                                      padding: '2px 6px',
+                                      borderRadius: '4px',
+                                      display: 'inline-block',
+                                    }}>
+                                      {r.promoCode}
+                                    </div>
+                                  )}
+                                </div>
+                              ) : (
+                                <div style={{
+                                  display: 'inline-flex',
+                                  alignItems: 'center',
+                                  gap: '4px',
+                                  background: '#fff7ed',
+                                  color: '#ea580c',
+                                  padding: '3px 8px',
+                                  borderRadius: '12px',
+                                  fontSize: '10px',
+                                  fontWeight: 700,
+                                  whiteSpace: 'nowrap',
+                                }}>
+                                  <Store size={9} />
+                                  In-Store
+                                </div>
+                              )}
+                              <div style={{
+                                fontSize: '10px',
+                                color: '#94a3b8',
+                                marginTop: '3px',
+                                maxWidth: '120px',
+                                overflow: 'hidden',
+                                textOverflow: 'ellipsis',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                {r.offerTitle}
+                              </div>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                                ₨ {(r.bill || 0).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              <span style={{
+                                display: 'inline-block',
+                                background: '#f0fdf4',
+                                color: '#10b981',
+                                padding: '2px 8px',
+                                borderRadius: '6px',
+                                fontWeight: 700,
+                                fontSize: '12px',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                ₨ {(r.saved || 0).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              <span style={{
+                                fontWeight: 700,
+                                color: '#059669',
+                                whiteSpace: 'nowrap',
+                              }}>
+                                ₨ {(r.paid || 0).toLocaleString()}
+                              </span>
+                            </td>
+                            <td style={styles.redemptionTd}>
+                              <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                                {new Date(r.date).toLocaleDateString('en-US', {
+                                  month: 'short',
+                                  day: 'numeric',
+                                  year: 'numeric',
+                                })}
+                              </span>
+                              <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                                {new Date(r.date).toLocaleTimeString('en-US', {
+                                  hour: '2-digit',
+                                  minute: '2-digit',
+                                })}
+                              </div>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+              </div>
+
+              {/* Footer */}
+              <div style={{
+                padding: isMobile ? '12px 16px' : '16px 24px',
+                borderTop: '1px solid #f1f5f9',
+                display: 'flex',
+                justifyContent: 'space-between',
+                alignItems: 'center',
+                flexWrap: 'wrap',
+                gap: '8px',
+                background: '#fafbfc',
+              }}>
+                <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#64748b', fontWeight: 500 }}>
+                  Showing <strong style={{ color: '#1e293b' }}>{filteredRedemptions.length}</strong> of{' '}
+                  <strong style={{ color: '#1e293b' }}>{brandRedemptions.length}</strong> redemptions
+                </div>
+                <motion.button
+                  onClick={closeRedemptionsModal}
+                  style={{
+                    padding: isMobile ? '8px 20px' : '9px 24px',
+                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    color: '#fff',
+                    border: 'none',
+                    borderRadius: '10px',
+                    fontWeight: 600,
+                    fontSize: isMobile ? '12px' : '13px',
+                    cursor: 'pointer',
+                  }}
+                  whileHover={{ scale: 1.03 }}
+                  whileTap={{ scale: 0.97 }}
+                >
+                  Close
+                </motion.button>
               </div>
             </motion.div>
           </motion.div>
@@ -2362,7 +3071,6 @@ export default function AdminUserList({ role, title }) {
           .action-btn { transition: all 0.2s ease; }
           .qr-generate-btn { transition: all 0.2s ease; }
 
-          /* Modal Styles */
           .modal-overlay {
             position: fixed !important;
             top: 0 !important;
@@ -2488,7 +3196,7 @@ const styles = {
     height: '300px',
     background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
     borderRadius: '50%',
-    pointerEvents: 'none'
+    pointerEvents: 'none',
   },
   bgDecoration2: {
     position: 'absolute',
@@ -2498,7 +3206,7 @@ const styles = {
     height: '250px',
     background: 'radial-gradient(circle, rgba(139,92,246,0.04) 0%, rgba(139,92,246,0) 70%)',
     borderRadius: '50%',
-    pointerEvents: 'none'
+    pointerEvents: 'none',
   },
   bgDecoration3: {
     position: 'absolute',
@@ -2509,7 +3217,7 @@ const styles = {
     height: '600px',
     background: 'radial-gradient(circle, rgba(255,150,26,0.02) 0%, rgba(255,150,26,0) 70%)',
     borderRadius: '50%',
-    pointerEvents: 'none'
+    pointerEvents: 'none',
   },
   container: {
     background: "rgba(255, 255, 255, 0.92)",
@@ -2542,12 +3250,12 @@ const styles = {
     fontSize: "13px",
     fontWeight: "600",
     color: "#ff961a",
-    marginBottom: "12px"
+    marginBottom: "12px",
   },
   headerActions: {
     display: 'flex',
     gap: '10px',
-    flexWrap: 'wrap'
+    flexWrap: 'wrap',
   },
   refreshBtn: {
     background: '#f1f5f9',
@@ -2561,7 +3269,7 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
-    transition: 'all 0.2s ease'
+    transition: 'all 0.2s ease',
   },
   title: {
     margin: 0,
@@ -3058,7 +3766,7 @@ const styles = {
     overflowY: 'auto',
     flex: 1,
     maxHeight: 'calc(90vh - 180px)',
-    '-webkit-overflow-scrolling': 'touch',
+    WebkitOverflowScrolling: 'touch',
   },
   modalStats: {
     display: 'flex',
@@ -3454,7 +4162,6 @@ const styles = {
     background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
     borderRadius: "4px",
   },
-  // QR Modal Styles
   qrModalOverlay: {
     position: 'fixed',
     top: 0,
@@ -3586,7 +4293,6 @@ const styles = {
     fontSize: '12px',
     color: '#64748b',
   },
-  // Pagination Styles
   paginationWrapper: {
     display: 'flex',
     justifyContent: 'space-between',
@@ -3657,5 +4363,78 @@ const styles = {
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
+  },
+  // ========== BRAND REDEMPTIONS DRILL-DOWN ==========
+  redemptionsOverlay: {
+    position: 'fixed',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    background: 'rgba(15, 23, 42, 0.8)',
+    backdropFilter: 'blur(10px)',
+    display: 'flex',
+    alignItems: 'center',
+    justifyContent: 'center',
+    zIndex: 99999,
+    padding: '16px',
+  },
+  redemptionsModal: {
+    background: '#fff',
+    borderRadius: '20px',
+    width: '100%',
+    maxWidth: '960px',
+    maxHeight: '90vh',
+    display: 'flex',
+    flexDirection: 'column',
+    overflow: 'hidden',
+    boxShadow: '0 30px 60px -12px rgba(0,0,0,0.35)',
+  },
+  redemptionsHeader: {
+    display: 'flex',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderBottom: '1px solid #f1f5f9',
+    background: 'linear-gradient(135deg, #f8fafc 0%, #fff 100%)',
+  },
+  redemptionsTitle: {
+    margin: 0,
+    fontSize: '20px',
+    fontWeight: 800,
+    color: '#0f172a',
+    display: 'flex',
+    alignItems: 'center',
+  },
+  redemptionsSubtitle: {
+    margin: '4px 0 0 0',
+    fontSize: '13px',
+    color: '#64748b',
+    fontWeight: 500,
+  },
+  redemptionStatBox: {
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '4px',
+    padding: '10px 12px',
+    background: '#fff',
+    borderRadius: '10px',
+    border: '1px solid #f1f5f9',
+  },
+  redemptionTh: {
+    padding: '10px 12px',
+    textAlign: 'left',
+    fontSize: '10px',
+    fontWeight: 700,
+    color: '#64748b',
+    textTransform: 'uppercase',
+    letterSpacing: '0.5px',
+    borderBottom: '2px solid #e2e8f0',
+    whiteSpace: 'nowrap',
+  },
+  redemptionTd: {
+    padding: '10px 12px',
+    fontSize: '13px',
+    color: '#334155',
+    verticalAlign: 'middle',
   },
 };

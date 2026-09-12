@@ -66,7 +66,7 @@ import grove from "../../src/assets/logos/grove.png";
 import Honey from "../../src/assets/logos/Honey.png";
 import leadsnotify from "../../src/assets/logos/leadsnotify.jpeg";
 import peng from "../../src/assets/logos/peng.jpeg";
-import appScreenshot1 from "../../src/assets/screen1.jpeg";
+import appScreenshot1 from "../../src/assets/screen4.png";
 import appScreenshot2 from "../../src/assets/screen2.jpeg";
 import appScreenshot3 from "../../src/assets/screen3.png";
 import OfferImagesGallery from "./OfferImagesGallery";

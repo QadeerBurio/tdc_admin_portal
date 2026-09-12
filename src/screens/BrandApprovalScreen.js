@@ -14,8 +14,8 @@ import {
 } from 'lucide-react';
 import './styles/Brands.css';
 
-//const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
-const API_BASE = 'http://localhost:5000/api';
+const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
+// const API_BASE = 'http://localhost:5000/api';
 
 const BrandApprovalScreen = () => {
   const { token, user, login } = useContext(AuthContext);

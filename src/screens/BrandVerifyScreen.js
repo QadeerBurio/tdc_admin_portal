@@ -17,7 +17,7 @@ import {
 import { AuthContext } from '../context/AuthContext';
 
 // API Base URL - Change this to your backend URL
-const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:5000/api';
+const API_BASE_URL = 'https://the-deft-crew-production.up.railway.app/api';
 
 const BrandVerifyScreen = () => {
   const navigate = useNavigate();

@@ -142,7 +142,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const token = localStorage.getItem("token");
   const API_URL = process.env.REACT_APP_API_URL
     ? `${process.env.REACT_APP_API_URL}/api/jobs`
-    : "http://localhost:5000/api/jobs";
+    : "https://the-deft-crew-production.up.railway.app/api/jobs";
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   // CSV/XLSX Upload State

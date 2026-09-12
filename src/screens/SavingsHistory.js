@@ -17,6 +17,10 @@ import {
   FaFilter,
   FaChevronDown,
   FaChevronUp,
+  FaStore,
+  FaGlobe,
+  FaTicketAlt,
+  FaQrcode,
 } from "react-icons/fa";
 
 const SavingsHistory = () => {
@@ -29,11 +33,17 @@ const SavingsHistory = () => {
   const [sortDirection, setSortDirection] = useState("desc");
   const [dateRange, setDateRange] = useState({ start: "", end: "" });
   const [showFilters, setShowFilters] = useState(false);
+  const [redemptionType, setRedemptionType] = useState("all"); // "all" | "qr" | "promo"
+  const [platform, setPlatform] = useState("all"); // "all" | "shopify" | "woocommerce" | "in-store" | "custom"
   const [brandStats, setBrandStats] = useState({
     totalRevenue: 0,
     totalTransactions: 0,
     averageDiscount: 0,
     topPerformingOffer: "",
+    onlineCount: 0,
+    inStoreCount: 0,
+    onlineSavings: 0,
+    inStoreSavings: 0,
   });
 
   useEffect(() => {
@@ -42,54 +52,77 @@ const SavingsHistory = () => {
 
   useEffect(() => {
     let results = [...history];
-    
+
     if (searchTerm) {
-      const term = searchTerm.toLowerCase();
+      const term = searchTerm.toLowerCase().trim();
       results = results.filter(item =>
         item.name?.toLowerCase().includes(term) ||
         item.brand?.toLowerCase().includes(term) ||
-        item.rollNo?.toLowerCase().includes(searchTerm.toLowerCase().trim())
+        item.rollNo?.toLowerCase().includes(term) ||
+        item.promoCode?.toLowerCase().includes(term) ||
+        item.email?.toLowerCase().includes(term)
       );
     }
-    
+
+    if (redemptionType !== "all") {
+      results = results.filter(item => item.redemptionType === redemptionType);
+    }
+
+    if (platform !== "all") {
+      results = results.filter(item => item.platform === platform);
+    }
+
     if (dateRange.start) {
       results = results.filter(item => new Date(item.date) >= new Date(dateRange.start));
     }
     if (dateRange.end) {
-      results = results.filter(item => new Date(item.date) <= new Date(dateRange.end));
+      const endDate = new Date(dateRange.end);
+      endDate.setHours(23, 59, 59, 999);
+      results = results.filter(item => new Date(item.date) <= endDate);
     }
-    
+
     results.sort((a, b) => {
       let aVal = a[sortField];
       let bVal = b[sortField];
-      
+
       if (sortField === "date") {
         aVal = new Date(aVal);
         bVal = new Date(bVal);
+      } else if (sortField === "bill" || sortField === "saved") {
+        aVal = Number(aVal) || 0;
+        bVal = Number(bVal) || 0;
+      } else {
+        aVal = (aVal || "").toString().toLowerCase();
+        bVal = (bVal || "").toString().toLowerCase();
       }
-      
+
       if (aVal < bVal) return sortDirection === "asc" ? -1 : 1;
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
-    
+
     setFilteredHistory(results);
     calculateBrandStats(results);
-  }, [searchTerm, dateRange, sortField, sortDirection, history]);
+  }, [searchTerm, dateRange, sortField, sortDirection, history, redemptionType, platform]);
 
   const fetchHistory = async () => {
     try {
-      const res = await axios.get(//"https://the-deft-crew-production.up.railway.app/api/offers/savings-report", 
-        "http://localhost:5000/api/offers/savings-report", {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-      setHistory(res.data);
-      setFilteredHistory(res.data);
-      calculateBrandStats(res.data);
+      const res = await axios.get(
+        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        {
+          headers: { Authorization: `Bearer ${token}` }
+        }
+      );
+      const data = Array.isArray(res.data) ? res.data : [];
+      setHistory(data);
+      setFilteredHistory(data);
+      calculateBrandStats(data);
     } catch (err) {
       console.error("Error fetching history", err);
+      setHistory([]);
+      setFilteredHistory([]);
     } finally {
-      setTimeout(() => setLoading(false), 500);
+      setTimeout(() => setLoading(false), 400);
     }
   };
 
@@ -100,17 +133,31 @@ const SavingsHistory = () => {
         totalTransactions: 0,
         averageDiscount: 0,
         topPerformingOffer: "No data",
+        onlineCount: 0,
+        inStoreCount: 0,
+        onlineSavings: 0,
+        inStoreSavings: 0,
       });
       return;
     }
 
-    const totalRevenue = data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
+    const totalRevenue = data.reduce((acc, curr) => acc + ((curr.bill || 0) - (curr.saved || 0)), 0);
     const totalTransactions = data.length;
-    const averageDiscount = totalTransactions > 0 ? (data.reduce((acc, curr) => acc + curr.saved, 0) / totalTransactions) : 0;
+    const averageDiscount = totalTransactions > 0
+      ? (data.reduce((acc, curr) => acc + (curr.saved || 0), 0) / totalTransactions)
+      : 0;
+
+    const onlineItems = data.filter(d => d.redemptionType === "promo");
+    const inStoreItems = data.filter(d => d.redemptionType === "qr");
+    const onlineCount = onlineItems.length;
+    const inStoreCount = inStoreItems.length;
+    const onlineSavings = onlineItems.reduce((acc, curr) => acc + (curr.saved || 0), 0);
+    const inStoreSavings = inStoreItems.reduce((acc, curr) => acc + (curr.saved || 0), 0);
 
     const offerCounts = {};
     data.forEach(item => {
-      offerCounts[item.brand] = (offerCounts[item.brand] || 0) + 1;
+      const key = item.brand || "Unknown";
+      offerCounts[key] = (offerCounts[key] || 0) + 1;
     });
     let topOffer = "N/A";
     let topCount = 0;
@@ -126,27 +173,57 @@ const SavingsHistory = () => {
       totalTransactions,
       averageDiscount,
       topPerformingOffer: topOffer,
+      onlineCount,
+      inStoreCount,
+      onlineSavings,
+      inStoreSavings,
     });
   };
 
   const downloadCSV = () => {
-    const headers = ["Student Name", "Brand/Offer", "Bill Amount (PKR)", "Saved Amount (PKR)", "Date"];
+    const headers = [
+      "Student Name",
+      "Roll No",
+      "Email",
+      "University",
+      "Brand/Offer",
+      "Type",
+      "Platform",
+      "Promo Code",
+      "Bill Amount (PKR)",
+      "Saved Amount (PKR)",
+      "Paid Amount (PKR)",
+      "Date",
+    ];
+
     const rows = filteredHistory.map(item => [
-      item.rollNo,
-      item.brand,
-      item.bill.toFixed(2),
-      item.saved.toFixed(2),
-      new Date(item.date).toLocaleDateString()
+      item.name || "",
+      item.rollNo || "",
+      item.email || "",
+      item.university || "",
+      item.brand || "",
+      item.redemptionType === "promo" ? "Online" : "In-Store",
+      item.platform || "in-store",
+      item.promoCode || "-",
+      (item.bill || 0).toFixed(2),
+      (item.saved || 0).toFixed(2),
+      ((item.bill || 0) - (item.saved || 0)).toFixed(2),
+      new Date(item.date).toLocaleString(),
     ]);
 
-    let csvContent = "data:text/csv;charset=utf-8," 
-      + headers.join(",") + "\n" 
-      + rows.map(e => e.join(",")).join("\n");
+    const csvContent =
+      "data:text/csv;charset=utf-8," +
+      headers.map(h => `"${h}"`).join(",") +
+      "\n" +
+      rows.map(e => e.map(v => `"${String(v).replace(/"/g, '""')}"`).join(",")).join("\n");
 
     const encodedUri = encodeURI(csvContent);
     const link = document.createElement("a");
     link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `Savings_Report_${new Date().toISOString().split('T')[0]}.csv`);
+    link.setAttribute(
+      "download",
+      `Savings_Report_${new Date().toISOString().split("T")[0]}.csv`
+    );
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -164,12 +241,62 @@ const SavingsHistory = () => {
   const clearFilters = () => {
     setSearchTerm("");
     setDateRange({ start: "", end: "" });
+    setRedemptionType("all");
+    setPlatform("all");
     setShowFilters(false);
   };
 
   const getSortIcon = (field) => {
     if (sortField !== field) return null;
     return sortDirection === "asc" ? <FaChevronUp size={10} /> : <FaChevronDown size={10} />;
+  };
+
+  const hasActiveFilters =
+    searchTerm ||
+    dateRange.start ||
+    dateRange.end ||
+    redemptionType !== "all" ||
+    platform !== "all";
+
+  const getPlatformBadge = (item) => {
+    if (item.redemptionType === "qr") {
+      return (
+        <div style={styles.badgeInStore}>
+          <FaStore size={10} />
+          In-Store
+        </div>
+      );
+    }
+
+    const platformName =
+      item.platform === "shopify"
+        ? "Shopify"
+        : item.platform === "woocommerce"
+        ? "WooCommerce"
+        : item.platform === "custom"
+        ? "Online"
+        : "Online";
+
+    const bg =
+      item.platform === "shopify"
+        ? "#e8f5e9"
+        : item.platform === "woocommerce"
+        ? "#e3f2fd"
+        : "#ede9fe";
+
+    const color =
+      item.platform === "shopify"
+        ? "#2e7d32"
+        : item.platform === "woocommerce"
+        ? "#1565c0"
+        : "#6d28d9";
+
+    return (
+      <div style={{ ...styles.badgePlatform, background: bg, color }}>
+        <FaGlobe size={10} />
+        {platformName}
+      </div>
+    );
   };
 
   return (
@@ -184,103 +311,161 @@ const SavingsHistory = () => {
             <span>Financial Report</span>
           </div>
           <h2 style={styles.title}>Savings Impact Dashboard</h2>
-          <p style={styles.subtitle}>Track student redemptions and total savings generated through your offers</p>
+          <p style={styles.subtitle}>
+            Track student redemptions — both in-store (QR) and online (promo codes)
+          </p>
         </div>
-        <button 
-          className="download-btn" 
-          style={styles.downloadBtn} 
-          onClick={downloadCSV} 
+        <button
+          className="download-btn"
+          style={styles.downloadBtn}
+          onClick={downloadCSV}
           disabled={filteredHistory.length === 0}
         >
           <FaDownload /> <span style={styles.btnText}>Export Report</span>
         </button>
       </div>
 
-      {/* Stats Overview Section - Responsive Grid */}
+      {/* Stats Overview */}
       <div style={styles.statsRow}>
         <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#f0fdf4'}}>
+          <div style={{ ...styles.statIcon, background: "#f0fdf4" }}>
             <FaCoins color="#10b981" size={24} />
           </div>
           <div style={styles.statContent}>
             <span style={styles.statLabel}>Total Revenue</span>
-            <h3 style={{...styles.statValue, color: '#10b981'}}>₨ {brandStats.totalRevenue.toLocaleString()}</h3>
+            <h3 style={{ ...styles.statValue, color: "#10b981" }}>
+              ₨ {brandStats.totalRevenue.toLocaleString()}
+            </h3>
           </div>
         </div>
+
         <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#eff6ff'}}>
+          <div style={{ ...styles.statIcon, background: "#eff6ff" }}>
             <FaShoppingBag color="#3b82f6" size={24} />
           </div>
           <div style={styles.statContent}>
             <span style={styles.statLabel}>Redemptions</span>
-            <h3 style={{...styles.statValue, color: '#3b82f6'}}>{brandStats.totalTransactions}</h3>
+            <h3 style={{ ...styles.statValue, color: "#3b82f6" }}>
+              {brandStats.totalTransactions}
+            </h3>
           </div>
         </div>
+
         <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#f3e8ff'}}>
+          <div style={{ ...styles.statIcon, background: "#f3e8ff" }}>
             <FaPercent color="#8b5cf6" size={24} />
           </div>
           <div style={styles.statContent}>
             <span style={styles.statLabel}>Avg Discount</span>
-            <h3 style={{...styles.statValue, color: '#8b5cf6'}}>₨ {brandStats.averageDiscount.toFixed(0)}</h3>
+            <h3 style={{ ...styles.statValue, color: "#8b5cf6" }}>
+              ₨ {brandStats.averageDiscount.toFixed(0)}
+            </h3>
           </div>
         </div>
+
         <div className="stat-card" style={styles.statCard}>
-          <div style={{...styles.statIcon, background: '#fce4ec'}}>
+          <div style={{ ...styles.statIcon, background: "#fce4ec" }}>
             <FaTrophy color="#e11d48" size={24} />
           </div>
           <div style={styles.statContent}>
             <span style={styles.statLabel}>Top Offer</span>
-            <h3 style={{...styles.statValue, color: '#e11d48', fontSize: 'clamp(14px, 1.5vw, 18px)'}}>{brandStats.topPerformingOffer}</h3>
+            <h3
+              style={{
+                ...styles.statValue,
+                color: "#e11d48",
+                fontSize: "clamp(14px, 1.5vw, 18px)",
+              }}
+            >
+              {brandStats.topPerformingOffer}
+            </h3>
+          </div>
+        </div>
+
+        {/* NEW: Online vs In-Store split */}
+        <div className="stat-card" style={styles.statCard}>
+          <div style={{ ...styles.statIcon, background: "#fef3c7" }}>
+            <FaStore color="#f59e0b" size={24} />
+          </div>
+          <div style={styles.statContent}>
+            <span style={styles.statLabel}>Online / In-Store</span>
+            <h3 style={{ ...styles.statValue, color: "#f59e0b" }}>
+              {brandStats.onlineCount} / {brandStats.inStoreCount}
+            </h3>
+            <span style={styles.statSubtext}>
+              ₨ {brandStats.onlineSavings.toLocaleString()} / ₨{" "}
+              {brandStats.inStoreSavings.toLocaleString()}
+            </span>
           </div>
         </div>
       </div>
 
-      {/* Filter Bar - Responsive */}
+      {/* Filter Bar */}
       <div style={styles.filterBar}>
         <div style={styles.searchWrapper}>
           <div style={styles.searchInputWrapper}>
             <FaSearch style={styles.searchIcon} />
-            <input 
+            <input
               style={styles.searchInput}
-              placeholder="Search by name or brand..."
+              placeholder="Search by name, roll no, promo code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <button 
+          <button
             style={styles.filterToggleBtn}
             onClick={() => setShowFilters(!showFilters)}
           >
             <FaFilter /> <span style={styles.btnText}>Filters</span>
           </button>
-          {(searchTerm || dateRange.start || dateRange.end) && (
+          {hasActiveFilters && (
             <button style={styles.clearBtn} onClick={clearFilters}>
               <FaTimes /> <span style={styles.btnText}>Clear</span>
             </button>
           )}
         </div>
-        
+
         {showFilters && (
           <div style={styles.dateFilters}>
-            <input 
-              type="date" 
+            <input
+              type="date"
               style={styles.dateInput}
               value={dateRange.start}
-              onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+              onChange={(e) => setDateRange({ ...dateRange, start: e.target.value })}
             />
             <span style={styles.dateSeparator}>to</span>
-            <input 
-              type="date" 
+            <input
+              type="date"
               style={styles.dateInput}
               value={dateRange.end}
-              onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+              onChange={(e) => setDateRange({ ...dateRange, end: e.target.value })}
             />
+
+            <select
+              style={styles.dateInput}
+              value={redemptionType}
+              onChange={(e) => setRedemptionType(e.target.value)}
+            >
+              <option value="all">All Types</option>
+              <option value="qr">In-Store (QR)</option>
+              <option value="promo">Online (Promo Code)</option>
+            </select>
+
+            <select
+              style={styles.dateInput}
+              value={platform}
+              onChange={(e) => setPlatform(e.target.value)}
+            >
+              <option value="all">All Platforms</option>
+              <option value="in-store">In-Store</option>
+              <option value="shopify">Shopify</option>
+              <option value="woocommerce">WooCommerce</option>
+              <option value="custom">Custom Website</option>
+            </select>
           </div>
         )}
       </div>
 
-      {/* Transactions Table - Responsive */}
+      {/* Transactions Table */}
       <div className="table-container" style={styles.tableWrapper}>
         <div style={styles.tableScrollContainer}>
           <table style={styles.table}>
@@ -288,13 +473,16 @@ const SavingsHistory = () => {
               <tr style={styles.theadRow}>
                 <th style={styles.th} onClick={() => handleSort("rollNo")}>
                   <span style={styles.thContent}>
-                    Name {getSortIcon("rollNo")}
+                    Student {getSortIcon("rollNo")}
                   </span>
                 </th>
                 <th style={styles.th} onClick={() => handleSort("brand")}>
                   <span style={styles.thContent}>
                     Offer {getSortIcon("brand")}
                   </span>
+                </th>
+                <th style={styles.th}>
+                  <span style={styles.thContent}>Type</span>
                 </th>
                 <th style={styles.th} onClick={() => handleSort("bill")}>
                   <span style={styles.thContent}>
@@ -316,50 +504,83 @@ const SavingsHistory = () => {
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan="5" style={styles.loadingCell}>
+                  <td colSpan="6" style={styles.loadingCell}>
                     <div className="loader" style={styles.loader}></div>
                     <span>Loading transaction records...</span>
                   </td>
                 </tr>
               ) : filteredHistory.length === 0 ? (
                 <tr className="empty-row">
-                  <td colSpan="5" style={styles.emptyCell}>
+                  <td colSpan="6" style={styles.emptyCell}>
                     <div style={styles.emptyState}>
                       <div style={styles.emptyIcon}>💰</div>
                       <p style={styles.emptyText}>No Redemption found</p>
-                      <span style={styles.emptySubtext}>Try adjusting your search or date filters</span>
+                      <span style={styles.emptySubtext}>
+                        Try adjusting your search or filters
+                      </span>
                     </div>
                   </td>
                 </tr>
               ) : (
                 filteredHistory.map((item, index) => (
                   <tr key={index} className="table-row" style={styles.tr}>
-                    <td style={styles.td} data-label="Name">
+                    <td style={styles.td} data-label="Student">
                       <div style={styles.studentCell}>
                         <div>
-                          <div style={styles.studentName}>{item.rollNo}</div>
+                          <div style={styles.studentName}>
+                            {item.rollNo || item.name || "N/A"}
+                          </div>
+                          {item.university && item.university !== "N/A" && (
+                            <div style={styles.studentSub}>
+                              {item.university}
+                            </div>
+                          )}
                         </div>
                       </div>
                     </td>
+
                     <td style={styles.td} data-label="Offer">
                       <div style={styles.offerCell}>
                         <FaTag size={12} color="#ff961a" />
                         <span style={styles.offerName}>{item.brand}</span>
                       </div>
                     </td>
-                    <td style={styles.td} data-label="Bill">
-                      <span style={styles.billAmount}>₨ {item.bill.toLocaleString()}</span>
+
+                    <td style={styles.td} data-label="Type">
+                      <div style={styles.typeCellWrapper}>
+                        {getPlatformBadge(item)}
+                        {item.promoCode && (
+                          <div style={styles.promoCodeText}>
+                            <FaTicketAlt size={9} />
+                            {item.promoCode}
+                          </div>
+                        )}
+                      </div>
                     </td>
+
+                    <td style={styles.td} data-label="Bill">
+                      <span style={styles.billAmount}>
+                        ₨ {(item.bill || 0).toLocaleString()}
+                      </span>
+                    </td>
+
                     <td style={styles.td} data-label="Saved">
                       <div style={styles.savedBadge}>
                         <FaArrowDown size={10} />
-                        ₨ {item.saved.toLocaleString()}
+                        ₨ {(item.saved || 0).toLocaleString()}
                       </div>
                     </td>
+
                     <td style={styles.td} data-label="Date">
                       <div style={styles.dateCell}>
                         <FaCalendarAlt size={12} color="#94a3b8" />
-                        <span>{new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
+                        <span>
+                          {new Date(item.date).toLocaleDateString("en-US", {
+                            month: "short",
+                            day: "numeric",
+                            year: "numeric",
+                          })}
+                        </span>
                       </div>
                     </td>
                   </tr>
@@ -374,11 +595,21 @@ const SavingsHistory = () => {
       {filteredHistory.length > 0 && (
         <div style={styles.footer}>
           <div style={styles.footerLeft}>
-            <FaTrophy style={{color: '#ff961a'}} />
-            <span>Showing {filteredHistory.length} of {history.length} transactions</span>
+            <FaTrophy style={{ color: "#ff961a" }} />
+            <span>
+              Showing {filteredHistory.length} of {history.length} transactions
+            </span>
           </div>
           <div style={styles.footerRight}>
-            <span>Revenue: <strong style={{color: '#10b981'}}>₨ {filteredHistory.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0).toLocaleString()}</strong></span>
+            <span>
+              Revenue:{" "}
+              <strong style={{ color: "#10b981" }}>
+                ₨{" "}
+                {filteredHistory
+                  .reduce((acc, curr) => acc + ((curr.bill || 0) - (curr.saved || 0)), 0)
+                  .toLocaleString()}
+              </strong>
+            </span>
           </div>
         </div>
       )}
@@ -405,6 +636,7 @@ const SavingsHistory = () => {
         .stat-card:nth-child(2) { animation-delay: 0.1s; }
         .stat-card:nth-child(3) { animation-delay: 0.15s; }
         .stat-card:nth-child(4) { animation-delay: 0.2s; }
+        .stat-card:nth-child(5) { animation-delay: 0.25s; }
         
         .table-row {
           transition: all 0.2s ease;
@@ -450,7 +682,7 @@ const SavingsHistory = () => {
           animation: pulse 0.8s linear infinite;
         }
         
-        input:focus {
+        input:focus, select:focus {
           outline: none;
           border-color: #ff961a !important;
         }
@@ -465,46 +697,18 @@ const SavingsHistory = () => {
           cursor: not-allowed;
         }
 
-        /* Mobile First Responsive Styles */
-        * {
-          box-sizing: border-box;
-        }
+        * { box-sizing: border-box; }
 
-        /* Small screens - Stack everything */
         @media (max-width: 768px) {
-          /* Stats become 2 columns */
-          .stat-card {
-            padding: 12px 14px !important;
-          }
-          
-          .statIcon {
-            width: 36px !important;
-            height: 36px !important;
-          }
-          
-          .statIcon svg {
-            width: 18px !important;
-            height: 18px !important;
-          }
-          
-          .statValue {
-            font-size: 16px !important;
-          }
-          
-          .statLabel {
-            font-size: 9px !important;
-          }
+          .stat-card { padding: 12px 14px !important; }
+          .statIcon { width: 36px !important; height: 36px !important; }
+          .statIcon svg { width: 18px !important; height: 18px !important; }
+          .statValue { font-size: 16px !important; }
+          .statLabel { font-size: 9px !important; }
 
-          /* Table becomes card view - but NOT for empty state */
-          table, thead, tbody, th, tr {
-            display: block;
-          }
+          table, thead, tbody, th, tr { display: block; }
+          thead tr { display: none; }
           
-          thead tr {
-            display: none;
-          }
-          
-          /* Only apply card styles to table rows with data, not empty rows */
           .table-row {
             display: block !important;
             margin-bottom: 16px;
@@ -526,9 +730,7 @@ const SavingsHistory = () => {
             width: 100% !important;
           }
           
-          .table-row td:last-child {
-            border-bottom: none !important;
-          }
+          .table-row td:last-child { border-bottom: none !important; }
           
           .table-row td:before {
             content: attr(data-label);
@@ -541,30 +743,16 @@ const SavingsHistory = () => {
             margin-right: 12px;
           }
           
-          .table-row td > div, .table-row td > span {
-            flex-shrink: 0;
-          }
-          
-          .table-row td > div {
-            justify-content: flex-end !important;
-          }
+          .table-row td > div { justify-content: flex-end !important; }
           
           .table-row .studentCell, 
           .table-row .offerCell, 
-          .table-row .dateCell {
-            justify-content: flex-end !important;
-          }
+          .table-row .dateCell,
+          .table-row .typeCellWrapper { justify-content: flex-end !important; }
           
-          .table-row .savedBadge {
-            justify-content: flex-end !important;
-          }
+          .table-row .savedBadge { justify-content: flex-end !important; }
 
-          /* Empty row - keep it as block but center the content */
-          .empty-row {
-            display: block !important;
-            width: 100% !important;
-          }
-          
+          .empty-row { display: block !important; width: 100% !important; }
           .empty-row td {
             display: block !important;
             width: 100% !important;
@@ -572,11 +760,7 @@ const SavingsHistory = () => {
             padding: 50px 20px !important;
             border: none !important;
           }
-          
-          .empty-row td:before {
-            display: none !important;
-          }
-          
+          .empty-row td:before { display: none !important; }
           .empty-row .emptyState {
             display: flex !important;
             flex-direction: column !important;
@@ -585,234 +769,59 @@ const SavingsHistory = () => {
             width: 100% !important;
             text-align: center !important;
           }
-          
           .empty-row .emptyIcon {
             display: block !important;
             margin: 0 auto 10px auto !important;
-            text-align: center !important;
-          }
-          
-          .empty-row .emptyText {
-            text-align: center !important;
-            width: 100% !important;
-            margin: 0 0 4px 0 !important;
-          }
-          
-          .empty-row .emptySubtext {
-            text-align: center !important;
-            width: 100% !important;
-            display: block !important;
           }
 
-          /* Filter bar mobile */
-          .searchWrapper {
-            flex-wrap: wrap;
-          }
-          
-          .searchInputWrapper {
-            min-width: 100% !important;
-          }
-          
-          .filterToggleBtn, .clearBtn {
-            flex: 1;
-            justify-content: center;
-          }
-          
-          .dateFilters {
-            flex-direction: column;
-            align-items: stretch;
-          }
-          
-          .dateInput {
-            min-width: 100% !important;
-          }
-          
-          .dateSeparator {
-            text-align: center;
-          }
-
-          /* Footer mobile */
-          .footer {
-            flex-direction: column;
-            align-items: flex-start;
-          }
-          
-          .footerRight {
-            flex-wrap: wrap;
-          }
+          .searchWrapper { flex-wrap: wrap; }
+          .searchInputWrapper { min-width: 100% !important; }
+          .filterToggleBtn, .clearBtn { flex: 1; justify-content: center; }
+          .dateFilters { flex-direction: column; align-items: stretch; }
+          .dateInput { min-width: 100% !important; }
+          .dateSeparator { text-align: center; }
+          .footer { flex-direction: column; align-items: flex-start; }
+          .footerRight { flex-wrap: wrap; }
         }
 
-        /* Extra small screens */
         @media (max-width: 480px) {
-          .container {
-            padding: 12px !important;
-            border-radius: 16px !important;
-          }
-          
-          .header {
-            flex-direction: column;
-          }
-          
-          .downloadBtn {
-            width: 100%;
-            justify-content: center;
-          }
-          
+          .container { padding: 12px !important; border-radius: 16px !important; }
+          .header { flex-direction: column; }
+          .downloadBtn { width: 100%; justify-content: center; }
           .statsRow {
             grid-template-columns: repeat(2, 1fr) !important;
             gap: 8px !important;
           }
-          
-          .statCard {
-            padding: 10px !important;
-            gap: 8px !important;
-          }
-          
-          .statIcon {
-            width: 30px !important;
-            height: 30px !important;
-          }
-          
-          .statIcon svg {
-            width: 14px !important;
-            height: 14px !important;
-          }
-          
-          .statValue {
-            font-size: 14px !important;
-          }
-          
-          .statLabel {
-            font-size: 8px !important;
-          }
-          
-          .statContent {
-            min-width: 0;
-          }
-          
-          .title {
-            font-size: 20px !important;
-          }
-          
-          .table-row {
-            padding: 10px !important;
-          }
-          
-          .table-row td {
-            font-size: 12px !important;
-            padding: 6px 2px !important;
-          }
-          
-          .table-row td:before {
-            font-size: 10px !important;
-          }
-          
-          .studentName {
-            font-size: 12px !important;
-          }
-          
-          .offerName {
-            font-size: 12px !important;
-          }
-          
-          .billAmount {
-            font-size: 12px !important;
-          }
-          
-          .savedBadge {
-            font-size: 11px !important;
-            padding: 2px 8px !important;
-          }
-          
-          .dateCell {
-            font-size: 11px !important;
-          }
-          
-          .footer {
-            padding: 12px !important;
-          }
-          
-          .footerLeft, .footerRight {
-            font-size: 11px !important;
-          }
-          
-          /* Fix for empty state in extra small screens */
-          .empty-row td {
-            padding: 40px 16px !important;
-          }
-          
-          .empty-row .emptyIcon {
-            font-size: 40px !important;
-          }
-          
-          .empty-row .emptyText {
-            font-size: 16px !important;
-          }
-          
-          .empty-row .emptySubtext {
-            font-size: 13px !important;
-          }
+          .statCard { padding: 10px !important; gap: 8px !important; }
+          .statIcon { width: 30px !important; height: 30px !important; }
+          .statIcon svg { width: 14px !important; height: 14px !important; }
+          .statValue { font-size: 14px !important; }
+          .statLabel { font-size: 8px !important; }
+          .statContent { min-width: 0; }
+          .title { font-size: 20px !important; }
+          .table-row { padding: 10px !important; }
+          .table-row td { font-size: 12px !important; padding: 6px 2px !important; }
+          .table-row td:before { font-size: 10px !important; }
+          .studentName, .offerName, .billAmount { font-size: 12px !important; }
+          .savedBadge { font-size: 11px !important; padding: 2px 8px !important; }
+          .dateCell { font-size: 11px !important; }
+          .footer { padding: 12px !important; }
+          .footerLeft, .footerRight { font-size: 11px !important; }
         }
 
-        /* Medium screens - keep table but make it scrollable */
         @media (min-width: 769px) and (max-width: 1024px) {
-          .tableScrollContainer {
-            overflow-x: auto;
-          }
-          
-          .table {
-            min-width: 600px;
-          }
-          
-          th, td {
-            padding: 10px 12px !important;
-            font-size: 12px !important;
-          }
+          .tableScrollContainer { overflow-x: auto; }
+          .table { min-width: 700px; }
+          th, td { padding: 10px 12px !important; font-size: 12px !important; }
         }
 
-        /* Fix for very small phones */
         @media (max-width: 360px) {
-          .statsRow {
-            grid-template-columns: 1fr 1fr !important;
-          }
-          
-          .statCard {
-            padding: 8px !important;
-          }
-          
-          .statValue {
-            font-size: 12px !important;
-          }
-          
-          .statLabel {
-            font-size: 7px !important;
-          }
-          
-          .statIcon {
-            width: 24px !important;
-            height: 24px !important;
-          }
-          
-          .statIcon svg {
-            width: 12px !important;
-            height: 12px !important;
-          }
-
-          .empty-row td {
-            padding: 20px 12px !important;
-          }
-          
-          .empty-row .emptyIcon {
-            font-size: 32px !important;
-          }
-          
-          .empty-row .emptyText {
-            font-size: 14px !important;
-          }
-          
-          .empty-row .emptySubtext {
-            font-size: 11px !important;
-          }
+          .statsRow { grid-template-columns: 1fr 1fr !important; }
+          .statCard { padding: 8px !important; }
+          .statValue { font-size: 12px !important; }
+          .statLabel { font-size: 7px !important; }
+          .statIcon { width: 24px !important; height: 24px !important; }
+          .statIcon svg { width: 12px !important; height: 12px !important; }
         }
       `}</style>
     </div>
@@ -820,16 +829,16 @@ const SavingsHistory = () => {
 };
 
 const styles = {
-  container: { 
-    padding: "clamp(12px, 3vw, 35px)", 
+  container: {
+    padding: "clamp(12px, 3vw, 35px)",
     background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-    minHeight: "85vh", 
+    minHeight: "85vh",
     fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     position: "relative",
     borderRadius: "clamp(16px, 3vw, 32px)",
     overflow: "hidden",
     maxWidth: "100%",
-    width: "100%"
+    width: "100%",
   },
   bgDecoration: {
     position: "absolute",
@@ -837,25 +846,23 @@ const styles = {
     right: "-50px",
     width: "300px",
     height: "300px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)",
+    background:
+      "radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)",
     borderRadius: "50%",
     pointerEvents: "none",
-    display: "none"
+    display: "none",
   },
-  header: { 
-    display: "flex", 
-    justifyContent: "space-between", 
-    alignItems: "flex-start", 
-    marginBottom: "clamp(16px, 3vw, 28px)", 
-    flexWrap: "wrap", 
+  header: {
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    marginBottom: "clamp(16px, 3vw, 28px)",
+    flexWrap: "wrap",
     gap: "12px",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
   },
-  headerLeft: {
-    flex: 1,
-    minWidth: "150px"
-  },
+  headerLeft: { flex: 1, minWidth: "150px" },
   headerBadge: {
     display: "inline-flex",
     alignItems: "center",
@@ -866,57 +873,57 @@ const styles = {
     fontSize: "clamp(10px, 1vw, 13px)",
     fontWeight: "600",
     color: "#ff961a",
-    marginBottom: "8px"
+    marginBottom: "8px",
   },
-  title: { 
-    margin: 0, 
-    color: "#1e293b", 
-    fontSize: "clamp(18px, 3vw, 28px)", 
+  title: {
+    margin: 0,
+    color: "#1e293b",
+    fontSize: "clamp(18px, 3vw, 28px)",
     fontWeight: "800",
     letterSpacing: "-0.5px",
-    wordBreak: "break-word"
+    wordBreak: "break-word",
   },
-  subtitle: { 
-    margin: "4px 0 0 0", 
-    color: "#64748b", 
-    fontSize: "clamp(11px, 1vw, 14px)" 
+  subtitle: {
+    margin: "4px 0 0 0",
+    color: "#64748b",
+    fontSize: "clamp(11px, 1vw, 14px)",
   },
-  downloadBtn: { 
-    display: "flex", 
-    alignItems: "center", 
-    gap: "6px", 
-    padding: "clamp(8px, 1.2vw, 12px) clamp(14px, 2vw, 24px)", 
+  downloadBtn: {
+    display: "flex",
+    alignItems: "center",
+    gap: "6px",
+    padding: "clamp(8px, 1.2vw, 12px) clamp(14px, 2vw, 24px)",
     background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
-    border: "none", 
-    borderRadius: "clamp(10px, 1.5vw, 16px)", 
-    cursor: "pointer", 
-    fontWeight: "600", 
-    transition: "all 0.3s ease", 
-    color: "#fff", 
+    border: "none",
+    borderRadius: "clamp(10px, 1.5vw, 16px)",
+    cursor: "pointer",
+    fontWeight: "600",
+    transition: "all 0.3s ease",
+    color: "#fff",
     fontSize: "clamp(11px, 1vw, 14px)",
     whiteSpace: "nowrap",
-    flexShrink: 0
+    flexShrink: 0,
   },
-  statsRow: { 
-    display: "grid", 
-    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 140px), 1fr))", 
-    gap: "clamp(8px, 1.5vw, 16px)", 
+  statsRow: {
+    display: "grid",
+    gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 160px), 1fr))",
+    gap: "clamp(8px, 1.5vw, 16px)",
     marginBottom: "clamp(16px, 2.5vw, 24px)",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
   },
-  statCard: { 
-    background: "#fff", 
-    padding: "clamp(10px, 1.8vw, 18px) clamp(10px, 1.8vw, 20px)", 
-    borderRadius: "clamp(12px, 2vw, 20px)", 
+  statCard: {
+    background: "#fff",
+    padding: "clamp(10px, 1.8vw, 18px) clamp(10px, 1.8vw, 20px)",
+    borderRadius: "clamp(12px, 2vw, 20px)",
     boxShadow: "0 4px 20px rgba(0,0,0,0.04)",
-    display: "flex", 
-    alignItems: "center", 
+    display: "flex",
+    alignItems: "center",
     gap: "clamp(8px, 1.2vw, 14px)",
     border: "1px solid rgba(255,150,26,0.08)",
     transition: "transform 0.3s ease, box-shadow 0.3s ease",
     minWidth: "0",
-    overflow: "hidden"
+    overflow: "hidden",
   },
   statIcon: {
     width: "clamp(30px, 4.5vw, 46px)",
@@ -925,31 +932,41 @@ const styles = {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
-    flexShrink: 0
+    flexShrink: 0,
   },
   statContent: {
     minWidth: "0",
     flex: 1,
-    overflow: "hidden"
+    overflow: "hidden",
   },
-  statLabel: { 
-    display: "block", 
-    color: "#64748b", 
+  statLabel: {
+    display: "block",
+    color: "#64748b",
     fontSize: "clamp(7px, 1vw, 11px)",
     fontWeight: "600",
     textTransform: "uppercase",
     letterSpacing: "0.3px",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
-  statValue: { 
-    margin: "2px 0 0", 
-    fontSize: "clamp(12px, 2.2vw, 22px)", 
+  statValue: {
+    margin: "2px 0 0",
+    fontSize: "clamp(12px, 2.2vw, 22px)",
     color: "#1e293b",
     fontWeight: "800",
     lineHeight: 1.2,
     wordBreak: "break-word",
     overflow: "hidden",
-    textOverflow: "ellipsis"
+    textOverflow: "ellipsis",
+  },
+  statSubtext: {
+    display: "block",
+    fontSize: "clamp(8px, 0.85vw, 10px)",
+    color: "#94a3b8",
+    fontWeight: "600",
+    marginTop: "2px",
+    whiteSpace: "nowrap",
+    overflow: "hidden",
+    textOverflow: "ellipsis",
   },
   filterBar: {
     display: "flex",
@@ -957,18 +974,18 @@ const styles = {
     gap: "10px",
     marginBottom: "clamp(14px, 2vw, 20px)",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
   },
   searchWrapper: {
     display: "flex",
     gap: "8px",
     flexWrap: "wrap",
-    width: "100%"
+    width: "100%",
   },
   searchInputWrapper: {
     flex: 1,
     position: "relative",
-    minWidth: "120px"
+    minWidth: "120px",
   },
   searchIcon: {
     position: "absolute",
@@ -976,7 +993,7 @@ const styles = {
     top: "50%",
     transform: "translateY(-50%)",
     color: "#94a3b8",
-    fontSize: "13px"
+    fontSize: "13px",
   },
   searchInput: {
     width: "100%",
@@ -986,7 +1003,7 @@ const styles = {
     fontSize: "clamp(12px, 1vw, 14px)",
     backgroundColor: "#fff",
     transition: "all 0.2s ease",
-    fontFamily: "inherit"
+    fontFamily: "inherit",
   },
   filterToggleBtn: {
     display: "flex",
@@ -1001,7 +1018,7 @@ const styles = {
     fontWeight: "500",
     color: "#64748b",
     transition: "all 0.2s",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   clearBtn: {
     display: "flex",
@@ -1009,14 +1026,14 @@ const styles = {
     gap: "4px",
     padding: "clamp(8px, 1.2vw, 12px) 12px",
     borderRadius: "12px",
-    border: "2px solid #e2e8f0",
-    backgroundColor: "#fff",
+    border: "2px solid #fecaca",
+    backgroundColor: "#fef2f2",
     cursor: "pointer",
     fontSize: "clamp(11px, 1vw, 13px)",
-    fontWeight: "500",
-    color: "#64748b",
+    fontWeight: "600",
+    color: "#dc2626",
     transition: "all 0.2s",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   dateFilters: {
     display: "flex",
@@ -1026,7 +1043,7 @@ const styles = {
     padding: "10px 14px",
     background: "#fff",
     borderRadius: "12px",
-    border: "2px solid #e2e8f0"
+    border: "2px solid #e2e8f0",
   },
   dateInput: {
     padding: "clamp(6px, 1vw, 10px) clamp(10px, 1.2vw, 14px)",
@@ -1037,68 +1054,63 @@ const styles = {
     fontFamily: "inherit",
     cursor: "pointer",
     flex: 1,
-    minWidth: "100px"
+    minWidth: "120px",
   },
   dateSeparator: {
     color: "#94a3b8",
-    fontSize: "clamp(11px, 1vw, 13px)"
+    fontSize: "clamp(11px, 1vw, 13px)",
   },
-  tableWrapper: { 
-    background: "#fff", 
-    borderRadius: "16px", 
-    boxShadow: "0 8px 30px rgba(0,0,0,0.04)", 
+  tableWrapper: {
+    background: "#fff",
+    borderRadius: "16px",
+    boxShadow: "0 8px 30px rgba(0,0,0,0.04)",
     overflow: "hidden",
     border: "1px solid #f1f5f9",
     position: "relative",
-    zIndex: 1
+    zIndex: 1,
   },
   tableScrollContainer: {
     overflowX: "auto",
     WebkitOverflowScrolling: "touch",
-    width: "100%"
+    width: "100%",
   },
-  table: { 
-    width: "100%", 
-    borderCollapse: "collapse", 
+  table: {
+    width: "100%",
+    borderCollapse: "collapse",
     textAlign: "left",
     minWidth: "300px",
-    maxWidth: "100%"
+    maxWidth: "100%",
   },
-  theadRow: {
-    background: "#f8fafc"
-  },
-  th: { 
-    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)", 
-    color: "#475569", 
-    fontSize: "clamp(9px, 0.8vw, 11px)", 
-    textTransform: "uppercase", 
-    fontWeight: "700", 
+  theadRow: { background: "#f8fafc" },
+  th: {
+    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)",
+    color: "#475569",
+    fontSize: "clamp(9px, 0.8vw, 11px)",
+    textTransform: "uppercase",
+    fontWeight: "700",
     letterSpacing: "0.5px",
     borderBottom: "2px solid #e2e8f0",
     transition: "background 0.2s",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   thContent: {
     display: "flex",
     alignItems: "center",
-    gap: "4px"
+    gap: "4px",
   },
-  td: { 
-    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)", 
-    borderBottom: "1px solid #f1f5f9", 
-    fontSize: "clamp(12px, 1vw, 14px)", 
+  td: {
+    padding: "clamp(8px, 1.2vw, 14px) clamp(8px, 1.5vw, 18px)",
+    borderBottom: "1px solid #f1f5f9",
+    fontSize: "clamp(12px, 1vw, 14px)",
     color: "#334155",
     wordBreak: "break-word",
-    maxWidth: "200px"
+    maxWidth: "240px",
   },
-  tr: { 
-    transition: "all 0.2s ease", 
-    cursor: "pointer" 
-  },
+  tr: { transition: "all 0.2s ease", cursor: "pointer" },
   loadingCell: {
     padding: "clamp(30px, 8vw, 60px)",
     textAlign: "center",
-    color: "#64748b"
+    color: "#64748b",
   },
   loader: {
     width: "20px",
@@ -1106,55 +1118,100 @@ const styles = {
     border: "3px solid #e2e8f0",
     borderTop: "3px solid #ff961a",
     borderRadius: "50%",
-    margin: "0 auto 10px"
+    margin: "0 auto 10px",
   },
   emptyCell: {
     padding: "clamp(30px, 8vw, 60px)",
-    textAlign: "center"
+    textAlign: "center",
   },
-  emptyState: {
-    textAlign: "center"
-  },
+  emptyState: { textAlign: "center" },
   emptyIcon: {
     fontSize: "clamp(30px, 6vw, 48px)",
     marginBottom: "10px",
-    opacity: 0.5
+    opacity: 0.5,
   },
   emptyText: {
     margin: "0 0 4px 0",
     fontSize: "clamp(14px, 1.5vw, 18px)",
     fontWeight: "600",
-    color: "#1e293b"
+    color: "#1e293b",
   },
   emptySubtext: {
     fontSize: "clamp(12px, 1vw, 14px)",
-    color: "#64748b"
+    color: "#64748b",
   },
   studentCell: {
     display: "flex",
     alignItems: "center",
-    gap: "8px"
+    gap: "8px",
   },
   studentName: {
     fontWeight: "700",
     color: "#1e293b",
     fontSize: "clamp(12px, 1vw, 14px)",
-    wordBreak: "break-word"
+    wordBreak: "break-word",
+  },
+  studentSub: {
+    fontSize: "clamp(10px, 0.85vw, 11px)",
+    color: "#94a3b8",
+    fontWeight: "500",
+    marginTop: "2px",
   },
   offerCell: {
     display: "flex",
     alignItems: "center",
-    gap: "6px"
+    gap: "6px",
   },
   offerName: {
     fontWeight: "500",
     color: "#1e293b",
-    wordBreak: "break-word"
+    wordBreak: "break-word",
+  },
+  typeCellWrapper: {
+    display: "flex",
+    flexDirection: "column",
+    gap: "4px",
+    alignItems: "flex-start",
+  },
+  badgeInStore: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "5px",
+    background: "#fff7ed",
+    color: "#ea580c",
+    padding: "3px 9px",
+    borderRadius: "20px",
+    fontSize: "clamp(10px, 0.85vw, 12px)",
+    fontWeight: "700",
+    whiteSpace: "nowrap",
+  },
+  badgePlatform: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "5px",
+    padding: "3px 9px",
+    borderRadius: "20px",
+    fontSize: "clamp(10px, 0.85vw, 12px)",
+    fontWeight: "700",
+    whiteSpace: "nowrap",
+  },
+  promoCodeText: {
+    display: "inline-flex",
+    alignItems: "center",
+    gap: "4px",
+    fontSize: "clamp(9px, 0.8vw, 11px)",
+    color: "#64748b",
+    fontFamily: "monospace",
+    fontWeight: "700",
+    background: "#f8fafc",
+    padding: "2px 6px",
+    borderRadius: "4px",
+    letterSpacing: "0.3px",
   },
   billAmount: {
     fontWeight: "600",
     color: "#1e293b",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   savedBadge: {
     display: "inline-flex",
@@ -1166,7 +1223,7 @@ const styles = {
     borderRadius: "6px",
     fontSize: "clamp(11px, 0.9vw, 13px)",
     fontWeight: "700",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   dateCell: {
     display: "flex",
@@ -1174,7 +1231,7 @@ const styles = {
     gap: "6px",
     fontSize: "clamp(11px, 0.9vw, 13px)",
     color: "#64748b",
-    whiteSpace: "nowrap"
+    whiteSpace: "nowrap",
   },
   footer: {
     marginTop: "clamp(10px, 1.5vw, 16px)",
@@ -1188,14 +1245,14 @@ const styles = {
     position: "relative",
     zIndex: 1,
     flexWrap: "wrap",
-    gap: "clamp(6px, 1vw, 12px)"
+    gap: "clamp(6px, 1vw, 12px)",
   },
   footerLeft: {
     display: "flex",
     alignItems: "center",
     gap: "8px",
     fontSize: "clamp(11px, 0.9vw, 13px)",
-    color: "#64748b"
+    color: "#64748b",
   },
   footerRight: {
     display: "flex",
@@ -1203,15 +1260,9 @@ const styles = {
     gap: "clamp(6px, 1vw, 12px)",
     fontSize: "clamp(11px, 0.9vw, 14px)",
     color: "#1e293b",
-    flexWrap: "wrap"
+    flexWrap: "wrap",
   },
-  footerDivider: {
-    color: "#e2e8f0",
-    fontSize: "clamp(14px, 1.5vw, 18px)"
-  },
-  btnText: {
-    display: "inline"
-  }
+  btnText: { display: "inline" },
 };
 
 export default SavingsHistory;

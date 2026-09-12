@@ -29,8 +29,7 @@ export default function SignIn() {
       setLoading(true);
 
       const res = await axios.post(
-        //"https://the-deft-crew-production.up.railway.app/api/auth/login",
-        "http://localhost:5000/api/auth/login",
+        "https://the-deft-crew-production.up.railway.app/api/auth/login",
         { email, password }
       );
 

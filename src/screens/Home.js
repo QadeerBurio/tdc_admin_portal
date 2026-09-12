@@ -53,6 +53,7 @@ import {
   FaTrophy,
   FaMedal,
   FaCoins,
+  FaMapMarkerAlt,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoSettingsOutline, IoNotificationsOutline } from "react-icons/io5";
@@ -65,6 +66,7 @@ import CreateOffer from "./CreateOffer";
 import ClaimedUsers from "./ClaimedUsers";
 import VerifyClaim from "./VerifyClaim";
 import SavingsHistory from "./SavingsHistory";
+import Branches from "./Branches";
 
 export default function Home() {
   const { user, token, logout } = useContext(AuthContext);
@@ -137,8 +139,8 @@ export default function Home() {
   const fetchOffers = async () => {
     try {
       const res = await axios.get(
-        //"https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
-        "http://localhost:5000/api/offers/my-offers",
+        "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        // "http://localhost:5000/api/offers/my-offers",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -167,8 +169,8 @@ export default function Home() {
   const fetchBrandData = async () => {
     try {
       const res = await axios.get(
-        //"https://the-deft-crew-production.up.railway.app/api/auth/me",
-        "http://localhost:5000/api/auth/me",
+        "https://the-deft-crew-production.up.railway.app/api/auth/me",
+        // "http://localhost:5000/api/auth/me",
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -194,15 +196,15 @@ export default function Home() {
   const fetchStats = async () => {
     try {
       const leadRes = await axios.get(
-        //"https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
-        "http://localhost:5000/api/offers/claimed-users",
+        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        // "http://localhost:5000/api/offers/claimed-users",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
       );
       const savingRes = await axios.get(
-        //"https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
-        "http://localhost:5000/api/offers/savings-report",
+        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        // "http://localhost:5000/api/offers/savings-report",
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -280,9 +282,11 @@ export default function Home() {
 
   const unreadCount = notifications.filter(n => !n.read).length;
 
+  // ✅ NAV ITEMS - Added "Branches"
   const navItems = [
     { id: "home", label: "Dashboard", icon: <MdOutlineDashboard />, description: "Overview" },
     { id: "myOffers", label: "Discount", icon: <FaTicketAlt />, description: "Manage" },
+    { id: "branches", label: "Branches", icon: <FaStore />, description: "Store/Online" },
     { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
     { id: "savingsHistory", label: "Redemption", icon: <FaShieldAlt />, description: "Verify" },
   ];
@@ -293,6 +297,8 @@ export default function Home() {
         return renderHome();
       case "myOffers":
         return <MyOffers />;
+      case "branches":
+        return <Branches />;
       case "createOffer":
         return <CreateOffer onOfferCreated={refreshOffers} />;
       case "claimedUsers":
@@ -425,7 +431,7 @@ export default function Home() {
         />
       )}
 
-      {/* Mobile Menu Toggle Button - Only visible on mobile */}
+      {/* Mobile Menu Toggle Button */}
       {isMobile && (
         <button
           style={{
@@ -467,7 +473,7 @@ export default function Home() {
                 style={styles.sidebarLogo}
                 onError={(e) => {
                   e.target.style.display = 'none';
-                  e.target.parentElement.innerHTML = '<span style={styles.logoIcon}>B</span>';
+                  e.target.parentElement.textContent = 'B';
                 }}
               />
             ) : (
@@ -599,7 +605,7 @@ export default function Home() {
                   <FaUserCircle size={18} />
                   <span>My Profile</span>
                 </motion.div>
-                
+
                 <div style={styles.dropdownDivider} />
                 <motion.div
                   style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
@@ -644,10 +650,10 @@ export default function Home() {
             <div style={styles.headerLeft}>
               <motion.div
                 style={styles.headerIconWrapper}
-                
               >
                 {activeTab === "home" && <FaHome style={styles.headerIcon} />}
                 {activeTab === "myOffers" && <FaTicketAlt style={styles.headerIcon} />}
+                {activeTab === "branches" && <FaStore style={styles.headerIcon} />}
                 {activeTab === "createOffer" && <FaGift style={styles.headerIcon} />}
                 {activeTab === "claimedUsers" && <FaUsers style={styles.headerIcon} />}
                 {activeTab === "verifyClaim" && <FaShieldAlt style={styles.headerIcon} />}
@@ -674,7 +680,6 @@ export default function Home() {
                 </motion.p>
               </div>
             </div>
-           
           </div>
 
           {/* Dynamic Content */}
@@ -1941,11 +1946,10 @@ const styles = {
     fontSize: "18px",
     flexShrink: 0,
     boxShadow: "0 4px 15px rgba(249, 195, 73, 0.25)",
-    marginLeft:70
+    marginLeft: 70,
   },
   headerIcon: {
     fontSize: "18px",
-    
   },
   pageTitle: {
     fontSize: "22px",
@@ -1959,8 +1963,6 @@ const styles = {
     color: "#64748b",
     margin: "4px 0 0 0",
   },
- 
-  
   mobileMenuBtn: {
     display: "none",
     position: "fixed",

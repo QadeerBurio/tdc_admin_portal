@@ -104,8 +104,7 @@ export default function Signup() {
   const autoLogin = async (email, password) => {
     try {
       const res = await axios.post(
-       // "https://the-deft-crew-production.up.railway.app/api/auth/login",
-        "http://localhost:5000/api/auth/login",
+       "https://the-deft-crew-production.up.railway.app/api/auth/login",
         { email, password }
       );
 
@@ -189,8 +188,7 @@ export default function Signup() {
 
       // Signup API call
       const response = await axios.post(
-        //"https://the-deft-crew-production.up.railway.app/api/auth/signup",
-        "http://localhost:5000/api/auth/signup",
+        "https://the-deft-crew-production.up.railway.app/api/auth/signup",
         data,
         {
           headers: {

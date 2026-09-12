@@ -23,8 +23,8 @@ export default function ForgotPassword() {
 
     try {
       const res = await axios.post(
-       //"https://the-deft-crew-production.up.railway.app/api/auth/forgot-password",
-        "http://localhost:5000/api/auth/forgot-password",
+       "https://the-deft-crew-production.up.railway.app/api/auth/forgot-password",
+        
         { emailOrPhone: emailOrPhone.trim() }
       );
 

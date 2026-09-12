@@ -13,8 +13,7 @@ import {
 import { MdVerified, MdOutlineDashboard } from "react-icons/md";
 import { HiOutlineTrendingUp, HiOutlineSparkles } from "react-icons/hi";
 
-//const BASE_URL = "https://the-deft-crew-production.up.railway.app"; 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://the-deft-crew-production.up.railway.app"; 
 const API_URL = `${BASE_URL}/api/offers`;
 const CLOUDINARY_NAME = "decaxpera";
 
