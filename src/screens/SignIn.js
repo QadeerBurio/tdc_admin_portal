@@ -4,7 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "./styles/SignIn.css";
-import loginImage from "../assets/login.jpeg";
+import loginImage from "../assets/login1.jpeg";
 
 export default function SignIn() {
   const { setUser, setToken } = useContext(AuthContext);
@@ -16,11 +16,10 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   const [error, setError] = useState("");
-  const [stepsOpen, setStepsOpen] = useState(false); // Mobile accordion
+  const [stepsOpen, setStepsOpen] = useState(false);
 
   const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
-  // Auto-close steps accordion on desktop resize
   useEffect(() => {
     const handleResize = () => {
       if (window.innerWidth > 900) setStepsOpen(false);
@@ -223,7 +222,6 @@ export default function SignIn() {
 
         {/* RIGHT: Modern Steps (Collapsible on Mobile) */}
         <div className={`steps-side ${stepsOpen ? "steps-open" : ""}`}>
-          {/* Mobile accordion toggle — only visible on mobile */}
           <button
             type="button"
             className="steps-toggle"
@@ -236,7 +234,7 @@ export default function SignIn() {
               </span>
               <span className="toggle-text">
                 <strong>What you get</strong>
-                <small>Welcome to The Crew</small>
+                <small>Welcome to tdc</small>
               </span>
             </span>
             <span className={`toggle-chevron ${stepsOpen ? "open" : ""}`}>
@@ -244,11 +242,10 @@ export default function SignIn() {
             </span>
           </button>
 
-          {/* Steps content — collapsible wrapper */}
           <div className="steps-content">
             <h1 className="steps-title">
               Welcome to <br />
-              <span className="steps-accent">The Crew</span>
+              <span className="steps-accent">tdc</span>
             </h1>
 
             <p className="steps-subtitle">
@@ -262,8 +259,8 @@ export default function SignIn() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Sign in securely</h3>
-                  <p>Your data is encrypted end-to-end with modern security.</p>
+                  <h3 style={{color:'white'}}>Sign in securely</h3>
+                  <p style={{color:'#a9a2a2'}}>Your data is encrypted end-to-end with modern security.</p>
                 </div>
               </div>
 
@@ -275,8 +272,8 @@ export default function SignIn() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Access your dashboard</h3>
-                  <p>Track offers, deals and analytics — all in one place.</p>
+                  <h3 style={{color:'white'}}>Access your dashboard</h3>
+                  <p style={{color:'#a9a2a2'}}>Track Discounts, Claims and Redemptions — all in one place.</p>
                 </div>
               </div>
 
@@ -288,8 +285,8 @@ export default function SignIn() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Grow your network</h3>
-                  <p>Connect with brands and unlock member-only perks.</p>
+                  <h3 style={{color:'white'}}>Grow your network</h3>
+                  <p style={{color:'#a9a2a2'}}>Connect with Students and unlock member-only perks.</p>
                 </div>
               </div>
             </div>

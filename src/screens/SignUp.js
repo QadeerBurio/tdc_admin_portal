@@ -4,7 +4,7 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import "./styles/Signup.css";
-import signupImage from "../assets/login.jpeg";
+import signupImage from "../assets/login1.jpeg";
 
 const PAKISTAN_CITIES = [
   "Karachi", "Lahore", "Faisalabad", "Rawalpindi", "Gujranwala",
@@ -60,6 +60,13 @@ export default function Signup() {
     window.addEventListener("resize", handleResize);
     return () => window.removeEventListener("resize", handleResize);
   }, []);
+
+  useEffect(() => {
+    if (window.innerWidth <= 900) {
+      document.body.style.overflow = stepsOpen ? "hidden" : "";
+    }
+    return () => { document.body.style.overflow = ""; };
+  }, [stepsOpen]);
 
   const validatePassword = (p) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(p);
   const validatePhone = (n) => /^[0]\d{10}$/.test(n);
@@ -458,7 +465,6 @@ export default function Signup() {
 
         {/* RIGHT: Modern Steps — Collapsible on Mobile */}
         <div className={`steps-side ${stepsOpen ? "steps-open" : ""}`}>
-          {/* Mobile accordion toggle — only visible on mobile */}
           <button
             type="button"
             className="steps-toggle"
@@ -479,7 +485,6 @@ export default function Signup() {
             </span>
           </button>
 
-          {/* Steps content — collapsible wrapper */}
           <div className="steps-content">
             <h1 className="steps-title">
               Your journey <br />
@@ -497,8 +502,8 @@ export default function Signup() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Create your account</h3>
-                  <p>Pick your role and fill in basic details. Takes just 30 seconds.</p>
+                  <h3 style={{color:'white'}}>Create your account</h3>
+                  <p style={{color:'#a9a2a2'}}>Pick your role and fill in basic details. Takes just 30 seconds.</p>
                 </div>
               </div>
 
@@ -510,8 +515,8 @@ export default function Signup() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Verify your identity</h3>
-                  <p>Quick verification to unlock exclusive perks and rewards.</p>
+                   <h3 style={{color:'white'}}>Offer Exclusive Discounts</h3>
+    <p style={{color:'#a9a2a2'}}>Create attractive student offers and drive more customers to your business.</p>
                 </div>
               </div>
 
@@ -523,8 +528,8 @@ export default function Signup() {
                   <div className="step-ring"></div>
                 </div>
                 <div className="step-content">
-                  <h3>Start exploring</h3>
-                  <p>Connect with brands, claim offers and grow your network.</p>
+                  <h3 style={{color:'white'}}>Connect with Students & Grow Revenue</h3>
+    <p style={{color:'#a9a2a2'}}>Reach more students, build loyal customers, and turn offers into revenue.</p>
                 </div>
               </div>
             </div>
