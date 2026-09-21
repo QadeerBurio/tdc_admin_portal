@@ -66,8 +66,8 @@ import grove from "../../src/assets/logos/grove.png";
 import Honey from "../../src/assets/logos/Honey.png";
 import leadsnotify from "../../src/assets/logos/leadsnotify.jpeg";
 import peng from "../../src/assets/logos/peng.jpeg";
-import appScreenshot1 from "../../src/assets/screen4.png";
-import appScreenshot2 from "../../src/assets/screen2.jpeg";
+import appScreenshot1 from "../../src/assets/screen1.png";
+import appScreenshot2 from "../../src/assets/screen2.png";
 import appScreenshot3 from "../../src/assets/screen3.png";
 import OfferImagesGallery from "./OfferImagesGallery";
 import HomeReviews from "./roles/HomeReviews";
@@ -1410,20 +1410,7 @@ const Landing = () => {
             viewport={{ once: true }}
             transition={{ duration: 0.7 }}
           >
-            <motion.div
-              className="app-cta-icon"
-              animate={{
-                y: [0, -12, 0],
-                scale: [1, 1.05, 1],
-              }}
-              transition={{
-                duration: 3,
-                repeat: Infinity,
-                ease: "easeInOut",
-              }}
-            >
-              <FaMobileAlt />
-            </motion.div>
+           
 
             <motion.h2
               className="app-cta-headline"

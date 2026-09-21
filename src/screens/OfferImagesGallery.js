@@ -24,69 +24,69 @@ const OfferImagesGallery = () => {
   }, []);
 
   const fetchAllOfferImages = async () => {
-  try {
-    setLoading(true);
-    const token = getToken();
-    
-    const response = await axios.get(
-      'https://the-deft-crew-production.up.railway.app/api/offers/images/all',
-      {
-        headers: {
-          'Authorization': `Bearer ${token}`
+    try {
+      setLoading(true);
+      const token = getToken();
+      
+      const response = await axios.get(
+        'https://the-deft-crew-production.up.railway.app/api/offers/images/all',
+        {
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
         }
-      }
-    );
+      );
 
-    // Get all offers from response
-    const allOffers = response.data.offers || [];
-    const totalOffers = response.data.totalOffers || allOffers.length;
-    const approvedOffers = response.data.approvedBrandOffers || allOffers.length;
-    
-    // Log for debugging
-    console.log(`Total offers in response: ${totalOffers}`);
-    console.log(`Approved brand offers: ${approvedOffers}`);
-    console.log(`Offers received: ${allOffers.length}`);
-    
-    // Filter out invalid offers (backend already filters approved brands)
-    const validOffers = allOffers.filter(offer => {
-      // Check if offer has required data
-      if (!offer || !offer.offerId) {
-        return false;
-      }
+      // Get all offers from response
+      const allOffers = response.data.offers || [];
+      const totalOffers = response.data.totalOffers || allOffers.length;
+      const approvedOffers = response.data.approvedBrandOffers || allOffers.length;
       
-      // Check if image exists and is valid
-      if (!offer.image || 
-          offer.image === null || 
-          offer.image === '' ||
-          offer.image === 'https://via.placeholder.com/120x120?text=Logo') {
-        return false;
-      }
+      // Log for debugging
+      console.log(`Total offers in response: ${totalOffers}`);
+      console.log(`Approved brand offers: ${approvedOffers}`);
+      console.log(`Offers received: ${allOffers.length}`);
       
-      // Check if brand exists and is approved
-      if (!offer.brand || !offer.brand.id) {
-        return false;
-      }
-      
-      // Double-check brand approval (backend already filters)
-      if (offer.brand.approved === false) {
-        return false;
-      }
-      
-      return true;
-    });
+      // Filter out invalid offers (backend already filters approved brands)
+      const validOffers = allOffers.filter(offer => {
+        // Check if offer has required data
+        if (!offer || !offer.offerId) {
+          return false;
+        }
+        
+        // Check if image exists and is valid
+        if (!offer.image || 
+            offer.image === null || 
+            offer.image === '' ||
+            offer.image === 'https://via.placeholder.com/120x120?text=Logo') {
+          return false;
+        }
+        
+        // Check if brand exists and is approved
+        if (!offer.brand || !offer.brand.id) {
+          return false;
+        }
+        
+        // Double-check brand approval (backend already filters)
+        if (offer.brand.approved === false) {
+          return false;
+        }
+        
+        return true;
+      });
 
-    console.log(`Valid offers after frontend filtering: ${validOffers.length}`);
-    console.log(`Filtered out: ${allOffers.length - validOffers.length} offers`);
+      console.log(`Valid offers after frontend filtering: ${validOffers.length}`);
+      console.log(`Filtered out: ${allOffers.length - validOffers.length} offers`);
 
-    setOffers(validOffers);
-    setError(null);
-  } catch (err) {
-    console.error('Error fetching offer images:', err);
-    setError(err.response?.data?.message || 'Failed to load offer images');
-  } finally {
-    setLoading(false);
-  }
-};
+      setOffers(validOffers);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching offer images:', err);
+      setError(err.response?.data?.message || 'Failed to load offer images');
+    } finally {
+      setLoading(false);
+    }
+  };
 
   const handleImageClick = (offer) => {
     setSelectedOffer(offer);
@@ -127,7 +127,7 @@ const OfferImagesGallery = () => {
     setIsDragging(false);
     const container = scrollRef.current;
     if (container) container.style.cursor = 'grab';
-    setTimeout(() => setAutoScroll(true), 5000);
+    setTimeout(() => setAutoScroll(true), 3000); // Reduced from 5000ms
   };
 
   const handleMouseMove = (e) => {
@@ -139,6 +139,7 @@ const OfferImagesGallery = () => {
     container.scrollLeft = scrollLeft - walk;
   };
 
+  // Fast auto-scroll effect - LIFO: newly clicked items appear on top
   useEffect(() => {
     if (!autoScroll || offers.length === 0 || showAllBrands) return;
 
@@ -152,9 +153,10 @@ const OfferImagesGallery = () => {
       if (currentScroll >= maxScroll - 1) {
         container.scrollTo({ left: 0, behavior: 'smooth' });
       } else {
-        container.scrollTo({ left: currentScroll + 1, behavior: 'smooth' });
+        // Faster scrolling: increased from 1px to 4px per tick
+        container.scrollTo({ left: currentScroll + 4, behavior: 'smooth' });
       }
-    }, 30);
+    }, 20); // Faster interval: reduced from 30ms to 20ms
 
     return () => clearInterval(interval);
   }, [offers, autoScroll, showAllBrands]);
@@ -205,7 +207,6 @@ const OfferImagesGallery = () => {
           <h2 className="gallery-title">Trusted By Industries Brands</h2>
           <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
         </div>
-       
       </div>
 
       <div className="gallery-wrapper">
@@ -253,16 +254,17 @@ const OfferImagesGallery = () => {
           ))}
         </div>
       </div>
-       <div className="header-actions">
-          <button className="view-all-btn" onClick={handleViewAll}>
-            <span>View All</span>
-            <svg viewBox="0 0 24 24" width="18" height="18">
-              <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-        </div>
+      
+      <div className="header-actions">
+        <button className="view-all-btn" onClick={handleViewAll}>
+          <span>View All</span>
+          <svg viewBox="0 0 24 24" width="18" height="18">
+            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+          </svg>
+        </button>
+      </div>
 
-      {/* All Brands Modal */}
+      {/* All Brands Modal - LIFO: newly added items appear on top */}
       {showAllBrands && (
         <div className="modal-overlay" onClick={closeAllBrands}>
           <div className="modal-content all-brands-modal" onClick={(e) => e.stopPropagation()}>
@@ -280,7 +282,8 @@ const OfferImagesGallery = () => {
             </div>
             
             <div className="all-brands-grid">
-              {offers.map((offer, index) => (
+              {/* LIFO: render offers in reverse order so newest appear first */}
+              {[...offers].reverse().map((offer, index) => (
                 <div 
                   key={offer.offerId || index} 
                   className="all-brand-item"
@@ -300,7 +303,6 @@ const OfferImagesGallery = () => {
                         e.target.src = 'https://via.placeholder.com/120x120?text=Brand';
                       }}
                     />
-                    
                   </div>
                   <h4 className="all-brand-name">{offer.title || 'Brand'}</h4>
                   <span className="all-brand-category">{offer.category || 'General'}</span>

@@ -497,11 +497,6 @@
   letter-spacing: -0.5px;
 }
 
-
-
-
-
-
 .modal-action-btn {
   width: 100%;
   padding: 10px 15px;
@@ -731,7 +726,6 @@
   .modal-image { width: 75px; height: 75px; padding: 10px; }
   .modal-title { font-size: 15px; }
 }
-/* Add to OfferImagesGallery.css */
 
 /* Header Actions - View All Button */
 .header-actions {
@@ -939,41 +933,6 @@
 
 .all-brand-item:hover .all-brand-image {
   transform: scale(1.1);
-}
-
-.all-brand-overlay {
-  position: absolute;
-  inset: 0;
-  background: rgba(0, 0, 0, 0.6);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  opacity: 0;
-  transition: opacity 0.4s ease;
-  border-radius: 50%;
-  backdrop-filter: blur(4px);
-}
-
-.all-brand-item:hover .all-brand-overlay {
-  opacity: 1;
-}
-
-.all-brand-view {
-  color: #ffffff;
-  font-size: 10px;
-  font-weight: 600;
-  text-transform: uppercase;
-  letter-spacing: 0.5px;
-  padding: 4px 12px;
-  border: 1px solid rgba(255, 255, 255, 0.3);
-  border-radius: 20px;
-  transition: all 0.3s ease;
-}
-
-.all-brand-view:hover {
-  background: #f9c349;
-  color: #000000;
-  border-color: #f9c349;
 }
 
 .all-brand-name {
