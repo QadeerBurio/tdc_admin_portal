@@ -54,6 +54,7 @@ import {
   FaMedal,
   FaCoins,
   FaMapMarkerAlt,
+  FaAward,
 } from "react-icons/fa";
 import { motion, AnimatePresence } from "framer-motion";
 import { IoSettingsOutline, IoNotificationsOutline } from "react-icons/io5";
@@ -65,8 +66,10 @@ import MyOffers from "./MyOffers";
 import CreateOffer from "./CreateOffer";
 import ClaimedUsers from "./ClaimedUsers";
 import VerifyClaim from "./VerifyClaim";
+import VerifyReward from "./VerifyReward"; // 🆕
 import SavingsHistory from "./SavingsHistory";
 import Branches from "./Branches";
+import BrandCampaigns from "./BrandCampaigns";
 
 export default function Home() {
   const { user, token, logout } = useContext(AuthContext);
@@ -119,8 +122,8 @@ export default function Home() {
         setIsMobileMenuOpen(false);
       }
     };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
+    window.addEventListener("resize", handleResize);
+    return () => window.removeEventListener("resize", handleResize);
   }, []);
 
   useEffect(() => {
@@ -128,12 +131,15 @@ export default function Home() {
       if (userMenuRef.current && !userMenuRef.current.contains(event.target)) {
         setShowUserMenu(false);
       }
-      if (notificationRef.current && !notificationRef.current.contains(event.target)) {
+      if (
+        notificationRef.current &&
+        !notificationRef.current.contains(event.target)
+      ) {
         setShowNotifications(false);
       }
     };
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
   const fetchOffers = async () => {
@@ -141,7 +147,7 @@ export default function Home() {
       const res = await axios.get(
         "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
@@ -196,18 +202,21 @@ export default function Home() {
       const leadRes = await axios.get(
         "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
       const savingRes = await axios.get(
         "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
         {
-          headers: { Authorization: `Bearer ${token}` }
+          headers: { Authorization: `Bearer ${token}` },
         }
       );
 
       const savings = savingRes.data.reduce((acc, curr) => acc + curr.saved, 0);
-      const revenue = savingRes.data.reduce((acc, curr) => acc + (curr.bill - curr.saved), 0);
+      const revenue = savingRes.data.reduce(
+        (acc, curr) => acc + (curr.bill - curr.saved),
+        0
+      );
 
       setStats({
         totalLeads: leadRes.data.length,
@@ -233,7 +242,9 @@ export default function Home() {
 
   const handleCloseDiscountModal = () => {
     if (!hasOffers) {
-      setNotificationMessage("Please create your first Discount to get started!");
+      setNotificationMessage(
+        "Please create your first Discount to get started!"
+      );
       setShowNotification(true);
       setTimeout(() => setShowNotification(false), 4000);
       return;
@@ -261,7 +272,13 @@ export default function Home() {
   };
 
   const getBrandName = () => {
-    return brandData?.brandName || brandData?.companyName || user?.brandName || user?.companyName || "Brand";
+    return (
+      brandData?.brandName ||
+      brandData?.companyName ||
+      user?.brandName ||
+      user?.companyName ||
+      "Brand"
+    );
   };
 
   const getDisplayName = () => {
@@ -276,15 +293,52 @@ export default function Home() {
   const displayName = getDisplayName();
   const logoUrl = getLogoUrl();
 
-  const unreadCount = notifications.filter(n => !n.read).length;
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
-  // ✅ NAV ITEMS - Added "Branches"
+  // ✅ NAV ITEMS — "Verify Reward" added right after "Verify Student"
   const navItems = [
-    { id: "home", label: "Dashboard", icon: <MdOutlineDashboard />, description: "Overview" },
-    { id: "myOffers", label: "Discount", icon: <FaTicketAlt />, description: "Manage" },
-    { id: "branches", label: "Branches", icon: <FaStore />, description: "Store/Online" },
-    { id: "verifyClaim", label: "Verify Student", icon: <FaShieldAlt />, description: "Verify" },
-    { id: "savingsHistory", label: "Redemption", icon: <FaShieldAlt />, description: "Verify" },
+    {
+      id: "home",
+      label: "Dashboard",
+      icon: <MdOutlineDashboard />,
+      description: "Overview",
+    },
+    {
+      id: "myOffers",
+      label: "Discount",
+      icon: <FaTicketAlt />,
+      description: "Manage",
+    },
+    {
+      id: "branches",
+      label: "Branches",
+      icon: <FaStore />,
+      description: "Store/Online",
+    },
+    {
+      id: "campaigns",
+      label: "Campaigns",
+      icon: <FaBullhorn />,
+      description: "With influencers",
+    },
+    {
+      id: "verifyClaim",
+      label: "Verify Student",
+      icon: <FaShieldAlt />,
+      description: "Verify",
+    },
+    {
+      id: "verifyReward",              // 🆕
+      label: "Verify Reward",          // 🆕
+      icon: <FaAward />,               // 🆕
+      description: "Redeem rewards",   // 🆕
+    },
+    {
+      id: "savingsHistory",
+      label: "Redemption",
+      icon: <FaShieldAlt />,
+      description: "Verify",
+    },
   ];
 
   const renderContent = () => {
@@ -295,12 +349,16 @@ export default function Home() {
         return <MyOffers />;
       case "branches":
         return <Branches />;
+      case "campaigns":
+        return <BrandCampaigns />;
       case "createOffer":
         return <CreateOffer onOfferCreated={refreshOffers} />;
       case "claimedUsers":
         return <ClaimedUsers />;
       case "verifyClaim":
         return <VerifyClaim />;
+      case "verifyReward":              // 🆕
+        return <VerifyReward />;        // 🆕
       case "savingsHistory":
         return <SavingsHistory />;
       default:
@@ -322,8 +380,15 @@ export default function Home() {
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #fef3c7, #fde68a)" }}>
-            <FaTicketAlt style={{ ...styles.statIcon, color: "#d97706" }} />
+          <div
+            style={{
+              ...styles.statIconWrapper,
+              background: "linear-gradient(135deg, #fef3c7, #fde68a)",
+            }}
+          >
+            <FaTicketAlt
+              style={{ ...styles.statIcon, color: "#d97706" }}
+            />
           </div>
           <div style={styles.statContent}>
             <h3 style={styles.statValue}>{stats.totalLeads}</h3>
@@ -340,8 +405,15 @@ export default function Home() {
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #d1fae5, #a7f3d0)" }}>
-            <FaCheckCircle style={{ ...styles.statIcon, color: "#059669" }} />
+          <div
+            style={{
+              ...styles.statIconWrapper,
+              background: "linear-gradient(135deg, #d1fae5, #a7f3d0)",
+            }}
+          >
+            <FaCheckCircle
+              style={{ ...styles.statIcon, color: "#059669" }}
+            />
           </div>
           <div style={styles.statContent}>
             <h3 style={styles.statValue}>{stats.completedRedemptions}</h3>
@@ -358,11 +430,18 @@ export default function Home() {
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #dbeafe, #93c5fd)" }}>
+          <div
+            style={{
+              ...styles.statIconWrapper,
+              background: "linear-gradient(135deg, #dbeafe, #93c5fd)",
+            }}
+          >
             <FaCoins style={{ ...styles.statIcon, color: "#2563eb" }} />
           </div>
           <div style={styles.statContent}>
-            <h3 style={styles.statValue}>PKR {stats.totalRevenue.toLocaleString()}</h3>
+            <h3 style={styles.statValue}>
+              PKR {stats.totalRevenue.toLocaleString()}
+            </h3>
             <p style={styles.statLabel}>Total Revenue</p>
             <span style={styles.statTrend}>
               <FaLongArrowAltUp size={12} /> From Sales
@@ -376,11 +455,20 @@ export default function Home() {
           whileHover={{ y: -4 }}
           transition={{ type: "spring", stiffness: 300 }}
         >
-          <div style={{ ...styles.statIconWrapper, background: "linear-gradient(135deg, #fce4ec, #fecdd3)" }}>
-            <FaChartLine style={{ ...styles.statIcon, color: "#e11d48" }} />
+          <div
+            style={{
+              ...styles.statIconWrapper,
+              background: "linear-gradient(135deg, #fce4ec, #fecdd3)",
+            }}
+          >
+            <FaChartLine
+              style={{ ...styles.statIcon, color: "#e11d48" }}
+            />
           </div>
           <div style={styles.statContent}>
-            <h3 style={styles.statValue}>PKR {stats.totalSavings.toLocaleString()}</h3>
+            <h3 style={styles.statValue}>
+              PKR {stats.totalSavings.toLocaleString()}
+            </h3>
             <p style={styles.statLabel}>Total Savings Given</p>
             <span style={styles.statTrend}>
               <FaLongArrowAltUp size={12} /> Social Impact
@@ -432,7 +520,7 @@ export default function Home() {
         <button
           style={{
             ...styles.mobileMenuBtn,
-            left: isMobileMenuOpen ? '290px' : '12px',
+            left: isMobileMenuOpen ? "290px" : "12px",
           }}
           onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
           className="mobileMenuBtn"
@@ -445,13 +533,17 @@ export default function Home() {
       <motion.nav
         style={{
           ...styles.sidebar,
-          transform: isMobile ? (isMobileMenuOpen ? 'translateX(0)' : 'translateX(-100%)') : 'translateX(0)',
-          position: isMobile ? 'fixed' : 'relative',
+          transform: isMobile
+            ? isMobileMenuOpen
+              ? "translateX(0)"
+              : "translateX(-100%)"
+            : "translateX(0)",
+          position: isMobile ? "fixed" : "relative",
         }}
         initial={false}
         animate={{
           x: isMobile ? (isMobileMenuOpen ? 0 : -280) : 0,
-          transition: { type: "spring", stiffness: 300, damping: 30 }
+          transition: { type: "spring", stiffness: 300, damping: 30 },
         }}
       >
         <div style={styles.sidebarGradient} />
@@ -468,8 +560,8 @@ export default function Home() {
                 alt="Brand Logo"
                 style={styles.sidebarLogo}
                 onError={(e) => {
-                  e.target.style.display = 'none';
-                  e.target.parentElement.textContent = 'B';
+                  e.target.style.display = "none";
+                  e.target.parentElement.textContent = "B";
                 }}
               />
             ) : (
@@ -504,8 +596,14 @@ export default function Home() {
               className="nav-link"
               style={{
                 ...styles.navItem,
-                backgroundColor: activeTab === item.id ? "rgba(249, 195, 73, 0.12)" : "transparent",
-                borderRight: activeTab === item.id ? "3px solid #f9c349" : "3px solid transparent",
+                backgroundColor:
+                  activeTab === item.id
+                    ? "rgba(249, 195, 73, 0.12)"
+                    : "transparent",
+                borderRight:
+                  activeTab === item.id
+                    ? "3px solid #f9c349"
+                    : "3px solid transparent",
               }}
               onClick={() => handleTabChange(item.id)}
               onMouseEnter={() => setHoveredNav(index)}
@@ -516,17 +614,19 @@ export default function Home() {
               <motion.span
                 style={{
                   ...styles.icon,
-                  color: activeTab === item.id ? "#f9c349" : "#94a3b8"
+                  color: activeTab === item.id ? "#f9c349" : "#94a3b8",
                 }}
                 whileHover={{ scale: 1.15 }}
               >
                 {item.icon}
               </motion.span>
               <div style={styles.navText}>
-                <span style={{
-                  ...styles.navLabel,
-                  color: activeTab === item.id ? "#f9c349" : "#e2e8f0"
-                }}>
+                <span
+                  style={{
+                    ...styles.navLabel,
+                    color: activeTab === item.id ? "#f9c349" : "#e2e8f0",
+                  }}
+                >
                   {item.label}
                 </span>
                 <span style={styles.navDesc}>{item.description}</span>
@@ -561,8 +661,9 @@ export default function Home() {
                   alt="Brand Logo"
                   style={styles.userAvatarImg}
                   onError={(e) => {
-                    e.target.style.display = 'none';
-                    e.target.parentElement.textContent = displayName?.charAt(0) || "B";
+                    e.target.style.display = "none";
+                    e.target.parentElement.textContent =
+                      displayName?.charAt(0) || "B";
                   }}
                 />
               ) : (
@@ -592,7 +693,10 @@ export default function Home() {
               >
                 <motion.div
                   style={styles.dropdownItem}
-                  whileHover={{ x: 5, backgroundColor: "rgba(255,255,255,0.05)" }}
+                  whileHover={{
+                    x: 5,
+                    backgroundColor: "rgba(255,255,255,0.05)",
+                  }}
                   onClick={() => {
                     setShowUserMenu(false);
                     setShowProfileModal(true);
@@ -604,8 +708,14 @@ export default function Home() {
 
                 <div style={styles.dropdownDivider} />
                 <motion.div
-                  style={{ ...styles.dropdownItem, ...styles.dropdownLogout }}
-                  whileHover={{ x: 5, backgroundColor: "rgba(239, 68, 68, 0.1)" }}
+                  style={{
+                    ...styles.dropdownItem,
+                    ...styles.dropdownLogout,
+                  }}
+                  whileHover={{
+                    x: 5,
+                    backgroundColor: "rgba(239, 68, 68, 0.1)",
+                  }}
                   onClick={() => {
                     setShowUserMenu(false);
                     handleLogout();
@@ -644,16 +754,32 @@ export default function Home() {
           {/* Page Header */}
           <div style={styles.pageHeader}>
             <div style={styles.headerLeft}>
-              <motion.div
-                style={styles.headerIconWrapper}
-              >
+              <motion.div style={styles.headerIconWrapper}>
                 {activeTab === "home" && <FaHome style={styles.headerIcon} />}
-                {activeTab === "myOffers" && <FaTicketAlt style={styles.headerIcon} />}
-                {activeTab === "branches" && <FaStore style={styles.headerIcon} />}
-                {activeTab === "createOffer" && <FaGift style={styles.headerIcon} />}
-                {activeTab === "claimedUsers" && <FaUsers style={styles.headerIcon} />}
-                {activeTab === "verifyClaim" && <FaShieldAlt style={styles.headerIcon} />}
-                {activeTab === "savingsHistory" && <FaChartLine style={styles.headerIcon} />}
+                {activeTab === "myOffers" && (
+                  <FaTicketAlt style={styles.headerIcon} />
+                )}
+                {activeTab === "branches" && (
+                  <FaStore style={styles.headerIcon} />
+                )}
+                {activeTab === "campaigns" && (
+                  <FaBullhorn style={styles.headerIcon} />
+                )}
+                {activeTab === "createOffer" && (
+                  <FaGift style={styles.headerIcon} />
+                )}
+                {activeTab === "claimedUsers" && (
+                  <FaUsers style={styles.headerIcon} />
+                )}
+                {activeTab === "verifyClaim" && (
+                  <FaShieldAlt style={styles.headerIcon} />
+                )}
+                {activeTab === "verifyReward" && (
+                  <FaAward style={styles.headerIcon} />
+                )}
+                {activeTab === "savingsHistory" && (
+                  <FaChartLine style={styles.headerIcon} />
+                )}
               </motion.div>
               <div>
                 <motion.h1
@@ -663,7 +789,8 @@ export default function Home() {
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ duration: 0.3 }}
                 >
-                  {navItems.find(item => item.id === activeTab)?.label || "Dashboard"}
+                  {navItems.find((item) => item.id === activeTab)?.label ||
+                    "Dashboard"}
                 </motion.h1>
                 <motion.p
                   style={styles.pageSubtitle}
@@ -672,7 +799,8 @@ export default function Home() {
                   animate={{ opacity: 1 }}
                   transition={{ delay: 0.1 }}
                 >
-                  {navItems.find(item => item.id === activeTab)?.description || "Overview"}
+                  {navItems.find((item) => item.id === activeTab)
+                    ?.description || "Overview"}
                 </motion.p>
               </div>
             </div>
@@ -715,8 +843,9 @@ export default function Home() {
                         alt="Brand Logo"
                         style={styles.modalAvatarImg}
                         onError={(e) => {
-                          e.target.style.display = 'none';
-                          e.target.parentElement.textContent = displayName?.charAt(0) || "B";
+                          e.target.style.display = "none";
+                          e.target.parentElement.textContent =
+                            displayName?.charAt(0) || "B";
                         }}
                       />
                     ) : (
@@ -725,10 +854,15 @@ export default function Home() {
                   </motion.div>
                   <div>
                     <h2 style={styles.modalTitle}>{displayName}</h2>
-                    <p style={styles.modalSubtitle}>{brandName || "Brand Partner"}</p>
+                    <p style={styles.modalSubtitle}>
+                      {brandName || "Brand Partner"}
+                    </p>
                   </div>
                 </div>
-                <button style={styles.modalCloseBtn} onClick={() => setShowProfileModal(false)}>
+                <button
+                  style={styles.modalCloseBtn}
+                  onClick={() => setShowProfileModal(false)}
+                >
                   <FaTimes />
                 </button>
               </div>
@@ -738,29 +872,39 @@ export default function Home() {
                   <div style={styles.profileStat}>
                     <FaTicketAlt size={18} color="#d97706" />
                     <div>
-                      <span style={styles.profileStatValue}>{stats.totalLeads}</span>
+                      <span style={styles.profileStatValue}>
+                        {stats.totalLeads}
+                      </span>
                       <span style={styles.profileStatLabel}>Total Leads</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
                     <FaCheckCircle size={18} color="#059669" />
                     <div>
-                      <span style={styles.profileStatValue}>{stats.completedRedemptions}</span>
+                      <span style={styles.profileStatValue}>
+                        {stats.completedRedemptions}
+                      </span>
                       <span style={styles.profileStatLabel}>Redemptions</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
                     <FaCoins size={18} color="#2563eb" />
                     <div>
-                      <span style={styles.profileStatValue}>PKR {stats.totalRevenue.toLocaleString()}</span>
+                      <span style={styles.profileStatValue}>
+                        PKR {stats.totalRevenue.toLocaleString()}
+                      </span>
                       <span style={styles.profileStatLabel}>Total Revenue</span>
                     </div>
                   </div>
                   <div style={styles.profileStat}>
                     <FaChartLine size={18} color="#e11d48" />
                     <div>
-                      <span style={styles.profileStatValue}>PKR {stats.totalSavings.toLocaleString()}</span>
-                      <span style={styles.profileStatLabel}>Savings Impact</span>
+                      <span style={styles.profileStatValue}>
+                        PKR {stats.totalSavings.toLocaleString()}
+                      </span>
+                      <span style={styles.profileStatLabel}>
+                        Savings Impact
+                      </span>
                     </div>
                   </div>
                 </div>
@@ -769,18 +913,44 @@ export default function Home() {
 
                 <div style={styles.profileDetails}>
                   {[
-                    { icon: <FaUser />, label: "Full Name", value: displayName },
-                    { icon: <FaStore />, label: "Brand Name", value: brandName || "Not specified" },
-                    { icon: <FaEnvelope />, label: "Email", value: user?.email || "brand@example.com" },
-                    { icon: <FaPhone />, label: "Phone", value: user?.phone || "+92 300 1234567" },
                     {
-                      icon: <FaCalendarAlt />, label: "Member Since", value: brandData?.createdAt ?
-                        new Date(brandData.createdAt).toLocaleDateString('en-US', {
-                          month: 'long',
-                          year: 'numeric'
-                        }) : 'January 2025'
+                      icon: <FaUser />,
+                      label: "Full Name",
+                      value: displayName,
                     },
-                    { icon: <FaShieldAlt />, label: "Role", value: "Brand Partner" },
+                    {
+                      icon: <FaStore />,
+                      label: "Brand Name",
+                      value: brandName || "Not specified",
+                    },
+                    {
+                      icon: <FaEnvelope />,
+                      label: "Email",
+                      value: user?.email || "brand@example.com",
+                    },
+                    {
+                      icon: <FaPhone />,
+                      label: "Phone",
+                      value: user?.phone || "+92 300 1234567",
+                    },
+                    {
+                      icon: <FaCalendarAlt />,
+                      label: "Member Since",
+                      value: brandData?.createdAt
+                        ? new Date(brandData.createdAt).toLocaleDateString(
+                            "en-US",
+                            {
+                              month: "long",
+                              year: "numeric",
+                            }
+                          )
+                        : "January 2025",
+                    },
+                    {
+                      icon: <FaShieldAlt />,
+                      label: "Role",
+                      value: "Brand Partner",
+                    },
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -788,19 +958,24 @@ export default function Home() {
                       whileHover={{ scale: 1.02 }}
                       transition={{ type: "spring", stiffness: 400 }}
                     >
-                      <div style={styles.profileDetailIcon}>
-                        {item.icon}
-                      </div>
+                      <div style={styles.profileDetailIcon}>{item.icon}</div>
                       <div>
-                        <span style={styles.profileDetailLabel}>{item.label}</span>
-                        <span style={styles.profileDetailValue}>{item.value}</span>
+                        <span style={styles.profileDetailLabel}>
+                          {item.label}
+                        </span>
+                        <span style={styles.profileDetailValue}>
+                          {item.value}
+                        </span>
                       </div>
                     </motion.div>
                   ))}
                 </div>
               </div>
 
-              <button style={styles.modalCloseBtnBottom} onClick={() => setShowProfileModal(false)}>
+              <button
+                style={styles.modalCloseBtnBottom}
+                onClick={() => setShowProfileModal(false)}
+              >
                 Close
               </button>
             </motion.div>
@@ -833,10 +1008,15 @@ export default function Home() {
                   </div>
                   <div>
                     <h2 style={styles.modalTitle}>Settings</h2>
-                    <p style={styles.modalSubtitle}>Manage your brand account preferences</p>
+                    <p style={styles.modalSubtitle}>
+                      Manage your brand account preferences
+                    </p>
                   </div>
                 </div>
-                <button style={styles.modalCloseBtn} onClick={() => setShowSettingsModal(false)}>
+                <button
+                  style={styles.modalCloseBtn}
+                  onClick={() => setShowSettingsModal(false)}
+                >
                   <FaTimes />
                 </button>
               </div>
@@ -845,11 +1025,36 @@ export default function Home() {
                 <div style={styles.settingsGroup}>
                   <h3 style={styles.settingsGroupTitle}>Account Settings</h3>
                   {[
-                    { icon: <FaUser />, label: "Profile Information", desc: "Update your personal information", action: "Edit" },
-                    { icon: <FaStore />, label: "Brand Details", desc: brandName || 'Update brand information', action: "Update" },
-                    { icon: <FaImage />, label: "Brand Logo", desc: "Upload or update your brand logo", action: "Upload" },
-                    { icon: <FaEnvelope />, label: "Email Preferences", desc: "Manage notification settings", action: "Configure" },
-                    { icon: <FaLock />, label: "Security", desc: "Change password and security settings", action: "Update" },
+                    {
+                      icon: <FaUser />,
+                      label: "Profile Information",
+                      desc: "Update your personal information",
+                      action: "Edit",
+                    },
+                    {
+                      icon: <FaStore />,
+                      label: "Brand Details",
+                      desc: brandName || "Update brand information",
+                      action: "Update",
+                    },
+                    {
+                      icon: <FaImage />,
+                      label: "Brand Logo",
+                      desc: "Upload or update your brand logo",
+                      action: "Upload",
+                    },
+                    {
+                      icon: <FaEnvelope />,
+                      label: "Email Preferences",
+                      desc: "Manage notification settings",
+                      action: "Configure",
+                    },
+                    {
+                      icon: <FaLock />,
+                      label: "Security",
+                      desc: "Change password and security settings",
+                      action: "Update",
+                    },
                   ].map((item, index) => (
                     <motion.div
                       key={index}
@@ -857,14 +1062,16 @@ export default function Home() {
                       whileHover={{ scale: 1.01, backgroundColor: "#f1f5f9" }}
                       transition={{ type: "spring", stiffness: 400 }}
                     >
-                      <div style={styles.settingsItemIcon}>
-                        {item.icon}
-                      </div>
+                      <div style={styles.settingsItemIcon}>{item.icon}</div>
                       <div style={styles.settingsItemContent}>
-                        <div style={styles.settingsItemLabel}>{item.label}</div>
+                        <div style={styles.settingsItemLabel}>
+                          {item.label}
+                        </div>
                         <div style={styles.settingsItemDesc}>{item.desc}</div>
                       </div>
-                      <button style={styles.settingsItemBtn}>{item.action}</button>
+                      <button style={styles.settingsItemBtn}>
+                        {item.action}
+                      </button>
                     </motion.div>
                   ))}
                 </div>
@@ -882,7 +1089,9 @@ export default function Home() {
                     </div>
                     <div style={styles.settingsItemContent}>
                       <div style={styles.settingsItemLabel}>Language</div>
-                      <div style={styles.settingsItemDesc}>Choose your preferred language</div>
+                      <div style={styles.settingsItemDesc}>
+                        Choose your preferred language
+                      </div>
                     </div>
                     <select style={styles.settingsSelect}>
                       <option>English</option>
@@ -899,14 +1108,19 @@ export default function Home() {
                     </div>
                     <div style={styles.settingsItemContent}>
                       <div style={styles.settingsItemLabel}>Privacy</div>
-                      <div style={styles.settingsItemDesc}>Control your privacy settings</div>
+                      <div style={styles.settingsItemDesc}>
+                        Control your privacy settings
+                      </div>
                     </div>
                     <button style={styles.settingsItemBtn}>Manage</button>
                   </motion.div>
                 </div>
               </div>
 
-              <button style={styles.modalCloseBtnBottom} onClick={() => setShowSettingsModal(false)}>
+              <button
+                style={styles.modalCloseBtnBottom}
+                onClick={() => setShowSettingsModal(false)}
+              >
                 Close
               </button>
             </motion.div>
@@ -938,11 +1152,18 @@ export default function Home() {
                     <FaRocket size={24} color="#d97706" />
                   </div>
                   <div>
-                    <h2 style={styles.discountModalTitle}>Create Your First Discount!</h2>
-                    <p style={styles.discountModalSubtitle}>You haven't created any Discount Offer yet</p>
+                    <h2 style={styles.discountModalTitle}>
+                      Create Your First Discount!
+                    </h2>
+                    <p style={styles.discountModalSubtitle}>
+                      You haven't created any Discount Offer yet
+                    </p>
                   </div>
                 </div>
-                <button style={styles.discountModalClose} onClick={handleCloseDiscountModal}>
+                <button
+                  style={styles.discountModalClose}
+                  onClick={handleCloseDiscountModal}
+                >
                   <FaTimes />
                 </button>
               </div>
@@ -1613,7 +1834,8 @@ const styles = {
     height: "100vh",
     width: "100vw",
     backgroundColor: "#f1f5f9",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
+    fontFamily:
+      "'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif",
     overflow: "hidden",
     position: "relative",
     padding: 0,
@@ -1641,7 +1863,8 @@ const styles = {
     left: 0,
     right: 0,
     bottom: 0,
-    background: "radial-gradient(ellipse at 50% 0%, rgba(249, 195, 73, 0.03) 0%, transparent 70%)",
+    background:
+      "radial-gradient(ellipse at 50% 0%, rgba(249, 195, 73, 0.03) 0%, transparent 70%)",
     pointerEvents: "none",
   },
   mobileOverlay: {
