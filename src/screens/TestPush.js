@@ -26,7 +26,7 @@ const ORANGE = '#f97316';
 // Change this if your CDN or static host differs.
 // ─────────────────────────────────────────────
 const ASSET_BASE =
-  process.env.REACT_APP_ASSET_BASE ||
+ 
   'https://the-deft-crew-production.up.railway.app/assets';
 
 // ─────────────────────────────────────────────
@@ -62,6 +62,30 @@ const MOODS = {
   default:  { emoji: '✨', label: 'default',  color: '#f9c349' },
 };
 
+
+// ─────────────────────────────────────────────
+// SAME RULES AS THE PHONE (backend utils/pushNotification.js)
+// so the preview shows the exact title, emoji, picture and sound.
+// ─────────────────────────────────────────────
+const MOOD_SOUND = {
+  sorted: 'tdc_mood_sorted', excited: 'tdc_mood_excited', panic: 'tdc_mood_panic',
+  broke: 'tdc_mood_broke', sleepy: 'tdc_mood_sleepy', shook: 'tdc_mood_shook',
+  sus: 'tdc_mood_sus', cheeky: 'tdc_mood_cheeky', rs: 'tdc_mood_rs',
+};
+const TYPE_SOUND = {
+  new_offer: 'tdc_push_deal', streak: 'tdc_push_streak', points: 'tdc_push_points',
+  level_up: 'tdc_push_level_up', badge: 'tdc_push_level_up', reminder: 'tdc_push_reminder',
+  event: 'tdc_push_event', message: 'tdc_push_message',
+};
+const soundFor = (type, mood) => MOOD_SOUND[mood] || TYPE_SOUND[type] || 'tdc_push_default';
+const HAS_EMOJI = /[\u2600-\u27BF]|[\uD83C-\uDBFF][\uDC00-\uDFFF]/;
+const phoneTitle = (title, mood) => {
+  const t = title || 'tdc';
+  if (HAS_EMOJI.test(t)) return t;
+  return `${(MOODS[mood] || MOODS.default).emoji} ${t}`;
+};
+const pushImage = (mood) => `${ASSET_BASE}/dots/push/${mood}.png`;
+
 // Preload all mood images so the preview is instant
 const MOOD_KEYS = Object.keys(MOODS).filter((k) => k !== 'default');
 MOOD_KEYS.forEach((m) => {
@@ -80,15 +104,15 @@ const COPY_KEYS = [
   { id: 'badge_earned',     label: 'badge earned',    mood: 'excited', hint: 'event pipeline · emoji ok' },
   { id: 'tier_unlocked',    label: 'level up',        mood: 'hype',    hint: 'event pipeline · emoji ok' },
   { id: 'referral_joined',  label: 'referral joined', mood: 'smug',    hint: 'event pipeline · emoji ok' },
-  { id: 'win_back_soft',    label: 'win-back · soft', mood: 'sleepy',  hint: '3–6 days inactive' },
+  { id: 'win_back_soft',    label: 'win-back · soft', mood: 'sleepy',  hint: '3–6 days inactive', pushTitle: 'we kept your seat warm' },
   { id: 'welcome_back',     label: 'welcome back',    mood: 'excited', hint: '7–13 days inactive' },
-  { id: 'exclusive_offer',  label: 'exclusive offer', mood: 'money',   hint: '14–29 days inactive' },
-  { id: 'win_back_ghost',   label: 'win-back · ghost',mood: 'ghost',   hint: '30+ days inactive' },
-  { id: 'new_offer',        label: 'new offer',       mood: 'money',   hint: 'brand creates offer' },
+  { id: 'exclusive_offer',  label: 'exclusive offer', mood: 'excited',   hint: '14–29 days inactive' },
+  { id: 'win_back_ghost',   label: 'win-back · ghost',mood: 'ghost',   hint: '30+ days inactive', pushTitle: 'we miss you' },
+  { id: 'new_offer',        label: 'new offer',       mood: 'broke',   hint: 'brand creates offer' },
   { id: 'new_for_you',      label: 'new for you',     mood: 'excited', hint: 'platform announcement' },
   { id: 'app_update',       label: 'app update',      mood: 'sorted',  hint: 'system' },
   { id: 'freeze_reset',     label: 'freeze reset',    mood: 'sorted',  hint: 'monday cron' },
-  { id: 'transactional',    label: 'transactional',   mood: 'sorted',  hint: 'generic' },
+  { id: 'transactional',    label: 'transactional',   mood: 'sorted',  hint: 'generic', pushTitle: 'tdc' },
 ];
 
 const getCopyMeta = (id) => COPY_KEYS.find((k) => k.id === id) || COPY_KEYS[0];
@@ -199,7 +223,7 @@ function MoodBigPreview({ mood }) {
           <div style={s.moodBannerEmoji}>{m.emoji}</div>
         ) : (
           <img
-            src={moodImage(mood)}
+            src={pushImage(mood)}
             alt={m.label}
             style={{
               width: 72,
@@ -690,7 +714,7 @@ function ComposeTab({ users, onRefresh }) {
               <MoodPill mood={mood} size="md" />
               <div style={{ flex: 1, minWidth: 0 }}>
                 <div style={s.notifTitle}>
-                  {title || copyMeta.label}
+                  {phoneTitle(title || copyMeta.pushTitle || copyMeta.label, mood)}
                 </div>
                 <div style={s.notifBody}>
                   {body || (
@@ -716,7 +740,13 @@ function ComposeTab({ users, onRefresh }) {
             <div style={s.bankInfoRow}>
               <span style={s.bankInfoLabel}>icon url</span>
               <span style={s.bankInfoValueMono}>
-                /dots/{mood}.png
+                /assets/dots/push/{mood}.png
+              </span>
+            </div>
+            <div style={s.bankInfoRow}>
+              <span style={s.bankInfoLabel}>sound</span>
+              <span style={s.bankInfoValueMono}>
+                {soundFor(copyKey, mood)}.wav
               </span>
             </div>
             <div style={s.bankInfoRow}>
