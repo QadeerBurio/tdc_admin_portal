@@ -37,26 +37,26 @@ const moodImage = (mood) => `${ASSET_BASE}/dots/${mood}.png`;
 
 const MOODS = {
   // 🙂 Happy / positive
-  sorted:   { emoji: '😌', label: 'sorted',   color: '#10b981' },
+  sorted:   { emoji: '😊', label: 'sorted',   color: '#10b981' },
   excited:  { emoji: '🤩', label: 'excited',  color: '#f9c349' },
-  hype:     { emoji: '🔥', label: 'hype',     color: '#f97316' },
+  hype:     { emoji: '😆', label: 'hype',     color: '#f97316' },
   smug:     { emoji: '😏', label: 'smug',     color: '#3b82f6' },
 
   // 😅 Wary / cheeky
   cheeky:   { emoji: '😜', label: 'cheeky',   color: '#ec4899' },
-  sus:      { emoji: '👀', label: 'sus',      color: '#f97316' },
+  sus:      { emoji: '😒', label: 'sus',      color: '#f97316' },
 
   // 😟 Negative / worried
-  broke:    { emoji: '😔', label: 'broke',    color: '#94a3b8' },
+  broke:    { emoji: '😢', label: 'broke',    color: '#94a3b8' },
   panic:    { emoji: '😰', label: 'panic',    color: '#ef4444' },
-  shock:    { emoji: '😮', label: 'shock',    color: '#eab308' },
-  shook:    { emoji: '😳', label: 'shook',    color: '#a855f7' },
-  urgent:   { emoji: '🚨', label: 'urgent',   color: '#ff6b6b' },
+  shock:    { emoji: '😳', label: 'shock',    color: '#eab308' },
+  shook:    { emoji: '😮', label: 'shook',    color: '#a855f7' },
+  urgent:   { emoji: '😨', label: 'urgent',   color: '#ff6b6b' },
 
   // 💤 Neutral / sleepy / money / ghost
   sleepy:   { emoji: '😴', label: 'sleepy',   color: '#8b5cf6' },
-  ghost:    { emoji: '👻', label: 'ghost',    color: '#64748b' },
-  money:    { emoji: '💰', label: 'money',    color: '#10b981' },
+  ghost:    { emoji: '😑', label: 'ghost',    color: '#64748b' },
+  money:    { emoji: '🤑', label: 'money',    color: '#10b981' },
 
   // Fallback
   default:  { emoji: '✨', label: 'default',  color: '#f9c349' },
@@ -467,7 +467,7 @@ function ComposeTab({ users, onRefresh }) {
         title: title || undefined,
         body: body || undefined,
       });
-      setResult({ ok: true, data: res });
+      setResult({ ok: res?.ok !== false && (res?.sent || 0) > 0, data: res, error: res?.message || res?.reason });
       onRefresh?.();
     } catch (e) {
       setResult({
@@ -653,8 +653,11 @@ function ComposeTab({ users, onRefresh }) {
         {result && (
           <div style={resultBanner(result.ok)}>
             {result.ok
-              ? `✓ sent: ${result.data?.sent || 0} / ${result.data?.total || 0} · failed: ${result.data?.failed || 0}`
-              : `✗ ${result.error}`}
+              ? `✓ sent: ${result.data?.sent || 0} / ${result.data?.total || 0}` +
+                (result.data?.skipped ? ` · skipped: ${result.data.skipped}` : '') +
+                (result.data?.failed ? ` · failed: ${result.data.failed}` : '')
+              : `✗ ${result.error || 'not sent'}` +
+                (result.data ? ` (sent ${result.data.sent || 0} / ${result.data.total || 0})` : '')}
           </div>
         )}
       </div>
