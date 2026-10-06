@@ -655,7 +655,8 @@ function ComposeTab({ users, onRefresh }) {
             {result.ok
               ? `✓ sent: ${result.data?.sent || 0} / ${result.data?.total || 0}` +
                 (result.data?.skipped ? ` · skipped: ${result.data.skipped}` : '') +
-                (result.data?.failed ? ` · failed: ${result.data.failed}` : '')
+                (result.data?.failed ? ` · failed: ${result.data.failed}` : '')+
+                (result.data?.note ? ` · ⚠ ${result.data.note}` : '')
               : `✗ ${result.error || 'not sent'}` +
                 (result.data ? ` (sent ${result.data.sent || 0} / ${result.data.total || 0})` : '')}
           </div>
