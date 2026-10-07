@@ -4,7 +4,60 @@ import { engagementApi } from '../services/api';
 import api from '../services/api';
 
 const DAYS = 7;
-const TYPES = ['internship', 'brand', 'confession', 'event', 'scholarship', 'poll'];
+const TYPES = ['internship', 'brand', 'event', 'scholarship', 'confession', 'listing', 'poll'];
+
+// Drop type ↔ linked content kind (kept in sync in the form)
+const TYPE_TO_KIND = {
+  internship: 'job',
+  brand: 'brand',
+  event: 'event',
+  scholarship: 'scholarship',
+  confession: 'confession',
+  best_confession: 'confession',
+  listing: 'listing',
+  poll: 'none',
+};
+const KIND_TO_TYPE = {
+  job: 'internship',
+  brand: 'brand',
+  event: 'event',
+  scholarship: 'scholarship',
+  confession: 'confession',
+  listing: 'listing',
+};
+
+// Exactly what the student's app does when the drop is tapped
+const OPENS_IN_APP = {
+  none: 'Home (just the question card, no link)',
+  job: 'Career → this job opens',
+  brand: 'Offer page of this brand',
+  event: 'Events → this event opens',
+  scholarship: 'Exchange → this program opens',
+  confession: 'Social → Confession tab, this post pinned on top',
+  listing: 'SkillShare → this listing',
+};
+
+// Vote buttons suggested per type (admin can change them)
+const DEFAULT_OPTIONS = {
+  internship: 'applying, saving it, not for me',
+  brand: 'claiming it, maybe later',
+  event: 'going, maybe, skip',
+  scholarship: 'applying, dream school, not now',
+  confession: 'relatable, wild, no way',
+  listing: 'interested, not for me',
+  poll: '',
+};
+
+const MOODS = ['excited', 'broke', 'panic', 'sus', 'shook', 'sleepy', 'cheeky', 'sorted'];
+
+// Day keys in Karachi time (the app and backend use Karachi days)
+const karachiDayKey = (d) =>
+  new Intl.DateTimeFormat('en-CA', {
+    timeZone: 'Asia/Karachi',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).format(d);
 
 const CONTENT_KINDS = [
   { id: 'none', label: 'No link (just a question)' },
@@ -17,12 +70,9 @@ const CONTENT_KINDS = [
 ];
 
 const buildWeek = () => {
-  const start = new Date();
   const days = [];
   for (let i = 0; i < DAYS; i++) {
-    const d = new Date(start);
-    d.setDate(d.getDate() + i);
-    days.push(d.toISOString().substring(0, 10));
+    days.push(karachiDayKey(new Date(Date.now() + i * 86400000)));
   }
   return days;
 };
@@ -101,6 +151,19 @@ export default function DropsSchedule() {
   };
 
   const save = async () => {
+    if (!form.title.trim()) {
+      alert('add a title (the question students see)');
+      return;
+    }
+    if (form.contentKind !== 'none' && !form.contentId) {
+      alert(`pick which ${form.contentKind} this drop opens, or set content type to "No link"`);
+      return;
+    }
+    const optionList = form.options.split(',').map((x) => x.trim()).filter(Boolean);
+    if (form.type === 'poll' && optionList.length < 2) {
+      alert('a poll needs at least 2 options');
+      return;
+    }
     const payload = {
       dayKey: form.dayKey,
       type: form.type,
@@ -182,19 +245,25 @@ export default function DropsSchedule() {
           break;
         }
 
-        // ─── SCHOLARSHIPS ───
+        // ─── SCHOLARSHIPS ───  (same list the app's Exchange screen uses)
         case 'scholarship': {
-          const res = await api.get('/auth/exchange/programs', {
-            params: { limit: 100 },
-          });
-          const list =
-            res.data?.programs ||
-            res.data?.data ||
-            (Array.isArray(res.data) ? res.data : []);
+          let list = [];
+          try {
+            const res = await api.get('/admin/exchange/all-admin');
+            list = Array.isArray(res.data) ? res.data : res.data?.programs || [];
+          } catch (e) {
+            const res = await api.get('/admin/exchange/all');
+            list = Array.isArray(res.data) ? res.data : res.data?.programs || [];
+          }
           items = list.map((p) => ({
             id: p._id,
-            title: p.title || p.name || 'untitled program',
-            subtitle: [p.university, p.country, p.level]
+            title: p.title || 'untitled program',
+            subtitle: [
+              p.university,
+              p.location,
+              p.degree,
+              p.active === false ? 'inactive (hidden in app)' : null,
+            ]
               .filter(Boolean)
               .join(' · '),
           }));
@@ -261,17 +330,33 @@ export default function DropsSchedule() {
           break;
         }
 
-        // ─── CONFESSIONS ───
+        // ─── CONFESSIONS ───  (same feed the app shows)
         case 'confession': {
           const res = await api.get('/social/confessions/feed');
-          const list = Array.isArray(res.data) ? res.data : [];
-          items = list.map((c) => ({
-            id: c._id,
-            title:
-              (c.text || '').slice(0, 60) ||
-              (c.image ? '[image confession]' : 'confession'),
-            subtitle: c.university?.name || c.location || 'anonymous',
-          }));
+          const list = Array.isArray(res.data)
+            ? res.data
+            : res.data?.confessions || [];
+          items = list.map((c) => {
+            const text = (c.text || '').replace(/\s+/g, ' ').trim();
+            return {
+              id: c._id,
+              title: text
+                ? text.length > 70
+                  ? `${text.slice(0, 70)}…`
+                  : text
+                : c.image
+                ? '[image confession]'
+                : 'confession',
+              subtitle: [
+                c.location || 'anonymous',
+                `${c.likes || 0} likes`,
+                `${(c.comments || []).length} comments`,
+                c.createdAt ? new Date(c.createdAt).toLocaleDateString() : null,
+              ]
+                .filter(Boolean)
+                .join(' · '),
+            };
+          });
           break;
         }
 
@@ -389,6 +474,11 @@ export default function DropsSchedule() {
               <tr key={r.dayKey} style={s.tr}>
                 <td style={s.td}>
                   <code style={{ fontSize: 12 }}>{r.dayKey}</code>
+                  {r.dayKey === weekDays[0] && (
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#b45309' }}>
+                      TODAY
+                    </span>
+                  )}
                 </td>
                 <td style={s.td}>{r.type || '—'}</td>
                 <td style={s.td}>
@@ -454,7 +544,20 @@ export default function DropsSchedule() {
               <select
                 style={s.input}
                 value={form.type}
-                onChange={(e) => setForm({ ...form, type: e.target.value })}
+                onChange={(e) => {
+                  const type = e.target.value;
+                  const kind = TYPE_TO_KIND[type] || 'none';
+                  const kindChanged = kind !== form.contentKind;
+                  setForm((f) => ({
+                    ...f,
+                    type,
+                    contentKind: kind,
+                    contentId: kindChanged ? '' : f.contentId,
+                    contentLabel: kindChanged ? '' : f.contentLabel,
+                    options: f.options.trim() ? f.options : DEFAULT_OPTIONS[type] || '',
+                  }));
+                  if (kind !== 'none' && kindChanged) openPicker(kind);
+                }}
               >
                 {TYPES.map((t) => (
                   <option key={t}>{t}</option>
@@ -491,16 +594,7 @@ export default function DropsSchedule() {
                   value={form.mood}
                   onChange={(e) => setForm({ ...form, mood: e.target.value })}
                 >
-                  {[
-                    'excited',
-                    'broke',
-                    'panic',
-                    'sus',
-                    'shook',
-                    'sleepy',
-                    'cheeky',
-                    'sorted',
-                  ].map((m) => (
+                  {MOODS.map((m) => (
                     <option key={m}>{m}</option>
                   ))}
                 </select>
@@ -531,6 +625,9 @@ export default function DropsSchedule() {
                 onChange={(e) => setForm({ ...form, options: e.target.value })}
                 placeholder="biryani, karahi"
               />
+              <div style={s.hint}>
+                these are the vote buttons. leave empty to show only the "view" button.
+              </div>
             </div>
 
             <div style={s.divider}>
@@ -549,6 +646,7 @@ export default function DropsSchedule() {
                     contentKind: kind,
                     contentId: '',
                     contentLabel: '',
+                    type: KIND_TO_TYPE[kind] || (kind === 'none' ? 'poll' : f.type),
                   }));
                   if (kind !== 'none') {
                     openPicker(kind);
@@ -603,6 +701,18 @@ export default function DropsSchedule() {
                 )}
               </div>
             )}
+
+            <div style={s.opensBox}>
+              <span style={s.opensLabel}>in the app, tapping this drop opens:</span>
+              <span style={s.opensValue}>
+                {OPENS_IN_APP[form.contentKind] || OPENS_IN_APP.none}
+                {form.contentLabel ? ` (${form.contentLabel.slice(0, 40)})` : ''}
+              </span>
+              <span style={s.opensNote}>
+                shows on the home screen only on {form.dayKey} once it's live
+                (19:00 automatically, or press "publish now").
+              </span>
+            </div>
 
             <div style={s.modalActions}>
               <button style={s.btnGhost} onClick={() => setOpen(false)}>
@@ -724,6 +834,20 @@ export default function DropsSchedule() {
 // STYLES (unchanged from before)
 // ══════════════════════════════════════════════
 const s = {
+  hint: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
+  opensBox: {
+    marginTop: 14,
+    padding: '10px 12px',
+    background: '#fffbeb',
+    border: '1px solid #fde68a',
+    borderRadius: 10,
+    display: 'flex',
+    flexDirection: 'column',
+    gap: 3,
+  },
+  opensLabel: { fontSize: 11, color: '#92400e', textTransform: 'lowercase' },
+  opensValue: { fontSize: 13, fontWeight: 700, color: '#0f172a' },
+  opensNote: { fontSize: 11, color: '#a16207' },
   header: {
     display: 'flex',
     justifyContent: 'space-between',
