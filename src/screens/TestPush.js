@@ -99,7 +99,7 @@ MOOD_KEYS.forEach((m) => {
 const COPY_KEYS = [
   { id: 'daily_drop',       label: 'daily drop',      mood: 'sus',     hint: '7pm cron · rotated variants' },
   { id: 'streak_warning',   label: 'streak at risk',  mood: 'panic',   hint: '8pm cron · deadpan tone' },
-  { id: 'streak_broken',    label: 'streak broke',    mood: 'sleepy',  hint: 'midnight cron' },
+  { id: 'streak_broken',    label: 'streak broke',    mood: 'urgent',  hint: 'midnight cron' },
   { id: 'freeze_used',      label: 'freeze saved',    mood: 'sleepy',  hint: 'midnight cron' },
   { id: 'badge_earned',     label: 'badge earned',    mood: 'excited', hint: 'event pipeline · emoji ok' },
   { id: 'tier_unlocked',    label: 'level up',        mood: 'hype',    hint: 'event pipeline · emoji ok' },
@@ -108,7 +108,7 @@ const COPY_KEYS = [
   { id: 'welcome_back',     label: 'welcome back',    mood: 'excited', hint: '7–13 days inactive' },
   { id: 'exclusive_offer',  label: 'exclusive offer', mood: 'excited',   hint: '14–29 days inactive' },
   { id: 'win_back_ghost',   label: 'win-back · ghost',mood: 'ghost',   hint: '30+ days inactive', pushTitle: 'we miss you' },
-  { id: 'new_offer',        label: 'new offer',       mood: 'broke',   hint: 'brand creates offer' },
+  { id: 'new_offer',        label: 'new offer',       mood: 'excited',   hint: 'brand creates offer' },
   { id: 'new_for_you',      label: 'new for you',     mood: 'excited', hint: 'platform announcement' },
   { id: 'app_update',       label: 'app update',      mood: 'sorted',  hint: 'system' },
   { id: 'freeze_reset',     label: 'freeze reset',    mood: 'sorted',  hint: 'monday cron' },
