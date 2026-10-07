@@ -333,9 +333,10 @@ export default function DropsSchedule() {
         // ─── CONFESSIONS ───  (same feed the app shows)
         case 'confession': {
           const res = await api.get('/social/confessions/feed');
-          const list = Array.isArray(res.data)
+          const list = (Array.isArray(res.data)
             ? res.data
-            : res.data?.confessions || [];
+            : res.data?.confessions || []
+          ).filter((c) => c.visibility !== 'campus'); // Daily Drops are public only
           items = list.map((c) => {
             const text = (c.text || '').replace(/\s+/g, ' ').trim();
             return {
@@ -348,7 +349,7 @@ export default function DropsSchedule() {
                 ? '[image confession]'
                 : 'confession',
               subtitle: [
-                c.location || 'anonymous',
+                c.campusName || c.location || 'anonymous',
                 `${c.likes || 0} likes`,
                 `${(c.comments || []).length} comments`,
                 c.createdAt ? new Date(c.createdAt).toLocaleDateString() : null,
