@@ -7,8 +7,14 @@ export default function ResetPassword() {
   const location = useLocation();
   const navigate = useNavigate();
 
-  const resetToken = location.state?.resetToken;
-  const userId = location.state?.userId;
+  // From the code screen, or from sessionStorage after a page refresh
+  const session = (() => {
+    if (location.state?.resetToken) return location.state;
+    try { return JSON.parse(sessionStorage.getItem("tdc_reset") || "null") || {}; } catch (e) { return {}; }
+  })();
+  const resetToken = session.resetToken;
+  const userId = session.userId;
+  const [done, setDone] = useState(false);
 
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
@@ -20,10 +26,7 @@ export default function ResetPassword() {
 
   // Redirect if no resetToken
   useEffect(() => {
-    if (!resetToken) {
-      alert("Session expired. Please try again.");
-      navigate("/forgot-password");
-    }
+    if (!resetToken) navigate("/forgot-password", { replace: true });
   }, [resetToken, navigate]);
 
   // Password strength checker
@@ -109,9 +112,10 @@ export default function ResetPassword() {
         }
       );
 
-      if (res.data.success) {
-        alert("Password reset successfully! Please login with your new password.");
-        navigate("/login");
+      if (res.status >= 200 && res.status < 300) {
+        try { sessionStorage.removeItem("tdc_reset"); } catch (e) {}
+        setDone(true);
+        setTimeout(() => navigate("/login", { replace: true }), 1800);
       } else {
         setError(res.data.message || "Failed to reset password");
       }
@@ -148,6 +152,20 @@ export default function ResetPassword() {
         }}>
           Create a new password for your account
         </p>
+
+        {done && (
+          <div style={{
+            color: '#0f7b3e',
+            fontSize: '14px',
+            marginBottom: '15px',
+            padding: '12px',
+            backgroundColor: '#e6f4ea',
+            borderRadius: '8px',
+            textAlign: 'center'
+          }}>
+            Password changed. Taking you to login...
+          </div>
+        )}
 
         {error && (
           <div className="error-message" style={{

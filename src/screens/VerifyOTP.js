@@ -11,18 +11,23 @@ export default function VerifyOTP() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [resendLoading, setResendLoading] = useState(false);
-  const [countdown, setCountdown] = useState(60);
-  const [canResend, setCanResend] = useState(false);
-  
-  const userId = location.state?.userId;
-  const emailOrPhone = location.state?.emailOrPhone;
+  const [info, setInfo] = useState("");
 
-  // Redirect if no userId
+  // From the previous screen, or from sessionStorage after a page refresh
+  const session = (() => {
+    if (location.state?.userId) return location.state;
+    try { return JSON.parse(sessionStorage.getItem("tdc_reset") || "null") || {}; } catch (e) { return {}; }
+  })();
+  const userId = session.userId;
+  const emailOrPhone = session.emailOrPhone;
+  const maskedEmail = session.maskedEmail;
+
+  const [countdown, setCountdown] = useState(session.retryAfter || 60);
+  const [canResend, setCanResend] = useState(false);
+
+  // No session at all → back to the email screen
   useEffect(() => {
-    if (!userId) {
-      alert("Session expired. Please try again.");
-      navigate("/forgot-password");
-    }
+    if (!userId) navigate("/forgot-password", { replace: true });
   }, [userId, navigate]);
 
   // Countdown timer for resend OTP
@@ -63,16 +68,10 @@ export default function VerifyOTP() {
         }
       );
 
-      if (res.data.success) {
-        alert("OTP verified successfully!");
-        
-        // Navigate to reset password
-        navigate("/reset-password", {
-          state: { 
-            resetToken: res.data.resetToken,
-            userId: userId
-          }
-        });
+      if (res.data?.resetToken) {
+        const next = { resetToken: res.data.resetToken, userId };
+        try { sessionStorage.setItem("tdc_reset", JSON.stringify({ ...session, ...next })); } catch (e) {}
+        navigate("/reset-password", { state: next, replace: true });
       } else {
         setError(res.data.message || "Invalid OTP. Please try again.");
       }
@@ -105,22 +104,24 @@ export default function VerifyOTP() {
     try {
       const res = await axios.post(
         "https://the-deft-crew-production.up.railway.app/api/auth/resend-otp",
-        { 
-          userId,
-          emailOrPhone: emailOrPhone 
-        }
+        { emailOrPhone: emailOrPhone || undefined, userId }
       );
 
-      if (res.data.success) {
-        alert("OTP resent successfully!");
+      if (res.data?.userId) {
+        setOtp("");
+        setInfo(res.data.message || "New code sent.");
         setCountdown(60);
         setCanResend(false);
       } else {
-        setError(res.data.message || "Failed to resend OTP");
+        setError(res.data?.message || "Failed to resend OTP");
       }
 
     } catch (err) {
       console.error("Resend OTP Error:", err);
+      if (err.response?.status === 429) {
+        setCountdown(err.response.data?.retryAfter || 60);
+        setCanResend(false);
+      }
       setError(
         err.response?.data?.message || 
         "Failed to resend OTP. Please try again."
@@ -143,9 +144,25 @@ export default function VerifyOTP() {
         }}>
           We've sent a verification code to<br />
           <strong style={{ color: '#1a1a1a' }}>
-            {emailOrPhone || 'your email/phone'}
+            {maskedEmail || emailOrPhone || 'your email/phone'}
           </strong>
+          <br />
+          <span style={{ fontSize: '12px', color: '#999' }}>The code expires in 10 minutes.</span>
         </p>
+
+        {info && !error && (
+          <div style={{
+            color: '#0f7b3e',
+            fontSize: '14px',
+            marginBottom: '15px',
+            padding: '10px',
+            backgroundColor: '#e6f4ea',
+            borderRadius: '5px',
+            textAlign: 'center'
+          }}>
+            {info}
+          </div>
+        )}
 
         {error && (
           <div className="error-message" style={{
@@ -170,6 +187,7 @@ export default function VerifyOTP() {
             const value = e.target.value.replace(/[^0-9]/g, '');
             setOtp(value);
             if (error) setError("");
+            if (info) setInfo("");
           }}
           disabled={loading}
           maxLength={6}

@@ -9,6 +9,18 @@ export default function ForgotPassword() {
   const [error, setError] = useState("");
   const navigate = useNavigate();
 
+  const goToVerify = (data) => {
+    const session = {
+      userId: data.userId,
+      emailOrPhone: emailOrPhone.trim(),
+      maskedEmail: data.email || "",
+      retryAfter: data.retryAfter || 60,
+    };
+    // Survives a page refresh on the next screens
+    try { sessionStorage.setItem("tdc_reset", JSON.stringify(session)); } catch (e) {}
+    navigate("/verify-otp", { state: session });
+  };
+
   const handleSendOTP = async (e) => {
     e.preventDefault();
     setError("");
@@ -28,23 +40,22 @@ export default function ForgotPassword() {
         { emailOrPhone: emailOrPhone.trim() }
       );
 
-      if (res.data.success) {
-        alert(res.data.message || "OTP sent successfully!");
-        
-        // Navigate to OTP verification with user ID
-        navigate("/verify-otp", {
-          state: { 
-            userId: res.data.userId,
-            emailOrPhone: emailOrPhone.trim()
-          }
-        });
+      // Any 2xx with a userId = code sent → go to the code screen
+      if (res.data?.userId) {
+        goToVerify(res.data);
       } else {
-        setError(res.data.message || "Failed to send OTP");
+        setError(res.data?.message || "Failed to send OTP");
       }
 
     } catch (err) {
       console.error("Forgot Password Error:", err);
-      
+
+      // 429 = a code was already sent less than a minute ago → still go enter it
+      if (err.response?.status === 429 && err.response.data?.userId) {
+        goToVerify(err.response.data);
+        return;
+      }
+
       // Handle different error types
       if (err.response) {
         // Server responded with error
