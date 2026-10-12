@@ -141,7 +141,10 @@ export function formFromEvent(templates, event, paymentInfo) {
   form.registrationCloses = toLocalInput(event.registrationCloses);
   // the form students fill: as saved, else the template's (generic for old events)
   const saved = event.registrationForm && event.registrationForm.length ? event.registrationForm : null;
-  form.regForm = copyFields(saved || tpl?.registrationFields);
+  const tplKeys = new Set((tpl?.registrationFields || []).map((f) => f.key));
+  form.regForm = copyFields(saved || tpl?.registrationFields).map((f) =>
+    BASE_KEYS.includes(f.key) || tplKeys.has(f.key) || f.store === "ticket" ? f : { ...f, custom: true }
+  );
   form.paymentInfoLoaded = !!paymentInfo;
   return form;
 }

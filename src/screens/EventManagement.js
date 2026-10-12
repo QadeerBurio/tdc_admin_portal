@@ -24,7 +24,6 @@ import {
   Select,
   MenuItem,
   FormControl,
-  InputLabel,
   Snackbar,
   Alert,
   CircularProgress,
@@ -34,7 +33,6 @@ import {
   Divider,
   Tooltip,
   Stack,
-  LinearProgress,
   Fade,
   Zoom,
   Slide,
@@ -72,10 +70,11 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { format } from "date-fns";
 import ".//styles/EventManagement.css";
+import EventFormV2 from "./events/EventFormV2";
+import { API_BASE, eventsApi, authProblem, errorMessage, uploadImage, MAX_IMAGE_BYTES, IMAGE_TYPES } from "./events/eventsApi";
+import { emptyForm, formFromEvent, validateForm, buildPayload, isLegacyEvent } from "./events/formLogic";
 
-
-const API_BASE = "https://the-deft-crew-production.up.railway.app/api/events";
-const CATEGORIES = ["Hackathons", "Workshops", "Conferences", "Competitions", "Career Fairs"];
+const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
 
 // ─── Loading Spinner ──────────────────────────────────────────────────
 
@@ -97,7 +96,7 @@ const LoadingSpinner = () => (
 const EventManagement = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
-  const { token } = useContext(AuthContext);
+  const { token, logout } = useContext(AuthContext);
   
   const [events, setEvents] = useState([]);
   const [registeredUsers, setRegisteredUsers] = useState([]);
@@ -124,6 +123,15 @@ const EventManagement = () => {
   const [csvResult, setCsvResult] = useState(null);
   const [csvError, setCsvError] = useState("");
   const csvFileInputRef = useRef(null);
+
+  // 401 / 403: say why, then go to the login screen (never a blank page)
+  const handleAuthError = (err) => {
+    const msg = authProblem(err);
+    if (!msg) return false;
+    setSnackbar({ open: true, message: msg, severity: "error" });
+    setTimeout(() => logout(), 1800);
+    return true;
+  };
 
   const handleOpenCsvDialog = () => {
     setCsvFile(null);
@@ -188,6 +196,7 @@ const EventManagement = () => {
         setCsvError(res.data?.message || "Upload failed.");
       }
     } catch (err) {
+      if (handleAuthError(err)) return;
       const msg = err.response?.data?.message || err.message || "Error uploading events file.";
       setCsvError(msg);
       showSnackbar(msg, "error");
@@ -196,20 +205,28 @@ const EventManagement = () => {
     }
   };
 
-  const [formData, setFormData] = useState({
-    title: "",
-    organizer: "",
-    city: "",
-    type: "Hackathons",
-    prize: "",
-    deadline: "",
-    description: "",
-    location: "",
-    contact: "",
-    date: "",
-    teamSize: "",
-    image: "",
-  });
+  // ── create / edit form (events v2: built from the server's category templates) ──
+  const [templates, setTemplates] = useState(null);
+  const [templatesState, setTemplatesState] = useState("idle"); // idle | loading | ready | error
+  const [form, setForm] = useState(null);
+  const [formErrors, setFormErrors] = useState({});
+  const [imageError, setImageError] = useState("");
+  const [editingEvent, setEditingEvent] = useState(null);
+
+  // fetched every time the dialog opens, so admins always get the server's current fields
+  const loadTemplates = async () => {
+    setTemplatesState("loading");
+    try {
+      const t = await eventsApi.templates();
+      if (!t || !Array.isArray(t.categories) || !t.generic) throw new Error("bad templates");
+      setTemplates(t);
+      setTemplatesState("ready");
+      return t;
+    } catch (err) {
+      setTemplatesState("error");
+      return null;
+    }
+  };
 
   useEffect(() => {
     fetchDashboardData();
@@ -240,6 +257,7 @@ const EventManagement = () => {
       setEvents(eventsWithCounts);
     } catch (error) {
       console.error("Error fetching events:", error);
+      if (!handleAuthError(error)) showSnackbar(errorMessage(error, "Couldn't load your events"), "error");
       setEvents([]);
     }
   };
@@ -267,49 +285,45 @@ const EventManagement = () => {
     }
   };
 
-  const handleCreateEvent = () => {
-    setDialogType("create");
-    setFormData({
-      title: "",
-      organizer: "",
-      city: "",
-      type: "Hackathons",
-      prize: "",
-      deadline: "",
-      description: "",
-      location: "",
-      contact: "",
-      date: "",
-      teamSize: "",
-      image: "",
-    });
+  const resetImage = (preview) => {
     setSelectedFile(null);
-    setImagePreview(null);
+    setImagePreview(preview || null);
+    setImageError("");
     setUploadProgress(0);
-    setOpenDialog(true);
+    if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleEditEvent = (event) => {
-    setDialogType("edit");
-    setFormData({
-      _id: event._id,
-      title: event.title || "",
-      organizer: event.organizer || "",
-      city: event.city || "",
-      type: event.type || "Hackathons",
-      prize: event.prize || "",
-      deadline: event.deadline || "",
-      description: event.description || "",
-      location: event.location || "",
-      contact: event.contact || "",
-      date: event.date || "",
-      teamSize: event.teamSize || "",
-      image: event.image || "",
-    });
-    setSelectedFile(null);
-    setImagePreview(event.image || null);
-    setUploadProgress(0);
+  const handleCreateEvent = async () => {
+    setDialogType("create");
+    setEditingEvent(null);
+    setForm(null);
+    setFormErrors({});
+    resetImage(null);
     setOpenDialog(true);
+    const t = await loadTemplates();
+    if (t) setForm(emptyForm(t));
+  };
+
+  const handleEditEvent = async (event) => {
+    setDialogType("edit");
+    setEditingEvent(event);
+    setForm(null);
+    setFormErrors({});
+    resetImage(event.image || null);
+    setOpenDialog(true);
+    const t = await loadTemplates();
+    if (!t) return;
+    // prices and payment accounts are not in list responses: load them for the form
+    let info = null;
+    if (!isLegacyEvent(event)) {
+      try {
+        info = await eventsApi.paymentInfo(token, event._id);
+      } catch (err) {
+        if (handleAuthError(err)) return;
+        showSnackbar("Prices and payment accounts didn't load. Saving is blocked until they do.", "error");
+      }
+    }
+    setForm(formFromEvent(t, event, info));
   };
 
   const handleViewEvent = async (event) => {
@@ -329,106 +343,82 @@ const EventManagement = () => {
       await fetchEvents();
       await fetchAllRegistrations();
     } catch (error) {
-      showSnackbar(error.response?.data?.error || "Error deleting event", "error");
+      if (handleAuthError(error)) return;
+      showSnackbar(errorMessage(error, "Error deleting event"), "error");
     }
   };
 
+  // image: types and 5 MB checked when picked
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
-    if (file) {
-      setSelectedFile(file);
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setImagePreview(reader.result);
-      };
-      reader.readAsDataURL(file);
+    if (!file) return;
+    if (!IMAGE_TYPES.includes(file.type)) {
+      setImageError("Pick a JPG, PNG, WebP or GIF image.");
+      event.target.value = "";
+      return;
     }
+    if (file.size > MAX_IMAGE_BYTES) {
+      setImageError(`This image is ${(file.size / 1024 / 1024).toFixed(1)} MB. The limit is 5 MB.`);
+      event.target.value = "";
+      return;
+    }
+    setImageError("");
+    setSelectedFile(file);
+    const reader = new FileReader();
+    reader.onloadend = () => setImagePreview(reader.result);
+    reader.readAsDataURL(file);
   };
 
   const handleRemoveImage = () => {
-    setSelectedFile(null);
-    setImagePreview(null);
-    setFormData({ ...formData, image: "" });
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const uploadImageToCloudinary = async (file) => {
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('upload_preset', 'tdc_profiles');
-    formData.append('cloud_name', 'decaxpera');
-
-    try {
-      const response = await fetch('https://api.cloudinary.com/v1_1/decaxpera/image/upload', {
-        method: 'POST',
-        body: formData,
-      });
-      const data = await response.json();
-      return data.secure_url;
-    } catch (error) {
-      console.error('Image upload error:', error);
-      return null;
-    }
+    resetImage(null);
+    setForm((f) => (f ? { ...f, image: "" } : f));
   };
 
   const handleSubmit = async () => {
-    if (!formData.title || !formData.organizer || !formData.city) {
-      showSnackbar("Please fill all required fields", "error");
+    if (!form || !templates) return;
+    const errs = validateForm(templates, form);
+    setFormErrors(errs);
+    if (Object.keys(errs).length) {
+      showSnackbar(errs._form || "Some fields need fixing. They're marked in red.", "error");
       return;
     }
 
     setSubmitting(true);
     setUploadProgress(0);
-    
     try {
-      let imageUrl = formData.image || "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
-      
+      // the image: a failed upload stops the save (no silent default photo)
+      let imageUrl = form.image || DEFAULT_IMAGE;
       if (selectedFile) {
         setUploadProgress(30);
-        const uploadedUrl = await uploadImageToCloudinary(selectedFile);
-        setUploadProgress(70);
-        if (uploadedUrl) {
-          imageUrl = uploadedUrl;
+        try {
+          imageUrl = await uploadImage(selectedFile);
+        } catch (upErr) {
+          setUploadProgress(0);
+          setImageError(upErr.message);
+          showSnackbar(upErr.message, "error");
+          return;
         }
         setUploadProgress(100);
+        setForm((f) => ({ ...f, image: imageUrl }));
+        setSelectedFile(null);
       }
 
-      const eventData = {
-        title: formData.title,
-        organizer: formData.organizer,
-        city: formData.city,
-        type: formData.type || "Hackathons",
-        prize: formData.prize || "TBD",
-        deadline: formData.deadline || "Limited spots",
-        description: formData.description || "",
-        location: formData.location || "Online/Venue TBD",
-        contact: formData.contact || "",
-        date: formData.date || new Date().toLocaleDateString(),
-        teamSize: formData.teamSize || "1-4 Members",
-        image: imageUrl,
-      };
-
+      const body = buildPayload(templates, form, imageUrl, { isCreate: dialogType === "create" });
       if (dialogType === "create") {
-        await axios.post(`${API_BASE}/create`, eventData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await eventsApi.create(token, body);
         showSnackbar("Event created successfully", "success");
       } else {
-        await axios.put(`${API_BASE}/event/${formData._id}`, eventData, {
-          headers: { Authorization: `Bearer ${token}` },
-        });
+        await eventsApi.update(token, form._id, body);
         showSnackbar("Event updated successfully", "success");
       }
       setOpenDialog(false);
-      setSelectedFile(null);
-      setImagePreview(null);
-      setUploadProgress(0);
+      resetImage(null);
       await fetchEvents();
       await fetchAllRegistrations();
     } catch (error) {
-      showSnackbar(error.response?.data?.message || "Error saving event", "error");
+      if (handleAuthError(error)) return;
+      // the server's plain message (e.g. "A paid event needs at least one payment account")
+      showSnackbar(errorMessage(error, "Error saving event"), "error");
     } finally {
       setSubmitting(false);
     }
@@ -927,18 +917,19 @@ const EventManagement = () => {
               isMobile={isMobile}
             />
           ) : (
-            <EventForm
-              formData={formData}
-              setFormData={setFormData}
-              categories={CATEGORIES}
-              selectedFile={selectedFile}
+            <EventDialogBody
+              templates={templates}
+              templatesState={templatesState}
+              onRetry={() => (dialogType === "edit" && editingEvent ? handleEditEvent(editingEvent) : handleCreateEvent())}
+              form={form}
+              setForm={setForm}
+              errors={formErrors}
               imagePreview={imagePreview}
-              handleFileSelect={handleFileSelect}
-              handleRemoveImage={handleRemoveImage}
-              fileInputRef={fileInputRef}
+              onPickImage={handleFileSelect}
+              onRemoveImage={handleRemoveImage}
+              imageError={imageError}
               uploadProgress={uploadProgress}
-              submitting={submitting}
-              isMobile={isMobile}
+              fileInputRef={fileInputRef}
             />
           )}
         </div>
@@ -948,7 +939,7 @@ const EventManagement = () => {
             <button className="dialog-cancel-btn" onClick={() => setOpenDialog(false)}>
               Cancel
             </button>
-            <button className="gradient-btn" onClick={handleSubmit} disabled={submitting}>
+            <button className="gradient-btn" onClick={handleSubmit} disabled={submitting || templatesState !== "ready" || !form}>
               {submitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : 
                 dialogType === "create" ? "Create Event" : "Update Event"}
             </button>
@@ -1299,179 +1290,33 @@ const RegistrationDetailsView = ({ registration, isMobile }) => (
   </>
 );
 
-// ─── Event Form Component ─────────────────────────────────────────
+// ─── Event Form (dialog body): templates loading / error / the v2 form ──
 
-const EventForm = ({ 
-  formData, 
-  setFormData, 
-  categories, 
-  selectedFile, 
-  imagePreview, 
-  handleFileSelect, 
-  handleRemoveImage,
-  fileInputRef,
-  uploadProgress,
-  submitting,
-  isMobile
-}) => (
-  <div style={{ marginTop: 8 }}>
-    <div className="form-grid">
-      <div className="full-width">
-        <TextField
-          fullWidth
-          label="Event Title *"
-          value={formData.title}
-          onChange={(e) => setFormData({ ...formData, title: e.target.value })}
-          required
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="Organizer *"
-          value={formData.organizer}
-          onChange={(e) => setFormData({ ...formData, organizer: e.target.value })}
-          required
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="City *"
-          value={formData.city}
-          onChange={(e) => setFormData({ ...formData, city: e.target.value })}
-          required
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div className="full-width">
-        <FormControl fullWidth size="small" className="form-field">
-          <InputLabel>Category</InputLabel>
-          <Select
-            value={formData.type}
-            label="Category"
-            onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-          >
-            {categories.map((cat) => (
-              <MenuItem key={cat} value={cat}>{cat}</MenuItem>
-            ))}
-          </Select>
-        </FormControl>
-      </div>
-      <div className="full-width">
-        <TextField
-          fullWidth
-          label="Description"
-          multiline
-          rows={isMobile ? 2 : 3}
-          value={formData.description}
-          onChange={(e) => setFormData({ ...formData, description: e.target.value })}
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="Date"
-          placeholder="15 May 2026"
-          value={formData.date}
-          onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="Team Size"
-          placeholder="2-4 Members"
-          value={formData.teamSize}
-          onChange={(e) => setFormData({ ...formData, teamSize: e.target.value })}
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="Prize Pool"
-          placeholder="PKR 100,000"
-          value={formData.prize}
-          onChange={(e) => setFormData({ ...formData, prize: e.target.value })}
-          size="small"
-          className="form-field"
-        />
-      </div>
-      <div>
-        <TextField
-          fullWidth
-          label="Deadline"
-          placeholder="30 April 2026"
-          value={formData.deadline}
-          onChange={(e) => setFormData({ ...formData, deadline: e.target.value })}
-          size="small"
-          className="form-field"
-        />
-      </div>
-      
-      {/* Image Upload */}
-      <div className="full-width upload-section">
-        <label className="upload-label">Event Image</label>
-        <input
-          type="file"
-          accept="image/*"
-          ref={fileInputRef}
-          style={{ display: 'none' }}
-          onChange={handleFileSelect}
-        />
-        <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
-          {imagePreview ? (
-            <div className="upload-preview">
-              <img src={imagePreview} alt="Preview" />
-              <button className="upload-preview-remove" onClick={(e) => {
-                e.stopPropagation();
-                handleRemoveImage();
-              }}>
-                <CloseIcon sx={{ fontSize: 16 }} />
-              </button>
-            </div>
-          ) : (
-            <div className="upload-placeholder">
-              <CloudUploadIcon />
-              <div className="upload-placeholder-text">Click to upload image</div>
-              <div className="upload-placeholder-sub">PNG, JPG up to 5MB</div>
-            </div>
-          )}
-        </div>
-        {uploadProgress > 0 && uploadProgress < 100 && (
-          <div className="upload-progress">
-            <div className="upload-progress-bar">
-              <LinearProgress 
-                variant="determinate" 
-                value={uploadProgress} 
-                sx={{ 
-                  height: 8, 
-                  borderRadius: 8,
-                  bgcolor: 'rgba(0,0,0,0.05)',
-                  '& .MuiLinearProgress-bar': {
-                    background: 'linear-gradient(90deg, #000 0%, #444 100%)',
-                    borderRadius: 8,
-                  }
-                }}
-              />
-            </div>
-            <span className="upload-progress-text">Uploading... {uploadProgress}%</span>
-          </div>
-        )}
-      </div>
-    </div>
-  </div>
-);
+const EventDialogBody = ({ templates, templatesState, onRetry, form, ...formProps }) => {
+  if (templatesState === "error") {
+    return (
+      <Alert
+        severity="error"
+        sx={{ borderRadius: "14px" }}
+        action={
+          <Button color="inherit" size="small" onClick={onRetry}>
+            Try again
+          </Button>
+        }
+      >
+        The event form couldn't load its category fields from the server. Check your connection and try again.
+      </Alert>
+    );
+  }
+  if (templatesState !== "ready" || !form || !templates) {
+    return (
+      <Box sx={{ textAlign: "center", py: 6 }}>
+        <CircularProgress size={32} sx={{ color: "#000" }} />
+        <Typography sx={{ mt: 1.5, color: "#666", fontSize: "0.85rem" }}>Loading the form…</Typography>
+      </Box>
+    );
+  }
+  return <EventFormV2 templates={templates} form={form} {...formProps} />;
+};
 
 export default EventManagement;
