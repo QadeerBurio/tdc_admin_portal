@@ -84,7 +84,7 @@ const EventManagement = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const { token, logout } = useContext(AuthContext);
-  
+
   const [events, setEvents] = useState([]);
   const [regTotal, setRegTotal] = useState(0);
   const [loading, setLoading] = useState(true);
@@ -114,8 +114,6 @@ const EventManagement = () => {
     setSnackbar({ open: true, message: msg, severity: "error" });
     setTimeout(() => {
       logout();
-      // logout() navigates to /login, but the signed-out routes redirect unknown paths
-      // to "/" first; make sure the user lands on the login screen
       setTimeout(() => {
         if (window.location.pathname !== "/login") window.location.replace("/login");
       }, 50);
@@ -203,7 +201,6 @@ const EventManagement = () => {
   const [imageError, setImageError] = useState("");
   const [editingEvent, setEditingEvent] = useState(null);
 
-  // fetched every time the dialog opens, so admins always get the server's current fields
   const loadTemplates = async () => {
     setTemplatesState("loading");
     try {
@@ -302,7 +299,6 @@ const EventManagement = () => {
     setOpenDialog(true);
     const t = await loadTemplates();
     if (!t) return;
-    // prices and payment accounts are not in list responses: load them for the form
     let info = null;
     if (!isLegacyEvent(event)) {
       try {
@@ -337,7 +333,6 @@ const EventManagement = () => {
     }
   };
 
-  // image: types and 5 MB checked when picked
   const handleFileSelect = (event) => {
     const file = event.target.files[0];
     if (!file) return;
@@ -375,7 +370,6 @@ const EventManagement = () => {
     setSubmitting(true);
     setUploadProgress(0);
     try {
-      // the image: a failed upload stops the save (no silent default photo)
       let imageUrl = form.image || DEFAULT_IMAGE;
       if (selectedFile) {
         setUploadProgress(30);
@@ -406,7 +400,6 @@ const EventManagement = () => {
       await fetchAllRegistrations();
     } catch (error) {
       if (handleAuthError(error)) return;
-      // the server's plain message (e.g. "A paid event needs at least one payment account")
       showSnackbar(errorMessage(error, "Error saving event"), "error");
     } finally {
       setSubmitting(false);
@@ -694,8 +687,18 @@ const EventManagement = () => {
         onClose={() => setOpenDialog(false)}
         maxWidth="md"
         fullWidth
+        scroll="paper"
         TransitionComponent={Slide}
         TransitionProps={{ direction: "up" }}
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: "90vh",
+            overflow: "hidden",
+            borderRadius: "20px",
+          },
+        }}
       >
         <div className="dialog-header">
           <div className="dialog-header-left">
@@ -713,7 +716,17 @@ const EventManagement = () => {
           </button>
         </div>
 
-        <div className="dialog-content">
+        <DialogContent
+          className="dialog-content"
+          sx={{
+            flex: "1 1 auto",
+            minHeight: 0,
+            overflowY: "auto",
+            overflowX: "hidden",
+            WebkitOverflowScrolling: "touch",
+            overscrollBehavior: "contain",
+          }}
+        >
           {dialogType === "view" && selectedEvent ? (
             <EventDetailsView 
               event={selectedEvent} 
@@ -737,10 +750,10 @@ const EventManagement = () => {
               fileInputRef={fileInputRef}
             />
           )}
-        </div>
+        </DialogContent>
 
         {dialogType !== "view" && (
-          <div className="dialog-actions">
+          <div className="dialog-actions" style={{ flexShrink: 0 }}>
             <button className="dialog-cancel-btn" onClick={() => setOpenDialog(false)}>
               Cancel
             </button>
@@ -770,8 +783,32 @@ const EventManagement = () => {
       </Snackbar>
 
       {/* ─── CSV Upload Dialog ────────────────────────────────────────── */}
-      <Dialog open={openCsvDialog} onClose={handleCloseCsvDialog} maxWidth="sm" fullWidth>
-        <DialogContent sx={{ p: 3 }}>
+      <Dialog
+        open={openCsvDialog}
+        onClose={handleCloseCsvDialog}
+        maxWidth="sm"
+        fullWidth
+        scroll="paper"
+        PaperProps={{
+          sx: {
+            display: "flex",
+            flexDirection: "column",
+            maxHeight: "90vh",
+            overflow: "hidden",
+            borderRadius: "16px",
+          },
+        }}
+      >
+        <DialogContent
+          sx={{
+            p: 3,
+            flex: "1 1 auto",
+            minHeight: 0,
+            overflowY: "auto",
+            overflowX: "hidden",
+            WebkitOverflowScrolling: "touch",
+          }}
+        >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
               <CloudUploadIcon sx={{ color: '#10b981' }} /> Upload Events CSV / XLSX
@@ -949,7 +986,7 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
       <TableContainer sx={{ 
         borderRadius: 14, 
         border: "1px solid rgba(0,0,0,0.04)", 
-        overflow: "hidden", 
+        overflowX: "auto", 
         mt: 2,
         boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
       }}>

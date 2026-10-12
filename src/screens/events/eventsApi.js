@@ -4,7 +4,7 @@
 import axios from "axios";
 
 export const API_BASE =
-  process.env.REACT_APP_EVENTS_API || "https://the-deft-crew-production.up.railway.app/api/events";
+  "https://the-deft-crew-production.up.railway.app/api/events";
 
 const auth = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 
