@@ -112,7 +112,14 @@ const EventManagement = () => {
     const msg = authProblem(err);
     if (!msg) return false;
     setSnackbar({ open: true, message: msg, severity: "error" });
-    setTimeout(() => logout(), 1800);
+    setTimeout(() => {
+      logout();
+      // logout() navigates to /login, but the signed-out routes redirect unknown paths
+      // to "/" first; make sure the user lands on the login screen
+      setTimeout(() => {
+        if (window.location.pathname !== "/login") window.location.replace("/login");
+      }, 50);
+    }, 1800);
     return true;
   };
 
@@ -421,6 +428,7 @@ const EventManagement = () => {
       Conferences: "#dc2626",
       Competitions: "#d97706",
       "Career Fairs": "#059669",
+      Concerts: "#db2777",
     };
     return colors[category] || "#666";
   };
@@ -432,6 +440,7 @@ const EventManagement = () => {
       Conferences: "🎤",
       Competitions: "🏆",
       "Career Fairs": "💼",
+      Concerts: "🎵",
     };
     return emojis[category] || "📌";
   };

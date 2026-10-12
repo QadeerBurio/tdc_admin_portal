@@ -179,8 +179,29 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
     }
   };
 
-  const actionsFor = (reg) => {
+  // compact: icon buttons for table rows (labels in tooltips / aria-label)
+  const actionsFor = (reg, compact = false) => {
     const s = reg.payment?.status || "not_required";
+    if (compact) {
+      return (
+        <span style={{ display: "inline-flex", gap: 2 }}>
+          {(s === "pending" || s === "rejected") && (
+            <Tooltip title="Verify payment">
+              <IconButton size="small" color="success" aria-label="Verify" onClick={(e) => openConfirm(reg, "verify", e)}>
+                <CheckCircleIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+          {(s === "pending" || s === "verified") && (
+            <Tooltip title="Reject payment">
+              <IconButton size="small" color="error" aria-label="Reject" onClick={(e) => openConfirm(reg, "reject", e)}>
+                <CancelIcon />
+              </IconButton>
+            </Tooltip>
+          )}
+        </span>
+      );
+    }
     return (
       <span style={{ display: "inline-flex", gap: 6 }}>
         {(s === "pending" || s === "rejected") && (
@@ -291,7 +312,7 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
           <div className="empty-subtitle">{eventId || status !== "all" || q ? "Try other filters" : "Registrations appear here when students sign up"}</div>
         </div>
       ) : (
-        <div className="table-container" style={{ opacity: loading ? 0.6 : 1 }}>
+        <div className="table-container ev2-scroll" style={{ opacity: loading ? 0.6 : 1 }}>
           {isMobile ? (
             <div style={{ padding: 16 }}>
               {rows.map((reg) => (
@@ -315,7 +336,7 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
               ))}
             </div>
           ) : (
-            <Table size="small">
+            <Table size="small" sx={{ minWidth: 980 }}>
               <TableHead className="table-header">
                 <TableRow>
                   <TableCell>Student</TableCell>
@@ -352,7 +373,7 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
                     <TableCell>
                       <StatusChip status={reg.payment?.status} />
                     </TableCell>
-                    <TableCell align="right">{actionsFor(reg)}</TableCell>
+                    <TableCell align="right">{actionsFor(reg, true)}</TableCell>
                   </TableRow>
                 ))}
               </TableBody>

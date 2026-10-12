@@ -1676,6 +1676,9 @@
   font-family: ui-monospace, Menlo, Consolas, monospace;
   font-size: 0.8rem;
 }
+.ev2-scroll {
+  overflow-x: auto;
+}
 .ev2-row-click {
   cursor: pointer;
 }
