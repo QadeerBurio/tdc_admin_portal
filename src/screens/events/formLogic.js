@@ -184,18 +184,22 @@ export const usesTiers = (templates, form) => !form.legacy && !!findTemplate(tem
 export const isPaidForm = (templates, form) =>
   !!form.paid && (usesTiers(templates, form) ? form.tiers.some((t) => Number(t.price) > 0) : Number(form.fee) > 0);
 
-// the server asks old app builds to update for these events
+// Same rule as the server (register route): old app builds must update only for a fee,
+// any ticket tiers, or a required question beyond the base fields. Base fields (incl.
+// university, whatever store an older saved form says) and the ticket choice / quantity
+// fields never count as extra questions.
+const isExtraQuestion = (f) => !!f.required && !BASE_KEYS.includes(f.key) && f.store !== "ticket";
 export function needsAppUpdate(templates, form) {
   if (isPaidForm(templates, form)) return true;
   if (usesTiers(templates, form) && form.tiers.length) return true;
   if (form.legacy) return false;
-  return form.regForm.some((f) => f.required && f.store !== "base");
+  return form.regForm.some(isExtraQuestion);
 }
 export function eventNeedsAppUpdate(event) {
   if (!event) return false;
   if ((event.fee?.amount || 0) > 0) return true;
   if ((event.ticketTiers || []).length) return true;
-  return (event.registrationForm || []).some((f) => f.required && f.store !== "base");
+  return (event.registrationForm || []).some(isExtraQuestion);
 }
 
 // ── one value (same rules as the server's checkField) ───────────
