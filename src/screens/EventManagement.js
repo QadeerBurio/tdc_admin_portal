@@ -20,10 +20,6 @@ import {
   Dialog,
   DialogContent,
   DialogActions,
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
   Snackbar,
   Alert,
   CircularProgress,
@@ -34,7 +30,6 @@ import {
   Tooltip,
   Stack,
   Fade,
-  Zoom,
   Slide,
   useTheme,
   useMediaQuery,
@@ -49,30 +44,22 @@ import {
   LocationOn as LocationIcon,
   Close as CloseIcon,
   Event as EventIcon,
-  Email as EmailIcon,
-  School as SchoolIcon,
-  WhatsApp as WhatsAppIcon,
-  Download as DownloadIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
   TrendingUp as TrendingUpIcon,
   Person as PersonIcon,
   CloudUpload as CloudUploadIcon,
   Groups as GroupsIcon,
   Timer as TimerIcon,
   EmojiEvents as EmojiEventsIcon,
-  ArrowUpward as ArrowUpwardIcon,
-  ArrowDownward as ArrowDownwardIcon,
   AutoAwesome as AutoAwesomeIcon,
   Rocket as RocketIcon,
 } from "@mui/icons-material";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
-import { format } from "date-fns";
 import ".//styles/EventManagement.css";
 import EventFormV2 from "./events/EventFormV2";
+import RegistrationsTab, { StatusChip } from "./events/RegistrationsTab";
 import { API_BASE, eventsApi, authProblem, errorMessage, uploadImage, MAX_IMAGE_BYTES, IMAGE_TYPES } from "./events/eventsApi";
-import { emptyForm, formFromEvent, validateForm, buildPayload, isLegacyEvent } from "./events/formLogic";
+import { emptyForm, formFromEvent, validateForm, buildPayload, isLegacyEvent, eventNeedsAppUpdate, UPDATE_WARNING } from "./events/formLogic";
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
 
@@ -99,7 +86,7 @@ const EventManagement = () => {
   const { token, logout } = useContext(AuthContext);
   
   const [events, setEvents] = useState([]);
-  const [registeredUsers, setRegisteredUsers] = useState([]);
+  const [regTotal, setRegTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [tabValue, setTabValue] = useState(0);
   const [selectedEvent, setSelectedEvent] = useState(null);
@@ -107,13 +94,9 @@ const EventManagement = () => {
   const [dialogType, setDialogType] = useState("create");
   const [snackbar, setSnackbar] = useState({ open: false, message: "", severity: "success" });
   const [submitting, setSubmitting] = useState(false);
-  const [selectedRegistration, setSelectedRegistration] = useState(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [filterCategory, setFilterCategory] = useState("All");
   const [uploadProgress, setUploadProgress] = useState(0);
   const [selectedFile, setSelectedFile] = useState(null);
   const [imagePreview, setImagePreview] = useState(null);
-  const [sortConfig, setSortConfig] = useState({ key: "createdAt", direction: "desc" });
   const fileInputRef = useRef(null);
 
   // CSV/XLSX Upload State
@@ -264,13 +247,12 @@ const EventManagement = () => {
 
   const fetchAllRegistrations = async () => {
     try {
-      const res = await axios.get(`${API_BASE}/all-registrations`, {
-        headers: { Authorization: `Bearer ${token}` },
-      });
-      setRegisteredUsers(Array.isArray(res.data) ? res.data : []);
+      const res = await eventsApi.registrations(token, { page: 1, limit: 1 });
+      setRegTotal(res?.total || 0);
     } catch (error) {
       console.error("Error fetching registrations:", error);
-      setRegisteredUsers([]);
+      handleAuthError(error);
+      setRegTotal(0);
     }
   };
 
@@ -432,39 +414,6 @@ const EventManagement = () => {
     setTabValue(newValue);
   };
 
-  const handleViewRegistration = (registration) => {
-    setSelectedRegistration(registration);
-  };
-
-  const handleExportData = () => {
-    const headers = ["Student Name", "Email", "WhatsApp", "Student ID", "Event", "Registered Date"];
-    const data = registeredUsers.map(reg => [
-      reg.studentName || "Unknown",
-      reg.email || "N/A",
-      reg.whatsapp || "N/A",
-      reg.studentId || "N/A",
-      reg.eventTitle || "Unknown Event",
-      reg.createdAt ? format(new Date(reg.createdAt), "MMM dd, yyyy HH:mm") : "N/A"
-    ]);
-
-    const csvContent = [headers.join(","), ...data.map(row => row.join(","))].join("\n");
-    const blob = new Blob([csvContent], { type: "text/csv" });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `registrations_${format(new Date(), "yyyy-MM-dd")}.csv`;
-    a.click();
-    window.URL.revokeObjectURL(url);
-    showSnackbar("Data exported successfully", "success");
-  };
-
-  const handleSort = (key) => {
-    setSortConfig({
-      key,
-      direction: sortConfig.key === key && sortConfig.direction === "desc" ? "asc" : "desc",
-    });
-  };
-
   const getCategoryColor = (category) => {
     const colors = {
       Hackathons: "#2563eb",
@@ -487,33 +436,10 @@ const EventManagement = () => {
     return emojis[category] || "📌";
   };
 
-  const totalRegistrations = registeredUsers.length;
+  const totalRegistrations = regTotal;
   const totalEvents = events.length;
   const averageRegistrations = totalEvents > 0 ? (totalRegistrations / totalEvents).toFixed(1) : 0;
   const activeEvents = events.filter(e => e.date && new Date(e.date) > new Date()).length || 0;
-
-  const filteredRegistrations = registeredUsers
-    .filter(reg => {
-      const matchesSearch = reg.studentName?.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                            reg.email?.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesEvent = filterCategory === "All" || reg.eventTitle === filterCategory;
-      return matchesSearch && matchesEvent;
-    })
-    .sort((a, b) => {
-      if (sortConfig.key === "createdAt") {
-        return sortConfig.direction === "desc" 
-          ? new Date(b.createdAt) - new Date(a.createdAt)
-          : new Date(a.createdAt) - new Date(b.createdAt);
-      }
-      if (sortConfig.key === "studentName") {
-        return sortConfig.direction === "desc"
-          ? b.studentName?.localeCompare(a.studentName) || 0
-          : a.studentName?.localeCompare(b.studentName) || 0;
-      }
-      return 0;
-    });
-
-  const eventTitles = ["All", ...new Set(registeredUsers.map(reg => reg.eventTitle).filter(Boolean))];
 
   if (loading) {
     return <LoadingSpinner />;
@@ -634,7 +560,7 @@ const EventManagement = () => {
               />
               <Tab
                 className={`tab-item ${tabValue === 1 ? "active" : ""}`}
-                label={isMobile ? `Registrations (${registeredUsers.length})` : `Registrations (${registeredUsers.length})`}
+                label={`Registrations (${regTotal})`}
                 icon={<PeopleIcon className="tab-icon" />}
                 iconPosition="start"
               />
@@ -679,10 +605,16 @@ const EventManagement = () => {
                           </div>
                           <div className="event-register-chip">
                             {event.registrations?.length || 0} registered
+                            {event.capacity ? ` · ${event.registeredCount || 0}/${event.capacity} seats` : ""}
                           </div>
                         </div>
                         <div className="event-card-content">
                           <div className="event-card-title">{event.title}</div>
+                          {eventNeedsAppUpdate(event) && (
+                            <Tooltip title={UPDATE_WARNING}>
+                              <span className="ev2-status pending" style={{ marginBottom: 6 }}>app update needed</span>
+                            </Tooltip>
+                          )}
                           <div className="event-card-details">
                             <div className="event-card-detail">
                               <LocationIcon />
@@ -731,153 +663,17 @@ const EventManagement = () => {
 
           {/* ─── Registrations Tab ───────────────────────────────────── */}
           {tabValue === 1 && (
-            <div className="tab-content">
-              <div className="registrations-header">
-                <div className="registrations-title">
-                  <PeopleIcon />
-                  All Registrations
-                  <span className="registrations-count">{filteredRegistrations.length}</span>
-                </div>
-                <div className="registrations-controls">
-                  <TextField
-                    className="search-field"
-                    size="small"
-                    placeholder="Search students..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    fullWidth={isMobile}
-                    InputProps={{
-                      startAdornment: <SearchIcon sx={{ mr: 1, color: "#999" }} />,
-                      endAdornment: searchQuery && (
-                        <IconButton size="small" onClick={() => setSearchQuery("")}>
-                          <ClearIcon />
-                        </IconButton>
-                      ),
-                    }}
-                  />
-                  <FormControl className="filter-select" size="small">
-                    <Select
-                      value={filterCategory}
-                      onChange={(e) => setFilterCategory(e.target.value)}
-                      displayEmpty
-                    >
-                      {eventTitles.map((title) => (
-                        <MenuItem key={title} value={title}>
-                          {title === "All" ? "All Events" : title}
-                        </MenuItem>
-                      ))}
-                    </Select>
-                  </FormControl>
-                  <button className="outline-btn" onClick={handleExportData}>
-                    <DownloadIcon /> {isMobile ? "Export" : "Export Data"}
-                  </button>
-                </div>
-              </div>
-
-              {filteredRegistrations.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon-wrapper">
-                    <PeopleIcon />
-                  </div>
-                  <div className="empty-title">No registrations found</div>
-                  <div className="empty-subtitle">Try adjusting your search or filter</div>
-                </div>
-              ) : (
-                <div className="table-container">
-                  {isMobile ? (
-                    <div style={{ padding: "16px" }}>
-                      {filteredRegistrations.map((reg, index) => (
-                        <Fade in timeout={200 + index * 50} key={reg._id}>
-                          <div className="mobile-reg-card">
-                            <div className="mobile-reg-header">
-                              <div className="mobile-reg-avatar">
-                                {reg.studentName?.charAt(0).toUpperCase() || "S"}
-                              </div>
-                              <div className="mobile-reg-info">
-                                <div className="mobile-reg-name">{reg.studentName || "Unknown"}</div>
-                                <div className="mobile-reg-email">
-                                  <EmailIcon />
-                                  {reg.email || "N/A"}
-                                </div>
-                              </div>
-                            </div>
-                            <div className="mobile-reg-tags">
-                              <span className="mobile-reg-tag outlined">
-                                <WhatsAppIcon sx={{ fontSize: 14, color: "#25D366" }} /> {reg.whatsapp || "N/A"}
-                              </span>
-                              <span className="mobile-reg-tag dark">{reg.eventTitle || "Unknown Event"}</span>
-                              <span className="mobile-reg-tag outlined">
-                                {reg.createdAt ? format(new Date(reg.createdAt), "MMM dd, yyyy") : "N/A"}
-                              </span>
-                            </div>
-                            <button className="mobile-reg-view-btn" onClick={() => handleViewRegistration(reg)}>
-                              <VisibilityIcon sx={{ fontSize: 16 }} /> View Details
-                            </button>
-                          </div>
-                        </Fade>
-                      ))}
-                    </div>
-                  ) : (
-                    <Table>
-                      <TableHead className="table-header">
-                        <TableRow>
-                          <TableCell>#</TableCell>
-                          <TableCell className="sortable-header" onClick={() => handleSort("studentName")}>
-                            Student
-                            {sortConfig.key === "studentName" && (
-                              sortConfig.direction === "desc" ? <ArrowDownwardIcon sx={{ fontSize: 14 }} /> : <ArrowUpwardIcon sx={{ fontSize: 14 }} />
-                            )}
-                          </TableCell>
-                          <TableCell>Email</TableCell>
-                          <TableCell>WhatsApp</TableCell>
-                          <TableCell>Event</TableCell>
-                          <TableCell className="sortable-header" onClick={() => handleSort("createdAt")}>
-                            Date
-                            {sortConfig.key === "createdAt" && (
-                              sortConfig.direction === "desc" ? <ArrowDownwardIcon sx={{ fontSize: 14 }} /> : <ArrowUpwardIcon sx={{ fontSize: 14 }} />
-                            )}
-                          </TableCell>
-                          <TableCell align="center">Actions</TableCell>
-                        </TableRow>
-                      </TableHead>
-                      <TableBody>
-                        {filteredRegistrations.map((reg, index) => (
-                          <TableRow className="table-row" key={reg._id}>
-                            <TableCell sx={{ fontWeight: 600, color: "#999" }}>{index + 1}</TableCell>
-                            <TableCell>
-                              <div className="student-cell">
-                                <div className="student-avatar">
-                                  {reg.studentName?.charAt(0).toUpperCase() || "S"}
-                                </div>
-                                <span className="student-name">{reg.studentName || "Unknown"}</span>
-                              </div>
-                            </TableCell>
-                            <TableCell>{reg.email || "N/A"}</TableCell>
-                            <TableCell>
-                              <div className="whatsapp-cell">
-                                <WhatsAppIcon />
-                                {reg.whatsapp || "N/A"}
-                              </div>
-                            </TableCell>
-                            <TableCell>
-                              <span className="event-chip">{reg.eventTitle || "Unknown Event"}</span>
-                            </TableCell>
-                            <TableCell>
-                              {reg.createdAt ? format(new Date(reg.createdAt), "MMM dd, yyyy") : "N/A"}
-                            </TableCell>
-                            <TableCell align="center">
-                              <button className="view-btn" onClick={() => handleViewRegistration(reg)}>
-                                <VisibilityIcon fontSize="small" />
-                              </button>
-                            </TableCell>
-                          </TableRow>
-                        ))}
-                      </TableBody>
-                    </Table>
-                  )}
-                </div>
-              )}
-            </div>
+            <RegistrationsTab
+              token={token}
+              events={events}
+              onAuthError={handleAuthError}
+              notify={showSnackbar}
+              isMobile={isMobile}
+              onChanged={() => {
+                fetchEvents();
+                fetchAllRegistrations();
+              }}
+            />
           )}
         </Paper>
       </div>
@@ -945,41 +741,6 @@ const EventManagement = () => {
             </button>
           </div>
         )}
-      </Dialog>
-
-      {/* ─── Registration Details Dialog ──────────────────────────── */}
-      <Dialog
-        className="modern-dialog"
-        open={!!selectedRegistration}
-        onClose={() => setSelectedRegistration(null)}
-        maxWidth="sm"
-        fullWidth
-        TransitionComponent={Zoom}
-      >
-        <div className="dialog-header">
-          <div className="dialog-header-left">
-            <div className="dialog-header-icon">
-              <PersonIcon />
-            </div>
-            <div className="dialog-header-title">Student Details</div>
-          </div>
-          <button className="dialog-close-btn" onClick={() => setSelectedRegistration(null)}>
-            <CloseIcon />
-          </button>
-        </div>
-        <div className="dialog-content">
-          {selectedRegistration && (
-            <RegistrationDetailsView 
-              registration={selectedRegistration} 
-              isMobile={isMobile} 
-            />
-          )}
-        </div>
-        <div className="dialog-actions">
-          <button className="dialog-cancel-btn" onClick={() => setSelectedRegistration(null)}>
-            Close
-          </button>
-        </div>
       </Dialog>
 
       {/* ─── Snackbar ───────────────────────────────────────────────── */}
@@ -1123,6 +884,16 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
     </div>
     
     <div className="event-detail-title">{event.title}</div>
+    {eventNeedsAppUpdate(event) && (
+      <Alert severity="warning" className="ev2-banner">
+        {UPDATE_WARNING}
+      </Alert>
+    )}
+    {event.capacity ? (
+      <div className="ev2-capacity">
+        {event.registeredCount || 0} of {event.capacity} seats taken
+      </div>
+    ) : null}
     
     <div className="event-detail-grid">
       <div>
@@ -1180,6 +951,7 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
               <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Name</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Email</TableCell>
               <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>WhatsApp</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Payment</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1189,6 +961,7 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
                 <TableCell sx={{ fontWeight: 500, fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.studentName || "Unknown"}</TableCell>
                 <TableCell sx={{ fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.email || "N/A"}</TableCell>
                 <TableCell sx={{ fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.whatsapp || "N/A"}</TableCell>
+                <TableCell><StatusChip status={reg.payment?.status} /></TableCell>
               </TableRow>
             ))}
           </TableBody>
@@ -1208,85 +981,6 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
         </Typography>
       </Box>
     )}
-  </>
-);
-
-// ─── Registration Details View ─────────────────────────────────────
-
-const RegistrationDetailsView = ({ registration, isMobile }) => (
-  <>
-    <div style={{ 
-      display: "flex", 
-      alignItems: "center", 
-      gap: isMobile ? 16 : 24, 
-      marginBottom: isMobile ? 16 : 24,
-      flexDirection: isMobile ? "column" : "row",
-      textAlign: isMobile ? "center" : "left",
-    }}>
-      <div className="mobile-reg-avatar" style={{ width: isMobile ? 72 : 96, height: isMobile ? 72 : 96, fontSize: isMobile ? 32 : 40 }}>
-        {registration.studentName?.charAt(0).toUpperCase() || "S"}
-      </div>
-      <div>
-        <div style={{ fontSize: isMobile ? "1.1rem" : "1.5rem", fontWeight: 700, color: "#000" }}>
-          {registration.studentName || "Unknown"}
-        </div>
-        <div style={{ fontSize: isMobile ? "0.8rem" : "0.875rem", color: "#666", fontWeight: 500 }}>
-          {registration.eventTitle || "Unknown Event"}
-        </div>
-        <div style={{ fontSize: isMobile ? "0.7rem" : "0.75rem", color: "#999" }}>
-          {registration.createdAt ? format(new Date(registration.createdAt), "MMM dd, yyyy HH:mm") : "N/A"}
-        </div>
-      </div>
-    </div>
-
-    <hr className="event-detail-divider" />
-
-    <div style={{ display: "grid", gap: isMobile ? 12 : 20 }}>
-      <div style={{ 
-        padding: isMobile ? 16 : 20, 
-        backgroundColor: "rgba(0,0,0,0.02)", 
-        borderRadius: 14,
-        border: "1px solid rgba(0,0,0,0.04)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <EmailIcon sx={{ color: "#000", fontSize: isMobile ? 16 : 20 }} />
-          <span style={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.8rem" : "0.875rem" }}>Email</span>
-        </div>
-        <div style={{ fontSize: isMobile ? "0.85rem" : "1rem", color: "#000" }}>
-          {registration.email || "N/A"}
-        </div>
-      </div>
-
-      <div style={{ 
-        padding: isMobile ? 16 : 20, 
-        backgroundColor: "rgba(0,0,0,0.02)", 
-        borderRadius: 14,
-        border: "1px solid rgba(0,0,0,0.04)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <WhatsAppIcon sx={{ color: "#25D366", fontSize: isMobile ? 16 : 20 }} />
-          <span style={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.8rem" : "0.875rem" }}>WhatsApp</span>
-        </div>
-        <div style={{ fontSize: isMobile ? "0.85rem" : "1rem", color: "#000" }}>
-          {registration.whatsapp || "N/A"}
-        </div>
-      </div>
-
-      <div style={{ 
-        padding: isMobile ? 16 : 20, 
-        backgroundColor: "rgba(0,0,0,0.02)", 
-        borderRadius: 14,
-        border: "1px solid rgba(0,0,0,0.04)",
-      }}>
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 8 }}>
-          <SchoolIcon sx={{ color: "#6366f1", fontSize: isMobile ? 16 : 20 }} />
-          <span style={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.8rem" : "0.875rem" }}>Student ID</span>
-        </div>
-        <div style={{ fontSize: isMobile ? "0.85rem" : "1rem", color: "#000" }}>
-          {registration.studentId || "Not provided"}
-        </div>
-      </div>
-    </div>
   </>
 );
 
