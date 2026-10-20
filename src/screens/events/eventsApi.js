@@ -46,6 +46,12 @@ export const eventsApi = {
     axios.patch(`${API_BASE}/registrations/${id}/payment`, { action, reason }, auth(token)).then((r) => r.data),
   registrationsCsv: (token, params) =>
     axios.get(`${API_BASE}/admin/registrations.csv`, { ...auth(token), params, responseType: "blob" }),
+
+  // tickets (admin): cancel / restore one code, re-send the ticket (push + email)
+  ticketAction: (token, id, code, action) =>
+    axios.patch(`${API_BASE}/registrations/${id}/tickets/${encodeURIComponent(code)}`, { action }, auth(token)).then((r) => r.data),
+  resendTicket: (token, id, body = {}) =>
+    axios.post(`${API_BASE}/registrations/${id}/tickets/resend`, body, auth(token)).then((r) => r.data),
 };
 
 // Cloudinary upload (same unsigned preset as before). Throws with a plain message.
