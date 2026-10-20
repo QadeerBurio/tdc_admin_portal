@@ -35,9 +35,10 @@ import {
   OpenInNew as OpenInNewIcon,
   Refresh as RefreshIcon,
   Send as SendIcon,
+  Link as LinkIcon,
 } from "@mui/icons-material";
 import { format } from "date-fns";
-import { eventsApi, authProblem, errorMessage } from "./eventsApi";
+import { eventsApi, authProblem, errorMessage, API_BASE } from "./eventsApi";
 
 const STATUSES = [
   { value: "all", label: "All payments" },
@@ -60,6 +61,39 @@ const answerText = (v) => (Array.isArray(v) ? v.join("\n") : v == null || v === 
 const TICKET_CHIP = { valid: "verified", cancelled: "rejected", used: "not_required" };
 export const TicketChip = ({ status }) => <span className={`ev2-status ${TICKET_CHIP[status] || "not_required"}`}>{status || "—"}</span>;
 const ticketList = (reg) => (Array.isArray(reg?.tickets) ? reg.tickets : []);
+// the public ticket page (the email's "download ticket")
+export const ticketLink = (t) => (t?.pageToken ? `${API_BASE}/ticket/${t.pageToken}` : "");
+// the last email of this registration's tickets, in words
+export const emailState = (reg) => {
+  const d = reg?.ticketDelivery || {};
+  if (d.emailStatus === "failed") return { tone: "bad", text: `email failed${d.emailError ? `: ${d.emailError}` : ""}` };
+  if (d.emailStatus === "no_email") return { tone: "bad", text: "email not sent: no email address" };
+  if (d.emailStatus === "sent" || d.emailedAt) return { tone: "ok", text: `email sent${d.emailedAt ? ` · ${when(d.emailedAt)}` : ""}` };
+  return { tone: "none", text: "email: not sent yet" };
+};
+async function copyText(text) {
+  try {
+    await navigator.clipboard.writeText(text);
+    return true;
+  } catch {
+    // older browsers / no clipboard permission
+    const ta = document.createElement("textarea");
+    ta.value = text;
+    ta.setAttribute("readonly", "");
+    ta.style.position = "fixed";
+    ta.style.opacity = "0";
+    document.body.appendChild(ta);
+    ta.select();
+    let ok = false;
+    try {
+      ok = document.execCommand("copy");
+    } catch {
+      ok = false;
+    }
+    ta.remove();
+    return ok;
+  }
+}
 // table / card cell: every code with its status (a registration can hold several seats)
 export const TicketCodes = ({ reg }) => {
   const list = ticketList(reg);
@@ -215,7 +249,8 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
       notify(action === "cancel" ? `Ticket ${code} cancelled.` : `Ticket ${code} restored.`, "success");
       setTicketConfirm(null);
       if (res?.registration) setPanel((p) => (p && p._id === reg._id ? { ...p, ...res.registration } : p));
-      await load();
+      // the panel is already up to date: the list refreshes in the background
+      load();
     } catch (err) {
       if (!onAuthError(err)) notify(errorMessage(err, "Couldn't update the ticket"), "error");
     } finally {
@@ -226,12 +261,23 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
     setTicketBusy("resend");
     try {
       const res = await eventsApi.resendTicket(token, reg._id);
-      notify(`Ticket sent again. ${res?.message || ""}`.trim(), "success");
+      const failedMail = res?.result?.email === "failed" || res?.result?.email === "no_email";
+      notify(`Ticket sent again. ${res?.message || ""}`.trim(), failedMail ? "warning" : "success");
+      // the fresh row: email status and (for old tickets) the new page links
+      if (res?.registration) setPanel((p) => (p && p._id === reg._id ? { ...p, ...res.registration } : p));
+      load();
     } catch (err) {
       if (!onAuthError(err)) notify(errorMessage(err, "Couldn't send the ticket"), "error");
     } finally {
       setTicketBusy("");
     }
+  };
+
+  const copyLink = async (t) => {
+    const url = ticketLink(t);
+    if (!url) return;
+    const copied = await copyText(url);
+    notify(copied ? `Ticket link copied (${t.code}).` : `Couldn't copy. The link is: ${url}`, copied ? "success" : "warning");
   };
 
   // compact: icon buttons for table rows (labels in tooltips / aria-label)
@@ -530,6 +576,19 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
                             .filter(Boolean)
                             .join(" · ") || "1 seat"}
                         </div>
+                        <div
+                          data-email-state={emailState(panel).tone}
+                          style={{ fontSize: "0.75rem", marginTop: 2, color: emailState(panel).tone === "bad" ? "#b42318" : emailState(panel).tone === "ok" ? "#1e6b3a" : "#777" }}
+                        >
+                          {emailState(panel).text}
+                        </div>
+                        {ticketLink(t) ? (
+                          <Button size="small" startIcon={<LinkIcon />} onClick={() => copyLink(t)} sx={{ px: 0, minWidth: 0, mt: 0.5 }} aria-label={`copy ticket link for ${t.code}`}>
+                            Copy ticket link
+                          </Button>
+                        ) : (
+                          <div style={{ fontSize: "0.75rem", color: "#777", marginTop: 2 }}>No link yet: re-send creates it.</div>
+                        )}
                       </div>
                       <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
                         <TicketChip status={t.status} />
@@ -558,8 +617,8 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
                       Re-send ticket (push + email)
                     </Button>
                   )}
-                  {panel.ticketDelivery?.emailError && (
-                    <div style={{ fontSize: "0.75rem", color: "#b42318", marginTop: 6 }}>Last email failed: {panel.ticketDelivery.emailError}</div>
+                  {emailState(panel).tone === "bad" && (
+                    <div style={{ fontSize: "0.75rem", color: "#b42318", marginTop: 6 }}>The ticket is still valid. Fix the cause, then re-send.</div>
                   )}
                 </>
               )}
