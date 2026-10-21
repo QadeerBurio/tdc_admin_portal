@@ -98,6 +98,7 @@ export function WebFooter() {
           <Link to="/universities">partner universities</Link>
           <Link to="/AppStoreReviews">reviews</Link>
           <Link to="/ambassador">campus ambassadors</Link>
+          <a href="/#campus">for campuses</a>
         </div>
         <div className="footer-col">
           <b>partners</b>

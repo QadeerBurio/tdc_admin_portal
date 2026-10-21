@@ -17,7 +17,7 @@ const TOOLS = [
   { title: "campus feed", body: "posts, polls and anonymous confessions from students like you. the part everyone opens first.", icon: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" },
   { title: "career hub", body: "internships and entry-level jobs with a match score once your CV and work profile are done.", icon: "M4 8h16v11H4zM9 8V5h6v3M4 13h16" },
   { title: "cv builder", body: "build a clean CV on your phone and keep it ready for every application.", icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" },
-  { title: "events and scholarships", body: "campus events, student-priced tickets and scholarships if you're planning to study abroad.", icon: "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" },
+  { title: "events and scholarships", body: "campus events, student-priced tickets and scholarships if you are planning to study abroad.", icon: "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" },
   { title: "ai travel assistant", body: "plan a trip on a student budget. it suggests the route and the plan, you decide.", icon: "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" },
 ];
 
@@ -203,7 +203,7 @@ export default function Landing() {
         <section className="wrap section">
           <div className="section-head" style={{ marginBottom: 28 }}>
             <h2 className="h-md">100+ brands already on tdc<span className="dot">.</span></h2>
-            <Link to="/OfferImagesGallery" style={{ fontWeight: 700, fontSize: 15 }}>see all brands</Link>
+            <a href={LINKS.getApp} style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
           </div>
           <div className="partners">
             {brands.map((b) => (
@@ -229,12 +229,11 @@ export default function Landing() {
               </div>
             </div>
             <div id="campus" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16, background: "#FFF1CC", borderColor: "#FFF1CC" }}>
-              <div className="eyebrow" style={{ color: "#111111" }}>campus ambassadors</div>
-              <h2 className="h-md" style={{ fontSize: 34 }}>run tdc on your campus<span className="dot">.</span></h2>
-              <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities and 20+ student societies already work with us. ambassadors get founder mentorship, 1-on-1 career counselling, a referral letter and a shot at the founder circle.</p>
+              <div className="eyebrow" style={{ color: "#111111" }}>for campuses and societies</div>
+              <h2 className="h-md" style={{ fontSize: 34 }}>bring tdc to your campus<span className="dot">.</span></h2>
+              <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities already work with us on events, activations and the campus ambassador program.</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
-                <Link to="/ambassador" className="btn btn-primary">apply as ambassador</Link>
-                <a href={`mailto:${LINKS.hello}?subject=${encodeURIComponent("tdc x our society")}`} className="btn btn-secondary">societies, talk to us</a>
+                <a href={`mailto:${LINKS.hello}`} className="btn btn-primary">partner with us</a>
               </div>
             </div>
           </div>
@@ -249,11 +248,11 @@ export default function Landing() {
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
               <a href={LINKS.appStore} className="btn btn-white" style={{ height: 58, borderRadius: 29 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.3.8 1.4 0 2.3-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.8-1-2.8-4.1zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.9-1.1 3.1 1.1.1 2.3-.6 3-1.4z" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M16 3c-1.5.2-3 1.3-3.5 3M12 7c-3-1.5-7 0-7 5 0 4 3 9 5 9 1 0 1.5-.6 2-.6s1 .6 2 .6c2 0 4-3.5 4.6-5.5-1.8-.8-2.6-2.5-2.6-4 0-1.6.9-2.8 2-3.5-1-1.4-3.5-2.5-6-1z" /></svg>
                 app store
               </a>
               <a href={LINKS.playStore} className="btn btn-accent" style={{ height: 58, borderRadius: 29 }}>
-                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2.8v18.4c0 .4.4.6.7.4l15.9-9.2c.3-.2.3-.6 0-.8L4.7 2.4c-.3-.2-.7 0-.7.4z" /></svg>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 3l14 9-14 9z" /></svg>
                 google play
               </a>
             </div>
