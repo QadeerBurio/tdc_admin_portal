@@ -1,7 +1,7 @@
 // UniversitiesSection.js — /universities: partner campuses. Names and logos only; no invented rankings or counts.
 import React from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PageHero, usePage, IconTile, ICONS } from "../../web/site";
 import szabistLogo from "./szabist_logo.jpg";
 import iobmLogo from "./Iobm.png";
 import indusLogo from "./indus.jpg";
@@ -20,10 +20,10 @@ const UNIVERSITIES = [
 ];
 
 const FOR_CAMPUS = [
-  { title: "free for every student", body: "deals, career hub, CV builder and the campus feed. tdc stays free for students, forever." },
-  { title: "careers on campus", body: "internships and entry-level roles from employers looking for your students." },
-  { title: "events and activations", body: "we run activations with your societies and partner brands, with costs shared across vendors." },
-  { title: "campus ambassadors", body: "student leads who run tdc on campus and get founder mentorship in return." },
+  { icon: ICONS.gift, title: "free for every student", body: "deals, career hub, CV builder and the campus feed. tdc stays free for students, forever." },
+  { icon: ICONS.briefcase, title: "careers on campus", body: "internships and entry-level roles from employers looking for your students." },
+  { icon: ICONS.calendar, title: "events and activations", body: "we run activations with your societies and partner brands, with costs shared across vendors." },
+  { icon: ICONS.megaphone, title: "campus ambassadors", body: "student leads who run tdc on campus and get founder mentorship in return." },
 ];
 
 export default function UniversitiesSection() {
@@ -59,7 +59,7 @@ export default function UniversitiesSection() {
           <div className="grid">
             {FOR_CAMPUS.map((f) => (
               <div className="card" key={f.title}>
-                <span className="dot-mark" />
+                <IconTile d={f.icon} />
                 <h3>{f.title}</h3>
                 <p>{f.body}</p>
               </div>

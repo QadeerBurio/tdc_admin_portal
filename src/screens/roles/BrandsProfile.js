@@ -1,27 +1,27 @@
 // BrandsProfile.js — /brands: why brands partner with tdc. New tdc design, real terms only.
 import React from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PageHero, usePage, IconTile, ICONS } from "../../web/site";
 import { useOffers } from "../../web/useOffers";
 
 const FACTS = [
-  { n: "100+", label: "brands already live" },
-  { n: "12+", label: "partner universities" },
-  { n: "3", label: "cities: Karachi, Lahore, Islamabad" },
-  { n: "0", label: "listing fee or commission in year one" },
+  { icon: ICONS.store, n: "100+", label: "brands already live" },
+  { icon: ICONS.cap, n: "12+", label: "partner universities" },
+  { icon: ICONS.pin, n: "3", label: "cities: Karachi, Lahore, Islamabad" },
+  { icon: ICONS.gift, n: "0", label: "listing fee or commission in year one" },
 ];
 
 const WHY = [
-  { title: "real footfall", body: "students claim in the app and redeem at your counter. every visit is a real customer, not an impression." },
-  { title: "no leakage", body: "a QR code only your brand has. only verified tdc users can claim, and your staff completes every redemption in the portal." },
-  { title: "you see what works", body: "every claim shows up live in your brand portal, with which institutes your customers come from. we share numbers, never students' personal data." },
-  { title: "creators, not ads", body: "tdc runs collabs with student creators. a 'tdc x your brand' post puts you in front of their followers." },
+  { icon: ICONS.store, title: "real footfall", body: "students claim in the app and redeem at your counter. every visit is a real customer, not an impression." },
+  { icon: ICONS.shield, title: "no leakage", body: "a QR code only your brand has. only verified tdc users can claim, and your staff completes every redemption in the portal." },
+  { icon: ICONS.chart, title: "you see what works", body: "every claim shows up live in your brand portal, with which institutes your customers come from. we share numbers, never students' personal data." },
+  { icon: ICONS.megaphone, title: "creators, not ads", body: "tdc runs collabs with student creators. a 'tdc x your brand' post puts you in front of their followers." },
 ];
 
 const STEPS = [
-  { title: "sign up free", body: "create your brand account at gettdc.pk/signup. takes about a minute." },
-  { title: "set one flat discount", body: "anything from 15% to 60% for tdc verified users. one simple offer students remember." },
-  { title: "put the QR on your counter", body: "we send your brand QR. students scan it to redeem, you see it live." },
+  { icon: ICONS.userPlus, title: "sign up free", body: "create your brand account at gettdc.pk/signup. takes about a minute." },
+  { icon: ICONS.percent, title: "set one flat discount", body: "anything from 15% to 60% for tdc verified users. one simple offer students remember." },
+  { icon: ICONS.qr, title: "put the QR on your counter", body: "we send your brand QR. students scan it to redeem, you see it live." },
 ];
 
 const TERMS = [
@@ -51,7 +51,7 @@ export default function BrandsProfile() {
         <section className="facts" aria-label="tdc in numbers" style={{ marginTop: 56 }}>
           <div className="wrap">
             {FACTS.map((f) => (
-              <div className="fact" key={f.label}><b>{f.n}</b><span>{f.label}</span></div>
+              <div className="fact" key={f.label}><IconTile d={f.icon} /><b>{f.n}</b><span>{f.label}</span></div>
             ))}
           </div>
         </section>
@@ -64,7 +64,7 @@ export default function BrandsProfile() {
           <div className="grid">
             {WHY.map((w) => (
               <div className="card" key={w.title}>
-                <span className="dot-mark" />
+                <IconTile d={w.icon} />
                 <h3>{w.title}</h3>
                 <p>{w.body}</p>
               </div>
@@ -78,7 +78,7 @@ export default function BrandsProfile() {
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
-                  <div className="step-n">{i + 1}</div>
+                  <IconTile d={s.icon} n={i + 1} />
                   <h3>{s.title}</h3>
                   <p>{s.body}</p>
                 </div>

@@ -2,16 +2,16 @@
 // There is no public backend endpoint for applications yet, so submitting opens a
 // pre-filled email to hr@gettdc.pk. Swap `submitApplication` for an API call once one exists.
 import React, { useEffect, useState } from "react";
-import { WebNav, WebFooter, LINKS, pageTitle } from "../web/site";
+import { WebNav, WebFooter, LINKS, pageTitle, IconTile, ICONS } from "../web/site";
 
 const CITIES = ["Karachi", "Lahore", "Islamabad", "Other"];
 const LEVELS = ["university", "college", "O/A levels"];
 
 const PERKS = [
-  { title: "founder mentorship", body: "work directly with the founders on how tdc grows on your campus." },
-  { title: "1-on-1 career counselling", body: "real sessions on your CV, internships and next steps." },
-  { title: "a referral letter", body: "for ambassadors who show up and get it done." },
-  { title: "a shot at founder circle", body: "the top tier of the crew. 50 seats, hand-picked." },
+  { icon: ICONS.bulb, title: "founder mentorship", body: "work directly with the founders on how tdc grows on your campus." },
+  { icon: ICONS.chat, title: "1-on-1 career counselling", body: "real sessions on your CV, internships and next steps." },
+  { icon: ICONS.mail, title: "a referral letter", body: "for ambassadors who show up and get it done." },
+  { icon: ICONS.star, title: "a shot at founder circle", body: "the top tier of the crew. 50 seats, hand-picked." },
 ];
 
 const EMPTY = { name: "", email: "", phone: "", institute: "", level: "university", city: "Karachi", program: "", instagram: "", why: "" };
@@ -85,7 +85,7 @@ export default function Ambassador() {
             <div className="grid" style={{ marginTop: 32, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
               {PERKS.map((p) => (
                 <div className="card" key={p.title} style={{ padding: 20 }}>
-                  <span className="dot-mark" />
+                  <IconTile d={p.icon} />
                   <h3 style={{ fontSize: 18 }}>{p.title}</h3>
                   <p>{p.body}</p>
                 </div>

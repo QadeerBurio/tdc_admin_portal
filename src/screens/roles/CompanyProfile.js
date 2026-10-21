@@ -1,19 +1,19 @@
 // CompanyProfile.js — /company_profile: hiring on tdc for employers. New tdc design, no invented stats.
 import React from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PageHero, usePage, IconTile, ICONS } from "../../web/site";
 
 const WHY = [
-  { title: "students who are ready", body: "candidates build their CV and work profile on tdc, so you see more than a bare PDF." },
-  { title: "a match score on every role", body: "once a student's CV and work profile are done, the career hub shows how well they fit your role before they apply." },
-  { title: "early access", body: "reach final-year students and fresh grads from 12+ partner universities before the open job market." },
-  { title: "one dashboard", body: "post roles, review candidates, schedule interviews and track your hiring in the employer portal." },
+  { icon: ICONS.users, title: "students who are ready", body: "candidates build their CV and work profile on tdc, so you see more than a bare PDF." },
+  { icon: ICONS.target, title: "a match score on every role", body: "once a student's CV and work profile are done, the career hub shows how well they fit your role before they apply." },
+  { icon: ICONS.clock, title: "early access", body: "reach final-year students and fresh grads from 12+ partner universities before the open job market." },
+  { icon: ICONS.grid, title: "one dashboard", body: "post roles, review candidates, schedule interviews and track your hiring in the employer portal." },
 ];
 
 const STEPS = [
-  { title: "register your company", body: "create an employer account. takes about a minute." },
-  { title: "post a role", body: "internships, entry-level jobs or graduate tracks: tech, marketing, finance, creative and more." },
-  { title: "shortlist and interview", body: "review profiles and match scores, then invite candidates to interview from your dashboard." },
+  { icon: ICONS.building, title: "register your company", body: "create an employer account. takes about a minute." },
+  { icon: ICONS.briefcase, title: "post a role", body: "internships, entry-level jobs or graduate tracks: tech, marketing, finance, creative and more." },
+  { icon: ICONS.list, title: "shortlist and interview", body: "review profiles and match scores, then invite candidates to interview from your dashboard." },
 ];
 
 const FAQ = [
@@ -69,7 +69,7 @@ export default function CompanyProfile() {
           <div className="grid">
             {WHY.map((w) => (
               <div className="card" key={w.title}>
-                <span className="dot-mark" />
+                <IconTile d={w.icon} />
                 <h3>{w.title}</h3>
                 <p>{w.body}</p>
               </div>
@@ -83,7 +83,7 @@ export default function CompanyProfile() {
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
-                  <div className="step-n">{i + 1}</div>
+                  <IconTile d={s.icon} n={i + 1} />
                   <h3>{s.title}</h3>
                   <p>{s.body}</p>
                 </div>

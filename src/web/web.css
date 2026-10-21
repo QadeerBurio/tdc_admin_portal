@@ -104,7 +104,13 @@
 .tdcw .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; }
 .tdcw .card h3 { font-weight: 700; font-size: 20px; }
 .tdcw .card p { margin-top: 6px; font-size: 15px; color: var(--muted); }
-.tdcw .icon-well { width: 48px; height: 48px; border-radius: 24px; background: var(--sand); display: flex; align-items: center; justify-content: center; margin-bottom: 14px; }
+/* icon tile: rounded square, yellow-soft, ink stroke; optional step number badge */
+.tdcw .icon-tile { position: relative; width: 48px; height: 48px; border-radius: 14px; background: var(--yellow-soft); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; flex: none; margin-bottom: 14px; }
+.tdcw .icon-tile-n { position: absolute; top: -6px; right: -6px; min-width: 22px; height: 22px; padding: 0 6px; border-radius: 11px; background: var(--ink); color: #FFFFFF; font-family: var(--heading); font-weight: 800; font-size: 12px; line-height: 22px; text-align: center; box-shadow: 0 0 0 2px var(--card); }
+.tdcw .on-dark .icon-tile-n { background: var(--yellow); color: var(--ink); box-shadow: 0 0 0 2px var(--ink); }
+.tdcw .block .icon-tile, .tdcw .split-aside .icon-tile { margin-bottom: 0; }
+.tdcw .block-soft .icon-tile { background: var(--card); }
+.tdcw .fact .icon-tile { margin-bottom: 12px; }
 .tdcw .chip { height: 34px; padding: 0 14px; border-radius: 17px; background: var(--card); border: 1px solid var(--line); display: inline-flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; }
 .tdcw .chip-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--yellow); }
 
@@ -118,7 +124,7 @@
 @media (max-width: 960px) { .tdcw .hero { grid-template-columns: 1fr; padding-top: 48px; } }
 
 /* phone mockup */
-.tdcw .phone { width: 330px; max-width: 100%; margin: 0 auto; border-radius: 44px; background: var(--ink); padding: 10px; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); }
+.tdcw .phone { position: relative; width: 330px; max-width: 100%; margin: 0 auto; border-radius: 44px; background: var(--ink); padding: 10px; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); }
 .tdcw .phone-screen { border-radius: 36px; background: var(--paper); overflow: hidden; padding-bottom: 18px; }
 .tdcw .phone-top { display: flex; align-items: center; justify-content: space-between; padding: 22px 18px 6px; }
 .tdcw .phone-top img { height: 22px; }
@@ -149,6 +155,12 @@
    about 60% of the screen height. zoom shrinks the layout box too, so no gap is left behind.
    Browsers without zoom show the full-size phone, still complete. */
 .tdcw .phone-stage { position: relative; }
+/* mood dots (decorative, landing only) */
+.tdcw .mood { position: absolute; width: 56px; height: 56px; pointer-events: none; }
+.tdcw .mood-a { top: 92px; left: -30px; transform: rotate(-10deg); }
+.tdcw .mood-b { bottom: 116px; right: -30px; transform: rotate(8deg); }
+.tdcw .cta-dots { display: flex; gap: 8px; margin-bottom: 18px; }
+.tdcw .cta-dots img { display: block; width: 48px; height: 48px; }
 @media (max-width: 600px) { .tdcw .phone { zoom: 0.72; } }
 @media (max-width: 380px) { .tdcw .phone { zoom: 0.68; } }
 
@@ -160,7 +172,6 @@
 
 /* steps band */
 .tdcw .band-soft { background: var(--yellow-soft); border-radius: 28px; padding: 48px 40px; }
-.tdcw .step-n { width: 40px; height: 40px; border-radius: 20px; background: var(--ink); color: #FFFFFF; display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 17px; margin-bottom: 16px; }
 .tdcw .band-soft .card { border-color: transparent; }
 @media (max-width: 600px) { .tdcw .band-soft { padding: 32px 20px; } }
 
@@ -182,7 +193,6 @@
 .tdcw .dark .btn-accent { color: var(--ink); }
 .tdcw .dark .btn-white { color: var(--ink); }
 .tdcw .dark-inner { padding-top: 96px; padding-bottom: 96px; display: grid; gap: 56px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
-.tdcw .dot-mark { display: block; width: 10px; height: 10px; border-radius: 5px; background: var(--yellow); margin-bottom: 14px; }
 
 /* partner chips */
 .tdcw .partners { display: flex; flex-wrap: wrap; gap: 10px; }
@@ -268,9 +278,8 @@
 .tdcw .split-aside { background: var(--ink); color: #FFFFFF; padding: 64px 48px; display: flex; flex-direction: column; justify-content: center; }
 .tdcw .split-aside ol { list-style: none; margin: 36px 0 0; padding: 0; display: flex; flex-direction: column; gap: 22px; }
 .tdcw .split-aside li { display: flex; gap: 16px; }
-.tdcw .split-aside .n { flex: 0 0 auto; width: 40px; height: 40px; border-radius: 20px; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 17px; }
-.tdcw .split-aside li b { display: block; font-family: var(--heading); font-weight: 700; font-size: 20px; }
-.tdcw .split-aside li span { display: block; font-size: 15px; color: var(--on-dark-muted); margin-top: 4px; }
+.tdcw .split-aside li div b { display: block; font-family: var(--heading); font-weight: 700; font-size: 20px; }
+.tdcw .split-aside li div span { display: block; font-size: 15px; color: var(--on-dark-muted); margin-top: 4px; }
 .tdcw .aside-chips { margin-top: 40px; padding-top: 24px; border-top: 1px solid var(--dark-line); display: flex; flex-wrap: wrap; gap: 8px; }
 .tdcw .aside-chips span { height: 34px; padding: 0 14px; border-radius: 17px; border: 1px solid #3A3936; display: flex; align-items: center; font-size: 13px; font-weight: 600; }
 @media (max-width: 960px) {

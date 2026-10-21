@@ -1,30 +1,33 @@
 // Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, Arrow, pageTitle } from "../web/site";
+import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS } from "../web/site";
 import { useOffers } from "../web/useOffers";
 import logoInk from "../web/assets/tdc-logo-ink.png";
+import dotSorted from "./dots/sorted.png";
+import dotExcited from "./dots/excited.png";
+import dotCheeky from "./dots/cheeky.png";
 
 const FACTS = [
-  { n: "100+", label: "partner brands" },
-  { n: "3", label: "cities: Karachi, Lahore, Islamabad" },
-  { n: "12+", label: "partner universities" },
-  { n: "15–60%", label: "flat student discounts" },
+  { icon: ICONS.store, n: "100+", label: "partner brands" },
+  { icon: ICONS.pin, n: "3", label: "cities: Karachi, Lahore, Islamabad" },
+  { icon: ICONS.cap, n: "12+", label: "partner universities" },
+  { icon: ICONS.percent, n: "15–60%", label: "flat student discounts" },
 ];
 
 const TOOLS = [
-  { title: "deals", body: "flat discounts at cafes, salons, gyms, fashion and more. claim in the app, scan at the counter.", icon: "M20 12l-8 8-9-9V3h8l9 9zM7.5 7.5h.01" },
-  { title: "campus feed", body: "posts, polls and anonymous confessions from students like you. the part everyone opens first.", icon: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" },
-  { title: "career hub", body: "internships and entry-level jobs with a match score once your CV and work profile are done.", icon: "M4 8h16v11H4zM9 8V5h6v3M4 13h16" },
-  { title: "cv builder", body: "build a clean CV on your phone and keep it ready for every application.", icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" },
-  { title: "events and scholarships", body: "campus events, student-priced tickets and scholarships if you are planning to study abroad.", icon: "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" },
-  { title: "ai travel assistant", body: "plan a trip on a student budget. it suggests the route and the plan, you decide.", icon: "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" },
+  { title: "deals", body: "flat discounts at cafes, salons, gyms, fashion and more. claim in the app, scan at the counter.", icon: ICONS.tag },
+  { title: "campus feed", body: "posts, polls and anonymous confessions from students like you. the part everyone opens first.", icon: ICONS.chat },
+  { title: "career hub", body: "internships and entry-level jobs with a match score once your CV and work profile are done.", icon: ICONS.briefcase },
+  { title: "cv builder", body: "build a clean CV on your phone and keep it ready for every application.", icon: ICONS.doc },
+  { title: "events and scholarships", body: "campus events, student-priced tickets and scholarships if you are planning to study abroad.", icon: ICONS.calendar },
+  { title: "ai travel assistant", body: "plan a trip on a student budget. it suggests the route and the plan, you decide.", icon: ICONS.pin },
 ];
 
 const STEPS = [
-  { title: "claim it", body: "pick a brand in the app and tap claim." },
-  { title: "scan at the counter", body: "scan the brand's tdc QR code. your profile gets verified on the spot." },
-  { title: "sorted.", body: "the discount is applied. that visit also earns you crew points." },
+  { icon: ICONS.plus, title: "claim it", body: "pick a brand in the app and tap claim." },
+  { icon: ICONS.qr, title: "scan at the counter", body: "scan the brand's tdc QR code. your profile gets verified on the spot." },
+  { icon: ICONS.check, title: "sorted.", body: "the discount is applied. that visit also earns you crew points." },
 ];
 
 const LEVELS = [
@@ -36,19 +39,11 @@ const LEVELS = [
 ];
 
 const BRAND_POINTS = [
-  { title: "free for year one", body: "no listing fee and no commission for the first year." },
-  { title: "no leakage", body: "a brand-only QR. only verified tdc users can claim, and your staff completes every redemption." },
-  { title: "live in your portal", body: "every claim shows up in real time, with which institutes your customers come from." },
-  { title: "simple terms", body: "you set a flat discount from 15% to 60%. either side can exit with 15 working days' notice." },
+  { icon: ICONS.gift, title: "free for year one", body: "no listing fee and no commission for the first year." },
+  { icon: ICONS.shield, title: "no leakage", body: "a brand-only QR. only verified tdc users can claim, and your staff completes every redemption." },
+  { icon: ICONS.chart, title: "live in your portal", body: "every claim shows up in real time, with which institutes your customers come from." },
+  { icon: ICONS.doc, title: "simple terms", body: "you set a flat discount from 15% to 60%. either side can exit with 15 working days' notice." },
 ];
-
-function Icon({ d }) {
-  return (
-    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
-      <path d={d} />
-    </svg>
-  );
-}
 
 export default function Landing() {
   const { brands: allBrands } = useOffers();
@@ -82,6 +77,8 @@ export default function Landing() {
 
           <div className="phone-stage" aria-hidden="true">
             <div className="phone">
+              <img className="mood mood-a" src={dotSorted} alt="" width="56" height="56" />
+              <img className="mood mood-b" src={dotExcited} alt="" width="56" height="56" />
               <div className="phone-screen">
                 <div className="phone-top">
                   <img src={logoInk} alt="" />
@@ -116,7 +113,7 @@ export default function Landing() {
         <section className="facts" aria-label="tdc in numbers">
           <div className="wrap">
             {FACTS.map((f) => (
-              <div className="fact" key={f.label}><b>{f.n}</b><span>{f.label}</span></div>
+              <div className="fact" key={f.label}><IconTile d={f.icon} /><b>{f.n}</b><span>{f.label}</span></div>
             ))}
           </div>
         </section>
@@ -130,7 +127,7 @@ export default function Landing() {
           <div className="grid">
             {TOOLS.map((t) => (
               <div className="card" key={t.title}>
-                <div className="icon-well"><Icon d={t.icon} /></div>
+                <IconTile d={t.icon} />
                 <h3>{t.title}</h3>
                 <p>{t.body}</p>
               </div>
@@ -145,7 +142,7 @@ export default function Landing() {
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
-                  <div className="step-n">{i + 1}</div>
+                  <IconTile d={s.icon} n={i + 1} />
                   <h3>{s.title}</h3>
                   <p>{s.body}</p>
                 </div>
@@ -190,7 +187,7 @@ export default function Landing() {
             <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12 }}>
               {BRAND_POINTS.map((b) => (
                 <div className="card" key={b.title}>
-                  <span className="dot-mark" />
+                  <IconTile d={b.icon} />
                   <h3 style={{ fontSize: 19 }}>{b.title}</h3>
                   <p>{b.body}</p>
                 </div>
@@ -220,6 +217,7 @@ export default function Landing() {
         <section className="wrap section">
           <div className="grid-2">
             <div id="employers" className="card block">
+              <IconTile d={ICONS.briefcase} />
               <div className="eyebrow">for employers</div>
               <h2 className="h-md" style={{ fontSize: 34 }}>hire interns and fresh grads<span className="dot">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0 }}>post internships and entry-level roles to the career hub. students who've built their CV on tdc see how well they match before they apply, and you see candidates who fit.</p>
@@ -229,6 +227,7 @@ export default function Landing() {
               </div>
             </div>
             <div id="campus" className="card block block-soft">
+              <IconTile d={ICONS.building} />
               <div className="eyebrow" style={{ color: "#111111" }}>for campuses and societies</div>
               <h2 className="h-md" style={{ fontSize: 34 }}>bring tdc to your campus<span className="dot">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities already work with us on events, activations and the campus ambassador program.</p>
@@ -243,6 +242,10 @@ export default function Landing() {
         <section className="wrap section">
           <div className="cta-box">
             <div>
+              <div className="cta-dots">
+                <img src={dotExcited} alt="" width="48" height="48" loading="lazy" />
+                <img src={dotCheeky} alt="" width="48" height="48" loading="lazy" />
+              </div>
               <h2>get tdc. it's free.<br />scene sorted<span className="dot">.</span></h2>
               <p>for students, alumni and faculty.</p>
             </div>
