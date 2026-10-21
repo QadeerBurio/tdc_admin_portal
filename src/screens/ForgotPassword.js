@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
-import { AuthShell, CardTitle } from "../web/site";
+import { AuthShell, CardTitle, pageTitle } from "../web/site";
 
 export default function ForgotPassword() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -11,7 +11,7 @@ export default function ForgotPassword() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    document.title = "forgot password · tdc.";
+    document.title = pageTitle("forgot password");
   }, []);
 
   const goToVerify = (data) => {

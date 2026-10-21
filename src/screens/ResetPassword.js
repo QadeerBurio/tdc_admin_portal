@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { AuthShell, CardTitle } from "../web/site";
+import { AuthShell, CardTitle, pageTitle } from "../web/site";
 
 const STRENGTH = {
   Weak: { label: "weak", color: "#B42318", bars: 1 },
@@ -31,7 +31,7 @@ export default function ResetPassword() {
   const [passwordStrength, setPasswordStrength] = useState("");
 
   useEffect(() => {
-    document.title = "new password · tdc.";
+    document.title = pageTitle("new password");
   }, []);
 
   useEffect(() => {

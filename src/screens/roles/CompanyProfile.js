@@ -48,7 +48,7 @@ function CandidatesPreview() {
 }
 
 export default function CompanyProfile() {
-  usePage("tdc. for employers");
+  usePage("for employers");
 
   return (
     <div className="tdcw">

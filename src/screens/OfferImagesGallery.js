@@ -5,7 +5,7 @@ import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../web/site";
 import { useOffers } from "../web/useOffers";
 
 export default function OfferImagesGallery() {
-  usePage("brands and deals · tdc.");
+  usePage("brands and deals");
   const { brands, loading } = useOffers();
   const [cat, setCat] = useState("all");
   const [q, setQ] = useState("");

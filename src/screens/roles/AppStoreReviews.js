@@ -39,7 +39,7 @@ function Stars({ n }) {
 }
 
 export default function AppStoreReviews() {
-  usePage("reviews · tdc.");
+  usePage("reviews");
   const [reviews, setReviews] = useState(null);
 
   useEffect(() => {

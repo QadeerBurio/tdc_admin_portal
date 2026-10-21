@@ -2,7 +2,7 @@
 // There is no public backend endpoint for applications yet, so submitting opens a
 // pre-filled email to hr@gettdc.pk. Swap `submitApplication` for an API call once one exists.
 import React, { useEffect, useState } from "react";
-import { WebNav, WebFooter, LINKS } from "../web/site";
+import { WebNav, WebFooter, LINKS, pageTitle } from "../web/site";
 
 const CITIES = ["Karachi", "Lahore", "Islamabad", "Other"];
 const LEVELS = ["university", "college", "O/A levels"];
@@ -41,7 +41,7 @@ export default function Ambassador() {
   const [sent, setSent] = useState(false);
 
   useEffect(() => {
-    document.title = "campus ambassadors · tdc.";
+    document.title = pageTitle("campus ambassadors");
     window.scrollTo(0, 0);
   }, []);
 

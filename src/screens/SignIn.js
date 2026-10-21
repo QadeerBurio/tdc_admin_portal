@@ -3,7 +3,7 @@ import React, { useState, useContext, useEffect } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { Logo, LINKS } from "../web/site";
+import { Logo, LINKS, pageTitle } from "../web/site";
 
 export default function SignIn() {
   const { setUser, setToken } = useContext(AuthContext);
@@ -18,7 +18,7 @@ export default function SignIn() {
   const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
   useEffect(() => {
-    document.title = "log in · tdc.";
+    document.title = pageTitle("partner log in");
   }, []);
 
   const handleLogin = async (e) => {

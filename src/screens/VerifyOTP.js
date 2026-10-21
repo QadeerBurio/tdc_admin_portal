@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, Link } from "react-router-dom";
-import { AuthShell, CardTitle } from "../web/site";
+import { AuthShell, CardTitle, pageTitle } from "../web/site";
 
 export default function VerifyOTP() {
   const location = useLocation();
@@ -27,7 +27,7 @@ export default function VerifyOTP() {
   const [canResend, setCanResend] = useState(false);
 
   useEffect(() => {
-    document.title = "enter code · tdc.";
+    document.title = pageTitle("enter code");
   }, []);
 
   // No session at all → back to the email screen

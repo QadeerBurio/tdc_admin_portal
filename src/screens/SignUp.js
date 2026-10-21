@@ -3,7 +3,7 @@ import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import { Logo } from "../web/site";
+import { Logo, pageTitle } from "../web/site";
 
 const PAKISTAN_CITIES = [
   "Karachi", "Lahore", "Faisalabad", "Rawalpindi", "Gujranwala",
@@ -58,7 +58,7 @@ export default function Signup() {
   };
 
   useEffect(() => {
-    document.title = "become a partner · tdc.";
+    document.title = pageTitle("partner sign up");
   }, []);
 
   const validatePassword = (p) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(p);

@@ -27,7 +27,7 @@ const FOR_CAMPUS = [
 ];
 
 export default function UniversitiesSection() {
-  usePage("partner universities · tdc.");
+  usePage("partner universities");
 
   return (
     <div className="tdcw">

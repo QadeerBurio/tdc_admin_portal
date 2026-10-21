@@ -33,7 +33,7 @@ const TERMS = [
 ];
 
 export default function BrandsProfile() {
-  usePage("tdc. for brands");
+  usePage("for brands");
   const { brands } = useOffers();
   const logos = brands.filter((b) => b.image).slice(0, 12);
 

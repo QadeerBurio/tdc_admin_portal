@@ -1,7 +1,7 @@
 // Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, Arrow } from "../web/site";
+import { WebNav, WebFooter, LINKS, Arrow, pageTitle } from "../web/site";
 import { useOffers } from "../web/useOffers";
 import logoInk from "../web/assets/tdc-logo-ink.png";
 
@@ -55,7 +55,7 @@ export default function Landing() {
   const brands = allBrands.slice(0, 18);
 
   useEffect(() => {
-    document.title = "tdc. student life, sorted";
+    document.title = pageTitle("student life, sorted");
     if (window.location.hash) {
       const el = document.querySelector(window.location.hash);
       if (el) setTimeout(() => el.scrollIntoView(), 50);
