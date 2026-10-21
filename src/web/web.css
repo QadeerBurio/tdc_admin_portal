@@ -298,10 +298,6 @@
 .tdcw .row-between { display: flex; justify-content: space-between; align-items: center; gap: 12px; flex-wrap: wrap; }
 .tdcw .link-btn { background: none; border: 0; padding: 10px 0; font-family: var(--body); font-weight: 600; font-size: 14px; color: var(--ink); cursor: pointer; text-decoration: underline; text-underline-offset: 3px; }
 
-@media (prefers-reduced-motion: reduce) {
-  .tdcw *, .tdcw *::before, .tdcw *::after { transition: none !important; animation-duration: 0.01ms !important; }
-}
-
 /* employers / campuses blocks (landing) */
 .tdcw .block { padding: 40px; border-radius: 28px; display: flex; flex-direction: column; gap: 16px; }
 .tdcw .block-soft { background: var(--yellow-soft); border-color: var(--yellow-soft); }
@@ -353,3 +349,25 @@
 
 /* review cards */
 .tdcw .stars { display: inline-flex; gap: 2px; color: var(--yellow); }
+
+/* ---------- motion: reveal on scroll, hover lift, phone float, heading dot (all off under reduced motion) ---------- */
+.tdcw .card, .tdcw .brand-card, .tdcw .logo-tile { transition: transform .2s ease, box-shadow .2s ease; }
+.tdcw .rv { transition: opacity .6s ease-out, transform .6s cubic-bezier(.2, .7, .2, 1); transition-delay: calc(var(--i, 0) * 70ms); }
+.tdcw .rv:not(.in) { opacity: 0; transform: translateY(16px); }
+.tdcw .rv.rv-done { transition: transform .2s ease, box-shadow .2s ease; }
+@media (hover: hover) {
+  .tdcw .card:not(form):hover, .tdcw .brand-card:hover, .tdcw .logo-tile:hover { transform: translateY(-3px); box-shadow: 0 12px 28px rgba(17, 17, 17, 0.07); }
+  .tdcw .btn:not([disabled]):hover { transform: translateY(-1px); }
+}
+.tdcw .btn:not([disabled]):active { transform: scale(0.97); }
+.tdcw .phone { animation: tdcw-float 5s ease-in-out infinite; }
+@keyframes tdcw-float { 0%, 100% { transform: translateY(0); } 50% { transform: translateY(-6px); } }
+/* the dot is inline text (no transform), so it drops in with top + opacity */
+.tdcw h1 .dot, .tdcw .rv.in h2 .dot, .tdcw h2.rv.in .dot { position: relative; animation: tdcw-dot .5s cubic-bezier(.3, 1.6, .5, 1) .25s both; }
+@keyframes tdcw-dot { from { opacity: 0; top: -0.4em; } to { opacity: 1; top: 0; } }
+
+@media (prefers-reduced-motion: reduce) {
+  .tdcw *, .tdcw *::before, .tdcw *::after { transition: none !important; animation: none !important; }
+  .tdcw .rv:not(.in) { opacity: 1; transform: none; }
+  .tdcw .card:hover, .tdcw .brand-card:hover, .tdcw .logo-tile:hover, .tdcw .btn:hover, .tdcw .btn:active { transform: none !important; }
+}

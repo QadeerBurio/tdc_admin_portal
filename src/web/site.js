@@ -127,8 +127,47 @@ function NavLink({ item, onClick }) {
   return <Link to={item.href} onClick={onClick}>{item.label}</Link>;
 }
 
+// Fade and rise for sections and cards as they scroll into view (once, staggered 70 ms within a row).
+// Only things below the first screen are hidden, so the hero and first paint are untouched.
+// Cards that arrive later (deals, logos) are picked up too. Off under reduced motion.
+const REVEAL = ".section-head, .grid > *, .grid-2 > *, .facts .fact, .band-soft > h2, .cta-box, .logo-grid > *, .brand-grid > *, .partners, .dark-inner > div:not(.grid)";
+function useReveal() {
+  React.useEffect(() => {
+    const main = document.querySelector(".tdcw main");
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!main || reduce || !("IntersectionObserver" in window)) return undefined;
+    const seen = new WeakSet();
+    const io = new IntersectionObserver((entries) => entries.forEach((e) => {
+      if (!e.isIntersecting) return;
+      const el = e.target;
+      io.unobserve(el);
+      const done = (ev) => { if (ev.target !== el) return; el.classList.add("rv-done"); el.removeEventListener("transitionend", done); };
+      el.addEventListener("transitionend", done);
+      el.classList.add("in");
+    }), { rootMargin: "0px 0px -8% 0px" });
+    const scan = () => {
+      main.querySelectorAll(REVEAL).forEach((el) => {
+        if (seen.has(el)) return;
+        seen.add(el);
+        for (let a = el.parentElement; a && a !== main; a = a.parentElement) if (seen.has(a)) return;
+        if (el.getBoundingClientRect().top < window.innerHeight) return;
+        const row = [...el.parentElement.children].filter((c) => c.matches(REVEAL));
+        el.style.setProperty("--i", Math.min(row.indexOf(el), 5));
+        el.classList.add("rv");
+        io.observe(el);
+      });
+    };
+    scan();
+    let raf;
+    const mo = new MutationObserver(() => { cancelAnimationFrame(raf); raf = requestAnimationFrame(scan); });
+    mo.observe(main, { childList: true, subtree: true });
+    return () => { io.disconnect(); mo.disconnect(); cancelAnimationFrame(raf); };
+  }, []);
+}
+
 export function WebNav() {
   const [open, setOpen] = useState(false);
+  useReveal();
   return (
     <header className="nav">
       <div className="wrap nav-inner">
