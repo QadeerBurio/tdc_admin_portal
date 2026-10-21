@@ -10,8 +10,8 @@ const API = "https://the-deft-crew-production.up.railway.app/api";
 const FACTS = [
   { n: "100+", label: "partner brands" },
   { n: "3", label: "cities: Karachi, Lahore, Islamabad" },
-  { n: "7+", label: "partner universities" },
-  { n: "15–50%", label: "flat student discounts" },
+  { n: "12+", label: "partner universities" },
+  { n: "15–60%", label: "flat student discounts" },
 ];
 
 const TOOLS = [
@@ -41,7 +41,7 @@ const BRAND_POINTS = [
   { title: "free for year one", body: "no listing fee and no commission for the first year." },
   { title: "no leakage", body: "a brand-only QR. only verified tdc users can claim, and your staff completes every redemption." },
   { title: "live in your portal", body: "every claim shows up in real time, with which institutes your customers come from." },
-  { title: "simple terms", body: "you set a flat discount from 15% to 50%. either side can exit with 15 working days' notice." },
+  { title: "simple terms", body: "you set a flat discount from 15% to 60%. either side can exit with 15 working days' notice." },
 ];
 
 // Shown only if the live brand list can't be loaded.
@@ -271,7 +271,7 @@ export default function Landing() {
             <div id="campus" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16, background: "#FFF1CC", borderColor: "#FFF1CC" }}>
               <div className="eyebrow" style={{ color: "#111111" }}>campus ambassadors</div>
               <h2 className="h-md" style={{ fontSize: 34 }}>run tdc on your campus<span className="dot">.</span></h2>
-              <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>7+ universities and 20+ student societies already work with us. ambassadors get founder mentorship, 1-on-1 career counselling, a referral letter and a shot at the founder circle.</p>
+              <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities and 20+ student societies already work with us. ambassadors get founder mentorship, 1-on-1 career counselling, a referral letter and a shot at the founder circle.</p>
               <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
                 <Link to="/ambassador" className="btn btn-primary">apply as ambassador</Link>
                 <a href={`mailto:${LINKS.hello}?subject=${encodeURIComponent("tdc x our society")}`} className="btn btn-secondary">societies, talk to us</a>

@@ -252,7 +252,7 @@ export default function Signup() {
             <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>live on tdc in 3 steps<span className="dot">.</span></h2>
             <ol>
               <li><span className="n">1</span><div><b>create your account</b><span>pick brand or employer and add your basic details.</span></div></li>
-              <li><span className="n">2</span><div><b>set your student offer</b><span>brands: a flat discount from 15% to 50%. employers: post your first role.</span></div></li>
+              <li><span className="n">2</span><div><b>set your student offer</b><span>brands: a flat discount from 15% to 60%. employers: post your first role.</span></div></li>
               <li><span className="n">3</span><div><b>track it in your portal</b><span>see every claim or applicant live, and which institutes they come from.</span></div></li>
             </ol>
             <div className="aside-chips">
