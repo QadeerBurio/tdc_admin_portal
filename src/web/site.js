@@ -169,13 +169,21 @@ export function usePage(title) {
   }, [title]);
 }
 
-export function PageHero({ eyebrow, title, mark = ".", lead, children }) {
-  return (
-    <div className="wrap" style={{ paddingTop: 64, paddingBottom: 8 }}>
+// aside: optional second column (the boards' hero cards), side by side from 760px up
+export function PageHero({ eyebrow, title, mark = ".", lead, children, aside }) {
+  const text = (
+    <div>
       {eyebrow && <span className="chip"><span className="chip-dot" />{eyebrow}</span>}
       <h1 className="h-xl" style={{ marginTop: 20, fontSize: "clamp(42px, 5.6vw, 76px)" }}>{title}<span className="dot">{mark}</span></h1>
-      {lead && <p className="lead" style={{ marginTop: 20, maxWidth: 620 }}>{lead}</p>}
+      {lead && <p className="lead" style={{ marginTop: 20, maxWidth: aside ? 560 : 620 }}>{lead}</p>}
       {children}
+    </div>
+  );
+  if (!aside) return <div className="wrap" style={{ paddingTop: 64, paddingBottom: 8 }}>{text}</div>;
+  return (
+    <div className="wrap hero-split" style={{ paddingTop: 64, paddingBottom: 8 }}>
+      {text}
+      {aside}
     </div>
   );
 }

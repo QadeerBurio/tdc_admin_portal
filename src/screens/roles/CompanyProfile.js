@@ -6,7 +6,7 @@ import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../../web/site";
 const WHY = [
   { title: "students who are ready", body: "candidates build their CV and work profile on tdc, so you see more than a bare PDF." },
   { title: "a match score on every role", body: "once a student's CV and work profile are done, the career hub shows how well they fit your role before they apply." },
-  { title: "early access", body: "reach final-year students and fresh grads from 12+ partner universities before they hit the open job market." },
+  { title: "early access", body: "reach final-year students and fresh grads from 12+ partner universities before the open job market." },
   { title: "one dashboard", body: "post roles, review candidates, schedule interviews and track your hiring in the employer portal." },
 ];
 
@@ -20,9 +20,32 @@ const FAQ = [
   { q: "what does it cost?", a: "talk to us about your hiring plans and we'll share what fits. reach us at hr@gettdc.pk." },
   { q: "what kind of roles can I post?", a: "internships, part-time roles, entry-level jobs and graduate programs. tdc is built for students and fresh grads." },
   { q: "who are the candidates?", a: "tdc verified users: university, college and O/A level students, plus alumni, across Karachi, Lahore and Islamabad." },
-  { q: "how does the match score work?", a: "students who've completed their CV and work profile on tdc see a match percentage for each role, and you see who fits before you shortlist." },
+  { q: "how does the match score work?", a: "students who've completed their CV and work profile see a match percentage for each role, and you see who fits before you shortlist." },
   { q: "can I hire from a specific university?", a: "yes. candidate profiles show their institute, so you can focus on the campuses you want." },
 ];
+
+// Hero card from the board: the sample role and three candidate rows. The board's rows are
+// placeholders for live data, so they stay as neutral bars here (no invented names or scores).
+function CandidatesPreview() {
+  return (
+    <div className="cand-card" aria-hidden="true">
+      <div className="cand-head">
+        <span className="cand-title">candidates<span className="dot">.</span></span>
+        <span className="cand-role">growth marketing intern</span>
+      </div>
+      {[0, 1, 2].map((i) => (
+        <div className="cand-row" key={i}>
+          <div className="cand-avatar" />
+          <div style={{ flex: 1 }}>
+            <div className="cand-bar" style={{ width: `${[62, 54, 46][i]}%` }} />
+            <div className="cand-bar soft" style={{ width: `${[78, 64, 40][i]}%`, marginTop: 8 }} />
+          </div>
+          <span className="cand-pill" />
+        </div>
+      ))}
+    </div>
+  );
+}
 
 export default function CompanyProfile() {
   usePage("tdc. for employers");
@@ -31,7 +54,7 @@ export default function CompanyProfile() {
     <div className="tdcw">
       <WebNav />
       <main>
-        <PageHero eyebrow="for employers" title="hire interns and fresh grads" lead="post internships and entry-level roles where students already plan their careers. they apply with a CV built on tdc, and you see who fits.">
+        <PageHero aside={<CandidatesPreview />} eyebrow="for employers" title="hire interns and fresh grads" lead="post internships and entry-level roles where students already plan their careers. they apply with a CV built on tdc, and you see who fits.">
           <div className="hero-ctas">
             <Link to="/signup" className="btn btn-primary">register as employer</Link>
             <a href={`mailto:${LINKS.hr}?subject=${encodeURIComponent("hiring on tdc")}`} className="btn btn-secondary">{LINKS.hr}</a>
