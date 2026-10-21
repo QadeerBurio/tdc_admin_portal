@@ -1,7 +1,7 @@
 // Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS } from "../web/site";
+import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS, CountUp } from "../web/site";
 import { useOffers } from "../web/useOffers";
 import logoInk from "../web/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
@@ -42,7 +42,7 @@ const BRAND_POINTS = [
   { icon: ICONS.gift, title: "free for year one", body: "no listing fee and no commission for the first year." },
   { icon: ICONS.shield, title: "no leakage", body: "a brand-only QR. only verified tdc users can claim, and your staff completes every redemption." },
   { icon: ICONS.chart, title: "live in your portal", body: "every claim shows up in real time, with which institutes your customers come from." },
-  { icon: ICONS.doc, title: "simple terms", body: "you set a flat discount from 15% to 60%. either side can exit with 15 working days' notice." },
+  { icon: ICONS.doc, title: "simple terms", body: "you set a flat discount from 15–60%. either side can exit with 15 working days' notice." },
 ];
 
 export default function Landing() {
@@ -113,7 +113,7 @@ export default function Landing() {
         <section className="facts" aria-label="tdc in numbers">
           <div className="wrap">
             {FACTS.map((f) => (
-              <div className="fact" key={f.label}><IconTile d={f.icon} /><b>{f.n}</b><span>{f.label}</span></div>
+              <div className="fact" key={f.label}><IconTile d={f.icon} /><b><CountUp value={f.n} /></b><span>{f.label}</span></div>
             ))}
           </div>
         </section>

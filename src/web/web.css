@@ -168,7 +168,12 @@
 .tdcw .facts { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
 .tdcw .facts .wrap { display: grid; gap: 20px; padding-top: 28px; padding-bottom: 28px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .tdcw .fact b { display: block; font-family: var(--heading); font-weight: 800; font-size: 40px; letter-spacing: -1px; line-height: 1.1; }
-.tdcw .fact span { font-size: 14px; color: var(--muted); }
+.tdcw .fact > span:last-child { font-size: 14px; color: var(--muted); }
+/* count-up: the hidden final value holds the width, tabular digits so nothing jumps */
+.tdcw .count { display: inline-grid; position: relative; font-variant-numeric: tabular-nums; }
+.tdcw .count > [aria-hidden] { grid-area: 1 / 1; font-size: inherit; color: inherit; }
+.tdcw .count-size { visibility: hidden; }
+.tdcw .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
 
 /* steps band */
 .tdcw .band-soft { background: var(--yellow-soft); border-radius: 28px; padding: 48px 40px; }

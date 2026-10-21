@@ -1,7 +1,7 @@
 // BrandsProfile.js — /brands: why brands partner with tdc. New tdc design, real terms only.
 import React from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, PageHero, usePage, IconTile, ICONS } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PageHero, usePage, IconTile, ICONS, CountUp } from "../../web/site";
 import { useOffers } from "../../web/useOffers";
 
 const FACTS = [
@@ -20,14 +20,14 @@ const WHY = [
 
 const STEPS = [
   { icon: ICONS.userPlus, title: "sign up free", body: "create your brand account at gettdc.pk/signup. takes about a minute." },
-  { icon: ICONS.percent, title: "set one flat discount", body: "anything from 15% to 60% for tdc verified users. one simple offer students remember." },
+  { icon: ICONS.percent, title: "set one flat discount", body: "anything from 15–60% for tdc verified users. one simple offer students remember." },
   { icon: ICONS.qr, title: "put the QR on your counter", body: "we send your brand QR. students scan it to redeem, you see it live." },
 ];
 
 const TERMS = [
   ["listing fee", "none in year one"],
   ["commission", "none in year one"],
-  ["discount", "flat, 15% to 60%, set by you"],
+  ["discount", "flat, 15–60%, set by you"],
   ["who can claim", "tdc verified users: students, alumni and faculty"],
   ["leaving", "either side, 15 working days' notice"],
 ];
@@ -51,7 +51,7 @@ export default function BrandsProfile() {
         <section className="facts" aria-label="tdc in numbers" style={{ marginTop: 56 }}>
           <div className="wrap">
             {FACTS.map((f) => (
-              <div className="fact" key={f.label}><IconTile d={f.icon} /><b>{f.n}</b><span>{f.label}</span></div>
+              <div className="fact" key={f.label}><IconTile d={f.icon} /><b><CountUp value={f.n} /></b><span>{f.label}</span></div>
             ))}
           </div>
         </section>

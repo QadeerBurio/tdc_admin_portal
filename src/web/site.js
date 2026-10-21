@@ -76,6 +76,42 @@ export function IconTile({ d, n }) {
   );
 }
 
+// Stat that counts up from 0 once when it scrolls into view: "100+", "3", "12+", "15–60%" (both numbers count).
+// About 1.2 s, ease-out. Writes straight to the DOM (no re-renders). Reduced motion or no IntersectionObserver:
+// the final value shows at once. Screen readers only get the final value.
+export function CountUp({ value }) {
+  const text = String(value);
+  const live = React.useRef(null);
+  React.useLayoutEffect(() => {
+    const el = live.current;
+    const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+    if (!el || reduce || !("IntersectionObserver" in window)) return undefined;
+    const at = (p) => text.replace(/\d+/g, (d) => String(Math.round(Number(d) * p)));
+    el.textContent = at(0);
+    let raf;
+    const io = new IntersectionObserver((entries) => {
+      if (!entries.some((e) => e.isIntersecting)) return;
+      io.disconnect();
+      const start = performance.now();
+      const tick = (now) => {
+        const k = Math.min(1, (now - start) / 1200);
+        el.textContent = k < 1 ? at(1 - Math.pow(1 - k, 3)) : text;
+        if (k < 1) raf = requestAnimationFrame(tick);
+      };
+      raf = requestAnimationFrame(tick);
+    }, { threshold: 0.4 });
+    io.observe(el);
+    return () => { io.disconnect(); cancelAnimationFrame(raf); el.textContent = text; };
+  }, [text]);
+  return (
+    <span className="count">
+      <span className="count-size" aria-hidden="true">{text}</span>
+      <span className="count-live" aria-hidden="true" ref={live}>{text}</span>
+      <span className="sr-only">{text}</span>
+    </span>
+  );
+}
+
 const NAV = [
   { href: "/#app", label: "the app" },
   { href: "/brands", label: "for brands" },
