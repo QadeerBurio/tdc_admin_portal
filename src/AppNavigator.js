@@ -12,6 +12,7 @@ import ResetPassword from "./screens/ResetPassword";
 
 // ── Public / Landing ────────────────────────────────────────────────────
 import Landing from "./screens/Landing";
+import Ambassador from "./screens/Ambassador";
 import BrandsProfile from "./screens/roles/BrandsProfile";
 import CompanyProfile from "./screens/roles/CompanyProfile";
 import OfferImagesGallery from "./screens/OfferImagesGallery";
@@ -76,6 +77,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Landing />} />
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignupScreen />} />
+        <Route path="/ambassador" element={<Ambassador />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />

@@ -1,1730 +1,307 @@
-// Landing.js
-import React, { useState, useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
-import { motion, useInView, AnimatePresence } from "framer-motion";
-import {
-  FaBuilding,
-  FaTag,
-  FaUniversity,
-  FaUsers,
-  FaFilter,
-  FaCalendarCheck,
-  FaChartLine,
-  FaShieldAlt,
-  FaRocket,
-  FaBullhorn,
-  FaVideo,
-  FaStore,
-  FaStar,
-  FaTrophy,
-  FaGem,
-  FaCoins,
-  FaApple,
-  FaGooglePlay,
-  FaLinkedinIn,
-  FaTwitter,
-  FaFacebookF,
-  FaInstagram,
-  FaYoutube,
-  FaChevronRight,
-  FaEnvelope,
-  FaPhone,
-  FaMapMarkerAlt,
-  FaClock,
-  FaEye,
-  FaBullseye,
-  FaHeart,
-  FaMobileAlt,
-  FaArrowRight,
-  FaTimes,
-  FaCheckCircle,
-  FaBars,
-  FaBuilding as FaBuildingIcon,
-  FaUser,
-  FaSchool,
-  FaPeopleArrows,
-  FaCalendarAlt,
-  FaFileAlt,
-  FaGraduationCap,
-  FaPlane,
-} from "react-icons/fa";
-import "./styles/Landing.css";
+// Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
+import React, { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import axios from "axios";
+import { WebNav, WebFooter, LINKS, Arrow } from "../web/site";
+import logoInk from "../web/assets/tdc-logo-ink.png";
 
-// University logo imports from assets
-import szabistLogo from "../../src/assets/szabist_logo.jpg";
-import iobmLogo from "../../src/assets/Iobm.png";
-import indusLogo from "../../src/assets/indus.jpg";
-import hamdardLogo from "../../src/assets/hamdard.png";
-import ziauddinLogo from "../../src/assets/ziaudin.jpg";
-import denningLogo from "../../src/assets/denning.jpg";
+const API = "https://the-deft-crew-production.up.railway.app/api";
 
-// Brand logo imports from assets
-import automate from "../../src/assets/logos/automate.jpeg";
-import civilazation from "../../src/assets/logos/civilazation.png";
-import Eagle from "../../src/assets/logos/eagle.jpeg";
-import grove from "../../src/assets/logos/grove.png";
-import Honey from "../../src/assets/logos/Honey.png";
-import leadsnotify from "../../src/assets/logos/leadsnotify.jpeg";
-import peng from "../../src/assets/logos/peng.jpeg";
-import appScreenshot1 from "../../src/assets/screen1.png";
-import appScreenshot2 from "../../src/assets/screen2.png";
-import appScreenshot3 from "../../src/assets/screen3.png";
-import OfferImagesGallery from "./OfferImagesGallery";
-import HomeReviews from "./roles/HomeReviews";
-import UniversitiesSection from "./roles/UniversitiesSection";
+const FACTS = [
+  { n: "100+", label: "partner brands" },
+  { n: "3", label: "cities: Karachi, Lahore, Islamabad" },
+  { n: "7+", label: "partner universities" },
+  { n: "15–50%", label: "flat student discounts" },
+];
 
-// ── Counter Component ──────────────────────────────────────────────────────
-const AnimatedCounter = ({ target, duration = 2000, suffix = "" }) => {
-  const [count, setCount] = useState(0);
-  const counterRef = useRef(null);
-  const isInView = useInView(counterRef, { once: true, amount: 0.5 });
-  const [hasAnimated, setHasAnimated] = useState(false);
+const TOOLS = [
+  { title: "deals", body: "flat discounts at cafes, salons, gyms, fashion and more. claim in the app, scan at the counter.", icon: "M20 12l-8 8-9-9V3h8l9 9zM7.5 7.5h.01" },
+  { title: "campus feed", body: "posts, polls and anonymous confessions from students like you. the part everyone opens first.", icon: "M21 12a8 8 0 0 1-11.6 7.1L4 20l1-4.6A8 8 0 1 1 21 12z" },
+  { title: "career hub", body: "internships and entry-level jobs with a match score once your CV and work profile are done.", icon: "M4 8h16v11H4zM9 8V5h6v3M4 13h16" },
+  { title: "cv builder", body: "build a clean CV on your phone and keep it ready for every application.", icon: "M7 3h7l5 5v13H7zM14 3v5h5M10 13h6M10 17h6" },
+  { title: "events and scholarships", body: "campus events, student-priced tickets and scholarships if you're planning to study abroad.", icon: "M4 6h16v14H4zM4 10h16M9 3v4M15 3v4" },
+  { title: "ai travel assistant", body: "plan a trip on a student budget. it suggests the route and the plan, you decide.", icon: "M12 21s-7-6.2-7-11a7 7 0 0 1 14 0c0 4.8-7 11-7 11zM12 12.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z" },
+];
 
-  useEffect(() => {
-    if (isInView && !hasAnimated) {
-      setHasAnimated(true);
-      let startTime = null;
-      const startValue = 0;
-      const endValue = target;
+const STEPS = [
+  { title: "claim it", body: "pick a brand in the app and tap claim." },
+  { title: "scan at the counter", body: "scan the brand's tdc QR code. your profile gets verified on the spot." },
+  { title: "sorted.", body: "the discount is applied. that visit also earns you crew points." },
+];
 
-      const animateCount = (timestamp) => {
-        if (!startTime) startTime = timestamp;
-        const progress = Math.min((timestamp - startTime) / duration, 1);
-        // Ease out cubic
-        const eased = 1 - Math.pow(1 - progress, 3);
-        const current = Math.floor(eased * endValue);
-        setCount(current);
+const LEVELS = [
+  { name: "rookie", pts: "300 pts", dot: "#FFFFFF" },
+  { name: "main character", pts: "1,000 pts", dot: "#FFF1CC" },
+  { name: "pro", pts: "3,000 pts", dot: "#F9C349" },
+  { name: "goat", pts: "6,000 pts", dot: "#111111" },
+  { name: "founder circle", pts: "8,000 pts + apply", dot: "#F9C349" },
+];
 
-        if (progress < 1) {
-          requestAnimationFrame(animateCount);
-        } else {
-          setCount(endValue);
-        }
-      };
+const BRAND_POINTS = [
+  { title: "free for year one", body: "no listing fee and no commission for the first year." },
+  { title: "no leakage", body: "a brand-only QR. only verified tdc users can claim, and your staff completes every redemption." },
+  { title: "live in your portal", body: "every claim shows up in real time, with which institutes your customers come from." },
+  { title: "simple terms", body: "you set a flat discount from 15% to 50%. either side can exit with 15 working days' notice." },
+];
 
-      requestAnimationFrame(animateCount);
-    }
-  }, [isInView, target, duration, hasAnimated]);
+// Shown only if the live brand list can't be loaded.
+const FALLBACK_BRANDS = [
+  ["Jenpharm", "health and beauty"], ["Dear Croissant", "food and drinks"], ["Socials by YS", "restaurant"],
+  ["Spark Saloon", "salon"], ["Fropresso", "cafe"], ["House of Burger", "restaurant"],
+  ["Krema Coffee & Gelato", "cafe"], ["The Padel Factory", "sports"], ["Playdium", "entertainment"],
+  ["Three Coffee Roasters", "cafe"], ["Muscle Lab Gym", "gym"], ["Xiongmao Hotpot", "restaurant"],
+].map(([name, category]) => ({ name, category }));
 
-  // Format number with commas for large numbers
-  const formatNumber = (num) => {
-    if (num >= 1000) {
-      return num.toLocaleString();
-    }
-    return num;
-  };
-
+function Icon({ d }) {
   return (
-    <span ref={counterRef} className="counter-number">
-      {formatNumber(count)}
-      {suffix}
-    </span>
+    <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+      <path d={d} />
+    </svg>
   );
-};
+}
 
-const Landing = () => {
-  const navigate = useNavigate();
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState("companies");
-  const [showUniversitiesModal, setShowUniversitiesModal] = useState(false);
-  const [hoveredFeature, setHoveredFeature] = useState(null);
+function useLiveBrands() {
+  const [brands, setBrands] = useState(null);
+  useEffect(() => {
+    let alive = true;
+    axios
+      .get(`${API}/offers/images/all`)
+      .then((res) => {
+        const seen = new Set();
+        const list = (res.data?.offers || [])
+          .filter((o) => o && o.brand && o.brand.approved !== false)
+          .map((o) => ({
+            name: (o.brand.brandName || o.brand.name || o.title || "").trim(),
+            category: (o.category || "").toLowerCase(),
+            image: o.image,
+          }))
+          .filter((b) => b.name)
+          .filter((b) => {
+            const k = b.name.trim().toLowerCase();
+            if (seen.has(k)) return false;
+            seen.add(k);
+            return true;
+          })
+          .slice(0, 18);
+        if (alive) setBrands(list.length ? list : FALLBACK_BRANDS);
+      })
+      .catch(() => alive && setBrands(FALLBACK_BRANDS));
+    return () => { alive = false; };
+  }, []);
+  return brands || FALLBACK_BRANDS;
+}
+
+export default function Landing() {
+  const brands = useLiveBrands();
 
   useEffect(() => {
-    window.scrollTo({
-      top: 0,
-      left: 0,
-      behavior: "smooth",
-    });
+    document.title = "tdc. student life, sorted";
+    if (window.location.hash) {
+      const el = document.querySelector(window.location.hash);
+      if (el) setTimeout(() => el.scrollIntoView(), 50);
+    }
   }, []);
 
-  const sectionRefs = {
-    hero: useRef(null),
-    features: useRef(null),
-    collaborate: useRef(null),
-    about: useRef(null),
-    contact: useRef(null),
-  };
-
-  const heroInView = useInView(sectionRefs.hero, { once: false, amount: 0.1 });
-  const featuresInView = useInView(sectionRefs.features, {
-    once: false,
-    amount: 0.1,
-  });
-  const collaborateInView = useInView(sectionRefs.collaborate, {
-    once: false,
-    amount: 0.1,
-  });
-  const aboutInView = useInView(sectionRefs.about, {
-    once: false,
-    amount: 0.1,
-  });
-  const contactInView = useInView(sectionRefs.contact, {
-    once: false,
-    amount: 0.1,
-  });
-
-  const isVisible = {
-    hero: heroInView,
-    features: featuresInView,
-    collaborate: collaborateInView,
-    about: aboutInView,
-    contact: contactInView,
-  };
-
-  const containerVariants = {
-    hidden: { opacity: 0, y: 50 },
-    visible: {
-      opacity: 1,
-      y: 0,
-      transition: {
-        duration: 0.8,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    },
-  };
-
-  const itemVariants = {
-    hidden: { opacity: 0, y: 30 },
-    visible: (i) => ({
-      opacity: 1,
-      y: 0,
-      transition: {
-        delay: i * 0.1,
-        duration: 0.6,
-        ease: [0.16, 1, 0.3, 1],
-      },
-    }),
-  };
-
-  const staggerVariants = {
-    hidden: { opacity: 0 },
-    visible: {
-      opacity: 1,
-      transition: {
-        staggerChildren: 0.15,
-        delayChildren: 0.2,
-      },
-    },
-  };
-
-  const scrollToSection = (ref) => {
-    if (ref && ref.current) {
-      ref.current.scrollIntoView({ behavior: "smooth", block: "start" });
-    }
-    setMobileMenuOpen(false);
-  };
-
-  const handleCompanyClick = (e) => {
-    e.preventDefault();
-    navigate("/company_profile");
-  };
-
-  const handleBrandClick = (e) => {
-    e.preventDefault();
-    navigate("/brands");
-  };
-
-  const handleLoginClick = () => {
-    navigate("/login");
-  };
-
-  const appFeatures = [
-    {
-      id: 1,
-      title: "Student Deals",
-      desc: "Exclusive discounts tailored for students across 200+ brands.",
-      icon: FaSchool,
-      color: "#f9c349",
-      gradient: ["#f9c349", "#f5a623"],
-    },
-    {
-      id: 2,
-      title: "Skills Share",
-      desc: "Connect with fellow students to share expertise and learn new skills.",
-      icon: FaPeopleArrows,
-      color: "#a29bfe",
-      gradient: ["#a29bfe", "#6c5ce7"],
-    },
-    {
-      id: 3,
-      title: "Premium Events",
-      desc: "Access workshops, seminars, and networking events.",
-      icon: FaCalendarAlt,
-      color: "#fd79a8",
-      gradient: ["#fd79a8", "#e84393"],
-    },
-    {
-      id: 4,
-      title: "Resume Builder",
-      desc: "Create ATS-optimized resumes with AI-powered suggestions.",
-      icon: FaFileAlt,
-      color: "#00b894",
-      gradient: ["#00b894", "#00a381"],
-    },
-    {
-      id: 5,
-      title: "Scholarships",
-      desc: "Access internal grants and external scholarships like Erasmus+.",
-      icon: FaGraduationCap,
-      color: "#ffa502",
-      gradient: ["#ffa502", "#f9a825"],
-    },
-    {
-      id: 6,
-      title: "Student Travel",
-      desc: "Curated budget-friendly travel packages for students.",
-      icon: FaPlane,
-      color: "#6c5ce7",
-      gradient: ["#6c5ce7", "#5a4bd1"],
-    },
-  ];
-
-  const featuresData = {
-    companies: [
-      {
-        icon: FaUsers,
-        title: "Access Top Talent",
-        description:
-          "Connect with 50,000+ verified students and fresh graduates from Pakistan's top universities.",
-      },
-      {
-        icon: FaFilter,
-        title: "Smart Filtering",
-        description:
-          "Filter candidates by university, GPA, skills, graduation projects, and more.",
-      },
-      {
-        icon: FaCalendarCheck,
-        title: "Direct Scheduling",
-        description:
-          "Schedule interviews directly through our streamlined dashboard and reduce time-to-hire by 60%.",
-      },
-      {
-        icon: FaChartLine,
-        title: "Analytics Dashboard",
-        description:
-          "Track your hiring progress, candidate engagement metrics, and success rates.",
-      },
-      {
-        icon: FaShieldAlt,
-        title: "Verified Profiles",
-        description:
-          "All student profiles are verified by institutional databases for accuracy.",
-      },
-      {
-        icon: FaRocket,
-        title: "Early Access",
-        description:
-          "Secure top talent 3-6 months before they enter the open job market.",
-      },
-    ],
-    brands: [
-      {
-        icon: FaBullhorn,
-        title: "Reach 50,000+ Students",
-        description:
-          "Directly connect with students from top universities and build brand awareness.",
-      },
-      {
-        icon: FaTag,
-        title: "100% Free to List",
-        description:
-          "List your brand with zero cost and 0% commissions on student transactions.",
-      },
-      {
-        icon: FaVideo,
-        title: "Authentic UGC",
-        description:
-          "Get real user-generated content as students share their experiences on social media.",
-      },
-      {
-        icon: FaStore,
-        title: "Drive Real Footfall",
-        description:
-          "Convert student engagement into physical store visits and online orders.",
-      },
-      {
-        icon: FaGem,
-        title: "Build Brand Loyalty",
-        description:
-          "Create lasting relationships with the next generation of consumers.",
-      },
-      {
-        icon: FaCoins,
-        title: "Generate Revenue",
-        description:
-          "Turn student engagement into revenue through exclusive campus offers.",
-      },
-    ],
-  };
-
-  // Universities with image logos
-  const universities = [
-    { name: "SZABIST", logo: szabistLogo, color: "#1a237e" },
-    { name: "IoBM", logo: iobmLogo, color: "#004d40" },
-    { name: "Indus", logo: indusLogo, color: "#1a237e" },
-    { name: "Hamdard", logo: hamdardLogo, color: "#2e7d32" },
-    { name: "Ziauddin", logo: ziauddinLogo, color: "#4a148c" },
-    { name: "Denning", logo: denningLogo, color: "#bf360c" },
-  ];
-
-  // Brands with image logos
-  const brands = [
-    { name: "automate", logo: automate },
-    { name: "civilazation", logo: civilazation },
-    { name: "Eagle", logo: Eagle },
-    { name: "grove", logo: grove },
-    { name: "Honey", logo: Honey },
-    { name: "leadsnotify", logo: leadsnotify },
-    { name: "peng", logo: peng },
-  ];
-
   return (
-    <div className="landing-page">
-      {/* Navigation */}
-      <nav className="landing-nav">
-        <div className="nav-container">
-          <div
-            className="nav-logo"
-            onClick={() => scrollToSection(sectionRefs.hero)}
-          >
-            <span className="logo" style={{ fontSize: 30 }}>tdc</span>
-            <span className="logo-suffix">.</span>
+    <div className="tdcw">
+      <WebNav />
+
+      <main>
+        {/* hero */}
+        <div className="wrap hero">
+          <div>
+            <span className="chip"><span className="chip-dot" />live in Karachi, Lahore and Islamabad</span>
+            <h1 className="h-xl">student life,<br />sorted<span className="dot">.</span></h1>
+            <p className="lead">tdc is the free app for university, college and O/A level students. deals at 100+ brands, internships, a CV builder and your campus feed, in one place.</p>
+            <div className="hero-ctas">
+              <a href={LINKS.getApp} className="btn btn-primary">get the app, it's free <Arrow /></a>
+              <Link to="/signup" className="btn btn-secondary">partner with tdc</Link>
+            </div>
+            <p className="hero-note">free for students. forever. no catch.</p>
           </div>
 
-          <button
-            className="mobile-menu-btn"
-            onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            aria-label="Toggle menu"
-          >
-            <FaBars />
-          </button>
-
-          <div className={`nav-links ${mobileMenuOpen ? "open" : ""}`}>
-            <a
-              href="#home"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection(sectionRefs.hero);
-              }}
-            >
-              Home
-            </a>
-            <a
-              href="#features"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection(sectionRefs.features);
-              }}
-            >
-              Why Choose Us
-            </a>
-            <a
-              href="#collaborate"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection(sectionRefs.collaborate);
-              }}
-            >
-              Collaborate
-            </a>
-            <a
-              href="#about"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection(sectionRefs.about);
-              }}
-            >
-              About Us
-            </a>
-            <a
-              href="#contact"
-              onClick={(e) => {
-                e.preventDefault();
-                scrollToSection(sectionRefs.contact);
-              }}
-            >
-              Contact
-            </a>
-            <a
-              href="/brands"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate("/signup");
-                setMobileMenuOpen(false);
-              }}
-            >
-              Register As Brand
-            </a>
-            <a
-              href="/company_profile"
-              onClick={(e) => {
-                e.preventDefault();
-                navigate("/signup");
-                setMobileMenuOpen(false);
-              }}
-            >
-              Register As Company
-            </a>
-            <div className="nav-actions">
-              <button className="nav-login-btn" onClick={handleLoginClick}>
-                <FaUser  />
-                <p>Login</p>
-              </button>
+          <div aria-hidden="true">
+            <div className="phone">
+              <div className="phone-screen">
+                <div className="phone-top">
+                  <img src={logoInk} alt="" />
+                  <span className="pill"><i />crew points</span>
+                </div>
+                <div className="ph-hello">
+                  <small>hey there</small>
+                  <div>what are we sorting today<span className="dot">?</span></div>
+                </div>
+                <div className="ph-drop">
+                  <b>today's drop</b>
+                  <div className="q">best place to study on campus?</div>
+                  <div className="ph-opts"><span>library</span><span>cafe</span><span>the lawn</span></div>
+                  <small>vote to see what campus thinks.</small>
+                </div>
+                <div className="ph-title"><b>on campus<span className="dot">.</span></b><span>open feed</span></div>
+                <div className="ph-card">
+                  <small>latest confession · anonymous</small>
+                  <p>been sitting in the 8am class for a month. it's not my class.</p>
+                </div>
+                <div className="ph-title"><b>deals near you<span className="dot">.</span></b><span>see all</span></div>
+                <div className="ph-deals">
+                  <div className="ph-deal"><i /><b>Jenpharm</b><small>health and beauty</small></div>
+                  <div className="ph-deal"><i /><b>Dear Croissant</b><small>food and drinks</small></div>
+                </div>
+              </div>
             </div>
           </div>
         </div>
-      </nav>
 
-      {/* HERO SECTION */}
-      <section ref={sectionRefs.hero} className="hero-section" id="home">
-        <div className="hero-bg-effects">
-          <div className="hero-half-white-bg"></div>
-          <div className="hero-digital-grid"></div>
-          <div className="hero-particles">
-            <div className="hero-particle gold-blur-1"></div>
-            <div className="hero-particle gold-blur-2"></div>
-            <div className="hero-particle gold-blur-3"></div>
+        {/* facts */}
+        <section className="facts" aria-label="tdc in numbers">
+          <div className="wrap">
+            {FACTS.map((f) => (
+              <div className="fact" key={f.label}><b>{f.n}</b><span>{f.label}</span></div>
+            ))}
           </div>
-        </div>
+        </section>
 
-        <div className="container">
-          <div className="hero-wrapper">
-            <motion.div
-              className="hero-content"
-              variants={containerVariants}
-              initial="hidden"
-              animate={isVisible.hero ? "visible" : "hidden"}
-            >
-              <motion.div
-                className="hero-pre-headline"
-                variants={itemVariants}
-                custom={0}
-              >
-                <span className="pre-headline-badge">
-                  🚀 THE FUTURE OF TALENT ACQUISITION & BRAND ENGAGEMENT
-                </span>
-              </motion.div>
+        {/* app */}
+        <section id="app" className="wrap section">
+          <div className="section-head">
+            <h2 className="h-lg">one app.<br />everything sorted<span className="dot">.</span></h2>
+            <p>the stuff students juggle across ten apps and fifty group chats, in one calm place.</p>
+          </div>
+          <div className="grid">
+            {TOOLS.map((t) => (
+              <div className="card" key={t.title}>
+                <div className="icon-well"><Icon d={t.icon} /></div>
+                <h3>{t.title}</h3>
+                <p>{t.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
 
-              <motion.h1
-                className="hero-title"
-                variants={itemVariants}
-                custom={1}
-              >
-                Connect, Collaborate, and <br />
-                <span className="highlight-text">Grow Your Business</span>
-              </motion.h1>
+        {/* how deals work */}
+        <section className="wrap section">
+          <div className="band-soft">
+            <h2 className="h-md">how a deal works<span className="dot">.</span></h2>
+            <div className="grid" style={{ marginTop: 32 }}>
+              {STEPS.map((s, i) => (
+                <div className="card" key={s.title}>
+                  <div className="step-n">{i + 1}</div>
+                  <h3>{s.title}</h3>
+                  <p>{s.body}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
 
-              <motion.p
-                className="hero-subheadline"
-                variants={itemVariants}
-                custom={2}
-              >
-                The Deft Crew bridges the gap between top-tier students, fresh
-                graduates, leading companies, and ambitious brands. Whether
-                you're hiring talent or building brand awareness, we've got you
-                covered.
-              </motion.p>
-
-              <motion.div
-                className="hero-stats"
-                variants={staggerVariants}
-                initial="hidden"
-                animate={isVisible.hero ? "visible" : "hidden"}
-              >
-                {[
-                  { number: 50000, label: "Active Students", suffix: "+" },
-                  { number: 50, label: "Partner Companies", suffix: "+" },
-                  { number: 100, label: "Trusted Brands", suffix: "+" },
-                  { number: 12, label: "Universities", suffix: "+" },
-                ].map((stat, index) => (
-                  <motion.div
-                    key={index}
-                    className="hero-stat"
-                    variants={itemVariants}
-                    custom={index}
-                  >
-                    <span className="stat-number">
-                      <AnimatedCounter target={stat.number} suffix={stat.suffix} />
-                    </span>
-                    <span className="stat-label">{stat.label}</span>
-                  </motion.div>
+        {/* crew */}
+        <section className="wrap section">
+          <div className="grid-2" style={{ gap: 40, alignItems: "center" }}>
+            <div>
+              <h2 className="h-lg">join the crew<span className="dot">.</span></h2>
+              <p className="lead" style={{ marginTop: 16, maxWidth: 460, fontSize: 17 }}>one referral code. bring friends, use tdc, earn crew points. points level you up and unlock brand perks.</p>
+              <p className="muted" style={{ marginTop: 14, fontSize: 14 }}>founder circle: 50 seats, hand-picked by the founders. applications close 30 Dec 2026.</p>
+            </div>
+            <div className="ladder">
+              <ul>
+                {LEVELS.map((l) => (
+                  <li key={l.name}>
+                    <span className="lvl"><i style={{ background: l.dot }} />{l.name}</span>
+                    <span className="pts">{l.pts}</span>
+                  </li>
                 ))}
-              </motion.div>
-            </motion.div>
-
-            {/* Right Side - App Features Grid */}
-            <motion.div
-              className="hero-features-grid"
-              initial={{ opacity: 0, x: 60 }}
-              animate={isVisible.hero ? { opacity: 1, x: 0 } : {}}
-              transition={{
-                duration: 0.8,
-                delay: 0.3,
-                ease: [0.16, 1, 0.3, 1],
-              }}
-            >
-              <div className="features-grid-container">
-                <div className="features-grid-header">
-                  <span className="features-badge">✨ App Features</span>
-                  <h4>Everything You Need in One App</h4>
-                </div>
-                <div className="app-features-grid">
-                  {appFeatures.map((feature, index) => {
-                    const IconComponent = feature.icon;
-                    return (
-                      <motion.div
-                        key={feature.id}
-                        className="app-feature-card"
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={isVisible.hero ? { opacity: 1, y: 0 } : {}}
-                        transition={{ delay: 0.5 + index * 0.08 }}
-                        onMouseEnter={() => setHoveredFeature(feature.id)}
-                        onMouseLeave={() => setHoveredFeature(null)}
-                        whileHover={{
-                          y: -8,
-                          boxShadow: `0 12px 40px ${feature.color}25`,
-                          borderColor: feature.color,
-                        }}
-                      >
-                        <div
-                          className="app-feature-icon"
-                          style={{
-                            background: `linear-gradient(135deg, ${feature.gradient[0]}, ${feature.gradient[1]})`,
-                          }}
-                        >
-                          <IconComponent />
-                        </div>
-                        <div className="app-feature-content">
-                          <h4>{feature.title}</h4>
-                          <p>{feature.desc}</p>
-                        </div>
-                        {hoveredFeature === feature.id && (
-                          <motion.div
-                            className="app-feature-glow"
-                            initial={{ opacity: 0, scale: 0.8 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            style={{
-                              background: `radial-gradient(circle, ${feature.color}30, transparent 70%)`,
-                            }}
-                          />
-                        )}
-                      </motion.div>
-                    );
-                  })}
-                </div>
-              </div>
-            </motion.div>
+              </ul>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
 
-      {/* WHY CHOOSE US / FEATURES SECTION */}
-      <section
-        ref={sectionRefs.features}
-        className="features-section"
-        id="features"
-      >
-        <div className="features-bg-effects">
-          <div className="features-half-white-bg"></div>
-          <div className="features-digital-grid"></div>
-          <div className="features-radial-spotlight"></div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="features-content"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isVisible.features ? "visible" : "hidden"}
-          >
-            <motion.div
-              className="features-badge"
-              variants={itemVariants}
-              custom={0}
-            >
-              <span>✨ WHY CHOOSE US</span>
-            </motion.div>
-
-            <motion.h2
-              className="features-headline"
-              variants={itemVariants}
-              custom={1}
-            >
-              Everything You Need to{" "}
-              <span className="highlight-text">Succeed</span>
-            </motion.h2>
-
-            <motion.p
-              className="features-subtitle"
-              variants={itemVariants}
-              custom={2}
-            >
-              Whether you're hiring top talent or building brand awareness, we
-              provide the tools you need.
-            </motion.p>
-
-            <motion.div
-              className="features-tabs"
-              variants={itemVariants}
-              custom={3}
-            >
-              <button
-                className={`tab-btn ${activeTab === "companies" ? "active" : ""}`}
-                onClick={() => setActiveTab("companies")}
-              >
-                <FaBuildingIcon />
-                For Companies
-              </button>
-              <button
-                className={`tab-btn ${activeTab === "brands" ? "active" : ""}`}
-                onClick={() => setActiveTab("brands")}
-              >
-                <FaTag />
-                For Brands
-              </button>
-            </motion.div>
-
-            <motion.div
-              className="features-grid"
-              variants={staggerVariants}
-              initial="hidden"
-              animate={isVisible.features ? "visible" : "hidden"}
-              key={activeTab}
-            >
-              {(activeTab === "companies"
-                ? featuresData.companies
-                : featuresData.brands
-              ).map((feature, index) => {
-                const IconComponent = feature.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    className="feature-card"
-                    variants={itemVariants}
-                    custom={index}
-                    whileHover={{
-                      y: -8,
-                      boxShadow: "0 12px 40px rgba(229, 182, 62, 0.08)",
-                    }}
-                  >
-                    <div className="feature-icon-wrapper">
-                      <div className="feature-icon">
-                        <IconComponent />
-                      </div>
-                    </div>
-                    <h3>{feature.title}</h3>
-                    <p>{feature.description}</p>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* COLLABORATE SECTION */}
-      <section
-        ref={sectionRefs.collaborate}
-        className="collaborate-section"
-        id="collaborate"
-      >
-        <div className="collaborate-bg-effects">
-          <div className="collaborate-half-white-bg"></div>
-          <div className="collaborate-digital-grid"></div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="collaborate-content"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isVisible.collaborate ? "visible" : "hidden"}
-          >
-            <motion.div
-              className="collaborate-badge"
-              variants={itemVariants}
-              custom={0}
-            >
-              <span>🤝 JOIN THE ECOSYSTEM</span>
-            </motion.div>
-
-            <motion.h2
-              className="collaborate-headline"
-              variants={itemVariants}
-              custom={1}
-            >
-              Choose Your <span className="highlight-text">Path</span>
-            </motion.h2>
-
-            <motion.p
-              className="collaborate-subtitle"
-              variants={itemVariants}
-              custom={2}
-            >
-              Whether you're a company looking for talent, a brand seeking
-              exposure, or a university connecting students with opportunities.
-            </motion.p>
-
-            <motion.div
-              className="collaborate-grid"
-              variants={staggerVariants}
-              initial="hidden"
-              animate={isVisible.collaborate ? "visible" : "hidden"}
-            >
-              {[
-                {
-                  icon: FaBuildingIcon,
-                  title: "For Companies",
-                  description:
-                    "Hire top-tier final year students and fresh graduates before your competitors. Access verified talent pools and reduce time-to-hire by 60%.",
-                  cta: "Register Your Company",
-                  color: "#E5B63E",
-                  action: handleCompanyClick,
-                  features: [
-                    "Top 10% Graduates",
-                    "Verified Profiles",
-                    "Early Access",
-                  ],
-                },
-                {
-                  icon: FaTag,
-                  title: "For Brands",
-                  description:
-                    "Reach 50,000+ students and build brand loyalty with the next generation. 100% free to list with 0% commissions on student transactions.",
-                  cta: "Register Your Brand",
-                  color: "#f0c84a",
-                  action: handleBrandClick,
-                  features: [
-                    "50,000+ Students",
-                    "Free Listing",
-                    "UGC Generation",
-                  ],
-                },
-                {
-                  icon: FaUniversity,
-                  title: "For Universities",
-                  description:
-                    "Connect your students with leading companies and brands. Track placement success and build strong industry partnerships.",
-                  cta: "View Universities",
-                  color: "#d4a832",
-                  action: () => setShowUniversitiesModal(true),
-                  features: [
-                    "Industry Connect",
-                    "Placement Tracking",
-                    "Student Success",
-                  ],
-                },
-              ].map((item, index) => {
-                const IconComponent = item.icon;
-                return (
-                  <motion.div
-                    key={index}
-                    className="collaborate-card"
-                    variants={itemVariants}
-                    custom={index}
-                  >
-                    <div
-                      className="collaborate-icon"
-                      style={{
-                        background: `${item.color}20`,
-                        color: item.color,
-                      }}
-                    >
-                      <IconComponent />
-                    </div>
-                    <h3>{item.title}</h3>
-                    <p>{item.description}</p>
-                    <div className="collaborate-features">
-                      {item.features.map((feature, i) => (
-                        <span key={i} className="collaborate-feature-tag">
-                          <FaCheckCircle style={{ color: item.color }} />
-                          {feature}
-                        </span>
-                      ))}
-                    </div>
-                    <motion.button
-                      className="collaborate-cta"
-                      onClick={item.action}
-                      whileHover={{ x: 6 }}
-                      style={{ color: item.color }}
-                    >
-                      {item.cta} <FaArrowRight />
-                    </motion.button>
-                  </motion.div>
-                );
-              })}
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* Universities Modal with Image Logos */}
-      <AnimatePresence>
-        {showUniversitiesModal && (
-          <motion.div
-            className="universities-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={() => setShowUniversitiesModal(false)}
-          >
-            <motion.div
-              className="universities-modal"
-              initial={{ scale: 0.8, y: 50 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.8, y: 50 }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <button
-                className="modal-close"
-                onClick={() => setShowUniversitiesModal(false)}
-              >
-                <FaTimes />
-              </button>
-              <h2 className="modal-title">🏛️ Partner Universities</h2>
-              <p className="modal-subtitle">
-                We partner with Pakistan's top universities to bring you the
-                best talent
-              </p>
-              <div className="modal-universities-grid">
-                {universities.map((uni, index) => (
-                  <motion.div
-                    key={index}
-                    className="modal-university-item"
-                    initial={{ opacity: 0, scale: 0.8 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.1 }}
-                    whileHover={{
-                      y: -6,
-                      boxShadow: "0 8px 30px rgba(229, 182, 62, 0.15)",
-                    }}
-                  >
-                    <div
-                      className="university-logo-wrapper"
-                      style={{ backgroundColor: `${uni.color}10` }}
-                    >
-                      <img
-                        src={uni.logo}
-                        alt={uni.name}
-                        className="university-logo-img"
-                      />
-                    </div>
-                    <span className="university-name">{uni.name}</span>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* ABOUT US SECTION with Stats */}
-      <section ref={sectionRefs.about} className="about-section" id="about">
-        <div className="about-bg-effects">
-          <div className="about-half-white-bg"></div>
-          <div className="about-digital-grid"></div>
-          <div className="about-radial-spotlight"></div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="about-content"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isVisible.about ? "visible" : "hidden"}
-          >
-            <motion.div
-              className="about-badge"
-              variants={itemVariants}
-              custom={0}
-            >
-              <span>📖 ABOUT US</span>
-            </motion.div>
-
-            <motion.h2
-              className="about-headline"
-              variants={itemVariants}
-              custom={1}
-            >
-              Building the Future of{" "}
-              <span className="highlight-text">Talent & Brand Engagement</span>
-            </motion.h2>
-
-            <motion.div
-              className="about-grid"
-              variants={staggerVariants}
-              initial="hidden"
-              animate={isVisible.about ? "visible" : "hidden"}
-            >
-              <motion.div
-                className="about-text"
-                variants={itemVariants}
-                custom={0}
-              >
-                <p>
-                  The Deft Crew is Pakistan's premier talent acquisition and
-                  brand engagement platform that connects top-tier universities,
-                  ambitious students, forward-thinking companies, and innovative
-                  brands.
-                </p>
-                <p>
-                  We work directly with placement cells and institutional
-                  databases of partner universities to ensure verified,
-                  high-quality talent streams. Our platform provides companies
-                  with early access to final-year students and fresh graduates,
-                  reducing time-to-hire by over 60%.
-                </p>
-                <p>
-                  For brands, we offer a unique opportunity to reach 50,000+
-                  students directly with 100% free listing and 0% commissions.
-                  Build brand loyalty with the next generation of consumers
-                  through authentic engagement and user-generated content.
-                </p>
-              </motion.div>
-
-              <motion.div
-                className="about-stats"
-                variants={itemVariants}
-                custom={1}
-              >
-                <div className="about-stat-card">
-                  <span className="about-stat-number">
-                    <AnimatedCounter target={50000} suffix="+" />
-                  </span>
-                  <span className="about-stat-label">Active Students</span>
-                </div>
-                <div className="about-stat-card">
-                  <span className="about-stat-number">
-                    <AnimatedCounter target={50} suffix="+" />
-                  </span>
-                  <span className="about-stat-label">Partner Companies</span>
-                </div>
-                <div className="about-stat-card">
-                  <span className="about-stat-number">
-                    <AnimatedCounter target={100} suffix="+" />
-                  </span>
-                  <span className="about-stat-label">Trusted Brands</span>
-                </div>
-                <div className="about-stat-card">
-                  <span className="about-stat-number">
-                    <AnimatedCounter target={12} suffix="+" />
-                  </span>
-                  <span className="about-stat-label">Universities</span>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        </div>
-        <div className="about-mission">
-          <div className="mission-item">
-            <FaEye />
+        {/* brands */}
+        <section id="brands" className="dark on-dark" style={{ marginTop: 96 }}>
+          <div className="wrap dark-inner">
             <div>
-              <h4>Our Vision</h4>
-              <p>
-                To become the leading ecosystem bridging academia, industry, and
-                brands.
-              </p>
+              <div className="eyebrow">for brands</div>
+              <h2 className="h-lg" style={{ marginTop: 12 }}>reach students where they decide what's next<span className="dot">.</span></h2>
+              <p className="lead" style={{ marginTop: 20, maxWidth: 460, fontSize: 17 }}>list a flat discount for tdc verified users. pay nothing in year one: no listing fee, no commission.</p>
+              <div className="hero-ctas">
+                <Link to="/signup" className="btn btn-accent">list your brand</Link>
+                <a href={`mailto:${LINKS.hello}`} className="btn btn-ghost-dark">talk to us</a>
+              </div>
+            </div>
+            <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 240px), 1fr))", gap: 12 }}>
+              {BRAND_POINTS.map((b) => (
+                <div className="card" key={b.title}>
+                  <span className="dot-mark" />
+                  <h3 style={{ fontSize: 19 }}>{b.title}</h3>
+                  <p>{b.body}</p>
+                </div>
+              ))}
             </div>
           </div>
-          <div className="mission-item">
-            <FaBullseye />
+        </section>
+
+        {/* partner brands (live) */}
+        <section className="wrap section">
+          <div className="section-head" style={{ marginBottom: 28 }}>
+            <h2 className="h-md">100+ brands already on tdc<span className="dot">.</span></h2>
+            <a href={LINKS.getApp} style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
+          </div>
+          <div className="partners">
+            {brands.map((b) => (
+              <span key={b.name}>
+                {b.image && <img src={b.image} alt="" style={{ width: 24, height: 24, borderRadius: 12, objectFit: "cover", marginLeft: -8 }} />}
+                {b.name}
+                {b.category && <small>{b.category}</small>}
+              </span>
+            ))}
+          </div>
+        </section>
+
+        {/* employers + campus */}
+        <section className="wrap section">
+          <div className="grid-2">
+            <div id="employers" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16 }}>
+              <div className="eyebrow">for employers</div>
+              <h2 className="h-md" style={{ fontSize: 34 }}>hire interns and fresh grads<span className="dot">.</span></h2>
+              <p style={{ fontSize: 16, marginTop: 0 }}>post internships and entry-level roles to the career hub. students who've built their CV on tdc see how well they match before they apply, and you see candidates who fit.</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+                <Link to="/signup" className="btn btn-primary">register as employer</Link>
+                <a href={`mailto:${LINKS.hr}`} className="btn btn-secondary">{LINKS.hr}</a>
+              </div>
+            </div>
+            <div id="campus" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16, background: "#FFF1CC", borderColor: "#FFF1CC" }}>
+              <div className="eyebrow" style={{ color: "#111111" }}>campus ambassadors</div>
+              <h2 className="h-md" style={{ fontSize: 34 }}>run tdc on your campus<span className="dot">.</span></h2>
+              <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>7+ universities and 20+ student societies already work with us. ambassadors get founder mentorship, 1-on-1 career counselling, a referral letter and a shot at the founder circle.</p>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+                <Link to="/ambassador" className="btn btn-primary">apply as ambassador</Link>
+                <a href={`mailto:${LINKS.hello}?subject=${encodeURIComponent("tdc x our society")}`} className="btn btn-secondary">societies, talk to us</a>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        {/* download */}
+        <section className="wrap section">
+          <div className="cta-box">
             <div>
-              <h4>Our Mission</h4>
-              <p>
-                Connect companies with top 10% of graduates and brands with
-                50,000+ students.
-              </p>
+              <h2>get tdc. it's free.<br />scene sorted<span className="dot">.</span></h2>
+              <p>for students, alumni and faculty.</p>
             </div>
-          </div>
-          <div className="mission-item">
-            <FaHeart />
-            <div>
-              <h4>Our Values</h4>
-              <p>
-                Transparency, Innovation, Excellence, and Impact-driven
-                solutions.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      
-
-      <OfferImagesGallery/>
-    
-
-
-<section className="universities-preview-section">
-  {/* Enhanced Background Effects */}
-  <div className="uni-preview-bg-effects">
-    <div className="uni-preview-half-white-bg"></div>
-    <div className="uni-preview-digital-grid"></div>
-    <div className="uni-preview-radial-spotlight"></div>
-    <div className="uni-preview-particle-1"></div>
-    <div className="uni-preview-particle-2"></div>
-    <div className="uni-preview-particle-3"></div>
-  </div>
-
-  <div className="container">
-    <div className="uni-preview-content">
-      {/* Header with Enhanced Animation */}
-      <motion.div
-        className="uni-preview-header"
-        initial={{ opacity: 0, y: 30 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
-        viewport={{ once: true }}
-      >
-        <div className="uni-preview-badge-wrapper">
-          <motion.span 
-            className="uni-preview-badge"
-            whileHover={{ scale: 1.05 }}
-            transition={{ type: "spring", stiffness: 400 }}
-          >
-            <FaGraduationCap className="badge-icon" />
-            Partner Universities
-            <span className="badge-dot"></span>
-            <span className="badge-glow"></span>
-          </motion.span>
-        </div>
-
-        <motion.h2 
-          className="uni-preview-headline"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1, duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          Pakistan's <span className="highlight-gold">Top Partner Universities</span>
-        </motion.h2>
-
-        <motion.p 
-          className="uni-preview-subtitle"
-          initial={{ opacity: 0, y: 20 }}
-          whileInView={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2, duration: 0.6 }}
-          viewport={{ once: true }}
-        >
-          We partner with Pakistan's leading universities to bring you the 
-          best talent and foster meaningful academic collaborations.
-        </motion.p>
-      </motion.div>
-
-     
-
-      {/* Universities Grid - Show only 3 with Enhanced Cards */}
-      <motion.div
-        className="uni-preview-grid-wrapper"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        viewport={{ once: true }}
-      >
-        <div className="uni-preview-grid">
-          {universities.slice(0, 3).map((uni, index) => (
-            <motion.div
-              key={index}
-              className="uni-preview-card"
-              initial={{ opacity: 0, scale: 0.9, y: 30 }}
-              animate={{ opacity: 1, scale: 1, y: 0 }}
-              transition={{ 
-                delay: index * 0.1,
-                type: "spring",
-                stiffness: 300,
-                damping: 20
-              }}
-              whileHover={{
-                y: -12,
-                scale: 1.03,
-                boxShadow: `0 20px 60px ${uni.color}25`,
-                borderColor: uni.color,
-                transition: { type: "spring", stiffness: 400 }
-              }}
-              whileTap={{ scale: 0.98 }}
-            >
-              {/* Card Glow Effects */}
-              <div 
-                className="uni-preview-card-glow" 
-                style={{ background: `radial-gradient(circle at 50% 0%, ${uni.color}20, transparent 70%)` }}
-              ></div>
-              <div className="card-shimmer-effect"></div>
-              
-              {/* Rating Badge */}
-              <div className="card-rating-badge">
-                <FaStar className="rating-star" />
-                <span>4.8</span>
-              </div>
-
-              {/* Logo with Ring Animation */}
-              <div 
-                className="uni-preview-logo-wrapper" 
-                style={{ backgroundColor: `${uni.color}10` }}
-              >
-                <motion.div 
-                  className="logo-ring-pulse"
-                  style={{ borderColor: uni.color }}
-                  animate={{ 
-                    scale: [1, 1.1, 1],
-                    opacity: [0.3, 0.6, 0.3]
-                  }}
-                  transition={{ 
-                    duration: 2,
-                    repeat: Infinity,
-                    ease: "easeInOut"
-                  }}
-                ></motion.div>
-                <img
-                  src={uni.logo}
-                  alt={uni.name}
-                  className="uni-preview-logo-img"
-                />
-              </div>
-
-              <div className="uni-preview-info">
-                <motion.h4 
-                  className="uni-preview-name" 
-                  style={{ color: uni.color }}
-                  whileHover={{ scale: 1.02 }}
-                >
-                  {uni.name}
-                </motion.h4>
-                <div className="uni-preview-location">
-                  <FaMapMarkerAlt className="location-icon" style={{ color: uni.color }} />
-                  <span>Karachi, Pakistan</span>
-                </div>
-              </div>
-
-              <div className="uni-preview-meta">
-                <div className="uni-preview-meta-item">
-                  <FaUsers className="meta-icon" style={{ color: uni.color }} />
-                  <span>5,000+ Students</span>
-                </div>
-                <div className="meta-divider-vertical"></div>
-                <div className="uni-preview-meta-item">
-                  <FaBuilding className="meta-icon" style={{ color: uni.color }} />
-                  <span>Private</span>
-                </div>
-              </div>
-
-              <div className="uni-preview-card-footer">
-                <motion.span 
-                  className="uni-preview-type" 
-                  style={{ background: `${uni.color}15`, color: uni.color }}
-                  whileHover={{ scale: 1.05 }}
-                >
-                  <FaTrophy className="type-icon" />
-                  Top Tier
-                </motion.span>
-                <motion.button 
-                  className="explore-mini-btn"
-                  style={{ color: uni.color }}
-                  whileHover={{ x: 5 }}
-                >
-                  Explore <FaArrowRight className="mini-arrow" />
-                </motion.button>
-              </div>
-
-              {/* Card Shimmer Line */}
-              <div className="card-shimmer-line" style={{ background: uni.color }}></div>
-            </motion.div>
-          ))}
-        </div>
-      </motion.div>
-
-      {/* View All CTA with Enhanced Animation */}
-      <motion.div
-        className="uni-preview-cta-wrapper"
-        initial={{ opacity: 0, y: 20 }}
-        whileInView={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.4 }}
-        viewport={{ once: true }}
-      >
-        <motion.button 
-          className="uni-preview-view-all-btn"
-          onClick={() => navigate('/universities')}
-          whileHover={{ 
-            scale: 1.03,
-            y: -4,
-            transition: { type: "spring", stiffness: 400 }
-          }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <span className="btn-text">View All Partner Universities</span>
-          <div className="btn-icon-wrapper">
-            <FaArrowRight className="btn-arrow" />
-          </div>
-          <div className="btn-shimmer"></div>
-        </motion.button>
-      </motion.div>
-
-      {/* Bottom Decoration */}
-      <div className="uni-preview-bottom-deco">
-        <div className="deco-line"></div>
-        <div className="deco-dots">
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-          <span></span>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
-      <HomeReviews />
-      {/* CONTACT US SECTION */}
-      <section
-        ref={sectionRefs.contact}
-        className="contact-section"
-        id="contact"
-      >
-        <div className="contact-bg-effects">
-          <div className="contact-half-white-bg"></div>
-          <div className="contact-digital-grid"></div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="contact-content"
-            variants={containerVariants}
-            initial="hidden"
-            animate={isVisible.contact ? "visible" : "hidden"}
-          >
-            <motion.div
-              className="contact-badge"
-              variants={itemVariants}
-              custom={0}
-            >
-              <span>📬 CONTACT US</span>
-            </motion.div>
-
-            <motion.h2
-              className="contact-headline"
-              variants={itemVariants}
-              custom={1}
-            >
-              Get in <span className="highlight-text">Touch</span>
-            </motion.h2>
-
-            <motion.p
-              className="contact-subtitle"
-              variants={itemVariants}
-              custom={2}
-            >
-              Have questions? We'd love to hear from you. Reach out to our team
-              and we'll get back to you within 24 hours.
-            </motion.p>
-
-            <motion.div
-              className="contact-grid"
-              variants={staggerVariants}
-              initial="hidden"
-              animate={isVisible.contact ? "visible" : "hidden"}
-            >
-              <motion.div
-                className="contact-info"
-                variants={itemVariants}
-                custom={0}
-              >
-                <div className="contact-item">
-                  <div className="contact-icon">
-                    <FaMapMarkerAlt />
-                  </div>
-                  <div>
-                    <h4>Location</h4>
-                    <p>Bldg 22-C LN 3, Bukhari Phase 6 DHA, Karachi, Pakistan 75500.</p>
-                  </div>
-                </div>
-                <div className="contact-item">
-                  <div className="contact-icon">
-                    <FaEnvelope />
-                  </div>
-                  <div>
-                    <h4>Email</h4>
-                    <p>hello@thedeftcrew.com</p>
-                  </div>
-                </div>
-                <div className="contact-item">
-                  <div className="contact-icon">
-                    <FaPhone />
-                  </div>
-                  <div>
-                    <h4>Phone</h4>
-                    <p>+923222969595</p>
-                  </div>
-                </div>
-                <div className="contact-item">
-                  <div className="contact-icon">
-                    <FaClock />
-                  </div>
-                  <div>
-                    <h4>Working Hours</h4>
-                    <p>Mon - Fri, 9:00 AM - 6:00 PM</p>
-                  </div>
-                </div>
-              </motion.div>
-
-              <motion.div
-                className="contact-details"
-                variants={itemVariants}
-                custom={1}
-              >
-                <div className="contact-details-card">
-                  <div className="contact-map">
-                    <iframe
-                      src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d2858.069255290672!2d67.066767!3d24.791769799999997!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x3eb33cebff2f4c39%3A0xd0b467e3ee81f4a7!2sThe%20Deft%20Crew-Digital%20Marketing%20Agency%20%7C%20Social%20Media%20Marketing%20%26%20Influencer%20Agency!5e1!3m2!1sen!2s!4v1784106864269!5m2!1sen!2s"
-                      width="100%"
-                      height="500"
-                      style={{ border: 0, borderRadius: "12px" }}
-                      allowFullScreen=""
-                      loading="lazy"
-                      title="Location Map"
-                    ></iframe>
-                  </div>
-                </div>
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* APP DOWNLOAD CTA */}
-      <section className="app-cta-section">
-        <div className="app-cta-bg-effects">
-          <div className="app-cta-half-white-bg"></div>
-          <div className="app-cta-digital-grid"></div>
-          <div className="app-cta-radial-spotlight"></div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="app-cta-content"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-           
-
-            <motion.h2
-              className="app-cta-headline"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
-              Download Our <span className="highlight-text">App</span>
-            </motion.h2>
-
-            <motion.p
-              className="app-cta-subtext"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              Access talent and brand opportunities on the go. Download the tdc
-              app and start connecting instantly.
-            </motion.p>
-
-            <motion.div
-              className="app-cta-buttons"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              <motion.a
-                href="https://apps.apple.com/pk/app/the-deft-crew/id6765877675"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="app-store-btn gold"
-                whileHover={{ scale: 1.05, y: -6 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaApple />
-                <div>
-                  <span>Download on the</span>
-                  <strong>App Store</strong>
-                </div>
-                <FaArrowRight className="arrow-icon" />
-              </motion.a>
-
-              <motion.a
-                href="https://play.google.com/store/apps/details?id=com.aqkhan110.tdc"
-                target="_blank"
-                rel="noopener noreferrer"
-                className="play-store-btn gold"
-                whileHover={{ scale: 1.05, y: -6 }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <FaGooglePlay />
-                <div>
-                  <span>Get it on</span>
-                  <strong>Google Play</strong>
-                </div>
-                <FaArrowRight className="arrow-icon" />
-              </motion.a>
-            </motion.div>
-
-            {/* App Screenshots Preview */}
-            <motion.div
-              className="app-screenshots"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.4, duration: 0.6 }}
-            >
-              <div className="app-screenshot">
-                <img
-                  src={appScreenshot1}
-                  alt="App Screenshot 1"
-                  className="app-screenshot-img"
-                />
-                <div className="app-screenshot-overlay">
-                  <span>Home</span>
-                </div>
-              </div>
-              <div className="app-screenshot">
-                <img
-                  src={appScreenshot2}
-                  alt="App Screenshot 2"
-                  className="app-screenshot-img"
-                />
-                <div className="app-screenshot-overlay">
-                  <span>Features</span>
-                </div>
-              </div>
-              <div className="app-screenshot">
-                <img
-                  src={appScreenshot3}
-                  alt="App Screenshot 3"
-                  className="app-screenshot-img"
-                />
-                <div className="app-screenshot-overlay">
-                  <span>Profile</span>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* BUILD YOUR PROFILE CTA */}
-      <section className="profile-cta-section">
-        <div className="profile-cta-bg-effects">
-          <div className="profile-cta-half-white-bg"></div>
-          <div className="profile-cta-digital-grid"></div>
-          <div className="profile-cta-radial-spotlight"></div>
-        </div>
-
-        {/* Floating Elements */}
-        <div className="profile-cta-floating">
-          <div className="floating-icon">✦</div>
-          <div className="floating-icon">✦</div>
-          <div className="floating-icon">✦</div>
-          <div className="floating-icon">✦</div>
-        </div>
-
-        <div className="container">
-          <motion.div
-            className="profile-cta-content"
-            initial={{ opacity: 0, y: 40 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true }}
-            transition={{ duration: 0.7 }}
-          >
-            <motion.h2
-              className="profile-cta-headline"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.1, duration: 0.6 }}
-            >
-              Build Your <span className="highlight-text">Profile</span> Today
-            </motion.h2>
-
-            <motion.p
-              className="profile-cta-subtext"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.2, duration: 0.6 }}
-            >
-              Whether you're a company hiring talent or a brand building
-              awareness, create your profile and start growing.
-            </motion.p>
-
-            <motion.div
-              className="profile-cta-buttons"
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true }}
-              transition={{ delay: 0.3, duration: 0.6 }}
-            >
-              <motion.button
-                className="profile-cta-company"
-                onClick={handleCompanyClick}
-                whileHover={{ scale: 1.05, y: -8 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <div className="btn-border"></div>
-                <div className="btn-glow"></div>
-                <FaBuildingIcon />
-                <div>
-                  <strong>For Companies</strong>
-                  <span>Hire Top Talent →</span>
-                </div>
-              </motion.button>
-
-              <motion.button
-                className="profile-cta-brand"
-                onClick={handleBrandClick}
-                whileHover={{ scale: 1.05, y: -8 }}
-                whileTap={{ scale: 0.95 }}
-                transition={{ type: "spring", stiffness: 400, damping: 17 }}
-              >
-                <div className="btn-border"></div>
-                <div className="btn-glow"></div>
-                <FaTag />
-                <div>
-                  <strong>For Brands</strong>
-                  <span>Reach Students →</span>
-                </div>
-              </motion.button>
-            </motion.div>
-          </motion.div>
-        </div>
-      </section>
-
-      {/* FOOTER */}
-      <footer className="landing-footer">
-        <div className="container">
-          <div className="footer-grid">
-            <div className="footer-brand">
-              <div className="footer-logo">
-                <span>The Deft </span>
-                <span className="footer-suffix">Crew</span>
-              </div>
-              <p className="footer-description">
-                Connecting talent, brands, and opportunities. Empowering the
-                next generation of professionals and businesses.
-              </p>
-              <div className="footer-social">
-                <a
-                  href="https://www.linkedin.com/company/thedeftcrew/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="LinkedIn"
-                  className="social-link"
-                >
-                  <FaLinkedinIn />
-                </a>
-                <a
-                  href="https://www.facebook.com/share/1CijYDto1b/"
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Facebook"
-                  className="social-link"
-                >
-                  <FaFacebookF />
-                </a>
-                <a
-                  href="https://www.instagram.com/thedeftcrew?igsh=MWRnc3RnZ3hkN2s0Yw=="
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  aria-label="Instagram"
-                  className="social-link"
-                >
-                  <FaInstagram />
-                </a>
-              </div>
-            </div>
-
-            <div className="footer-links-column">
-              <h4>Quick Links</h4>
-              <a
-                href="#home"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(sectionRefs.hero);
-                }}
-              >
-                <FaChevronRight /> Home
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <a href={LINKS.appStore} className="btn btn-white" style={{ height: 58, borderRadius: 29 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M16.4 12.6c0-2.5 2-3.7 2.1-3.8-1.2-1.7-3-1.9-3.6-2-1.5-.2-3 .9-3.8.9-.8 0-2-.9-3.3-.9-1.7 0-3.3 1-4.2 2.5-1.8 3.1-.5 7.7 1.3 10.2.9 1.2 1.9 2.6 3.2 2.6 1.3-.1 1.8-.8 3.3-.8 1.6 0 2 .8 3.3.8 1.4 0 2.3-1.2 3.1-2.5 1-1.4 1.4-2.8 1.4-2.9-.1 0-2.8-1-2.8-4.1zM13.9 5.2c.7-.8 1.2-2 1-3.2-1 .1-2.2.7-2.9 1.5-.6.7-1.2 1.9-1.1 3.1 1.1.1 2.3-.6 3-1.4z" /></svg>
+                app store
               </a>
-              <a
-                href="#features"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(sectionRefs.features);
-                }}
-              >
-                <FaChevronRight /> Why Choose Us
-              </a>
-              <a
-                href="#collaborate"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(sectionRefs.collaborate);
-                }}
-              >
-                <FaChevronRight /> Collaborate
-              </a>
-              <a
-                href="#about"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(sectionRefs.about);
-                }}
-              >
-                <FaChevronRight /> About Us
-              </a>
-              <a
-                href="#contact"
-                onClick={(e) => {
-                  e.preventDefault();
-                  scrollToSection(sectionRefs.contact);
-                }}
-              >
-                <FaChevronRight /> Contact
-              </a>
-            </div>
-
-            <div className="footer-links-column">
-              <h4>Connect With Us</h4>
-              <a href="mailto:hello@thedeftcrew.com">
-                <FaEnvelope /> hello@thedeftcrew.com
-              </a>
-              <a href="tel:+923222969595">
-                <FaPhone /> +923222969595
-              </a>
-              <a href="#">
-                <FaMapMarkerAlt /> Bldg 22-C LN 3, Bukhari Phase 6 DHA, Karachi, Pakistan 75500.
-              </a>
-              <a href="#">
-                <FaClock /> Mon - Fri, 9AM - 6PM
+              <a href={LINKS.playStore} className="btn btn-accent" style={{ height: 58, borderRadius: 29 }}>
+                <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M4 2.8v18.4c0 .4.4.6.7.4l15.9-9.2c.3-.2.3-.6 0-.8L4.7 2.4c-.3-.2-.7 0-.7.4z" /></svg>
+                google play
               </a>
             </div>
           </div>
+        </section>
+      </main>
 
-          <div className="footer-bottom">
-            <p className="footer-copyright">
-              © {new Date().getFullYear()}{" "}
-              <span className="footer-copyright-brand">The Deft Crew</span>. All
-              rights reserved.
-            </p>
-          </div>
-        </div>
-      </footer>
+      <WebFooter />
     </div>
   );
-};
-
-export default Landing;
+}
