@@ -118,7 +118,7 @@ export function WebFooter() {
         </div>
       </div>
       <div className="wrap footer-base">
-        <span>© {new Date().getFullYear()} tdc, part of MSB Group. all rights reserved.</span>
+        <span>© {new Date().getFullYear()} tdc, part of MSB Group.</span>
         <span style={{ display: "flex", gap: 18 }}>
           <a href={LINKS.instagram}>Instagram</a>
           <a href={LINKS.linkedin}>LinkedIn</a>
@@ -157,10 +157,13 @@ export function CardTitle({ title, sub, mark = "." }) {
   );
 }
 
+// Tab titles follow the design boards: "tdc. partner log in", "tdc. for brands", ...
+export const pageTitle = (name) => `tdc. ${String(name).replace(/\s*·\s*tdc\.?\s*$/, "").replace(/^tdc\.\s*/, "")}`;
+
 // Sets the tab title and starts each page at the top.
 export function usePage(title) {
   React.useEffect(() => {
-    document.title = title;
+    document.title = pageTitle(title);
     if (!window.location.hash) window.scrollTo(0, 0);
   }, [title]);
 }
