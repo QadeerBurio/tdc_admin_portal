@@ -219,20 +219,20 @@ export default function Landing() {
         {/* employers + campus */}
         <section className="wrap section">
           <div className="grid-2">
-            <div id="employers" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16 }}>
+            <div id="employers" className="card block">
               <div className="eyebrow">for employers</div>
               <h2 className="h-md" style={{ fontSize: 34 }}>hire interns and fresh grads<span className="dot">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0 }}>post internships and entry-level roles to the career hub. students who've built their CV on tdc see how well they match before they apply, and you see candidates who fit.</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+              <div className="block-actions">
                 <Link to="/signup" className="btn btn-primary">register as employer</Link>
                 <a href={`mailto:${LINKS.hr}`} className="btn btn-secondary">{LINKS.hr}</a>
               </div>
             </div>
-            <div id="campus" className="card" style={{ padding: 40, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16, background: "#FFF1CC", borderColor: "#FFF1CC" }}>
+            <div id="campus" className="card block block-soft">
               <div className="eyebrow" style={{ color: "#111111" }}>for campuses and societies</div>
               <h2 className="h-md" style={{ fontSize: 34 }}>bring tdc to your campus<span className="dot">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities already work with us on events, activations and the campus ambassador program.</p>
-              <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 8 }}>
+              <div className="block-actions">
                 <a href={`mailto:${LINKS.hello}`} className="btn btn-primary">partner with us</a>
               </div>
             </div>

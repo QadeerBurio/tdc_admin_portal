@@ -89,7 +89,7 @@
 
 /* ---------- sections ---------- */
 .tdcw section { scroll-margin-top: 80px; }
-.tdcw .section { padding: 96px 0 0; }
+.tdcw .section { padding-top: 96px; }
 .tdcw .eyebrow { font-size: 14px; font-weight: 700; color: var(--muted); }
 .tdcw .on-dark .eyebrow { color: var(--yellow); }
 .tdcw .h-xl { font-weight: 800; font-size: clamp(48px, 6.4vw, 88px); line-height: 0.98; letter-spacing: -2.5px; }
@@ -109,7 +109,8 @@
 .tdcw .chip-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--yellow); }
 
 /* ---------- hero ---------- */
-.tdcw .hero { padding: 72px 0 56px; display: grid; gap: 56px; align-items: center; grid-template-columns: 1.1fr 0.9fr; }
+.tdcw .hero { padding-top: 72px; padding-bottom: 56px; display: grid; gap: 56px; align-items: center; grid-template-columns: 1.1fr 0.9fr; }
+.tdcw .hero > * { min-width: 0; }
 .tdcw .hero h1 { margin-top: 22px; }
 .tdcw .hero .lead { margin-top: 24px; max-width: 520px; }
 .tdcw .hero-ctas { margin-top: 32px; display: flex; flex-wrap: wrap; gap: 12px; }
@@ -173,7 +174,7 @@
 .tdcw .dark a { color: #FFFFFF; }
 .tdcw .dark .btn-accent { color: var(--ink); }
 .tdcw .dark .btn-white { color: var(--ink); }
-.tdcw .dark-inner { padding: 96px 0; display: grid; gap: 56px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
+.tdcw .dark-inner { padding-top: 96px; padding-bottom: 96px; display: grid; gap: 56px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
 .tdcw .dot-mark { display: block; width: 10px; height: 10px; border-radius: 5px; background: var(--yellow); margin-bottom: 14px; }
 
 /* partner chips */
@@ -189,11 +190,11 @@
 
 /* footer */
 .tdcw .footer { background: var(--card); border-top: 1px solid var(--line); margin-top: 96px; }
-.tdcw .footer-grid { padding: 56px 0 32px; display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
+.tdcw .footer-grid { padding-top: 56px; padding-bottom: 32px; display: grid; gap: 32px; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); }
 .tdcw .footer-col { display: flex; flex-direction: column; gap: 10px; font-size: 15px; }
 .tdcw .footer-col b { font-weight: 700; }
 .tdcw .footer-col a { text-decoration: none; }
-.tdcw .footer-base { padding: 20px 0 32px; border-top: 1px solid var(--line-soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); }
+.tdcw .footer-base { padding-top: 20px; padding-bottom: 32px; border-top: 1px solid var(--line-soft); display: flex; flex-wrap: wrap; justify-content: space-between; gap: 12px; font-size: 13.5px; color: var(--muted); }
 .tdcw .footer-base a { color: var(--muted); }
 
 /* ---------- forms ---------- */
@@ -278,6 +279,29 @@
 
 @media (prefers-reduced-motion: reduce) {
   .tdcw *, .tdcw *::before, .tdcw *::after { transition: none !important; animation-duration: 0.01ms !important; }
+}
+
+/* employers / campuses blocks (landing) */
+.tdcw .block { padding: 40px; border-radius: 28px; display: flex; flex-direction: column; gap: 16px; }
+.tdcw .block-soft { background: var(--yellow-soft); border-color: var(--yellow-soft); }
+.tdcw .block-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 8px; }
+
+/* ---------- small screens ---------- */
+@media (max-width: 900px) {
+  .tdcw .facts .wrap { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 600px) {
+  .tdcw .section { padding-top: 64px; }
+  .tdcw .hero { padding-top: 36px; padding-bottom: 40px; gap: 40px; }
+  .tdcw .dark-inner { padding-top: 64px; padding-bottom: 64px; gap: 40px; }
+  .tdcw .section-head { margin-bottom: 28px; }
+  .tdcw .footer { margin-top: 64px; }
+  .tdcw .fact b { font-size: 32px; }
+  .tdcw .block { padding: 28px 22px; }
+  .tdcw .cta-box { flex-direction: column; align-items: stretch; }
+  .tdcw main .btn:not(.btn-sm) { width: 100%; min-height: 48px; }
+  .tdcw .btn-sm { height: 48px; border-radius: 24px; }
+  .tdcw .nav-toggle { width: 48px; height: 48px; border-radius: 24px; }
 }
 
 /* logo grid (partner brands, universities) */
