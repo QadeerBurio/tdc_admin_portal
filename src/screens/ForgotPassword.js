@@ -1,13 +1,18 @@
-import React, { useState } from "react";
+// ForgotPassword.js — step 1 of password reset. Same API flow as before, new tdc design.
+import React, { useEffect, useState } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
-import "./styles/ForgotPassword.css";
+import { useNavigate, Link } from "react-router-dom";
+import { AuthShell, CardTitle } from "../web/site";
 
 export default function ForgotPassword() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const navigate = useNavigate();
+
+  useEffect(() => {
+    document.title = "forgot password · tdc.";
+  }, []);
 
   const goToVerify = (data) => {
     const session = {
@@ -25,9 +30,8 @@ export default function ForgotPassword() {
     e.preventDefault();
     setError("");
 
-    // Validate input
     if (!emailOrPhone || emailOrPhone.trim() === "") {
-      setError("Please enter your email or phone number");
+      setError("please enter your email or phone number.");
       return;
     }
 
@@ -35,8 +39,7 @@ export default function ForgotPassword() {
 
     try {
       const res = await axios.post(
-       "https://the-deft-crew-production.up.railway.app/api/auth/forgot-password",
-        
+        "https://the-deft-crew-production.up.railway.app/api/auth/forgot-password",
         { emailOrPhone: emailOrPhone.trim() }
       );
 
@@ -44,9 +47,8 @@ export default function ForgotPassword() {
       if (res.data?.userId) {
         goToVerify(res.data);
       } else {
-        setError(res.data?.message || "Failed to send OTP");
+        setError(res.data?.message || "couldn't send the code. please try again.");
       }
-
     } catch (err) {
       console.error("Forgot Password Error:", err);
 
@@ -56,20 +58,12 @@ export default function ForgotPassword() {
         return;
       }
 
-      // Handle different error types
       if (err.response) {
-        // Server responded with error
-        setError(
-          err.response.data?.message || 
-          err.response.data?.error ||
-          "Server error. Please try again."
-        );
+        setError(err.response.data?.message || err.response.data?.error || "server error. please try again.");
       } else if (err.request) {
-        // Request made but no response
-        setError("Network error. Please check your connection.");
+        setError("network error. please check your connection.");
       } else {
-        // Something else happened
-        setError("Something went wrong. Please try again.");
+        setError("something went wrong. please try again.");
       }
     } finally {
       setLoading(false);
@@ -77,94 +71,35 @@ export default function ForgotPassword() {
   };
 
   return (
-    <div className="forgot-container">
-      <form className="forgot-card" onSubmit={handleSendOTP}>
-        <h2>Forgot Password</h2>
-        
-        {error && (
-          <div className="error-message" style={{
-            color: '#ff0000',
-            fontSize: '14px',
-            marginBottom: '15px',
-            padding: '10px',
-            backgroundColor: '#ffeeee',
-            borderRadius: '5px',
-            textAlign: 'center'
-          }}>
-            {error}
-          </div>
-        )}
+    <AuthShell headerAction={<Link to="/login" className="btn btn-secondary btn-sm" style={{ borderWidth: 1, borderColor: "#ECE7DB" }}>back to log in</Link>}>
+      <form className="auth-card" onSubmit={handleSendOTP} noValidate>
+        <CardTitle title="forgot your password" mark="?" sub="no stress. we'll send a code to your email or phone." />
 
-        <input
-          type="text"
-          placeholder="Enter Email or Phone"
-          value={emailOrPhone}
-          onChange={(e) => {
-            setEmailOrPhone(e.target.value);
-            // Clear error when user starts typing
-            if (error) setError("");
-          }}
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '12px',
-            marginBottom: '15px',
-            border: '2px solid #ddd',
-            borderRadius: '8px',
-            fontSize: '16px',
-            transition: 'border-color 0.3s'
-          }}
-        />
+        {error && <div className="alert alert-error" role="alert">{error}</div>}
 
-        <button 
-          type="submit" 
-          disabled={loading}
-          style={{
-            width: '100%',
-            padding: '12px',
-            backgroundColor: '#f9c349', // Yellow background
-            color: '#000',
-            border: 'none',
-            borderRadius: '8px',
-            fontSize: '16px',
-            fontWeight: '600',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            transition: 'all 0.3s ease',
-            opacity: loading ? 0.7 : 1,
-          }}
-          onMouseEnter={(e) => {
-            if (!loading) {
-              e.target.style.backgroundColor = '#e8b33d';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!loading) {
-              e.target.style.backgroundColor = '#f9c349';
-            }
-          }}
-        >
-          {loading ? 'Sending OTP...' : 'Send OTP'}
+        <div className="field">
+          <label htmlFor="emailOrPhone">email or phone</label>
+          <input
+            id="emailOrPhone"
+            className="input"
+            type="text"
+            placeholder="you@yourbrand.com or 03XXXXXXXXX"
+            value={emailOrPhone}
+            onChange={(e) => { setEmailOrPhone(e.target.value); if (error) setError(""); }}
+            disabled={loading}
+            autoComplete="username"
+            autoFocus
+          />
+        </div>
+
+        <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+          {loading ? (<><span className="spinner" aria-hidden="true" /> sending code</>) : "send code"}
         </button>
 
-        <p style={{
-          marginTop: '15px',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: '#666'
-        }}>
-          <span 
-            onClick={() => navigate('/login')}
-            style={{
-              color: '#f9c349',
-              fontWeight: '600',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
-            Back to Login
-          </span>
+        <p className="muted" style={{ textAlign: "center", fontSize: 15 }}>
+          remembered it? <Link to="/login" style={{ fontWeight: 700 }}>log in</Link>
         </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

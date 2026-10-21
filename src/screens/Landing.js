@@ -1,11 +1,9 @@
 // Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
-import React, { useEffect, useState } from "react";
+import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import axios from "axios";
 import { WebNav, WebFooter, LINKS, Arrow } from "../web/site";
+import { useOffers } from "../web/useOffers";
 import logoInk from "../web/assets/tdc-logo-ink.png";
-
-const API = "https://the-deft-crew-production.up.railway.app/api";
 
 const FACTS = [
   { n: "100+", label: "partner brands" },
@@ -44,14 +42,6 @@ const BRAND_POINTS = [
   { title: "simple terms", body: "you set a flat discount from 15% to 60%. either side can exit with 15 working days' notice." },
 ];
 
-// Shown only if the live brand list can't be loaded.
-const FALLBACK_BRANDS = [
-  ["Jenpharm", "health and beauty"], ["Dear Croissant", "food and drinks"], ["Socials by YS", "restaurant"],
-  ["Spark Saloon", "salon"], ["Fropresso", "cafe"], ["House of Burger", "restaurant"],
-  ["Krema Coffee & Gelato", "cafe"], ["The Padel Factory", "sports"], ["Playdium", "entertainment"],
-  ["Three Coffee Roasters", "cafe"], ["Muscle Lab Gym", "gym"], ["Xiongmao Hotpot", "restaurant"],
-].map(([name, category]) => ({ name, category }));
-
 function Icon({ d }) {
   return (
     <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="#111111" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
@@ -60,39 +50,9 @@ function Icon({ d }) {
   );
 }
 
-function useLiveBrands() {
-  const [brands, setBrands] = useState(null);
-  useEffect(() => {
-    let alive = true;
-    axios
-      .get(`${API}/offers/images/all`)
-      .then((res) => {
-        const seen = new Set();
-        const list = (res.data?.offers || [])
-          .filter((o) => o && o.brand && o.brand.approved !== false)
-          .map((o) => ({
-            name: (o.brand.brandName || o.brand.name || o.title || "").trim(),
-            category: (o.category || "").toLowerCase(),
-            image: o.image,
-          }))
-          .filter((b) => b.name)
-          .filter((b) => {
-            const k = b.name.trim().toLowerCase();
-            if (seen.has(k)) return false;
-            seen.add(k);
-            return true;
-          })
-          .slice(0, 18);
-        if (alive) setBrands(list.length ? list : FALLBACK_BRANDS);
-      })
-      .catch(() => alive && setBrands(FALLBACK_BRANDS));
-    return () => { alive = false; };
-  }, []);
-  return brands || FALLBACK_BRANDS;
-}
-
 export default function Landing() {
-  const brands = useLiveBrands();
+  const { brands: allBrands } = useOffers();
+  const brands = allBrands.slice(0, 18);
 
   useEffect(() => {
     document.title = "tdc. student life, sorted";
@@ -243,7 +203,7 @@ export default function Landing() {
         <section className="wrap section">
           <div className="section-head" style={{ marginBottom: 28 }}>
             <h2 className="h-md">100+ brands already on tdc<span className="dot">.</span></h2>
-            <a href={LINKS.getApp} style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
+            <Link to="/OfferImagesGallery" style={{ fontWeight: 700, fontSize: 15 }}>see all brands</Link>
           </div>
           <div className="partners">
             {brands.map((b) => (

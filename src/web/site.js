@@ -36,11 +36,18 @@ export function Arrow({ size = 18 }) {
 
 const NAV = [
   { href: "/#app", label: "the app" },
-  { href: "/#brands", label: "for brands" },
-  { href: "/#employers", label: "for employers" },
+  { href: "/brands", label: "for brands" },
+  { href: "/company_profile", label: "for employers" },
+  { href: "/OfferImagesGallery", label: "deals" },
   { href: "/ambassador", label: "campus ambassadors" },
   { href: "/#contact", label: "contact" },
 ];
+
+// Section links (with #) are plain anchors; page links use the router.
+function NavLink({ item, onClick }) {
+  if (item.href.includes("#")) return <a href={item.href} onClick={onClick}>{item.label}</a>;
+  return <Link to={item.href} onClick={onClick}>{item.label}</Link>;
+}
 
 export function WebNav() {
   const [open, setOpen] = useState(false);
@@ -49,9 +56,7 @@ export function WebNav() {
       <div className="wrap nav-inner">
         <Logo />
         <nav className="nav-links" aria-label="main">
-          {NAV.map((n) => (
-            <a key={n.href} href={n.href}>{n.label}</a>
-          ))}
+          {NAV.map((n) => <NavLink key={n.href} item={n} />)}
         </nav>
         <div className="nav-actions">
           <Link to="/login" className="nav-login">log in</Link>
@@ -70,9 +75,7 @@ export function WebNav() {
         </button>
       </div>
       <div className={`nav-mobile ${open ? "open" : ""}`}>
-        {NAV.map((n) => (
-          <a key={n.href} href={n.href} onClick={() => setOpen(false)}>{n.label}</a>
-        ))}
+        {NAV.map((n) => <NavLink key={n.href} item={n} onClick={() => setOpen(false)} />)}
         <Link to="/login" onClick={() => setOpen(false)}>partner log in</Link>
         <a href={LINKS.getApp} className="btn btn-primary btn-block">get the app</a>
       </div>
@@ -91,14 +94,16 @@ export function WebFooter() {
         <div className="footer-col">
           <b>explore</b>
           <a href="/#app">the app</a>
-          <a href="/#brands">for brands</a>
-          <a href="/#employers">for employers</a>
+          <Link to="/OfferImagesGallery">brands and deals</Link>
+          <Link to="/universities">partner universities</Link>
+          <Link to="/AppStoreReviews">reviews</Link>
           <Link to="/ambassador">campus ambassadors</Link>
         </div>
         <div className="footer-col">
           <b>partners</b>
-          <Link to="/signup">list your brand</Link>
-          <Link to="/signup">register as employer</Link>
+          <Link to="/brands">for brands</Link>
+          <Link to="/company_profile">for employers</Link>
+          <Link to="/signup">become a partner</Link>
           <Link to="/login">partner log in</Link>
         </div>
         <div className="footer-col">
@@ -120,5 +125,53 @@ export function WebFooter() {
         </span>
       </div>
     </footer>
+  );
+}
+
+// Centered card layout used by log in, forgot password, OTP and reset password.
+export function AuthShell({ children, headerAction }) {
+  return (
+    <div className="tdcw">
+      <div className="center-shell">
+        <header className="wrap row-between" style={{ width: "100%", paddingTop: 20, paddingBottom: 20 }}>
+          <Logo />
+          {headerAction}
+        </header>
+        <main>{children}</main>
+        <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted">
+          need help? <a href={`mailto:${LINKS.hello}`} style={{ color: "#6B675E" }}>{LINKS.hello}</a>
+          {" · "}
+          <a href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer" style={{ color: "#6B675E" }}>WhatsApp</a>
+        </footer>
+      </div>
+    </div>
+  );
+}
+
+export function CardTitle({ title, sub, mark = "." }) {
+  return (
+    <div style={{ textAlign: "center" }}>
+      <h1 style={{ fontWeight: 800, fontSize: 34, letterSpacing: -1, lineHeight: 1.1 }}>{title}<span className="dot">{mark}</span></h1>
+      {sub && <p className="muted" style={{ marginTop: 8, fontSize: 15 }}>{sub}</p>}
+    </div>
+  );
+}
+
+// Sets the tab title and starts each page at the top.
+export function usePage(title) {
+  React.useEffect(() => {
+    document.title = title;
+    if (!window.location.hash) window.scrollTo(0, 0);
+  }, [title]);
+}
+
+export function PageHero({ eyebrow, title, mark = ".", lead, children }) {
+  return (
+    <div className="wrap" style={{ paddingTop: 64, paddingBottom: 8 }}>
+      {eyebrow && <span className="chip"><span className="chip-dot" />{eyebrow}</span>}
+      <h1 className="h-xl" style={{ marginTop: 20, fontSize: "clamp(42px, 5.6vw, 76px)" }}>{title}<span className="dot">{mark}</span></h1>
+      {lead && <p className="lead" style={{ marginTop: 20, maxWidth: 620 }}>{lead}</p>}
+      {children}
+    </div>
   );
 }
