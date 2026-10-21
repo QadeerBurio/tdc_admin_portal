@@ -15,7 +15,7 @@ const WHY = [
   { title: "real footfall", body: "students claim in the app and redeem at your counter. every visit is a real customer, not an impression." },
   { title: "no leakage", body: "a QR code only your brand has. only verified tdc users can claim, and your staff completes every redemption in the portal." },
   { title: "you see what works", body: "every claim shows up live in your brand portal, with which institutes your customers come from. we share numbers, never students' personal data." },
-  { title: "creators, not ads", body: "tdc runs collabs with 100+ student creators. a 'tdc x your brand' post puts you in front of their followers." },
+  { title: "creators, not ads", body: "tdc runs collabs with student creators. a 'tdc x your brand' post puts you in front of their followers." },
 ];
 
 const STEPS = [

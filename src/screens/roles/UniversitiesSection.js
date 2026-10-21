@@ -33,7 +33,7 @@ export default function UniversitiesSection() {
     <div className="tdcw">
       <WebNav />
       <main>
-        <PageHero eyebrow="12+ partner universities" title="on campus with tdc" lead="we work with universities, colleges and 20+ student societies to bring deals, careers and events to students. here are some of the campuses already with us." />
+        <PageHero eyebrow="12+ partner universities" title="on campus with tdc" lead="we work with universities, colleges and student societies to bring deals, careers and events to students. here are some of the campuses already with us." />
 
         <section className="wrap section" style={{ paddingTop: 56 }}>
           <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fill, minmax(min(100%, 240px), 1fr))" }}>
