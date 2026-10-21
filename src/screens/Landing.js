@@ -80,7 +80,7 @@ export default function Landing() {
             <p className="hero-note">free for students. forever. no catch.</p>
           </div>
 
-          <div aria-hidden="true">
+          <div className="phone-stage" aria-hidden="true">
             <div className="phone">
               <div className="phone-screen">
                 <div className="phone-top">
