@@ -1,5 +1,5 @@
 // SignUp.js — partner sign up (brand or employer). Same validation, payload and auto-login as before, new tdc design.
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
@@ -27,8 +27,35 @@ export default function Signup() {
 
   const [formData, setFormData] = useState({
     fullName: "", brandName: "", email: "", phone: "",
-    password: "", confirmPassword: "", city: "Karachi",
+    password: "", confirmPassword: "", city: "",
   });
+
+  // City: searchable list as on the old page (empty = Karachi when the form is sent)
+  const [citySearch, setCitySearch] = useState("");
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const cityDropdownRef = useRef(null);
+  const cityInputRef = useRef(null);
+
+  const filteredCities = useMemo(() => {
+    if (!citySearch.trim()) return PAKISTAN_CITIES;
+    const q = citySearch.toLowerCase().trim();
+    return PAKISTAN_CITIES.filter((c) => c.toLowerCase().includes(q));
+  }, [citySearch]);
+
+  useEffect(() => {
+    const handleClickOutside = (e) => {
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target)) setShowCityDropdown(false);
+    };
+    document.addEventListener("mousedown", handleClickOutside);
+    return () => document.removeEventListener("mousedown", handleClickOutside);
+  }, []);
+
+  const handleSelectCity = (city) => {
+    setFormData((prev) => ({ ...prev, city }));
+    setCitySearch(city);
+    setShowCityDropdown(false);
+    setTouchedFields((prev) => ({ ...prev, city: true }));
+  };
 
   useEffect(() => {
     document.title = "become a partner · tdc.";
@@ -204,11 +231,56 @@ export default function Signup() {
               {errorFor("phone")}
             </div>
 
-            <div className="field">
-              <label htmlFor="city">city</label>
-              <select id="city" name="city" className="input" value={formData.city} onChange={handleChange}>
-                {PAKISTAN_CITIES.map((c) => <option key={c} value={c}>{c}</option>)}
-              </select>
+            <div className="field city-field" ref={cityDropdownRef}>
+              <label htmlFor="city">city <span className="muted" style={{ fontWeight: 500 }}>(default: Karachi)</span></label>
+              <div className="city-input">
+                <input
+                  ref={cityInputRef}
+                  id="city" name="city" type="text" className="input" autoComplete="off"
+                  placeholder="search your city"
+                  role="combobox" aria-expanded={showCityDropdown} aria-controls="city-list" aria-autocomplete="list"
+                  value={citySearch}
+                  onChange={(e) => {
+                    setCitySearch(e.target.value);
+                    setShowCityDropdown(true);
+                    if (e.target.value !== formData.city) setFormData((prev) => ({ ...prev, city: "" }));
+                  }}
+                  onFocus={() => setShowCityDropdown(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setShowCityDropdown(false);
+                    if (e.key === "Enter" && showCityDropdown && filteredCities.length) { e.preventDefault(); handleSelectCity(filteredCities[0]); }
+                  }}
+                />
+                {formData.city && (
+                  <button
+                    type="button" className="city-clear" aria-label="clear city"
+                    onClick={() => { setFormData((prev) => ({ ...prev, city: "" })); setCitySearch(""); cityInputRef.current?.focus(); }}
+                  >
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
+                  </button>
+                )}
+              </div>
+              {showCityDropdown && (
+                <div className="city-list" id="city-list" role="listbox" aria-label="cities">
+                  {filteredCities.length > 0 ? (
+                    filteredCities.map((city) => (
+                      <div
+                        key={city}
+                        role="option" aria-selected={formData.city === city}
+                        className={`city-row ${formData.city === city ? "on" : ""}`}
+                        onMouseDown={(e) => { e.preventDefault(); handleSelectCity(city); }}
+                      >
+                        <span>{city}</span>
+                        {formData.city === city && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+                        )}
+                      </div>
+                    ))
+                  ) : (
+                    <div className="city-empty">no match. Karachi will be used.</div>
+                  )}
+                </div>
+              )}
             </div>
 
             <div className="field">
@@ -258,7 +330,7 @@ export default function Signup() {
             <div className="aside-chips">
               <span>free in year one</span>
               <span>100+ brands already live</span>
-              <span>exit anytime, 15 days' notice</span>
+              <span>exit anytime, 15 days notice</span>
             </div>
           </div>
         </aside>
