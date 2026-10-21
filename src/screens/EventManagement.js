@@ -509,7 +509,7 @@ const EventManagement = () => {
           <div className="stat-card" style={{ background: "linear-gradient(135deg, #ffffff 0%, #f0e8ff 100%)" }}>
             <div className="stat-card-content">
               <div>
-                <div className="stat-label">Avg Registrations</div>
+                <div className="stat-label">Ave Registrations</div>
                 <div className="stat-value">{averageRegistrations}</div>
                 <div className="stat-footer">
                   <AutoAwesomeIcon className="stat-footer-icon" style={{ color: "#8b5cf6" }} />
