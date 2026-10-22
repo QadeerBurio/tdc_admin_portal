@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Image as ImageIcon, MapPin, Plus, Trash2, 
   Edit3, X, Search, Briefcase,  
-  Sparkles, Globe, DollarSign,  
+  Sparkles, DollarSign,  
   TrendingUp,  
   Grid, List, SlidersHorizontal,
   ChevronDown, ChevronUp
@@ -235,10 +235,10 @@ const AdminPackageScreen = () => {
           {pkg.description?.substring(0, 60) || 'No description available'}...
         </p>
         <div style={styles.mobileCardActions}>
-          <button style={{...styles.mobileActionBtn, background: '#eff6ff', color: '#3b82f6'}} onClick={() => openModal(pkg)}>
+          <button style={{...styles.mobileActionBtn, background: '#E1F1FA', color: '#2B7FC0'}} onClick={() => openModal(pkg)}>
             <Edit3 size={14} /> Edit
           </button>
-          <button style={{...styles.mobileActionBtn, background: '#fef2f2', color: '#ef4444'}} onClick={() => handleDelete(pkg._id)}>
+          <button style={{...styles.mobileActionBtn, background: '#FDECEA', color: '#B42318'}} onClick={() => handleDelete(pkg._id)}>
             {deletingId === pkg._id ? (
               <div style={styles.spinnerSmall}></div>
             ) : (
@@ -253,8 +253,8 @@ const AdminPackageScreen = () => {
   return (
     <div style={{
       ...styles.pageWrapper,
-      padding: isMobile ? '12px 16px' : isTablet ? '16px 24px' : '25px 35px',
-      borderRadius: isMobile ? '16px' : isTablet ? '24px' : '32px',
+      padding: 0,
+      borderRadius: 0,
     }}>
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
@@ -275,19 +275,15 @@ const AdminPackageScreen = () => {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <div style={styles.headerBadge}>
-              <Globe size={14} />
-              <span>Travel Inventory</span>
-            </div>
             <h1 style={{
               ...styles.mainTitle,
               fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
-            }}>Travel Packages</h1>
+            }}>traveling<span className="dot" aria-hidden="true">.</span></h1>
             <p style={{
               ...styles.mainSubtitle,
               fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
             }}>
-              {isMobile ? 'Manage your travel inventory' : 'Manage and update your travel inventory across all categories'}
+              travel packages students see in the app.
             </p>
           </div>
           <div style={{
@@ -305,9 +301,9 @@ const AdminPackageScreen = () => {
                 ...styles.statCard,
                 padding: isMobile ? '8px 14px' : '10px 20px',
                 flex: isMobile ? 1 : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
                 <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <Briefcase size={isMobile ? 14 : 18} color="#10b981" />
+                  <Briefcase size={isMobile ? 14 : 18} color="#1E6B3A" />
                 </div>
                 <div>
                   <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{totalPackages}</div>
@@ -318,9 +314,9 @@ const AdminPackageScreen = () => {
                 ...styles.statCard,
                 padding: isMobile ? '8px 14px' : '10px 20px',
                 flex: isMobile ? 1 : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
                 <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <TrendingUp size={isMobile ? 14 : 18} color="#3b82f6" />
+                  <TrendingUp size={isMobile ? 14 : 18} color="#2B7FC0" />
                 </div>
                 <div>
                   <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{CATEGORIES.length}</div>
@@ -338,7 +334,7 @@ const AdminPackageScreen = () => {
                 fontSize: isMobile ? '13px' : '14px',
               }} 
               onClick={() => openModal()}
-              whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
+              whileHover={{ y: -2, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
               whileTap={{ scale: 0.95 }}
             >
               <Plus size={isMobile ? 16 : 18} /> {isMobile ? 'Create' : 'Create Package'}
@@ -556,7 +552,7 @@ const AdminPackageScreen = () => {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
-                    whileHover={{ y: -8, boxShadow: "0 20px 35px -12px rgba(0,0,0,0.15)" }}
+                    whileHover={{ y: -8, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
                   >
                     <div style={{
                       ...styles.gridImageWrapper,
@@ -682,7 +678,7 @@ const AdminPackageScreen = () => {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: index * 0.05 }}
-                      whileHover={{ backgroundColor: '#f8fafc', x: 4 }}
+                      whileHover={{ backgroundColor: '#FAF8F3', x: 4 }}
                     >
                       <div style={{...styles.cell, flex: 2.5}}>
                         <img src={pkg.image} alt="" style={{
@@ -709,10 +705,10 @@ const AdminPackageScreen = () => {
                           padding: isTablet ? '4px 10px' : '5px 12px',
                         }}>{pkg.category}</span>
                       </div>
-                      <div style={{...styles.cell, flex: 1, color: '#64748b', fontSize: isTablet ? '12px' : '13px'}}>
+                      <div style={{...styles.cell, flex: 1, color: '#6B675E', fontSize: isTablet ? '12px' : '13px'}}>
                         <MapPin size={isTablet ? 12 : 14} style={{marginRight: 4}} /> {pkg.location || 'TBD'}
                       </div>
-                      <div style={{...styles.cell, flex: 1, fontWeight: '700', color: '#ff961a', fontSize: isTablet ? '13px' : '14px'}}>
+                      <div style={{...styles.cell, flex: 1, fontWeight: '700', color: '#C77700', fontSize: isTablet ? '13px' : '14px'}}>
                         <DollarSign size={isTablet ? 12 : 14} style={{display: 'inline', marginRight: 2}} />
                         {parseInt(pkg.price).toLocaleString()}
                       </div>
@@ -842,7 +838,7 @@ const AdminPackageScreen = () => {
                         onChange={(e) => setForm({...form, name: e.target.value})} 
                         required 
                         placeholder="e.g., Swiss Alps Adventure"
-                        whileFocus={{ borderColor: "#ff961a", boxShadow: "0 0 0 3px rgba(255,150,26,0.1)" }}
+                        whileFocus={{ borderColor: "#111111", boxShadow: "0 0 0 3px rgba(249, 195, 73,0.1)" }}
                       />
                     </div>
 
@@ -858,7 +854,7 @@ const AdminPackageScreen = () => {
                           value={form.category} 
                           onChange={(e) => setForm({...form, category: e.target.value})} 
                           required
-                          whileFocus={{ borderColor: "#ff961a", boxShadow: "0 0 0 3px rgba(255,150,26,0.1)" }}
+                          whileFocus={{ borderColor: "#111111", boxShadow: "0 0 0 3px rgba(249, 195, 73,0.1)" }}
                         >
                           <option value="" disabled>Select category</option>
                           {CATEGORIES.map(cat => <option key={cat} value={cat}>{cat}</option>)}
@@ -873,7 +869,7 @@ const AdminPackageScreen = () => {
                           onChange={(e) => setForm({...form, price: e.target.value})} 
                           required 
                           placeholder="0.00"
-                          whileFocus={{ borderColor: "#ff961a", boxShadow: "0 0 0 3px rgba(255,150,26,0.1)" }}
+                          whileFocus={{ borderColor: "#111111", boxShadow: "0 0 0 3px rgba(249, 195, 73,0.1)" }}
                         />
                       </div>
                     </div>
@@ -885,7 +881,7 @@ const AdminPackageScreen = () => {
                         value={form.location} 
                         onChange={(e) => setForm({...form, location: e.target.value})} 
                         placeholder="e.g., Interlaken, Switzerland"
-                        whileFocus={{ borderColor: "#ff961a", boxShadow: "0 0 0 3px rgba(255,150,26,0.1)" }}
+                        whileFocus={{ borderColor: "#111111", boxShadow: "0 0 0 3px rgba(249, 195, 73,0.1)" }}
                       />
                     </div>
 
@@ -900,7 +896,7 @@ const AdminPackageScreen = () => {
                         value={form.description} 
                         onChange={(e) => setForm({...form, description: e.target.value})} 
                         placeholder="Provide an overview of the package..."
-                        whileFocus={{ borderColor: "#ff961a", boxShadow: "0 0 0 3px rgba(255,150,26,0.1)" }}
+                        whileFocus={{ borderColor: "#111111", boxShadow: "0 0 0 3px rgba(249, 195, 73,0.1)" }}
                       />
                     </div>
                   </div>
@@ -915,7 +911,7 @@ const AdminPackageScreen = () => {
                           height: isMobile ? '140px' : '180px',
                         }} 
                         onClick={() => fileInputRef.current.click()}
-                        whileHover={{ borderColor: "#ff961a", background: "#fff7ed" }}
+                        whileHover={{ borderColor: "#111111", background: "#FFF1CC" }}
                       >
                         {previewUrl ? (
                           <div style={styles.previewContainer}>
@@ -927,7 +923,7 @@ const AdminPackageScreen = () => {
                           </div>
                         ) : (
                           <div style={styles.uploadPlaceholder}>
-                            <ImageIcon size={isMobile ? 24 : 32} color="#cbd5e1" />
+                            <ImageIcon size={isMobile ? 24 : 32} color="#9A958B" />
                             <span style={{
                               ...styles.uploadText,
                               fontSize: isMobile ? '12px' : '14px',
@@ -977,7 +973,7 @@ const AdminPackageScreen = () => {
                               type="button" 
                               onClick={() => removeField(idx, 'requirements')} 
                               style={styles.delSmallBtn}
-                              whileHover={{ scale: 1.1, color: "#ef4444" }}
+                              whileHover={{ scale: 1.1, color: "#B42318" }}
                               whileTap={{ scale: 0.9 }}
                             >
                               <X size={14} />
@@ -1025,7 +1021,7 @@ const AdminPackageScreen = () => {
                               type="button" 
                               onClick={() => removeField(idx, 'inclusions')} 
                               style={styles.delSmallBtn}
-                              whileHover={{ scale: 1.1, color: "#ef4444" }}
+                              whileHover={{ scale: 1.1, color: "#B42318" }}
                               whileTap={{ scale: 0.9 }}
                             >
                               <X size={14} />
@@ -1158,11 +1154,11 @@ const AdminPackageScreen = () => {
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #111111;
           }
 
           @media (max-width: 768px) {
@@ -1263,13 +1259,15 @@ const AdminPackageScreen = () => {
 
 const styles = {
   pageWrapper: { 
-    minHeight: '100vh', 
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+    minHeight: "auto",
+    background: "transparent",
     padding: '25px 35px', 
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
     position: 'relative',
     borderRadius: '32px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: "none",
+    border: "none",
+    margin: "0",
   },
   bgDecoration1: {
     position: 'absolute',
@@ -1277,7 +1275,7 @@ const styles = {
     right: '-50px',
     width: '300px',
     height: '300px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1287,7 +1285,7 @@ const styles = {
     left: '-60px',
     width: '250px',
     height: '250px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1297,7 +1295,7 @@ const styles = {
     right: '10%',
     width: '150px',
     height: '150px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1319,12 +1317,12 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    background: '#fff7ed',
+    background: '#FFF1CC',
     padding: '6px 16px',
     borderRadius: '40px',
     fontSize: '13px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     marginBottom: '16px'
   },
   headerActions: { 
@@ -1344,7 +1342,7 @@ const styles = {
     display: 'flex', 
     alignItems: 'center', 
     gap: '12px', 
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     transition: 'all 0.3s ease'
   },
   statIcon: {
@@ -1358,29 +1356,29 @@ const styles = {
   statVal: { 
     fontSize: '20px', 
     fontWeight: '800', 
-    color: '#1e293b',
+    color: '#111111',
     lineHeight: '1.2'
   },
   statLab: { 
     fontSize: '10px', 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     textTransform: 'uppercase', 
     fontWeight: '600' 
   },
   mainTitle: { 
     fontSize: '32px', 
     fontWeight: '800', 
-    color: '#1e293b', 
+    color: '#111111', 
     margin: 0, 
     letterSpacing: '-0.5px' 
   },
   mainSubtitle: { 
-    color: '#64748b', 
+    color: '#6B675E', 
     fontSize: '14px', 
     marginTop: '8px' 
   },
   addMainBtn: { 
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
+    background: '#111111', 
     color: '#fff', 
     border: 'none', 
     padding: '12px 28px', 
@@ -1422,7 +1420,7 @@ const styles = {
     left: '14px', 
     top: '50%', 
     transform: 'translateY(-50%)', 
-    color: '#94a3b8' 
+    color: '#9A958B' 
   },
   clearSearch: {
     position: 'absolute',
@@ -1432,25 +1430,25 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   searchInput: { 
     width: '100%', 
     padding: '10px 40px 10px 40px', 
     borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
+    border: '2px solid #ECE7DB', 
     outline: 'none', 
     fontSize: '14px', 
     backgroundColor: '#fff',
     transition: 'all 0.2s ease'
   },
   badgeCount: { 
-    background: '#f1f5f9', 
+    background: '#F0ECE2', 
     padding: '6px 16px', 
     borderRadius: '20px', 
     fontSize: '12px', 
     fontWeight: '600', 
-    color: '#475569',
+    color: '#6B675E',
     whiteSpace: 'nowrap'
   },
   filterToggle: {
@@ -1459,12 +1457,12 @@ const styles = {
     gap: '6px',
     padding: '10px 16px',
     borderRadius: '14px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     background: '#fff',
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#475569',
+    color: '#6B675E',
     transition: 'all 0.2s ease',
     position: 'relative'
   },
@@ -1475,12 +1473,12 @@ const styles = {
     width: '10px',
     height: '10px',
     borderRadius: '50%',
-    background: '#ff961a'
+    background: '#111111'
   },
   viewToggle: {
     display: 'flex',
     gap: '4px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     padding: '4px',
     borderRadius: '12px'
   },
@@ -1490,21 +1488,21 @@ const styles = {
     borderRadius: '8px',
     cursor: 'pointer',
     background: 'transparent',
-    color: '#94a3b8',
+    color: '#9A958B',
     transition: 'all 0.2s ease'
   },
   activeView: {
     background: '#fff',
-    color: '#ff961a',
+    color: '#C77700',
     boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
   },
   sortSelect: {
     padding: '8px 14px',
     borderRadius: '12px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     background: '#fff',
     fontSize: '13px',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer',
     outline: 'none'
   },
@@ -1513,8 +1511,8 @@ const styles = {
     borderRadius: '16px',
     padding: '0',
     marginBottom: '20px',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 8px 30px rgba(0,0,0,0.06)',
+    border: '1px solid #ECE7DB',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
     overflow: 'hidden'
   },
   filtersContent: {
@@ -1534,16 +1532,16 @@ const styles = {
   filterLabel: {
     fontSize: '12px',
     fontWeight: '700',
-    color: '#475569',
+    color: '#6B675E',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
   filterSelect: {
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     fontSize: '14px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     outline: 'none'
   },
   priceRange: {
@@ -1555,17 +1553,17 @@ const styles = {
     width: '80px',
     padding: '10px 12px',
     borderRadius: '10px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     fontSize: '14px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     outline: 'none'
   },
   priceSeparator: {
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   filterApplyBtn: {
     padding: '10px 24px',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '10px',
@@ -1586,15 +1584,15 @@ const styles = {
     background: '#fff',
     borderRadius: '24px',
     overflow: 'hidden',
-    border: '1px solid #e2e8f0',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.02)',
+    border: '1px solid #ECE7DB',
+    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)',
     transition: 'all 0.3s ease'
   },
   gridImageWrapper: {
     position: 'relative',
     height: '200px',
     overflow: 'hidden',
-    background: '#f1f5f9'
+    background: '#F0ECE2'
   },
   gridImage: {
     width: '100%',
@@ -1610,7 +1608,7 @@ const styles = {
     borderRadius: '20px',
     fontSize: '11px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
   gridPrice: {
@@ -1630,7 +1628,7 @@ const styles = {
   gridTitle: {
     fontSize: '16px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#111111',
     margin: '0 0 6px 0'
   },
   gridLocation: {
@@ -1638,12 +1636,12 @@ const styles = {
     alignItems: 'center',
     gap: '4px',
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     marginBottom: '8px'
   },
   gridDescription: {
     fontSize: '13px',
-    color: '#94a3b8',
+    color: '#9A958B',
     marginBottom: '12px',
     lineHeight: '1.4'
   },
@@ -1656,8 +1654,8 @@ const styles = {
     padding: '8px 16px',
     borderRadius: '10px',
     border: 'none',
-    background: '#eff6ff',
-    color: '#3b82f6',
+    background: '#E1F1FA',
+    color: '#2B7FC0',
     fontWeight: '600',
     cursor: 'pointer',
     display: 'flex',
@@ -1671,8 +1669,8 @@ const styles = {
     padding: '8px 14px',
     borderRadius: '10px',
     border: 'none',
-    background: '#fef2f2',
-    color: '#ef4444',
+    background: '#FDECEA',
+    color: '#B42318',
     fontWeight: '600',
     cursor: 'pointer',
     display: 'flex',
@@ -1685,9 +1683,9 @@ const styles = {
   listWrapper: {
     background: '#fff',
     borderRadius: '24px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.04)'
+    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)'
   },
   listContainer: {
     width: '100%'
@@ -1695,9 +1693,9 @@ const styles = {
   tableHeader: {
     display: 'flex',
     padding: '16px 24px',
-    backgroundColor: '#f8fafc',
-    borderBottom: '2px solid #e2e8f0',
-    color: '#64748b',
+    backgroundColor: '#FAF8F3',
+    borderBottom: '2px solid #ECE7DB',
+    color: '#6B675E',
     fontSize: '11px',
     fontWeight: '700',
     textTransform: 'uppercase',
@@ -1706,7 +1704,7 @@ const styles = {
   tableRow: {
     display: 'flex',
     padding: '18px 24px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     alignItems: 'center',
     transition: 'all 0.2s ease'
   },
@@ -1724,22 +1722,22 @@ const styles = {
     borderRadius: '14px',
     objectFit: 'cover',
     marginRight: '16px',
-    background: '#f1f5f9'
+    background: '#F0ECE2'
   },
   pkgName: {
     fontSize: '15px',
     fontWeight: '700',
-    color: '#1e293b'
+    color: '#111111'
   },
   pkgId: {
     fontSize: '10px',
-    color: '#94a3b8',
+    color: '#9A958B',
     marginTop: '4px',
     fontFamily: 'monospace'
   },
   categoryTag: {
-    backgroundColor: '#f0fdf4',
-    color: '#166534',
+    backgroundColor: '#E3F3E8',
+    color: '#1E6B3A',
     padding: '5px 12px',
     borderRadius: '8px',
     fontSize: '12px',
@@ -1747,8 +1745,8 @@ const styles = {
     display: 'inline-block'
   },
   iconBtnEdit: {
-    color: '#3b82f6',
-    background: '#eff6ff',
+    color: '#2B7FC0',
+    background: '#E1F1FA',
     border: 'none',
     padding: '8px',
     borderRadius: '10px',
@@ -1759,8 +1757,8 @@ const styles = {
     justifyContent: 'center'
   },
   iconBtnDel: {
-    color: '#ef4444',
-    background: '#fef2f2',
+    color: '#B42318',
+    background: '#FDECEA',
     border: 'none',
     padding: '8px',
     borderRadius: '10px',
@@ -1790,11 +1788,11 @@ const styles = {
     borderRadius: '28px', 
     maxHeight: '90vh', 
     overflowY: 'auto', 
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' 
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)' 
   },
   modalHeader: { 
     padding: '24px 32px 20px', 
-    borderBottom: '2px solid #f1f5f9', 
+    borderBottom: '2px solid #F0ECE2', 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'flex-start' 
@@ -1803,30 +1801,30 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    background: '#fff7ed',
+    background: '#FFF1CC',
     padding: '4px 12px',
     borderRadius: '20px',
     fontSize: '11px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     marginBottom: '12px'
   },
   modalTitle: { 
     margin: 0, 
     fontSize: '22px', 
     fontWeight: '800', 
-    color: '#1e293b' 
+    color: '#111111' 
   },
   modalSubtitle: {
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     margin: '4px 0 0'
   },
   closeBtn: { 
-    background: '#f1f5f9', 
+    background: '#F0ECE2', 
     border: 'none', 
     cursor: 'pointer', 
-    color: '#64748b', 
+    color: '#6B675E', 
     padding: '8px', 
     borderRadius: '50%',
     transition: 'all 0.2s ease',
@@ -1855,12 +1853,12 @@ const styles = {
   label: { 
     fontSize: '12px', 
     fontWeight: '700', 
-    color: '#475569', 
+    color: '#6B675E', 
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
   required: {
-    color: '#ef4444',
+    color: '#B42318',
     fontSize: '12px',
     marginLeft: '2px'
   },
@@ -1868,24 +1866,23 @@ const styles = {
     width: '100%', 
     padding: '12px 16px', 
     borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
+    border: '2px solid #ECE7DB', 
     fontSize: '14px', 
     transition: 'all 0.2s ease', 
     outline: 'none', 
-    backgroundColor: '#f8fafc',
-    fontFamily: 'inherit'
+    backgroundColor: '#FAF8F3',
   },
   row: { 
     display: 'flex', 
     gap: '16px' 
   },
   uploadBox: { 
-    border: '2px dashed #e2e8f0', 
+    border: '2px dashed #ECE7DB', 
     borderRadius: '16px', 
     height: '180px', 
     cursor: 'pointer', 
     overflow: 'hidden', 
-    background: '#f8fafc', 
+    background: '#FAF8F3', 
     transition: 'all 0.2s ease' 
   },
   previewContainer: {
@@ -1915,7 +1912,7 @@ const styles = {
   },
   uploadPlaceholder: { 
     textAlign: 'center', 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     display: 'flex', 
     flexDirection: 'column', 
     gap: '10px', 
@@ -1926,17 +1923,17 @@ const styles = {
   uploadText: {
     fontSize: '14px',
     fontWeight: '500',
-    color: '#475569'
+    color: '#6B675E'
   },
   uploadHint: {
     fontSize: '11px',
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   section: { 
-    background: '#f8fafc', 
+    background: '#FAF8F3', 
     padding: '20px', 
     borderRadius: '20px', 
-    border: '1px solid #f1f5f9' 
+    border: '1px solid #F0ECE2' 
   },
   sectionHeader: { 
     display: 'flex', 
@@ -1945,7 +1942,7 @@ const styles = {
     marginBottom: '16px' 
   },
   addSmallBtn: { 
-    background: '#1e293b', 
+    background: '#111111', 
     color: '#fff', 
     border: 'none', 
     borderRadius: '10px', 
@@ -1969,9 +1966,9 @@ const styles = {
     alignItems: 'center' 
   },
   delSmallBtn: { 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     background: '#fff', 
-    border: '1px solid #e2e8f0', 
+    border: '1px solid #ECE7DB', 
     borderRadius: '8px', 
     padding: '8px', 
     cursor: 'pointer',
@@ -1985,24 +1982,24 @@ const styles = {
     display: 'flex', 
     justifyContent: 'flex-end', 
     gap: '14px', 
-    borderTop: '2px solid #f1f5f9', 
+    borderTop: '2px solid #F0ECE2', 
     paddingTop: '24px' 
   },
   cancelBtn: { 
     padding: '12px 28px', 
     borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
+    border: '2px solid #ECE7DB', 
     background: '#fff', 
     cursor: 'pointer', 
     fontWeight: '600', 
-    color: '#475569',
+    color: '#6B675E',
     transition: 'all 0.2s ease'
   },
   submitBtn: { 
     padding: '12px 32px', 
     borderRadius: '14px', 
     border: 'none', 
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)', 
+    background: '#111111', 
     color: '#fff', 
     cursor: 'pointer', 
     fontWeight: '600',
@@ -2022,15 +2019,15 @@ const styles = {
   spinnerSmall: {
     width: '16px',
     height: '16px',
-    border: '2px solid #e2e8f0',
-    borderTop: '2px solid #ef4444',
+    border: '2px solid #ECE7DB',
+    borderTop: '2px solid #D9443F',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
   },
   emptyState: { 
     textAlign: 'center', 
     padding: '80px 20px', 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     display: 'flex', 
     flexDirection: 'column', 
     alignItems: 'center', 
@@ -2044,17 +2041,17 @@ const styles = {
   emptyTitle: {
     fontSize: '18px',
     fontWeight: '600',
-    color: '#1e293b',
+    color: '#111111',
     margin: 0
   },
   emptySubtext: {
     fontSize: '14px',
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   emptyBtn: {
     marginTop: '16px',
     padding: '12px 24px',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '12px',
@@ -2071,11 +2068,11 @@ const styles = {
     gap: '8px',
     padding: '8px 16px',
     background: '#fff',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     borderRadius: '12px',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#1e293b',
+    color: '#111111',
     cursor: 'pointer',
     flex: 1,
     justifyContent: 'center'
@@ -2087,7 +2084,7 @@ const styles = {
     padding: '12px',
     background: '#fff',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     marginBottom: '16px'
   },
   mobileFilterGroup: {
@@ -2098,27 +2095,26 @@ const styles = {
   mobileFilterLabel: {
     fontSize: '12px',
     fontWeight: '600',
-    color: '#475569'
+    color: '#6B675E'
   },
   mobileFilterSelect: {
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     fontSize: '13px',
     background: '#fff',
-    color: '#1e293b',
+    color: '#111111',
     cursor: 'pointer',
     outline: 'none',
-    fontFamily: 'inherit'
   },
   mobileClearFilters: {
     padding: '8px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: 'none',
     borderRadius: '8px',
     fontSize: '13px',
     fontWeight: '600',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer'
   },
   mobileCardList: {
@@ -2129,7 +2125,7 @@ const styles = {
   },
   mobileCard: {
     background: '#fff',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     borderRadius: '16px',
     overflow: 'hidden',
     transition: 'all 0.3s ease'
@@ -2138,7 +2134,7 @@ const styles = {
     position: 'relative',
     height: '160px',
     overflow: 'hidden',
-    background: '#f1f5f9'
+    background: '#F0ECE2'
   },
   mobileCardImg: {
     width: '100%',
@@ -2154,7 +2150,7 @@ const styles = {
     borderRadius: '16px',
     fontSize: '10px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     boxShadow: '0 2px 8px rgba(0,0,0,0.1)'
   },
   mobileCardPrice: {
@@ -2174,7 +2170,7 @@ const styles = {
   mobileCardTitle: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#111111',
     margin: '0 0 4px 0'
   },
   mobileCardLocation: {
@@ -2182,12 +2178,12 @@ const styles = {
     alignItems: 'center',
     gap: '4px',
     fontSize: '12px',
-    color: '#64748b',
+    color: '#6B675E',
     marginBottom: '6px'
   },
   mobileCardDesc: {
     fontSize: '12px',
-    color: '#94a3b8',
+    color: '#9A958B',
     marginBottom: '10px',
     lineHeight: '1.4'
   },
@@ -2208,7 +2204,6 @@ const styles = {
     justifyContent: 'center',
     gap: '4px',
     transition: 'all 0.2s ease',
-    fontFamily: 'inherit'
   }
 };
 
