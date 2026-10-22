@@ -135,9 +135,9 @@ export default function CreateOfferAdmin() {
   return (
     <div style={{
       ...styles.dashboardWrapper,
-      padding: isMobile ? "12px 16px 30px" : isTablet ? "16px 24px 35px" : "20px 30px 40px",
-      margin: isMobile ? "10px" : isTablet ? "20px auto" : "30px auto",
-      borderRadius: isMobile ? "20px" : isTablet ? "30px" : "40px",
+      padding: 0,
+      margin: 0,
+      borderRadius: 0,
     }}>
       {/* Decorative Background */}
       <div style={styles.bgDecoration1}></div>
@@ -161,14 +161,7 @@ export default function CreateOfferAdmin() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.1 }}
         >
-          Content Manager
-          <motion.span 
-            style={styles.titleEmoji}
-            animate={{ rotate: [0, 10, -10, 0] }}
-            transition={{ duration: 2, repeat: Infinity, delay: 1 }}
-          >
-            ✨
-          </motion.span>
+          <span>create offer<span className="dot" aria-hidden="true">.</span></span>
         </motion.h1>
         <motion.p 
           style={{
@@ -180,7 +173,7 @@ export default function CreateOfferAdmin() {
           animate={{ opacity: 1 }}
           transition={{ duration: 0.5, delay: 0.2 }}
         >
-          {isMobile ? "Manage slider & offers" : "Manage slider images and exclusive offers for the mobile app"}
+          add a home slider image or an exclusive offer to the app.
         </motion.p>
       </motion.div>
 
@@ -279,9 +272,9 @@ export default function CreateOfferAdmin() {
             transition={{ duration: 0.3, delay: 0.3 }}
           >
             {view === "slider" ? (
-              <><FaPalette style={{color: '#ff961a'}} /> {isMobile ? "Upload Slider" : "Upload Slider Image"}</>
+              <><FaPalette style={{color: '#C77700'}} /> {isMobile ? "Upload Slider" : "Upload Slider Image"}</>
             ) : (
-              <><FaMagic style={{color: '#ff961a'}} /> {isMobile ? "Create Offer" : "Create Exclusive Offer"}</>
+              <><FaMagic style={{color: '#C77700'}} /> {isMobile ? "Create Offer" : "Create Exclusive Offer"}</>
             )}
           </motion.h2>
           
@@ -311,8 +304,8 @@ export default function CreateOfferAdmin() {
                   marginBottom: isMobile ? "14px" : isTablet ? "16px" : "20px",
                 }}
                 whileFocus={{ 
-                  borderColor: "#ff961a", 
-                  boxShadow: "0 0 0 4px rgba(255,150,26,0.15)",
+                  borderColor: "#111111", 
+                  boxShadow: "0 0 0 4px rgba(249, 195, 73,0.15)",
                   scale: 1.01
                 }}
               />
@@ -337,8 +330,8 @@ export default function CreateOfferAdmin() {
                   ...styles.fileUploadContainer,
                   padding: isMobile ? "16px" : isTablet ? "20px" : "24px",
                   marginBottom: isMobile ? "14px" : isTablet ? "16px" : "20px",
-                  borderColor: dragActive ? '#ff961a' : '#e2e8f0',
-                  background: dragActive ? '#fff7ed' : '#f8fafc',
+                  borderColor: dragActive ? '#111111' : '#ECE7DB',
+                  background: dragActive ? '#FFF1CC' : '#FAF8F3',
                   borderStyle: dragActive ? 'solid' : 'dashed',
                 }}
                 onClick={() => fileInputRef.current.click()}
@@ -347,8 +340,8 @@ export default function CreateOfferAdmin() {
                 onDragOver={handleDrag}
                 onDrop={handleDrop}
                 whileHover={{ 
-                  borderColor: '#ff961a',
-                  background: '#fff7ed',
+                  borderColor: '#111111',
+                  background: '#FFF1CC',
                   scale: 1.01
                 }}
               >
@@ -363,7 +356,7 @@ export default function CreateOfferAdmin() {
                       animate={{ rotate: [0, 360] }}
                       transition={{ duration: 1, delay: 0.5 }}
                     >
-                      <FaCheckCircle color="#10b981" size={isMobile ? 20 : 24} />
+                      <FaCheckCircle color="#1E6B3A" size={isMobile ? 20 : 24} />
                     </motion.div>
                     <span style={{
                       ...styles.successText,
@@ -400,7 +393,7 @@ export default function CreateOfferAdmin() {
                         ease: "easeInOut"
                       }}
                     >
-                      <FaUpload size={isMobile ? 28 : 40} color="#cbd5e1" />
+                      <FaUpload size={isMobile ? 28 : 40} color="#9A958B" />
                     </motion.div>
                     <p style={{
                       ...styles.uploadText,
@@ -450,8 +443,8 @@ export default function CreateOfferAdmin() {
                   }}
                   rows={isMobile ? 3 : 4}
                   whileFocus={{ 
-                    borderColor: "#ff961a", 
-                    boxShadow: "0 0 0 4px rgba(255,150,26,0.15)"
+                    borderColor: "#111111", 
+                    boxShadow: "0 0 0 4px rgba(249, 195, 73,0.15)"
                   }}
                 />
               </motion.div>
@@ -566,7 +559,7 @@ export default function CreateOfferAdmin() {
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity }}
             >
-              <FaEye style={{color: '#94a3b8'}} />
+              <FaEye style={{color: '#9A958B'}} />
             </motion.div>
             <h3 style={{
               ...styles.previewTitle,
@@ -582,7 +575,7 @@ export default function CreateOfferAdmin() {
             }}
             whileHover={{ 
               y: -8, 
-              boxShadow: "0 35px 70px -12px rgba(0,0,0,0.35)",
+              boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
               scale: 1.02
             }}
             onHoverStart={() => setIsHovered(true)}
@@ -625,7 +618,7 @@ export default function CreateOfferAdmin() {
                     }}
                     transition={{ duration: 2, repeat: Infinity }}
                   >
-                    <FaImage size={isMobile ? 24 : 40} color="#cbd5e1" />
+                    <FaImage size={isMobile ? 24 : 40} color="#9A958B" />
                   </motion.div>
                   <span style={{
                     ...styles.placeholderText,
@@ -754,9 +747,9 @@ export default function CreateOfferAdmin() {
           100% { transform: translateY(0px); }
         }
         @keyframes glow {
-          0% { box-shadow: 0 0 5px rgba(255,150,26,0.2); }
-          50% { box-shadow: 0 0 20px rgba(255,150,26,0.4); }
-          100% { box-shadow: 0 0 5px rgba(255,150,26,0.2); }
+          0% { box-shadow: 0 0 5px rgba(249, 195, 73,0.2); }
+          50% { box-shadow: 0 0 20px rgba(249, 195, 73,0.4); }
+          100% { box-shadow: 0 0 5px rgba(249, 195, 73,0.2); }
         }
         
         .tab-container {
@@ -774,7 +767,7 @@ export default function CreateOfferAdmin() {
         }
         .tab-btn.active {
           background: #fff;
-          color: #ff961a;
+          color: #C77700;
           box-shadow: 0 4px 12px rgba(0,0,0,0.08);
         }
         
@@ -794,16 +787,16 @@ export default function CreateOfferAdmin() {
           transition: all 0.2s ease;
         }
         .form-input:focus, .form-textarea:focus {
-          border-color: #ff961a;
-          box-shadow: 0 0 0 3px rgba(255,150,26,0.1);
+          border-color: #C77700;
+          box-shadow: 0 0 0 3px rgba(249, 195, 73,0.1);
         }
         
         .upload-area {
           transition: all 0.2s ease;
         }
         .upload-area:hover {
-          border-color: #ff961a;
-          background: #fff7ed;
+          border-color: #C77700;
+          background: #FFF1CC;
         }
         
         .publish-btn {
@@ -848,11 +841,11 @@ export default function CreateOfferAdmin() {
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb {
-          background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+          background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
           border-radius: 10px;
         }
         ::-webkit-scrollbar-thumb:hover {
-          background: #ff961a;
+          background: #111111;
         }
 
         @media (max-width: 768px) {
@@ -939,12 +932,11 @@ const styles = {
     maxWidth: "1100px", 
     margin: "30px auto", 
     padding: "20px 30px 40px",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
     position: "relative",
-    background: "#fff",
-    borderRadius: "40px",
+    background: "transparent",
+    borderRadius: "0",
     overflow: "hidden",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.04)"
+    boxShadow: "none"
   },
   bgDecoration1: {
     position: "absolute",
@@ -952,7 +944,7 @@ const styles = {
     right: "-80px",
     width: "300px",
     height: "300px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.08) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -962,7 +954,7 @@ const styles = {
     left: "-60px",
     width: "250px",
     height: "250px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.05) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -972,7 +964,7 @@ const styles = {
     right: "10%",
     width: "150px",
     height: "150px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -982,12 +974,12 @@ const styles = {
     left: "5%",
     width: "100px",
     height: "100px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
   header: {
-    textAlign: "center",
+    textAlign: "left",
     marginBottom: "32px",
     position: "relative",
     zIndex: 1
@@ -995,12 +987,12 @@ const styles = {
   mainTitle: {
     margin: 0,
     fontSize: "32px",
-    color: "#1e293b",
+    color: "#111111",
     fontWeight: "800",
-    letterSpacing: "-0.5px",
+    letterSpacing: "-0.8px",
     display: "flex",
     alignItems: "center",
-    justifyContent: "center",
+    justifyContent: "flex-start",
     gap: "8px"
   },
   titleEmoji: {
@@ -1010,16 +1002,14 @@ const styles = {
   subTitle: {
     margin: "8px 0 0",
     fontSize: "14px",
-    color: "#64748b",
-    maxWidth: "450px",
-    marginLeft: "auto",
-    marginRight: "auto"
+    color: "#6B675E",
+    maxWidth: "560px",
   },
   tabContainer: { 
     display: "flex", 
     gap: "12px", 
     marginBottom: "32px", 
-    background: "#f1f5f9", 
+    background: "#F0ECE2", 
     padding: "6px", 
     borderRadius: "60px", 
     width: "fit-content",
@@ -1035,7 +1025,7 @@ const styles = {
     cursor: "pointer", 
     background: "transparent", 
     fontWeight: "600", 
-    color: "#64748b", 
+    color: "#6B675E", 
     transition: "all 0.2s",
     display: "flex",
     alignItems: "center",
@@ -1049,13 +1039,13 @@ const styles = {
     transform: "translateX(-50%)",
     width: "20px",
     height: "3px",
-    background: "#ff961a",
+    background: "#111111",
     borderRadius: "4px"
   },
   activeTab: { 
     background: "#fff", 
-    color: "#ff961a", 
-    boxShadow: "0 4px 12px rgba(0,0,0,0.05)" 
+    color: "#C77700", 
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" 
   },
   offerContainer: { 
     display: "grid", 
@@ -1068,14 +1058,14 @@ const styles = {
     background: "#fff", 
     borderRadius: "28px", 
     padding: "32px", 
-    border: "1px solid #f1f5f9", 
-    boxShadow: "0 8px 30px rgba(0,0,0,0.04)"
+    border: "1px solid #F0ECE2", 
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)"
   },
   sectionTitle: { 
     fontSize: "20px", 
     fontWeight: "700", 
     marginBottom: "28px", 
-    color: "#1e293b",
+    color: "#111111",
     display: "flex",
     alignItems: "center",
     gap: "10px"
@@ -1089,7 +1079,7 @@ const styles = {
     fontSize: "13px", 
     fontWeight: "600", 
     marginBottom: "4px", 
-    color: "#475569", 
+    color: "#6B675E", 
     textTransform: "uppercase",
     letterSpacing: "0.5px",
     display: "flex",
@@ -1098,11 +1088,11 @@ const styles = {
   optional: {
     fontSize: "10px",
     fontWeight: "400",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginLeft: "8px"
   },
   required: {
-    color: "#ef4444",
+    color: "#B42318",
     fontSize: "12px",
     marginLeft: "4px"
   },
@@ -1110,22 +1100,21 @@ const styles = {
     padding: "14px 16px", 
     marginBottom: "20px", 
     borderRadius: "14px", 
-    border: "2px solid #e2e8f0", 
+    border: "2px solid #ECE7DB", 
     fontSize: "14px", 
     outline: "none",
     transition: "all 0.2s",
-    fontFamily: "inherit",
-    color: "#1e293b",
+    color: "#111111",
     backgroundColor: "#fff"
   },
   fileUploadContainer: { 
     padding: "24px", 
     marginBottom: "20px", 
     borderRadius: "16px", 
-    border: "2px dashed #e2e8f0", 
+    border: "2px dashed #ECE7DB", 
     textAlign: "center", 
     cursor: "pointer", 
-    background: "#f8fafc",
+    background: "#FAF8F3",
     transition: "all 0.2s",
     position: "relative"
   },
@@ -1138,19 +1127,19 @@ const styles = {
   uploadText: {
     fontSize: "14px",
     fontWeight: "500",
-    color: "#475569",
+    color: "#6B675E",
     margin: 0
   },
   uploadHint: {
     fontSize: "12px",
-    color: "#94a3b8"
+    color: "#9A958B"
   },
   uploadSuccess: {
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
     gap: "12px",
-    color: "#10b981",
+    color: "#1E6B3A",
     fontSize: "14px",
     fontWeight: "500"
   },
@@ -1158,10 +1147,10 @@ const styles = {
     display: "flex"
   },
   successText: {
-    color: "#065f46"
+    color: "#1E6B3A"
   },
   removeImageBtn: {
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     border: "none",
     borderRadius: "50%",
     width: "28px",
@@ -1170,7 +1159,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    color: "#64748b",
+    color: "#6B675E",
     marginLeft: "8px",
     transition: "all 0.2s ease"
   },
@@ -1178,42 +1167,41 @@ const styles = {
     padding: "14px 16px", 
     marginBottom: "20px", 
     borderRadius: "14px", 
-    border: "2px solid #e2e8f0", 
+    border: "2px solid #ECE7DB", 
     fontSize: "14px", 
     resize: "vertical",
     outline: "none",
-    fontFamily: "inherit",
-    color: "#1e293b",
+    color: "#111111",
     backgroundColor: "#fff",
     minHeight: "100px"
   },
   progressContainer: {
     marginBottom: "16px",
     padding: "12px",
-    background: "#f8fafc",
+    background: "#FAF8F3",
     borderRadius: "12px"
   },
   progressBar: {
     height: "6px",
-    background: "#e5e7eb",
+    background: "#ECE7DB",
     borderRadius: "3px",
     overflow: "hidden"
   },
   progressFill: {
     height: "100%",
-    background: "linear-gradient(90deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     borderRadius: "3px",
     transition: "width 0.5s ease"
   },
   progressText: {
     fontSize: "12px",
-    color: "#64748b",
+    color: "#6B675E",
     marginTop: "6px",
     textAlign: "center"
   },
   primaryBtn: { 
     padding: "14px 24px", 
-    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)", 
+    background: "#111111", 
     color: "#fff", 
     border: "none", 
     borderRadius: "16px", 
@@ -1231,8 +1219,8 @@ const styles = {
   successToast: {
     marginTop: "16px",
     padding: "12px 16px",
-    background: "#d1fae5",
-    color: "#065f46",
+    background: "#E3F3E8",
+    color: "#1E6B3A",
     borderRadius: "12px",
     display: "flex",
     alignItems: "center",
@@ -1257,15 +1245,15 @@ const styles = {
     margin: 0, 
     fontSize: "13px", 
     fontWeight: "700", 
-    color: "#94a3b8", 
+    color: "#9A958B", 
     textTransform: "uppercase",
     letterSpacing: "1px"
   },
   mobileFrame: { 
-    background: "#1e293b", 
+    background: "#111111", 
     padding: "12px", 
     borderRadius: "36px", 
-    boxShadow: "0 25px 50px -12px rgba(0,0,0,0.25)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     width: "100%",
     maxWidth: "280px",
     transition: "all 0.3s ease"
@@ -1288,7 +1276,7 @@ const styles = {
     borderRadius: "24px", 
     overflow: "hidden", 
     position: "relative", 
-    backgroundColor: "#f1f5f9",
+    backgroundColor: "#F0ECE2",
     transition: "all 0.3s ease"
   },
   appImage: { 
@@ -1302,7 +1290,7 @@ const styles = {
     flexDirection: "column",
     alignItems: "center", 
     justifyContent: "center", 
-    color: "#cbd5e1",
+    color: "#9A958B",
     gap: "8px"
   },
   placeholderText: {
@@ -1333,10 +1321,10 @@ const styles = {
     fontSize: "14px", 
     fontWeight: "800", 
     margin: 0,
-    color: "#1e293b"
+    color: "#111111"
   },
   appDesc: { 
-    color: "#64748b", 
+    color: "#6B675E", 
     fontSize: "11px", 
     marginTop: "4px" 
   },
@@ -1350,24 +1338,24 @@ const styles = {
     width: "20px",
     height: "4px",
     borderRadius: "2px",
-    backgroundColor: "#ff961a"
+    backgroundColor: "#111111"
   },
   inactiveDot: {
     width: "6px",
     height: "4px",
     borderRadius: "2px",
-    backgroundColor: "#cbd5e1"
+    backgroundColor: "#ECE7DB"
   },
   homeIndicator: {
     width: "40%",
     height: "4px",
-    background: "#475569",
+    background: "#D9D2C2",
     borderRadius: "2px",
     margin: "12px auto 8px"
   },
   previewHint: {
     fontSize: "11px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "16px",
     maxWidth: "280px"
   }
