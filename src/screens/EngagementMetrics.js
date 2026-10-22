@@ -8,15 +8,15 @@ import { engagementApi } from '../services/api';
 const GOLD = '#f9c349';
 const GOLD_DARK = '#e0a82e';
 const GOLD_LIGHT = '#fffbee';
-const BLACK = '#0f172a';
-const MUTED = '#64748b';
-const BORDER = '#f1f5f9';
-const DANGER = '#ef4444';
-const SUCCESS = '#10b981';
-const INFO = '#3b82f6';
-const PURPLE = '#8b5cf6';
-const PINK = '#ec4899';
-const ORANGE = '#f97316';
+const BLACK = '#111111';
+const MUTED = '#6B675E';
+const BORDER = '#F0ECE2';
+const DANGER = '#B42318';
+const SUCCESS = '#1E6B3A';
+const INFO = '#2B7FC0';
+const PURPLE = '#8E44AD';
+const PINK = '#C2185B';
+const ORANGE = '#C77700';
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -140,7 +140,7 @@ export default function EngagementMetrics() {
       <div style={s.page}>
         <div style={s.header}>
           <div>
-            <h2 style={s.title}>metrics</h2>
+            <h2 style={s.title}>engagement<span className="dot" aria-hidden="true">.</span></h2>
             <p style={s.subtitle}>loading engagement data...</p>
           </div>
         </div>
@@ -160,7 +160,7 @@ export default function EngagementMetrics() {
       <div style={s.page}>
         <div style={s.header}>
           <div>
-            <h2 style={s.title}>metrics</h2>
+            <h2 style={s.title}>engagement<span className="dot" aria-hidden="true">.</span></h2>
             <p style={s.subtitle}>something went wrong</p>
           </div>
         </div>
@@ -201,7 +201,7 @@ export default function EngagementMetrics() {
       <div style={s.page}>
         <div style={s.header}>
           <div>
-            <h2 style={s.title}>metrics</h2>
+            <h2 style={s.title}>engagement<span className="dot" aria-hidden="true">.</span></h2>
             <p style={s.subtitle}>no data available</p>
           </div>
         </div>
@@ -251,9 +251,9 @@ export default function EngagementMetrics() {
       {/* ── Header ── */}
       <div style={s.header}>
         <div>
-          <h2 style={s.title}>metrics</h2>
+          <h2 style={s.title}>engagement<span className="dot" aria-hidden="true">.</span></h2>
           <p style={s.subtitle}>
-            click any number to see the exact users ·{' '}
+            are students coming back? goal: 2 to 3 opens a day. click any number to see the exact users ·{' '}
             {lastUpdated ? `updated ${timeAgo(lastUpdated)}` : 'never'}
           </p>
         </div>
@@ -705,11 +705,12 @@ const s = {
     flexWrap: 'wrap',
   },
   title: {
-    fontSize: 26,
-    fontWeight: 900,
+    fontSize: 32,
+    fontWeight: 800,
+    letterSpacing: '-0.8px',
+    lineHeight: 1.1,
     color: BLACK,
     margin: 0,
-    letterSpacing: -0.5,
     textTransform: 'lowercase',
   },
   subtitle: {
@@ -757,7 +758,7 @@ const s = {
 
   // Error
   errorCard: {
-    backgroundColor: '#fef2f2',
+    backgroundColor: '#FDECEA',
     border: `1.5px solid ${DANGER}30`,
     borderRadius: 16,
     padding: 32,
@@ -775,7 +776,7 @@ const s = {
   },
   errorMessage: {
     fontSize: 13,
-    color: '#991b1b',
+    color: '#B42318',
     margin: '0 0 20px 0',
     lineHeight: 20,
     wordBreak: 'break-word',
@@ -957,7 +958,7 @@ const s = {
     display: 'inline-block',
     padding: '4px 12px',
     background: '#10b98115',
-    color: '#059669',
+    color: '#1E6B3A',
     borderRadius: 8,
     fontSize: 13,
     fontWeight: 900,
@@ -1094,7 +1095,7 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    boxShadow: '0 24px 60px rgba(0,0,0,0.3)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
   },
   modalHeader: {
     display: 'flex',
@@ -1130,7 +1131,7 @@ const s = {
     width: 36,
     height: 36,
     borderRadius: 12,
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: 'none',
     cursor: 'pointer',
     fontSize: 22,
