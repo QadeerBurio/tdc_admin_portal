@@ -1,20 +1,21 @@
-// src/components/admin/BrandApprovalScreen.jsx
+// src/screens/BrandApprovalScreen.js
+// Brand approvals (design/portal/AdBrands): review new brands, offers and QR codes, approve / reject / draft,
+// and log in as an approved brand.
 import React, { useState, useEffect, useCallback, useContext } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
-import { motion, AnimatePresence } from 'framer-motion';
 import QRCode from 'qrcode';
-import {
-  X, CheckCircle, Clock, User, Mail, Phone, MapPin, Building,
-  Store, Gift, QrCode, Copy, Download, Share2, Eye, ChevronRight,
-  Calendar, Hash, Link2, UserPlus, Award, Sparkles, Crown,
-  Flame, TrendingUp, RefreshCw, ShoppingBag, FileText,
-  Briefcase, Ticket, FileCheck, Users, Layers, Zap,
-  ArrowUpRight, ChevronDown, ChevronUp, BarChart4, LogIn
-} from 'lucide-react';
+import Ico from '../portal/Ico';
+import { PageLoading, PageHeader, Button, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
 import './styles/Brands.css';
 
 const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
+const STATUS = {
+  pending: { tone: 'orange', label: 'Pending' },
+  approved: { tone: 'green', label: 'Approved' },
+  rejected: { tone: 'red', label: 'Rejected' },
+  draft: { tone: 'blue', label: 'Draft' },
+};
 
 const BrandApprovalScreen = () => {
   const { token, user, login } = useContext(AuthContext);
@@ -34,7 +35,6 @@ const BrandApprovalScreen = () => {
     draft: 0
   });
   const [processingId, setProcessingId] = useState(null);
-  const [toast, setToast] = useState(null);
   const [loadingDetails, setLoadingDetails] = useState(false);
   const [brandOffers, setBrandOffers] = useState([]);
   const [brandStats, setBrandStats] = useState({
@@ -53,25 +53,11 @@ const BrandApprovalScreen = () => {
   const [generatingQR, setGeneratingQR] = useState(false);
   const [copied, setCopied] = useState(false);
 
-  // Mobile responsive
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
-
   const isAdmin = user?.role === 'admin';
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      setIsTablet(window.innerWidth <= 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
 
   // Show toast notification
   const showToast = (message, type = 'success') => {
-    setToast({ message, type });
-    setTimeout(() => setToast(null), 3000);
+    kitToast(message, type === 'error' ? 'bad' : 'ok');
   };
 
   // Fetch brands from API
@@ -265,31 +251,18 @@ const BrandApprovalScreen = () => {
   };
 
   const getStatusBadge = (status) => {
-    const configs = {
-      pending: { bg: '#FFF1CC', text: '#C77700', icon: '⏳', label: 'Pending' },
-      approved: { bg: '#E3F3E8', text: '#2E8B3E', icon: '✅', label: 'Approved' },
-      rejected: { bg: '#FDECEA', text: '#D9443F', icon: '❌', label: 'Rejected' },
-      draft: { bg: '#E1F1FA', text: '#2B7FC0', icon: '📄', label: 'Draft' }
-    };
-
-    const config = configs[status] || configs.pending;
-
-    return (
-      <span className={`status-badge status-${status}`} style={{ backgroundColor: config.bg, color: config.text }}>
-        {config.icon} {config.label}
-      </span>
-    );
+    const config = STATUS[status] || STATUS.pending;
+    return <Pill tone={config.tone} dot>{config.label}</Pill>;
   };
 
-  const renderFilterButton = (filterKey, label, count) => (
-    <button
-      className={`filter-btn ${filter === filterKey ? 'active' : ''}`}
-      onClick={() => setFilter(filterKey)}
-    >
-      {label}
-      {count !== undefined && count > 0 && <span className="filter-count">{count}</span>}
-    </button>
-  );
+  const offerType = (o, long) => (o.isOnline && o.isInStore ? <Pill tone="purple">Online & In-Store</Pill>
+    : o.isOnline ? <Pill tone="blue">{long ? 'Online Only' : 'Online'}</Pill>
+      : o.isInStore ? <Pill tone="green">{long ? 'In-Store Only' : 'In-Store'}</Pill>
+        : long ? <Pill tone="sand">Standard</Pill> : null);
+
+  const logo = (b, cls) => (b.logo
+    ? <img src={b.logo} alt={b.brandName || b.name} className={`ba-logo ${cls || ''}`} />
+    : <span className={`ba-logo ph ${cls || ''}`}>{(b.brandName || b.name || 'B')[0].toUpperCase()}</span>);
 
   const handleBrandClick = (brand) => {
     setSelectedBrand(brand);
@@ -336,8 +309,8 @@ const BrandApprovalScreen = () => {
         width: 400,
         margin: 2,
         color: {
-          dark: '#1a1a1a',
-          light: '#ffffff'
+          dark: '#111111',
+          light: '#FFFFFF'
         },
         errorCorrectionLevel: 'H'
       });
@@ -403,563 +376,239 @@ const BrandApprovalScreen = () => {
   // Check admin access
   if (!isAdmin) {
     return (
-      <div className="access-denied-container">
-        <div className="access-denied-icon">🔒</div>
-        <h2>Access Restricted</h2>
-        <p>This area is reserved for administrators only. Please contact support if you believe this is an error.</p>
+      <div className="tdcp k-page">
+        <div className="k-card">
+          <EmptyState icon="lock" tone="red" title="Access Restricted" text="This area is reserved for administrators only. Please contact support if you believe this is an error." />
+        </div>
       </div>
     );
   }
 
   if (loading && !refreshing) {
-    return (
-      <div className="loading-container">
-        <div className="spinner"></div>
-        <p>Loading brands...</p>
-      </div>
-    );
+    return <div className="tdcp k-page"><PageLoading label="Loading brands..." /></div>;
   }
 
+  const busy = selectedBrand && processingId === selectedBrand._id;
+
   return (
-    <div className="brand-approval-container">
-      {/* Toast Notification */}
-      {toast && (
-        <div className={`toast toast-${toast.type}`}>
-          <span className="toast-icon">
-            {toast.type === 'success' ? '✓' : '✕'}
-          </span>
-          <span className="toast-message">{toast.message}</span>
+    <div className="tdcp k-page ba" data-screen="brand-approvals">
+      <PageHeader
+        title="brand approvals"
+        sub="review new brands before they go live in the app."
+        actions={
+          <Button variant="secondary" icon="refresh" loading={refreshing} onClick={() => { setRefreshing(true); fetchBrands(); }}>
+            {refreshing ? 'Refreshing...' : 'Refresh'}
+          </Button>
+        }
+      />
+
+      <div className="k-stats">
+        <StatCard label="Total Brands" value={stats.total || 0} icon="store" tone="sand" />
+        <StatCard label="Pending Review" value={stats.pending || 0} icon="clock" tone="orange" />
+        <StatCard label="Approved" value={stats.approved || 0} icon="checkCircle" tone="green" />
+        <StatCard label="Rejected" value={stats.rejected || 0} icon="xCircle" tone="red" />
+        <StatCard label="Drafts" value={stats.draft || 0} icon="file" tone="blue" />
+      </div>
+
+      <Segmented
+        label="status"
+        value={filter}
+        onChange={setFilter}
+        options={[
+          { value: 'all', label: 'All', count: stats.total > 0 ? stats.total : undefined },
+          { value: 'pending', label: 'Pending', count: stats.pending > 0 ? stats.pending : undefined },
+          { value: 'approved', label: 'Approved', count: stats.approved > 0 ? stats.approved : undefined },
+          { value: 'rejected', label: 'Rejected', count: stats.rejected > 0 ? stats.rejected : undefined },
+          { value: 'draft', label: 'Draft', count: stats.draft > 0 ? stats.draft : undefined },
+        ]}
+      />
+
+      {brands.length === 0 ? (
+        <div className="k-card">
+          <EmptyState icon="store" tone="sand" title="No brands found" text={filter === 'all' ? 'No brands have registered yet' : `No ${filter} brands to display`} />
+        </div>
+      ) : (
+        <div className="ba-list">
+          {brands.map((brand) => (
+            <button type="button" key={brand._id} className="k-card ba-card" onClick={() => handleBrandClick(brand)}>
+              {logo(brand)}
+              <span className="ba-info">
+                <span className="ba-name">{brand.brandName || brand.name}</span>
+                <span className="ba-email">{brand.email}</span>
+                <Pill tone="sand">{brand.category || 'General'}</Pill>
+              </span>
+              <span className="ba-right">
+                {getStatusBadge(brand.brandApprovalStatus)}
+                <span className="ba-date">
+                  {new Date(brand.createdAt).toLocaleDateString('en-US', {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </span>
+              </span>
+              <Ico kind="chevronRight" tone="plain" size={18} />
+            </button>
+          ))}
         </div>
       )}
 
-      {/* Header */}
-      <div className="brand-approval-header">
-        <div className="header-left">
-          <h1>brand approvals<span className="dot" aria-hidden="true">.</span></h1>
-          <p>review new brands before they go live in the app.</p>
-        </div>
-        <button 
-          className="refresh-btn" 
-          onClick={() => { setRefreshing(true); fetchBrands(); }} 
-          disabled={refreshing}
-        >
-          <span className={`refresh-icon ${refreshing ? 'spinning' : ''}`}>⟳</span>
-          {refreshing ? 'Refreshing...' : 'Refresh'}
-        </button>
-      </div>
-
-      {/* Stats Summary */}
-      <div className="stats-container">
-        <div className="stat-card stat-total">
-          <span className="stat-value">{stats.total || 0}</span>
-          <span className="stat-label">Total Brands</span>
-        </div>
-        <div className="stat-card stat-pending">
-          <span className="stat-value">{stats.pending || 0}</span>
-          <span className="stat-label">Pending Review</span>
-        </div>
-        <div className="stat-card stat-approved">
-          <span className="stat-value">{stats.approved || 0}</span>
-          <span className="stat-label">Approved</span>
-        </div>
-        <div className="stat-card stat-rejected">
-          <span className="stat-value">{stats.rejected || 0}</span>
-          <span className="stat-label">Rejected</span>
-        </div>
-        <div className="stat-card stat-draft">
-          <span className="stat-value">{stats.draft || 0}</span>
-          <span className="stat-label">Drafts</span>
-        </div>
-      </div>
-
-      {/* Filters */}
-      <div className="filter-container">
-        {renderFilterButton('all', 'All', stats.total)}
-        {renderFilterButton('pending', 'Pending', stats.pending)}
-        {renderFilterButton('approved', 'Approved', stats.approved)}
-        {renderFilterButton('rejected', 'Rejected', stats.rejected)}
-        {renderFilterButton('draft', 'Draft', stats.draft)}
-      </div>
-
-      {/* Brand List */}
-      <div className="brand-list">
-        {brands.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon">🏪</div>
-            <h3>No brands found</h3>
-            <p>{filter === 'all' ? 'No brands have registered yet' : `No ${filter} brands to display`}</p>
-          </div>
-        ) : (
-          brands.map((brand) => (
-            <div
-              key={brand._id}
-              className="brand-card"
-              onClick={() => handleBrandClick(brand)}
+      {/* brand detail */}
+      <Modal
+        open={showModal && !!selectedBrand}
+        onClose={closeModal}
+        size="xl"
+        title={selectedBrand ? (selectedBrand.brandName || selectedBrand.name) : ''}
+        sub={selectedBrand?.email}
+        footer={selectedBrand ? <>
+          {selectedBrand.brandApprovalStatus === 'approved' && (
+            <Button
+              variant="ghost"
+              icon="key"
+              onClick={(e) => handleAutoLogin(selectedBrand._id, e)}
+              loading={autoLoginLoading}
+              title="Login as this brand"
+              style={{ marginRight: 'auto' }}
             >
-              <div className="brand-card-content">
-                <div className="brand-logo-container">
-                  {brand.logo ? (
-                    <img src={brand.logo} alt={brand.brandName || brand.name} className="brand-logo" />
-                  ) : (
-                    <div className="brand-logo-placeholder">
-                      {(brand.brandName || brand.name || 'B')[0].toUpperCase()}
-                    </div>
-                  )}
-                </div>
-
-                <div className="brand-info">
-                  <h3 className="brand-name">{brand.brandName || brand.name}</h3>
-                  <p className="brand-email">{brand.email}</p>
-                  <span className="brand-category">{brand.category || 'General'}</span>
-                </div>
-
-                <div className="brand-right">
-                  {getStatusBadge(brand.brandApprovalStatus)}
-                  <span className="brand-date">
-                    {new Date(brand.createdAt).toLocaleDateString('en-US', {
-                      year: 'numeric',
-                      month: 'short',
-                      day: 'numeric'
-                    })}
-                  </span>
-                </div>
+              Login as Brand
+            </Button>
+          )}
+          <Button variant="secondary" icon="file" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'draft')}>Save as Draft</Button>
+          <Button variant="danger" icon="xCircle" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'rejected')}>Reject</Button>
+          <Button variant="success" icon="checkCircle" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'approved')}>Approve</Button>
+        </> : null}
+      >
+        {selectedBrand && (
+          loadingDetails ? (
+            <PageLoading label="Loading brand details..." minHeight={240} />
+          ) : (
+            <>
+              <div className="ba-who">
+                {logo(selectedBrand, 'lg')}
+                <div style={{ minWidth: 0 }}>{getStatusBadge(selectedBrand.brandApprovalStatus)}</div>
               </div>
+
+              <div className="k-stats">
+                <StatCard label="Total Offers" value={brandStats.totalOffers} icon="gift" tone="yellow" />
+                <StatCard label="Active" value={brandStats.activeOffers} icon="checkCircle" tone="green" />
+                <StatCard label="Total Claims" value={brandStats.totalClaims} icon="ticket" tone="blue" />
+                <StatCard label="Savings" value={`rs ${brandStats.totalSavings}`} icon="coin" tone="purple" />
+              </div>
+
+              <div className="ba-grid">
+                <Card title="Brand Information" icon="store" tone="purple">
+                  <Facts rows={[
+                    ['Brand Name', selectedBrand.brandName || selectedBrand.name],
+                    ['Email', selectedBrand.email],
+                    ['Phone', selectedBrand.phone || 'N/A'],
+                    ['Category', selectedBrand.category || 'General'],
+                    ['Address', selectedBrand.address || 'N/A'],
+                    ['Website', selectedBrand.website || 'N/A'],
+                  ]} />
+                </Card>
+
+                <Card title="Presence & Referrals" icon="globe" tone="blue">
+                  <Facts rows={[
+                    ['Online Presence', <Pill key="on" tone={selectedBrand.isOnline ? 'green' : 'red'} dot>{selectedBrand.isOnline ? 'Online' : 'Offline'}</Pill>],
+                    ['In-Store', <Pill key="in" tone={selectedBrand.isInStore ? 'green' : 'red'} dot>{selectedBrand.isInStore ? 'Available' : 'Not Available'}</Pill>],
+                    ['Referral Code', <code key="code" className="ba-code">{selectedBrand.referralCode || 'N/A'}</code>],
+                    ['Referral Count', <span key="count" className="ba-line">{selectedBrand.referralCount || 0}{selectedBrand.referralCount >= 10 && <Ico kind="flame" tone="red" size={22} />}</span>],
+                    ['Referred By', selectedBrand.referredBy?.name || 'None'],
+                  ]} />
+                </Card>
+
+                <Card title={`Brand Offers (${brandOffers.length})`} icon="gift" tone="yellow" style={{ gridColumn: '1 / -1' }}>
+                  {brandOffers.length > 0 ? (
+                    <div className="ba-offers">
+                      {brandOffers.map((offer, index) => (
+                        <div key={index} className="ba-offer">
+                          <div className="ba-offer-main">
+                            <b>{offer.title}</b>
+                            <span className="ba-ok">{offer.discountPercentage}% off</span>
+                            <span className="k-hint">{offer.claimedBy?.length || 0} claims</span>
+                            <Pill tone={offer.isActive !== false ? 'green' : 'red'} dot>{offer.isActive !== false ? 'Active' : 'Inactive'}</Pill>
+                          </div>
+                          <div className="ba-offer-side">
+                            {offerType(offer, false)}
+                            <Button
+                              size="sm"
+                              variant="secondary"
+                              icon="qr"
+                              loading={generatingQR && selectedOfferForQR?._id === offer._id}
+                              disabled={generatingQR}
+                              onClick={(e) => generateQRForOffer(offer, selectedBrand, e)}
+                              title="Generate QR Code for this offer"
+                            >
+                              QR
+                            </Button>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="k-hint" style={{ margin: 0 }}>No offers created yet</p>
+                  )}
+                </Card>
+
+                <Card title="Timestamps" icon="calendar" tone="sand">
+                  <Facts rows={[
+                    ['Joined', new Date(selectedBrand.createdAt).toLocaleString()],
+                    ['Last Updated', new Date(selectedBrand.updatedAt).toLocaleString()],
+                    ...(selectedBrand.brandApprovedAt ? [['Approved At', new Date(selectedBrand.brandApprovedAt).toLocaleString()]] : []),
+                    ...(selectedBrand.brandRejectedAt ? [['Rejected At', new Date(selectedBrand.brandRejectedAt).toLocaleString()]] : []),
+                  ]} />
+                </Card>
+
+                <Card title="Admin Note" icon="edit" tone="sand">
+                  <Field label="note" htmlFor="ba-note">
+                    <Textarea
+                      id="ba-note"
+                      placeholder="Add a note about this brand (optional)..."
+                      value={statusNote}
+                      onChange={(e) => setStatusNote(e.target.value)}
+                      rows="3"
+                    />
+                  </Field>
+                </Card>
+              </div>
+            </>
+          )
+        )}
+      </Modal>
+
+      {/* offer QR code */}
+      <Modal
+        open={showQRModal && !!qrImage && !!selectedOfferForQR}
+        onClose={closeQRModal}
+        icon="qr"
+        tone="yellow"
+        title={`QR Code - ${selectedBrand?.brandName || 'Brand'}`}
+        sub={selectedOfferForQR ? `${selectedOfferForQR.title} • ${selectedOfferForQR.discountPercentage}% OFF` : undefined}
+        footer={<>
+          <Button variant="secondary" icon="copy" onClick={copyQRData}>{copied ? 'Copied!' : 'Copy Data'}</Button>
+          <Button variant="secondary" icon="share" onClick={shareQR}>Share</Button>
+          <Button icon="download" onClick={downloadQR}>Download</Button>
+        </>}
+      >
+        {selectedOfferForQR && (
+          <>
+            <div className="ba-qr"><img src={qrImage} alt="QR Code" /></div>
+            <div className="k-card pad" style={{ padding: '6px 18px' }}>
+              <Facts rows={[
+                ['Brand', selectedBrand?.brandName || selectedBrand?.name || 'Brand'],
+                ['Offer', selectedOfferForQR.title],
+                ['Discount', <b key="d">{selectedOfferForQR.discountPercentage}% OFF</b>],
+                ['Type', offerType(selectedOfferForQR, true)],
+                ...(selectedOfferForQR.promoCode ? [['Promo Code', <code key="p" className="ba-code">{selectedOfferForQR.promoCode}</code>]] : []),
+              ]} />
             </div>
-          ))
+            <div className="k-note">
+              <b>Students can scan this QR code to claim this discount</b>
+              <div className="k-hint">The QR code contains all necessary information for verification</div>
+            </div>
+          </>
         )}
-      </div>
-
-      {/* Brand Detail Modal */}
-      <AnimatePresence>
-        {showModal && selectedBrand && (
-          <motion.div 
-            className="modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeModal}
-          >
-            <motion.div 
-              className="modal-container"
-              initial={{ scale: 0.9, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 30, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Modal Header */}
-              <div className="modal-header">
-                <div className="modal-brand-info">
-                  <div className="modal-brand-logo-container">
-                    {selectedBrand.logo ? (
-                      <img src={selectedBrand.logo} alt={selectedBrand.brandName} className="modal-brand-logo" />
-                    ) : (
-                      <div className="modal-brand-logo-placeholder">
-                        {(selectedBrand.brandName || selectedBrand.name || 'B')[0].toUpperCase()}
-                      </div>
-                    )}
-                  </div>
-                  <div className="modal-brand-details">
-                    <h2>{selectedBrand.brandName || selectedBrand.name}</h2>
-                    <p className="modal-brand-email">{selectedBrand.email}</p>
-                    {getStatusBadge(selectedBrand.brandApprovalStatus)}
-                  </div>
-                </div>
-                <div className="modal-header-actions">
-                  {/* Auto-Login Button - Only show for approved brands */}
-                  {selectedBrand.brandApprovalStatus === 'approved' && (
-                    <motion.button
-                      className="auto-login-btn"
-                      onClick={(e) => handleAutoLogin(selectedBrand._id, e)}
-                      whileHover={{ scale: 1.05 }}
-                      whileTap={{ scale: 0.95 }}
-                      disabled={autoLoginLoading}
-                      title="Login as this brand"
-                    >
-                      {autoLoginLoading ? (
-                        <div className="spinner-small"></div>
-                      ) : (
-                        <>
-                          <LogIn size={isMobile ? 14 : 16} />
-                          <span>Login as Brand</span>
-                        </>
-                      )}
-                    </motion.button>
-                  )}
-                  <button className="modal-close-btn" onClick={closeModal}>
-                    <X size={isMobile ? 16 : 20} />
-                  </button>
-                </div>
-              </div>
-
-              {/* Modal Body */}
-              <div className="modal-body">
-                {loadingDetails ? (
-                  <div className="loading-details">
-                    <div className="spinner-small"></div>
-                    <p>Loading brand details...</p>
-                  </div>
-                ) : (
-                  <>
-                    {/* Quick Stats */}
-                    <div className="modal-stats">
-                      <div className="modal-stat">
-                        <span className="modal-stat-value">{brandStats.totalOffers}</span>
-                        <span className="modal-stat-label">Total Offers</span>
-                      </div>
-                      <div className="modal-stat-divider" />
-                      <div className="modal-stat">
-                        <span className="modal-stat-value">{brandStats.activeOffers}</span>
-                        <span className="modal-stat-label">Active</span>
-                      </div>
-                      <div className="modal-stat-divider" />
-                      <div className="modal-stat">
-                        <span className="modal-stat-value">{brandStats.totalClaims}</span>
-                        <span className="modal-stat-label">Total Claims</span>
-                      </div>
-                      <div className="modal-stat-divider" />
-                      <div className="modal-stat">
-                        <span className="modal-stat-value">rs {brandStats.totalSavings}</span>
-                        <span className="modal-stat-label">Savings</span>
-                      </div>
-                    </div>
-
-                    <div className="modal-grid">
-                      {/* Brand Information */}
-                      <div className="modal-section">
-                        <h4 className="modal-section-title">
-                          <Building size={isMobile ? 12 : 14} /> Brand Information
-                        </h4>
-                        <div className="modal-details">
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Brand Name</span>
-                            <span className="modal-detail-value">{selectedBrand.brandName || selectedBrand.name}</span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Email</span>
-                            <span className="modal-detail-value">{selectedBrand.email}</span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Phone</span>
-                            <span className="modal-detail-value">{selectedBrand.phone || 'N/A'}</span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Category</span>
-                            <span className="modal-detail-value">{selectedBrand.category || 'General'}</span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Address</span>
-                            <span className="modal-detail-value">{selectedBrand.address || 'N/A'}</span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Website</span>
-                            <span className="modal-detail-value">{selectedBrand.website || 'N/A'}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Presence & Referral Info */}
-                      <div className="modal-section">
-                        <h4 className="modal-section-title">
-                          <Layers size={isMobile ? 12 : 14} /> Presence & Referrals
-                        </h4>
-                        <div className="modal-details">
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Online Presence</span>
-                            <span className="modal-detail-value">
-                              <span className={`presence-tag ${selectedBrand.isOnline ? 'active' : 'inactive'}`}>
-                                {selectedBrand.isOnline ? '🟢 Online' : '🔴 Offline'}
-                              </span>
-                            </span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">In-Store</span>
-                            <span className="modal-detail-value">
-                              <span className={`presence-tag ${selectedBrand.isInStore ? 'active' : 'inactive'}`}>
-                                {selectedBrand.isInStore ? '🟢 Available' : '🔴 Not Available'}
-                              </span>
-                            </span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Referral Code</span>
-                            <code className="modal-referral-code">{selectedBrand.referralCode || 'N/A'}</code>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Referral Count</span>
-                            <span className="modal-detail-value">
-                              <span className={`modal-referral-badge ${selectedBrand.referralCount >= 10 ? 'modal-top-referral-badge' : ''}`}>
-                                {selectedBrand.referralCount || 0}
-                                {selectedBrand.referralCount >= 10 && ' 🔥'}
-                              </span>
-                            </span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Referred By</span>
-                            <span className="modal-detail-value">{selectedBrand.referredBy?.name || 'None'}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      {/* Offers Section - With QR Generation */}
-                      <div className="modal-section modal-section-full">
-                        <h4 className="modal-section-title">
-                          <Gift size={isMobile ? 12 : 14} /> Brand Offers ({brandOffers.length})
-                        </h4>
-                        {brandOffers.length > 0 ? (
-                          <div className="offer-list">
-                            {brandOffers.map((offer, index) => (
-                              <div key={index} className="offer-item">
-                                <div className="offer-item-left">
-                                  <span className="offer-title">{offer.title}</span>
-                                  <span className="offer-discount">{offer.discountPercentage}% off</span>
-                                  <span className="offer-status">
-                                    {offer.claimedBy?.length || 0} claims
-                                  </span>
-                                  <span className={`offer-active-status ${offer.isActive !== false ? 'active' : 'inactive'}`}>
-                                    {offer.isActive !== false ? '🟢 Active' : '🔴 Inactive'}
-                                  </span>
-                                </div>
-                                <div className="offer-item-right">
-                                  {offer.isOnline && offer.isInStore && (
-                                    <span className="badge-small badge-both">Online & In-Store</span>
-                                  )}
-                                  {offer.isOnline && !offer.isInStore && (
-                                    <span className="badge-small badge-online">Online</span>
-                                  )}
-                                  {!offer.isOnline && offer.isInStore && (
-                                    <span className="badge-small badge-instore">In-Store</span>
-                                  )}
-                                  <motion.button
-                                    className="qr-generate-btn"
-                                    onClick={(e) => generateQRForOffer(offer, selectedBrand, e)}
-                                    whileHover={{ scale: 1.05 }}
-                                    whileTap={{ scale: 0.95 }}
-                                    disabled={generatingQR}
-                                    title="Generate QR Code for this offer"
-                                  >
-                                    {generatingQR && selectedOfferForQR?._id === offer._id ? (
-                                      <div className="spinner-small"></div>
-                                    ) : (
-                                      <QrCode size={isMobile ? 14 : 16} />
-                                    )}
-                                    <span className="qr-btn-text">QR</span>
-                                  </motion.button>
-                                </div>
-                              </div>
-                            ))}
-                          </div>
-                        ) : (
-                          <div className="empty-offers">
-                            <p>No offers created yet</p>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Timestamps */}
-                      <div className="modal-section modal-section-full">
-                        <h4 className="modal-section-title">
-                          <Calendar size={isMobile ? 12 : 14} /> Timestamps
-                        </h4>
-                        <div className="modal-details">
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Joined</span>
-                            <span className="modal-detail-value">
-                              {new Date(selectedBrand.createdAt).toLocaleString()}
-                            </span>
-                          </div>
-                          <div className="modal-detail-row">
-                            <span className="modal-detail-label">Last Updated</span>
-                            <span className="modal-detail-value">
-                              {new Date(selectedBrand.updatedAt).toLocaleString()}
-                            </span>
-                          </div>
-                          {selectedBrand.brandApprovedAt && (
-                            <div className="modal-detail-row">
-                              <span className="modal-detail-label">Approved At</span>
-                              <span className="modal-detail-value">
-                                {new Date(selectedBrand.brandApprovedAt).toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                          {selectedBrand.brandRejectedAt && (
-                            <div className="modal-detail-row">
-                              <span className="modal-detail-label">Rejected At</span>
-                              <span className="modal-detail-value">
-                                {new Date(selectedBrand.brandRejectedAt).toLocaleString()}
-                              </span>
-                            </div>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Admin Note */}
-                      <div className="modal-section modal-section-full">
-                        <h4 className="modal-section-title">
-                          <FileText size={isMobile ? 12 : 14} /> Admin Note
-                        </h4>
-                        <textarea
-                          className="note-input"
-                          placeholder="Add a note about this brand (optional)..."
-                          value={statusNote}
-                          onChange={(e) => setStatusNote(e.target.value)}
-                          rows="3"
-                        />
-                      </div>
-                    </div>
-                  </>
-                )}
-              </div>
-
-              {/* Modal Footer */}
-              <div className="modal-footer">
-                <button
-                  className="action-btn action-draft"
-                  onClick={() => handleStatusUpdate(selectedBrand._id, 'draft')}
-                  disabled={processingId === selectedBrand._id}
-                >
-                  {processingId === selectedBrand._id ? (
-                    <span className="btn-spinner"></span>
-                  ) : (
-                    '📄 Save as Draft'
-                  )}
-                </button>
-                <button
-                  className="action-btn action-reject"
-                  onClick={() => handleStatusUpdate(selectedBrand._id, 'rejected')}
-                  disabled={processingId === selectedBrand._id}
-                >
-                  {processingId === selectedBrand._id ? (
-                    <span className="btn-spinner"></span>
-                  ) : (
-                    '❌ Reject'
-                  )}
-                </button>
-                <button
-                  className="action-btn action-approve"
-                  onClick={() => handleStatusUpdate(selectedBrand._id, 'approved')}
-                  disabled={processingId === selectedBrand._id}
-                >
-                  {processingId === selectedBrand._id ? (
-                    <span className="btn-spinner"></span>
-                  ) : (
-                    '✅ Approve'
-                  )}
-                </button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* QR Code Modal */}
-      <AnimatePresence>
-        {showQRModal && qrImage && selectedOfferForQR && (
-          <motion.div 
-            className="qr-modal-overlay"
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            onClick={closeQRModal}
-          >
-            <motion.div 
-              className="qr-modal-content"
-              initial={{ scale: 0.9, y: 30, opacity: 0 }}
-              animate={{ scale: 1, y: 0, opacity: 1 }}
-              exit={{ scale: 0.9, y: 30, opacity: 0 }}
-              transition={{ type: "spring", damping: 25 }}
-              onClick={e => e.stopPropagation()}
-            >
-              <div className="qr-modal-header">
-                <div>
-                  <h3 className="qr-modal-title">
-                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#C77700' }} />
-                    QR Code - {selectedBrand?.brandName || 'Brand'}
-                  </h3>
-                  <p className="qr-modal-subtitle">
-                    {selectedOfferForQR.title} • {selectedOfferForQR.discountPercentage}% OFF
-                  </p>
-                </div>
-                <button className="qr-modal-close-btn" onClick={closeQRModal}>
-                  <X size={isMobile ? 16 : 20} />
-                </button>
-              </div>
-
-              <div className="qr-modal-body">
-                <div className="qr-image-container">
-                  <img src={qrImage} alt="QR Code" className="qr-modal-image" />
-                </div>
-
-                <div className="qr-offer-details">
-                  <div className="qr-offer-row">
-                    <span className="qr-offer-label">Brand:</span>
-                    <span className="qr-offer-value">{selectedBrand?.brandName || selectedBrand?.name || 'Brand'}</span>
-                  </div>
-                  <div className="qr-offer-row">
-                    <span className="qr-offer-label">Offer:</span>
-                    <span className="qr-offer-value">{selectedOfferForQR.title}</span>
-                  </div>
-                  <div className="qr-offer-row">
-                    <span className="qr-offer-label">Discount:</span>
-                    <span className="qr-offer-value highlight-discount">{selectedOfferForQR.discountPercentage}% OFF</span>
-                  </div>
-                  <div className="qr-offer-row">
-                    <span className="qr-offer-label">Type:</span>
-                    <span className="qr-offer-value">
-                      {selectedOfferForQR.isOnline && selectedOfferForQR.isInStore ? (
-                        <span className="badge-small badge-both">Online & In-Store</span>
-                      ) : selectedOfferForQR.isOnline ? (
-                        <span className="badge-small badge-online">Online Only</span>
-                      ) : selectedOfferForQR.isInStore ? (
-                        <span className="badge-small badge-instore">In-Store Only</span>
-                      ) : (
-                        <span className="badge-small">Standard</span>
-                      )}
-                    </span>
-                  </div>
-                  {selectedOfferForQR.promoCode && (
-                    <div className="qr-offer-row">
-                      <span className="qr-offer-label">Promo Code:</span>
-                      <span className="qr-offer-value promo-code">{selectedOfferForQR.promoCode}</span>
-                    </div>
-                  )}
-                </div>
-
-                <div className="qr-modal-actions">
-                  <motion.button 
-                    className="qr-action-btn qr-action-download"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={downloadQR}
-                  >
-                    <Download size={isMobile ? 14 : 16} /> Download
-                  </motion.button>
-                  <motion.button 
-                    className="qr-action-btn qr-action-share"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={shareQR}
-                  >
-                    <Share2 size={isMobile ? 14 : 16} /> Share
-                  </motion.button>
-                  <motion.button 
-                    className="qr-action-btn qr-action-copy"
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    onClick={copyQRData}
-                  >
-                    <Copy size={isMobile ? 14 : 16} /> {copied ? 'Copied!' : 'Copy Data'}
-                  </motion.button>
-                </div>
-
-                <div className="qr-scan-instructions">
-                  <p className="qr-scan-text">📱 Students can scan this QR code to claim this discount</p>
-                  <p className="qr-scan-subtext">The QR code contains all necessary information for verification</p>
-                </div>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      </Modal>
     </div>
   );
 };
