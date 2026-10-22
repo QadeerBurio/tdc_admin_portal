@@ -1,0 +1,17 @@
+/* ManageExchange: programs table, program form and bulk upload. Kit tokens only. */
+.tdcp .mx-filters { display: flex; flex-direction: column; gap: 10px; }
+.tdcp .mx-deadline { color: var(--danger); font-size: 12.5px; }
+.tdcp .mx-status { min-width: 72px; height: 30px; padding: 0 12px; border-radius: 15px; border: 0; background: var(--sand); color: var(--muted); font-family: var(--body); font-weight: 700; font-size: 12.5px; cursor: pointer; display: inline-flex; align-items: center; justify-content: center; }
+.tdcp .mx-status.on { background: var(--success-bg); color: var(--success); }
+.tdcp .mx-form { display: flex; flex-direction: column; gap: 14px; }
+.tdcp .mx-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tdcp .mx-add { display: flex; gap: 8px; }
+.tdcp .mx-reqs { display: flex; flex-direction: column; gap: 6px; margin-top: 8px; }
+.tdcp .mx-req { display: flex; align-items: center; gap: 8px; padding: 6px 6px 6px 12px; border-radius: 12px; background: var(--success-bg); color: var(--success); font-size: 13.5px; }
+.tdcp .mx-req span { color: var(--ink); }
+.tdcp .mx-drop { position: relative; }
+.tdcp .mx-file { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; }
+.tdcp .mx-template { position: relative; z-index: 1; margin-top: 6px; }
+.tdcp .mx-skipped { display: flex; flex-direction: column; gap: 6px; max-height: 160px; overflow-y: auto; margin-top: 8px; }
+.tdcp .mx-skip { display: flex; justify-content: space-between; align-items: center; gap: 8px; flex-wrap: wrap; padding: 8px 12px; border-radius: 10px; background: var(--card); font-size: 12.5px; }
+@media (max-width: 600px) { .tdcp .mx-two { grid-template-columns: 1fr; } .tdcp .mx-add { flex-direction: column; } }
