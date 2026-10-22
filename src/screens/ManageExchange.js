@@ -446,7 +446,7 @@ const ManageExchange = () => {
     >
       <div style={styles.mobileCardHeader}>
         <div style={styles.mobileCardIcon}>
-          <GraduationCap size={20} color={item.active ? '#ff961a' : '#94a3b8'} />
+          <GraduationCap size={20} color={item.active ? '#111111' : '#ECE7DB'} />
         </div>
         <div style={styles.mobileCardTitleSection}>
           <div style={styles.mobileCardTitle}>
@@ -466,8 +466,8 @@ const ManageExchange = () => {
           disabled={togglingId === item._id}
           style={{
             ...styles.mobileStatusBadge,
-            backgroundColor: item.active ? '#dcfce7' : '#f1f5f9',
-            color: item.active ? '#166534' : '#64748b'
+            backgroundColor: item.active ? '#E3F3E8' : '#F0ECE2',
+            color: item.active ? '#1E6B3A' : '#6B675E'
           }}
         >
           {togglingId === item._id ? (
@@ -479,13 +479,13 @@ const ManageExchange = () => {
 
       <div style={styles.mobileCardDetails}>
         <div style={styles.mobileCardDetail}>
-          <MapPin size={14} color="#94a3b8" /> {item.location}
+          <MapPin size={14} color="#9A958B" /> {item.location}
         </div>
         <div style={styles.mobileCardDetail}>
-          <Clock size={14} color="#94a3b8" /> {item.duration}
+          <Clock size={14} color="#9A958B" /> {item.duration}
         </div>
-        <div style={{...styles.mobileCardDetail, color: '#ef4444'}}>
-          <Calendar size={13} color="#ef4444" /> Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}
+        <div style={{...styles.mobileCardDetail, color: '#B42318'}}>
+          <Calendar size={13} color="#B42318" /> Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}
         </div>
       </div>
 
@@ -504,14 +504,14 @@ const ManageExchange = () => {
         </button>
         <button 
           onClick={() => openModal(item)}
-          style={{...styles.mobileActionBtn, background: '#10b981', color: '#fff'}}
+          style={{...styles.mobileActionBtn, background: '#2E8B3E', color: '#fff'}}
         >
           <Edit3 size={14} /> Edit
         </button>
         <button 
           onClick={() => deleteProgram(item._id)}
           disabled={deletingId === item._id}
-          style={{...styles.mobileActionBtn, background: '#ef4444', color: '#fff'}}
+          style={{...styles.mobileActionBtn, background: '#D9443F', color: '#fff'}}
         >
           {deletingId === item._id ? (
             <div style={styles.spinnerSmall}></div>
@@ -741,7 +741,7 @@ const ManageExchange = () => {
                         ) : (
                           formData.requirements.map((req, idx) => (
                             <div key={idx} className="req-item" style={styles.reqBadge}>
-                              <CheckCircle2 size={14} color="#10b981" />
+                              <CheckCircle2 size={14} color="#1E6B3A" />
                               <span style={{flex: 1, fontSize: '13px'}}>{req}</span>
                               <button
                                 type="button"
@@ -865,7 +865,7 @@ const ManageExchange = () => {
                         ) : (
                           (formData.scholarship.requirements || []).map((req, idx) => (
                             <div key={idx} className="req-item" style={styles.reqBadge}>
-                              <CheckCircle2 size={14} color="#10b981" />
+                              <CheckCircle2 size={14} color="#1E6B3A" />
                               <span style={{flex: 1, fontSize: '13px'}}>{req}</span>
                               <button
                                 type="button"
@@ -993,12 +993,12 @@ const ManageExchange = () => {
                     disabled={isUploading}
                   />
                   <div style={styles.uploadIcon}>
-                    <FileSpreadsheet size={isMobile ? 28 : (fileLoaded ? 32 : 44)} color="#ff961a" />
+                    <FileSpreadsheet size={isMobile ? 28 : (fileLoaded ? 32 : 44)} color="#C77700" />
                   </div>
-                  <h4 style={{color: '#1e293b', marginBottom: '4px', fontSize: isMobile ? '14px' : '16px'}}>
+                  <h4 style={{color: '#111111', marginBottom: '4px', fontSize: isMobile ? '14px' : '16px'}}>
                     {fileLoaded ? '📄 File Loaded!' : 'Upload Excel or CSV File'}
                   </h4>
-                  <p style={{color: '#94a3b8', fontSize: isMobile ? '12px' : '13px', margin: 0}}>
+                  <p style={{color: '#9A958B', fontSize: isMobile ? '12px' : '13px', margin: 0}}>
                     {fileLoaded 
                       ? `${previewData.length} programs found. Click "Upload All Programs" to continue.`
                       : 'Drag & drop or click to select .xlsx, .xls, or .csv file'}
@@ -1008,7 +1008,7 @@ const ManageExchange = () => {
                       onClick={downloadTemplate}
                       style={{
                         ...styles.smallAddBtn,
-                        background: '#ff961a',
+                        background: '#111111',
                         padding: isMobile ? '8px 16px' : '8px 20px',
                         marginTop: '12px',
                         fontSize: isMobile ? '12px' : '13px',
@@ -1027,7 +1027,7 @@ const ManageExchange = () => {
                       flexDirection: isMobile ? 'column' : 'row',
                       alignItems: isMobile ? 'flex-start' : 'center',
                     }}>
-                      <span style={{fontWeight: 600, color: '#1e293b', fontSize: isMobile ? '13px' : '14px'}}>
+                      <span style={{fontWeight: 600, color: '#111111', fontSize: isMobile ? '13px' : '14px'}}>
                         📊 Preview ({previewData.length} programs found)
                       </span>
                       <label style={styles.autoScholarshipLabel}>
@@ -1048,7 +1048,7 @@ const ManageExchange = () => {
                     }}>
                       <table style={{width: '100%', borderCollapse: 'collapse'}}>
                         <thead>
-                          <tr style={{background: '#f8fafc'}}>
+                          <tr style={{background: '#FAF8F3'}}>
                             <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>#</th>
                             <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>Program</th>
                             <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>University</th>
@@ -1058,8 +1058,8 @@ const ManageExchange = () => {
                         </thead>
                         <tbody>
                           {previewData.slice(0, isMobile ? 3 : 5).map((prog, idx) => (
-                            <tr key={idx} style={{borderBottom: '1px solid #f1f5f9'}}>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', color: '#94a3b8'}}>{idx + 1}</td>
+                            <tr key={idx} style={{borderBottom: '1px solid #F0ECE2'}}>
+                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', color: '#9A958B'}}>{idx + 1}</td>
                               <td style={{padding: isMobile ? '4px 8px' : '8px 12px', fontWeight: 500, fontSize: isMobile ? '11px' : '13px'}}>{prog.title}</td>
                               <td style={{padding: isMobile ? '4px 8px' : '8px 12px', fontSize: isMobile ? '11px' : '13px'}}>{prog.university}</td>
                               <td style={{padding: isMobile ? '4px 8px' : '8px 12px'}}>
@@ -1072,7 +1072,7 @@ const ManageExchange = () => {
                           ))}
                           {previewData.length > (isMobile ? 3 : 5) && (
                             <tr>
-                              <td colSpan={5} style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'center', color: '#94a3b8', fontSize: isMobile ? '11px' : '13px'}}>
+                              <td colSpan={5} style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'center', color: '#9A958B', fontSize: isMobile ? '11px' : '13px'}}>
                                 ... and {previewData.length - (isMobile ? 3 : 5)} more programs
                               </td>
                             </tr>
@@ -1090,8 +1090,8 @@ const ManageExchange = () => {
                               width: `${uploadProgress}%`,
                               transition: 'width 0.5s ease-in-out',
                               background: uploadComplete 
-                                ? 'linear-gradient(90deg, #10b981, #059669)' 
-                                : 'linear-gradient(90deg, #ff961a, #f59e0b)'
+                                ? '#111111' 
+                                : '#111111'
                             }}
                           >
                             <span style={styles.progressText}>{uploadProgress}%</span>
@@ -1099,7 +1099,7 @@ const ManageExchange = () => {
                         </div>
                         <p style={{
                           fontSize: isMobile ? '12px' : '14px',
-                          color: '#475569',
+                          color: '#6B675E',
                           marginTop: '8px',
                           whiteSpace: 'pre-wrap',
                           wordBreak: 'break-word'
@@ -1116,19 +1116,19 @@ const ManageExchange = () => {
                             marginTop: '12px',
                             padding: '12px',
                             borderRadius: '12px',
-                            backgroundColor: '#fff7ed',
-                            border: '1px solid #ffedd5'
+                            backgroundColor: '#FFF1CC',
+                            border: '1px solid #FFF1CC'
                           }}>
-                            <div style={{ fontWeight: 600, color: '#c2410c', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
+                            <div style={{ fontWeight: 600, color: '#8A5A00', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
                               <span>⚠️ Skipped Rows Details ({skippedRows.length}):</span>
                             </div>
                             <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
                               {skippedRows.map((sr, i) => (
-                                <div key={i} style={{ fontSize: '12px', color: '#9a3412', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #fed7aa', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                                <div key={i} style={{ fontSize: '12px', color: '#8A5A00', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FFF1CC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                                   <div>
                                     <strong>Row {sr.row}</strong>: {sr.title ? `${sr.title}${sr.university ? ` (${sr.university})` : ''}` : 'Untitled Row'}
                                   </div>
-                                  <span style={{ backgroundColor: '#ffedd5', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500 }}>
+                                  <span style={{ backgroundColor: '#FFF1CC', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500 }}>
                                     {sr.reason}
                                   </span>
                                 </div>
@@ -1148,7 +1148,7 @@ const ManageExchange = () => {
                       paddingTop: '14px',
                       paddingBottom: '4px',
                       marginTop: '16px',
-                      borderTop: '1px solid #f1f5f9',
+                      borderTop: '1px solid #F0ECE2',
                       zIndex: 10
                     }}>
                       {uploadComplete ? (
@@ -1171,7 +1171,7 @@ const ManageExchange = () => {
                               ...styles.submitBtn,
                               width: isMobile ? '100%' : 'auto',
                               justifyContent: 'center',
-                              background: '#10b981',
+                              background: '#2E8B3E',
                               cursor: 'pointer'
                             }}
                           >
@@ -1197,7 +1197,7 @@ const ManageExchange = () => {
                               ...styles.submitBtn,
                               width: isMobile ? '100%' : 'auto',
                               justifyContent: 'center',
-                              background: isUploading ? '#94a3b8' : '#1e293b',
+                              background: isUploading ? '#ECE7DB' : '#111111',
                               cursor: isUploading ? 'default' : 'pointer'
                             }}
                           >
@@ -1226,8 +1226,8 @@ const ManageExchange = () => {
   return (
     <div style={{
       ...styles.pageWrapper,
-      padding: isMobile ? '12px 16px' : isTablet ? '16px 24px' : '20px 30px',
-      borderRadius: isMobile ? '16px' : isTablet ? '24px' : '32px',
+      padding: 0,
+      borderRadius: 0,
     }}>
       <div style={styles.bgDecoration1}></div>
       <div style={styles.bgDecoration2}></div>
@@ -1247,19 +1247,15 @@ const ManageExchange = () => {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <div style={styles.headerBadge}>
-              <Globe size={14} />
-              <span>Global Partnerships</span>
-            </div>
             <h1 style={{
               ...styles.headerTitle,
               fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
-            }}>Scholarships</h1>
+            }}>scholarships<span className="dot" aria-hidden="true">.</span></h1>
             <p style={{
               ...styles.headerSub,
               fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
             }}>
-              {isMobile ? 'Manage scholarships' : 'Manage scholarships and application cycles'}
+              study abroad programs and funding students see in the app.
             </p>
           </div>
           <div style={{
@@ -1279,9 +1275,9 @@ const ManageExchange = () => {
                 padding: isMobile ? '8px 14px' : '10px 20px',
                 flex: isMobile ? 1 : 'auto',
                 minWidth: isMobile ? 'auto' : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
                 <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <GraduationCap size={isMobile ? 14 : 18} color="#10b981" />
+                  <GraduationCap size={isMobile ? 14 : 18} color="#1E6B3A" />
                 </div>
                 <div>
                   <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{programs.length}</div>
@@ -1293,9 +1289,9 @@ const ManageExchange = () => {
                 padding: isMobile ? '8px 14px' : '10px 20px',
                 flex: isMobile ? 1 : 'auto',
                 minWidth: isMobile ? 'auto' : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 8px 20px rgba(0,0,0,0.08)" }}>
+              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
                 <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <Award size={isMobile ? 14 : 18} color="#3b82f6" />
+                  <Award size={isMobile ? 14 : 18} color="#2B7FC0" />
                 </div>
                 <div>
                   <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{activeCount}</div>
@@ -1320,7 +1316,7 @@ const ManageExchange = () => {
                   fontSize: isMobile ? '13px' : '14px',
                 }} 
                 onClick={() => openModal()}
-                whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
+                whileHover={{ y: -2, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Plus size={isMobile ? 16 : 18} /> 
@@ -1330,14 +1326,14 @@ const ManageExchange = () => {
                 className="add-btn" 
                 style={{
                   ...styles.addButton,
-                  background: '#0f172a',
+                  background: '#111111',
                   width: isMobile ? '100%' : 'auto',
                   justifyContent: 'center',
                   padding: isMobile ? '10px 16px' : '10px 24px',
                   fontSize: isMobile ? '13px' : '14px',
                 }} 
                 onClick={() => setUploadModalVisible(true)}
-                whileHover={{ y: -2, boxShadow: "0 8px 20px rgba(0,0,0,0.15)" }}
+                whileHover={{ y: -2, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
                 whileTap={{ scale: 0.95 }}
               >
                 <Upload size={isMobile ? 16 : 18} /> 
@@ -1364,7 +1360,7 @@ const ManageExchange = () => {
             width: isMobile ? '100%' : 'auto',
             padding: isMobile ? '0 12px' : '0 16px',
           }}>
-            <Search size={isMobile ? 16 : 18} color="#94a3b8" />
+            <Search size={isMobile ? 16 : 18} color="#9A958B" />
             <input
               type="text"
               placeholder={isMobile ? "Search..." : "Search programs, universities..."}
@@ -1460,7 +1456,7 @@ const ManageExchange = () => {
           {loading ? (
             <div className="loader-container" style={styles.loaderContainer}>
               <div className="spinner" style={styles.spinner}></div>
-              <p style={{marginTop: '16px', color: '#64748B', fontWeight: 500, fontSize: isMobile ? '13px' : '14px'}}>
+              <p style={{marginTop: '16px', color: '#6B675E', fontWeight: 500, fontSize: isMobile ? '13px' : '14px'}}>
                 Loading scholarship programs...
               </p>
             </div>
@@ -1495,7 +1491,7 @@ const ManageExchange = () => {
                   padding: isMobile ? '40px 16px' : isTablet ? '60px 24px' : '80px 24px',
                 }}>
                   <div style={{...styles.emptyIcon, fontSize: isMobile ? '40px' : '64px'}}>🌍</div>
-                  <h3 style={{color: '#1e293b', marginBottom: '4px', fontSize: isMobile ? '16px' : '18px'}}>
+                  <h3 style={{color: '#111111', marginBottom: '4px', fontSize: isMobile ? '16px' : '18px'}}>
                     {programs.length === 0 ? 'No Programs Registered' : 'No matching programs found'}
                   </h3>
                   <p style={{fontSize: isMobile ? '13px' : '14px'}}>
@@ -1523,7 +1519,7 @@ const ManageExchange = () => {
                       initial={{ opacity: 0, x: -20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ duration: 0.4, delay: index * 0.05 }}
-                      whileHover={{ backgroundColor: '#f8fafc', x: 4 }}
+                      whileHover={{ backgroundColor: '#FAF8F3', x: 4 }}
                     >
                       <div style={{flex: 2.5, display: 'flex', gap: '14px', alignItems: 'center'}}>
                         <div style={{
@@ -1531,7 +1527,7 @@ const ManageExchange = () => {
                           width: isTablet ? '36px' : '44px',
                           height: isTablet ? '36px' : '44px',
                         }}>
-                          <GraduationCap size={isTablet ? 16 : 20} color={item.active ? '#ff961a' : '#94a3b8'} />
+                          <GraduationCap size={isTablet ? 16 : 20} color={item.active ? '#111111' : '#ECE7DB'} />
                         </div>
                         <div>
                           <div style={styles.rowTitle}>
@@ -1549,14 +1545,14 @@ const ManageExchange = () => {
                       </div>
 
                       <div style={{flex: 1, ...styles.cellText, fontSize: isTablet ? '12px' : '13px'}}>
-                        <MapPin size={isTablet ? 12 : 14} color="#94a3b8" /> {item.location}
+                        <MapPin size={isTablet ? 12 : 14} color="#9A958B" /> {item.location}
                       </div>
 
                       <div style={{flex: 1}}>
                         <div style={{...styles.cellText, marginBottom: '4px', fontSize: isTablet ? '12px' : '13px'}}>
                           <Clock size={isTablet ? 12 : 14} /> {item.duration}
                         </div>
-                        <div style={{...styles.cellText, fontSize: isTablet ? '11px' : '12px', color: '#ef4444'}}>
+                        <div style={{...styles.cellText, fontSize: isTablet ? '11px' : '12px', color: '#B42318'}}>
                           <Calendar size={isTablet ? 11 : 13} /> Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}
                         </div>
                       </div>
@@ -1570,8 +1566,8 @@ const ManageExchange = () => {
                             ...styles.statusBadge,
                             fontSize: isTablet ? '10px' : '11px',
                             padding: isTablet ? '4px 10px' : '5px 14px',
-                            backgroundColor: item.active ? '#dcfce7' : '#f1f5f9', 
-                            color: item.active ? '#166534' : '#64748b' 
+                            backgroundColor: item.active ? '#E3F3E8' : '#F0ECE2', 
+                            color: item.active ? '#1E6B3A' : '#6B675E' 
                           }}
                         >
                           {togglingId === item._id ? (
@@ -1589,8 +1585,8 @@ const ManageExchange = () => {
                           style={{
                             ...styles.actionBtn,
                             padding: isTablet ? '6px' : '8px',
-                            color: '#3b82f6',
-                            borderColor: '#dbeafe',
+                            color: '#2B7FC0',
+                            borderColor: '#E1F1FA',
                           }}
                           whileHover={{ y: -2 }}
                           whileTap={{ scale: 0.95 }}
@@ -1631,8 +1627,8 @@ const ManageExchange = () => {
                           style={{
                             ...styles.actionBtn,
                             padding: isTablet ? '6px' : '8px',
-                            color: '#ef4444',
-                            borderColor: '#fee2e2',
+                            color: '#B42318',
+                            borderColor: '#FDECEA',
                           }}
                           whileHover={{ y: -2 }}
                           whileTap={{ scale: 0.95 }}
@@ -1695,7 +1691,7 @@ const ManageExchange = () => {
             transition: all 0.2s ease;
           }
           .tab-btn:hover {
-            color: #ff961a;
+            color: #C77700;
           }
           
           .req-item {
@@ -1708,8 +1704,8 @@ const ManageExchange = () => {
           
           input:focus, select:focus, textarea:focus {
             outline: none;
-            border-color: #ff961a;
-            box-shadow: 0 0 0 3px rgba(255,150,26,0.1);
+            border-color: #C77700;
+            box-shadow: 0 0 0 3px rgba(249, 195, 73,0.1);
           }
 
           ::-webkit-scrollbar {
@@ -1720,11 +1716,11 @@ const ManageExchange = () => {
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #111111;
           }
         `}
       </style>
@@ -1734,13 +1730,15 @@ const ManageExchange = () => {
 
 const styles = {
   pageWrapper: { 
-    minHeight: '100vh', 
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)', 
+    minHeight: "auto",
+    background: "transparent",
     padding: '20px 30px', 
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
     position: 'relative',
     borderRadius: '32px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: "none",
+    border: "none",
+    margin: "0",
   },
   bgDecoration1: {
     position: 'absolute',
@@ -1748,7 +1746,7 @@ const styles = {
     right: '-50px',
     width: '300px',
     height: '300px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1758,7 +1756,7 @@ const styles = {
     left: '-60px',
     width: '250px',
     height: '250px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1768,7 +1766,7 @@ const styles = {
     right: '10%',
     width: '150px',
     height: '150px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1791,12 +1789,12 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    background: '#fff7ed',
+    background: '#FFF1CC',
     padding: '6px 16px',
     borderRadius: '40px',
     fontSize: '13px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     marginBottom: '16px'
   },
   headerActions: { 
@@ -1809,11 +1807,11 @@ const styles = {
     fontSize: '32px', 
     fontWeight: '800', 
     margin: 0, 
-    color: '#1e293b', 
+    color: '#111111', 
     letterSpacing: '-0.5px' 
   },
   headerSub: { 
-    color: '#64748b', 
+    color: '#6B675E', 
     fontSize: '14px', 
     marginTop: '8px' 
   },
@@ -1828,7 +1826,7 @@ const styles = {
     display: 'flex', 
     alignItems: 'center', 
     gap: '12px', 
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     transition: 'all 0.3s ease'
   },
   statIcon: {
@@ -1842,17 +1840,17 @@ const styles = {
   statVal: { 
     fontSize: '20px', 
     fontWeight: '800', 
-    color: '#1e293b',
+    color: '#111111',
     lineHeight: '1.2'
   },
   statLab: { 
     fontSize: '10px', 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     textTransform: 'uppercase', 
     fontWeight: '600' 
   },
   addButton: { 
-    backgroundColor: '#1e293b', 
+    backgroundColor: '#111111', 
     color: '#fff', 
     border: 'none', 
     padding: '10px 24px', 
@@ -1881,7 +1879,7 @@ const styles = {
     background: '#fff',
     padding: '0 16px',
     borderRadius: '16px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     transition: 'all 0.2s ease'
   },
   searchInput: {
@@ -1891,7 +1889,7 @@ const styles = {
     background: 'transparent',
     fontSize: '14px',
     outline: 'none',
-    color: '#1e293b'
+    color: '#111111'
   },
   filterGroup: {
     display: 'flex',
@@ -1900,10 +1898,10 @@ const styles = {
   filterSelect: {
     padding: '10px 16px',
     borderRadius: '12px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     background: '#fff',
     fontSize: '13px',
-    color: '#1e293b',
+    color: '#111111',
     cursor: 'pointer',
     outline: 'none',
     transition: 'all 0.2s ease'
@@ -1915,16 +1913,16 @@ const styles = {
   listContainer: { 
     backgroundColor: '#fff', 
     borderRadius: '24px', 
-    border: '1px solid #e2e8f0', 
+    border: '1px solid #ECE7DB', 
     overflow: 'hidden', 
-    boxShadow: '0 4px 12px rgba(0,0,0,0.04)' 
+    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)' 
   },
   listHeader: { 
     display: 'flex', 
     padding: '16px 24px', 
-    backgroundColor: '#f8fafc', 
-    borderBottom: '2px solid #e2e8f0', 
-    color: '#64748b', 
+    backgroundColor: '#FAF8F3', 
+    borderBottom: '2px solid #ECE7DB', 
+    color: '#6B675E', 
     fontSize: '11px', 
     fontWeight: '700', 
     letterSpacing: '0.5px',
@@ -1934,13 +1932,13 @@ const styles = {
     display: 'flex', 
     alignItems: 'center', 
     padding: '18px 24px', 
-    borderBottom: '1px solid #f1f5f9', 
+    borderBottom: '1px solid #F0ECE2', 
     transition: 'all 0.2s ease' 
   },
   rowTitle: { 
     fontSize: '15px', 
     fontWeight: '700', 
-    color: '#1e293b',
+    color: '#111111',
     display: 'flex',
     alignItems: 'center',
     gap: '8px',
@@ -1948,11 +1946,11 @@ const styles = {
   },
   rowSub: { 
     fontSize: '12px', 
-    color: '#64748b', 
+    color: '#6B675E', 
     marginTop: '4px' 
   },
   degreeTag: { 
-    color: '#ff961a', 
+    color: '#C77700', 
     fontWeight: 600, 
     fontSize: '11px' 
   },
@@ -1960,8 +1958,8 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '4px',
-    background: '#fef3c7',
-    color: '#d97706',
+    background: '#FFF1CC',
+    color: '#8A5A00',
     padding: '2px 10px',
     borderRadius: '12px',
     fontSize: '10px',
@@ -1972,7 +1970,7 @@ const styles = {
     alignItems: 'center', 
     gap: '6px', 
     fontSize: '13px', 
-    color: '#475569' 
+    color: '#6B675E' 
   },
   iconBox: { 
     width: '44px', 
@@ -1981,7 +1979,7 @@ const styles = {
     display: 'flex', 
     alignItems: 'center', 
     justifyContent: 'center', 
-    border: '1px solid #e2e8f0' 
+    border: '1px solid #ECE7DB' 
   },
   statusBadge: { 
     fontSize: '11px', 
@@ -1995,10 +1993,10 @@ const styles = {
   actionBtn: { 
     padding: '8px', 
     borderRadius: '10px', 
-    border: '1px solid #e2e8f0', 
+    border: '1px solid #ECE7DB', 
     backgroundColor: '#fff', 
     cursor: 'pointer', 
-    color: '#64748b', 
+    color: '#6B675E', 
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
@@ -2023,11 +2021,11 @@ const styles = {
     overflow: 'hidden', 
     display: 'flex',
     flexDirection: 'column',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)' 
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)' 
   },
   modalHeader: { 
     padding: '24px 28px 16px', 
-    borderBottom: '2px solid #f1f5f9', 
+    borderBottom: '2px solid #F0ECE2', 
     display: 'flex', 
     justifyContent: 'space-between', 
     alignItems: 'flex-start',
@@ -2037,32 +2035,32 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '6px',
-    background: '#fff7ed',
+    background: '#FFF1CC',
     padding: '4px 12px',
     borderRadius: '20px',
     fontSize: '11px',
     fontWeight: '600',
-    color: '#ff961a',
+    color: '#C77700',
     marginBottom: '12px'
   },
   modalTitle: {
     fontSize: '22px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#111111',
     margin: 0
   },
   tabs: { 
     display: 'flex', 
     gap: '24px', 
     padding: '0 28px', 
-    borderBottom: '1px solid #f1f5f9' 
+    borderBottom: '1px solid #F0ECE2' 
   },
   tab: { 
     padding: '14px 0', 
     border: 'none', 
     background: 'none', 
     fontSize: '14px', 
-    color: '#64748b', 
+    color: '#6B675E', 
     cursor: 'pointer', 
     display: 'flex', 
     alignItems: 'center', 
@@ -2075,12 +2073,12 @@ const styles = {
     border: 'none', 
     background: 'none', 
     fontSize: '14px', 
-    color: '#ff961a', 
+    color: '#C77700', 
     cursor: 'pointer', 
     display: 'flex', 
     alignItems: 'center', 
     gap: '8px', 
-    borderBottom: '2px solid #ff961a', 
+    borderBottom: '2px solid #111111', 
     fontWeight: 600 
   },
   form: { 
@@ -2104,24 +2102,23 @@ const styles = {
   label: { 
     fontSize: '12px', 
     fontWeight: '700', 
-    color: '#475569',
+    color: '#6B675E',
     textTransform: 'uppercase',
     letterSpacing: '0.5px'
   },
   input: { 
     padding: '12px 14px', 
     borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
+    border: '2px solid #ECE7DB', 
     fontSize: '14px', 
     width: '100%', 
     boxSizing: 'border-box', 
     outline: 'none', 
     transition: 'all 0.2s ease',
-    backgroundColor: '#f8fafc',
-    fontFamily: 'inherit'
+    backgroundColor: '#FAF8F3',
   },
   smallAddBtn: { 
-    backgroundColor: '#1e293b', 
+    backgroundColor: '#111111', 
     color: '#fff', 
     border: 'none', 
     padding: '0 24px', 
@@ -2150,11 +2147,11 @@ const styles = {
     display: 'flex', 
     alignItems: 'center', 
     gap: '12px', 
-    backgroundColor: '#f0fdf4', 
-    color: '#166534', 
+    backgroundColor: '#E3F3E8', 
+    color: '#1E6B3A', 
     padding: '10px 14px', 
     borderRadius: '12px', 
-    border: '1px solid #dcfce7',
+    border: '1px solid #E3F3E8',
     transition: 'all 0.2s ease'
   },
   removeReqIcon: { 
@@ -2167,20 +2164,20 @@ const styles = {
     display: 'flex', 
     justifyContent: 'flex-end', 
     gap: '12px',
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
     marginTop: '8px'
   },
   cancelBtn: { 
     padding: '12px 24px', 
     borderRadius: '14px', 
-    border: '2px solid #e2e8f0', 
+    border: '2px solid #ECE7DB', 
     background: '#fff', 
     fontWeight: '600', 
     cursor: 'pointer',
     transition: 'all 0.2s ease'
   },
   submitBtn: { 
-    backgroundColor: '#1e293b', 
+    backgroundColor: '#111111', 
     color: '#fff', 
     padding: '12px 28px', 
     borderRadius: '14px', 
@@ -2194,11 +2191,11 @@ const styles = {
   },
   closeBtn: { 
     border: 'none', 
-    background: '#f1f5f9', 
+    background: '#F0ECE2', 
     borderRadius: '50%', 
     padding: '8px', 
     cursor: 'pointer', 
-    color: '#64748b',
+    color: '#6B675E',
     transition: 'all 0.2s ease',
     display: 'flex',
     alignItems: 'center',
@@ -2211,7 +2208,7 @@ const styles = {
     flexDirection: 'column', 
     alignItems: 'center', 
     gap: '12px', 
-    color: '#94a3b8' 
+    color: '#9A958B' 
   },
   emptyIcon: {
     fontSize: '64px',
@@ -2220,10 +2217,10 @@ const styles = {
   },
   emptyReqs: { 
     textAlign: 'center', 
-    color: '#94a3b8', 
+    color: '#9A958B', 
     padding: '30px', 
     fontSize: '13px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '16px'
   },
   loaderContainer: { 
@@ -2237,16 +2234,16 @@ const styles = {
   spinner: {
     width: '40px',
     height: '40px',
-    border: '3px solid #e2e8f0',
-    borderTop: '3px solid #ff961a',
+    border: '3px solid #ECE7DB',
+    borderTop: '3px solid #111111',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
   },
   spinnerSmall: {
     width: '16px',
     height: '16px',
-    border: '2px solid #e2e8f0',
-    borderTop: '2px solid #ff961a',
+    border: '2px solid #ECE7DB',
+    borderTop: '2px solid #111111',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite'
   },
@@ -2256,7 +2253,7 @@ const styles = {
     gap: '20px'
   },
   uploadBox: {
-    border: '2px dashed #e2e8f0',
+    border: '2px dashed #ECE7DB',
     borderRadius: '20px',
     padding: '40px',
     textAlign: 'center',
@@ -2277,7 +2274,7 @@ const styles = {
     marginBottom: '16px'
   },
   previewSection: {
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     borderRadius: '16px',
     padding: '16px',
     background: '#fff'
@@ -2295,13 +2292,13 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     fontSize: '13px',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer'
   },
   previewTable: {
     maxHeight: '200px',
     overflow: 'auto',
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
     borderRadius: '12px'
   },
   uploadStatus: {
@@ -2310,7 +2307,7 @@ const styles = {
   progressBar: {
     width: '100%',
     height: '24px',
-    background: '#e2e8f0',
+    background: '#ECE7DB',
     borderRadius: '12px',
     overflow: 'hidden',
     position: 'relative'
@@ -2332,8 +2329,8 @@ const styles = {
   completeBadge: {
     marginTop: '8px',
     padding: '8px 16px',
-    background: '#d1fae5',
-    color: '#065f46',
+    background: '#E3F3E8',
+    color: '#1E6B3A',
     borderRadius: '8px',
     fontSize: '14px',
     fontWeight: '600',
@@ -2352,11 +2349,11 @@ const styles = {
     gap: '8px',
     padding: '8px 16px',
     background: '#fff',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     borderRadius: '12px',
     fontSize: '13px',
     fontWeight: '500',
-    color: '#1e293b',
+    color: '#111111',
     cursor: 'pointer',
     width: '100%',
     justifyContent: 'center'
@@ -2368,28 +2365,27 @@ const styles = {
     padding: '12px',
     background: '#fff',
     borderRadius: '12px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     marginBottom: '16px'
   },
   mobileFilterSelect: {
     padding: '10px 14px',
     borderRadius: '10px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     fontSize: '13px',
     background: '#fff',
-    color: '#1e293b',
+    color: '#111111',
     cursor: 'pointer',
     outline: 'none',
-    fontFamily: 'inherit'
   },
   mobileClearFilters: {
     padding: '8px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: 'none',
     borderRadius: '8px',
     fontSize: '13px',
     fontWeight: '600',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer'
   },
   mobileCardList: {
@@ -2400,7 +2396,7 @@ const styles = {
   },
   mobileCard: {
     background: '#fff',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     borderRadius: '16px',
     padding: '16px',
     boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
@@ -2415,11 +2411,11 @@ const styles = {
     width: '40px',
     height: '40px',
     borderRadius: '12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     flexShrink: 0
   },
   mobileCardTitleSection: {
@@ -2428,7 +2424,7 @@ const styles = {
   mobileCardTitle: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#1e293b',
+    color: '#111111',
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
@@ -2436,7 +2432,7 @@ const styles = {
   },
   mobileCardSub: {
     fontSize: '12px',
-    color: '#64748b',
+    color: '#6B675E',
     marginTop: '2px'
   },
   mobileStatusBadge: {
@@ -2454,8 +2450,8 @@ const styles = {
     gridTemplateColumns: '1fr 1fr',
     gap: '6px',
     padding: '10px 0',
-    borderTop: '1px solid #f1f5f9',
-    borderBottom: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
+    borderBottom: '1px solid #F0ECE2',
     marginBottom: '12px'
   },
   mobileCardDetail: {
@@ -2463,7 +2459,7 @@ const styles = {
     alignItems: 'center',
     gap: '4px',
     fontSize: '12px',
-    color: '#475569'
+    color: '#6B675E'
   },
   mobileCardActions: {
     display: 'grid',
@@ -2476,15 +2472,14 @@ const styles = {
     justifyContent: 'center',
     gap: '4px',
     padding: '6px 8px',
-    background: '#f8fafc',
-    border: '1px solid #e2e8f0',
+    background: '#FAF8F3',
+    border: '1px solid #ECE7DB',
     borderRadius: '8px',
     fontSize: '11px',
     fontWeight: '500',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
-    fontFamily: 'inherit'
   }
 };
 
