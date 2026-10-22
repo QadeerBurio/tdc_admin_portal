@@ -1,7 +1,14 @@
+// ResetPassword.js — step 3 of password reset. Same rules and API flow as before, new tdc design.
 import React, { useState, useEffect } from "react";
 import axios from "axios";
-import { useLocation, useNavigate } from "react-router-dom";
-import "./styles/ResetPassword.css";
+import { useLocation, useNavigate, Link } from "react-router-dom";
+import { AuthShell, CardTitle, pageTitle } from "../web/site";
+
+const STRENGTH = {
+  Weak: { label: "weak", color: "#B42318", bars: 1 },
+  Medium: { label: "okay", color: "#C77700", bars: 2 },
+  Strong: { label: "strong", color: "#1E6B3A", bars: 3 },
+};
 
 export default function ResetPassword() {
   const location = useLocation();
@@ -21,25 +28,24 @@ export default function ResetPassword() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordStrength, setPasswordStrength] = useState("");
 
-  // Redirect if no resetToken
+  useEffect(() => {
+    document.title = pageTitle("new password");
+  }, []);
+
   useEffect(() => {
     if (!resetToken) navigate("/forgot-password", { replace: true });
   }, [resetToken, navigate]);
 
-  // Password strength checker
   const checkPasswordStrength = (pass) => {
     if (pass.length === 0) return "";
-    
     let score = 0;
     if (pass.length >= 8) score++;
     if (pass.match(/[a-z]/)) score++;
     if (pass.match(/[A-Z]/)) score++;
     if (pass.match(/[0-9]/)) score++;
     if (pass.match(/[^a-zA-Z0-9]/)) score++;
-    
     if (score <= 2) return "Weak";
     if (score <= 4) return "Medium";
     return "Strong";
@@ -53,23 +59,11 @@ export default function ResetPassword() {
 
   const validatePassword = (pass) => {
     const errors = [];
-    
-    if (pass.length < 8) {
-      errors.push("at least 8 characters");
-    }
-    if (!/[a-z]/.test(pass)) {
-      errors.push("a lowercase letter");
-    }
-    if (!/[A-Z]/.test(pass)) {
-      errors.push("an uppercase letter");
-    }
-    if (!/[0-9]/.test(pass)) {
-      errors.push("a number");
-    }
-    if (!/[^a-zA-Z0-9]/.test(pass)) {
-      errors.push("a special character");
-    }
-    
+    if (pass.length < 8) errors.push("at least 8 characters");
+    if (!/[a-z]/.test(pass)) errors.push("a lowercase letter");
+    if (!/[A-Z]/.test(pass)) errors.push("an uppercase letter");
+    if (!/[0-9]/.test(pass)) errors.push("a number");
+    if (!/[^a-zA-Z0-9]/.test(pass)) errors.push("a special character");
     return errors;
   };
 
@@ -77,26 +71,21 @@ export default function ResetPassword() {
     e.preventDefault();
     setError("");
 
-    // Validate fields
     if (!password || password.trim() === "") {
-      setError("Please enter a new password");
+      setError("please enter a new password.");
       return;
     }
-
     if (!confirmPassword || confirmPassword.trim() === "") {
-      setError("Please confirm your password");
+      setError("please confirm your password.");
       return;
     }
-
     if (password !== confirmPassword) {
-      setError("Passwords do not match");
+      setError("passwords don't match.");
       return;
     }
-
-    // Password strength validation
     const errors = validatePassword(password);
     if (errors.length > 0) {
-      setError(`Password must contain: ${errors.join(", ")}`);
+      setError(`your password needs ${errors.join(", ")}.`);
       return;
     }
 
@@ -105,11 +94,7 @@ export default function ResetPassword() {
     try {
       const res = await axios.post(
         "https://the-deft-crew-production.up.railway.app/api/auth/reset-password",
-        { 
-          resetToken, 
-          newPassword: password,
-          userId: userId
-        }
+        { resetToken, newPassword: password, userId }
       );
 
       if (res.status >= 200 && res.status < 300) {
@@ -117,259 +102,84 @@ export default function ResetPassword() {
         setDone(true);
         setTimeout(() => navigate("/login", { replace: true }), 1800);
       } else {
-        setError(res.data.message || "Failed to reset password");
+        setError(res.data.message || "couldn't reset your password.");
       }
-
     } catch (err) {
       console.error("Reset Password Error:", err);
-      
       if (err.response) {
-        setError(
-          err.response.data?.message || 
-          err.response.data?.error ||
-          "Failed to reset password. Please try again."
-        );
+        setError(err.response.data?.message || err.response.data?.error || "couldn't reset your password. please try again.");
       } else if (err.request) {
-        setError("Network error. Please check your connection.");
+        setError("network error. please check your connection.");
       } else {
-        setError("Something went wrong. Please try again.");
+        setError("something went wrong. please try again.");
       }
     } finally {
       setLoading(false);
     }
   };
 
+  const s = STRENGTH[passwordStrength];
+
   return (
-    <div className="reset-container">
-      <form className="reset-card" onSubmit={handleResetPassword}>
-        <h2>Reset Password</h2>
+    <AuthShell headerAction={<Link to="/login" className="btn btn-secondary btn-sm" style={{ borderWidth: 1, borderColor: "#ECE7DB" }}>back to log in</Link>}>
+      <form className="auth-card" onSubmit={handleResetPassword} noValidate>
+        <CardTitle title="new password" sub="pick something you'll remember." />
 
-        <p style={{
-          textAlign: 'center',
-          color: '#666',
-          fontSize: '14px',
-          marginBottom: '20px'
-        }}>
-          Create a new password for your account
-        </p>
+        {done && <div className="alert alert-success" role="status">password changed. sorted. taking you to log in...</div>}
+        {error && <div className="alert alert-error" role="alert">{error}</div>}
 
-        {done && (
-          <div style={{
-            color: '#0f7b3e',
-            fontSize: '14px',
-            marginBottom: '15px',
-            padding: '12px',
-            backgroundColor: '#e6f4ea',
-            borderRadius: '8px',
-            textAlign: 'center'
-          }}>
-            Password changed. Taking you to login...
+        <div className="field">
+          <label htmlFor="new-password">new password</label>
+          <div className="pw-wrap">
+            <input
+              id="new-password"
+              className="input"
+              type={showPassword ? "text" : "password"}
+              value={password}
+              onChange={(e) => handlePasswordChange(e.target.value)}
+              disabled={loading || done}
+              autoComplete="new-password"
+              autoFocus
+            />
+            <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "hide password" : "show password"}>
+              {showPassword ? "hide" : "show"}
+            </button>
           </div>
-        )}
-
-        {error && (
-          <div className="error-message" style={{
-            color: '#ff0000',
-            fontSize: '14px',
-            marginBottom: '15px',
-            padding: '12px',
-            backgroundColor: '#ffeeee',
-            borderRadius: '8px',
-            textAlign: 'center',
-            borderLeft: '4px solid #ff0000'
-          }}>
-            {error}
-          </div>
-        )}
-
-        <div className="password-input-wrapper">
-          <input
-            type={showPassword ? "text" : "password"}
-            placeholder="New Password"
-            value={password}
-            onChange={(e) => handlePasswordChange(e.target.value)}
-            disabled={loading}
-            className={error ? "error" : ""}
-            style={{
-              width: '100%',
-              padding: '14px',
-              marginBottom: '10px',
-              border: error ? '2px solid #ff0000' : '2px solid #ddd',
-              borderRadius: '10px',
-              fontSize: '16px',
-              transition: 'all 0.3s ease',
-              paddingRight: '45px'
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              color: '#666',
-              cursor: 'pointer',
-              padding: '5px',
-              fontSize: '18px'
-            }}
-          >
-            {showPassword ? '👁️' : '👁️‍🗨️'}
-          </button>
-        </div>
-
-        {password && (
-          <div style={{
-            marginBottom: '15px',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'space-between'
-          }}>
-            <span style={{
-              fontSize: '13px',
-              color: passwordStrength === 'Weak' ? '#ff0000' : 
-                     passwordStrength === 'Medium' ? '#f9c349' : '#00b894'
-            }}>
-              Strength: {passwordStrength}
-            </span>
-            <div style={{
-              display: 'flex',
-              gap: '5px'
-            }}>
-              <div style={{
-                width: '30px',
-                height: '4px',
-                borderRadius: '2px',
-                backgroundColor: passwordStrength === 'Weak' ? '#ff0000' : 
-                               passwordStrength === 'Medium' ? '#f9c349' : '#00b894',
-                transition: 'background-color 0.3s ease'
-              }} />
-              <div style={{
-                width: '30px',
-                height: '4px',
-                borderRadius: '2px',
-                backgroundColor: passwordStrength === 'Weak' ? '#ddd' : 
-                               passwordStrength === 'Medium' ? '#f9c349' : '#00b894',
-                transition: 'background-color 0.3s ease'
-              }} />
-              <div style={{
-                width: '30px',
-                height: '4px',
-                borderRadius: '2px',
-                backgroundColor: passwordStrength === 'Strong' ? '#00b894' : '#ddd',
-                transition: 'background-color 0.3s ease'
-              }} />
+          {s && (
+            <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+              <div style={{ display: "flex", gap: 4, flex: 1 }} aria-hidden="true">
+                {[1, 2, 3].map((n) => (
+                  <span key={n} style={{ flex: 1, height: 5, borderRadius: 3, background: n <= s.bars ? s.color : "#ECE7DB" }} />
+                ))}
+              </div>
+              <span style={{ fontSize: 12.5, fontWeight: 700, color: s.color }}>{s.label}</span>
             </div>
-          </div>
-        )}
-
-        <div className="password-input-wrapper" style={{ marginTop: '5px' }}>
-          <input
-            type={showConfirmPassword ? "text" : "password"}
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => {
-              setConfirmPassword(e.target.value);
-              if (error) setError("");
-            }}
-            disabled={loading}
-            style={{
-              width: '100%',
-              padding: '14px',
-              marginBottom: '20px',
-              border: '2px solid #ddd',
-              borderRadius: '10px',
-              fontSize: '16px',
-              transition: 'all 0.3s ease',
-              paddingRight: '45px'
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={{
-              position: 'absolute',
-              right: '12px',
-              top: '50%',
-              transform: 'translateY(-50%)',
-              background: 'none',
-              border: 'none',
-              color: '#666',
-              cursor: 'pointer',
-              padding: '5px',
-              fontSize: '18px'
-            }}
-          >
-            {showConfirmPassword ? '👁️' : '👁️‍🗨️'}
-          </button>
+          )}
         </div>
 
-        <button 
-          type="submit" 
-          disabled={loading || !password || !confirmPassword}
-          style={{
-            width: '100%',
-            padding: '14px',
-            backgroundColor: '#f9c349',
-            color: '#000',
-            border: 'none',
-            borderRadius: '10px',
-            fontSize: '17px',
-            fontWeight: '700',
-            cursor: (loading || !password || !confirmPassword) ? 'not-allowed' : 'pointer',
-            transition: 'all 0.3s ease',
-            opacity: (loading || !password || !confirmPassword) ? 0.6 : 1,
-            textTransform: 'uppercase',
-            letterSpacing: '0.5px',
-            marginBottom: '15px'
-          }}
-          onMouseEnter={(e) => {
-            if (!loading && password && confirmPassword) {
-              e.target.style.backgroundColor = '#e8b33d';
-            }
-          }}
-          onMouseLeave={(e) => {
-            if (!loading && password && confirmPassword) {
-              e.target.style.backgroundColor = '#f9c349';
-            }
-          }}
-        >
-          {loading ? 'Resetting...' : 'Reset Password'}
+        <div className="field">
+          <label htmlFor="confirm-password">confirm password</label>
+          <input
+            id="confirm-password"
+            className="input"
+            type={showPassword ? "text" : "password"}
+            value={confirmPassword}
+            onChange={(e) => { setConfirmPassword(e.target.value); if (error) setError(""); }}
+            disabled={loading || done}
+            autoComplete="new-password"
+          />
+        </div>
+
+        <p className="muted" style={{ fontSize: 13 }}>8+ characters with an uppercase letter, a lowercase letter, a number and a special character.</p>
+
+        <button type="submit" className="btn btn-primary btn-block" disabled={loading || done || !password || !confirmPassword}>
+          {loading ? (<><span className="spinner" aria-hidden="true" /> saving</>) : "save new password"}
         </button>
 
-        <div style={{
-          display: 'flex',
-          justifyContent: 'center',
-          alignItems: 'center',
-          gap: '20px',
-          marginTop: '10px'
-        }}>
-          <span
-            onClick={() => navigate('/forgot-password')}
-            style={{
-              color: '#666',
-              fontSize: '14px',
-              cursor: 'pointer',
-              textDecoration: 'underline'
-            }}
-          >
-            Back to Forgot Password
-          </span>
-        </div>
-
-        <p style={{
-          marginTop: '15px',
-          textAlign: 'center',
-          fontSize: '13px',
-          color: '#999'
-        }}>
-          Password must contain at least 8 characters,<br />
-          one uppercase, one lowercase, one number, and one special character
+        <p className="muted" style={{ textAlign: "center", fontSize: 15 }}>
+          code expired? <Link to="/forgot-password" style={{ fontWeight: 700 }}>start again</Link>
         </p>
       </form>
-    </div>
+    </AuthShell>
   );
 }

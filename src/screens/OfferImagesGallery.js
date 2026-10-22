@@ -1,364 +1,97 @@
-import React, { useState, useEffect, useRef } from 'react';
-import axios from 'axios';
-import './styles/OfferImagesGallery.css';
+// OfferImagesGallery.js — /OfferImagesGallery: every partner brand with a live offer, from the public offers endpoint.
+import React, { useMemo, useState } from "react";
+import { Link } from "react-router-dom";
+import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../web/site";
+import { useOffers } from "../web/useOffers";
 
-const OfferImagesGallery = () => {
-  const [offers, setOffers] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState(null);
-  const [selectedOffer, setSelectedOffer] = useState(null);
-  const [hoveredOffer, setHoveredOffer] = useState(null);
-  const [showAllBrands, setShowAllBrands] = useState(false);
-  const scrollRef = useRef(null);
-  const [isDragging, setIsDragging] = useState(false);
-  const [startX, setStartX] = useState(0);
-  const [scrollLeft, setScrollLeft] = useState(0);
-  const [autoScroll, setAutoScroll] = useState(true);
+export default function OfferImagesGallery() {
+  usePage("brands and deals");
+  const { brands, loading } = useOffers();
+  const [cat, setCat] = useState("all");
+  const [q, setQ] = useState("");
 
-  const getToken = () => {
-    return localStorage.getItem('token') || sessionStorage.getItem('token');
-  };
+  const categories = useMemo(() => {
+    const counts = {};
+    brands.forEach((b) => { if (b.category) counts[b.category] = (counts[b.category] || 0) + 1; });
+    return Object.keys(counts).sort((a, b) => counts[b] - counts[a]);
+  }, [brands]);
 
-  useEffect(() => {
-    fetchAllOfferImages();
-  }, []);
-
-  const fetchAllOfferImages = async () => {
-    try {
-      setLoading(true);
-      const token = getToken();
-      
-      const response = await axios.get(
-        'https://the-deft-crew-production.up.railway.app/api/offers/images/all',
-        {
-          headers: {
-            'Authorization': `Bearer ${token}`
-          }
-        }
-      );
-
-      // Get all offers from response
-      const allOffers = response.data.offers || [];
-      const totalOffers = response.data.totalOffers || allOffers.length;
-      const approvedOffers = response.data.approvedBrandOffers || allOffers.length;
-      
-      // Log for debugging
-      console.log(`Total offers in response: ${totalOffers}`);
-      console.log(`Approved brand offers: ${approvedOffers}`);
-      console.log(`Offers received: ${allOffers.length}`);
-      
-      // Filter out invalid offers (backend already filters approved brands)
-      const validOffers = allOffers.filter(offer => {
-        // Check if offer has required data
-        if (!offer || !offer.offerId) {
-          return false;
-        }
-        
-        // Check if image exists and is valid
-        if (!offer.image || 
-            offer.image === null || 
-            offer.image === '' ||
-            offer.image === 'https://via.placeholder.com/120x120?text=Logo') {
-          return false;
-        }
-        
-        // Check if brand exists and is approved
-        if (!offer.brand || !offer.brand.id) {
-          return false;
-        }
-        
-        // Double-check brand approval (backend already filters)
-        if (offer.brand.approved === false) {
-          return false;
-        }
-        
-        return true;
-      });
-
-      console.log(`Valid offers after frontend filtering: ${validOffers.length}`);
-      console.log(`Filtered out: ${allOffers.length - validOffers.length} offers`);
-
-      setOffers(validOffers);
-      setError(null);
-    } catch (err) {
-      console.error('Error fetching offer images:', err);
-      setError(err.response?.data?.message || 'Failed to load offer images');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleImageClick = (offer) => {
-    setSelectedOffer(offer);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeModal = () => {
-    setSelectedOffer(null);
-    document.body.style.overflow = 'auto';
-  };
-
-  const handleViewAll = () => {
-    setShowAllBrands(true);
-    document.body.style.overflow = 'hidden';
-  };
-
-  const closeAllBrands = () => {
-    setShowAllBrands(false);
-    document.body.style.overflow = 'auto';
-  };
-
-  const handleMouseDown = (e) => {
-    setIsDragging(true);
-    setAutoScroll(false);
-    const container = scrollRef.current;
-    setStartX(e.pageX - container.offsetLeft);
-    setScrollLeft(container.scrollLeft);
-    container.style.cursor = 'grabbing';
-  };
-
-  const handleMouseLeave = () => {
-    setIsDragging(false);
-    const container = scrollRef.current;
-    if (container) container.style.cursor = 'grab';
-  };
-
-  const handleMouseUp = () => {
-    setIsDragging(false);
-    const container = scrollRef.current;
-    if (container) container.style.cursor = 'grab';
-    setTimeout(() => setAutoScroll(true), 3000); // Reduced from 5000ms
-  };
-
-  const handleMouseMove = (e) => {
-    if (!isDragging) return;
-    e.preventDefault();
-    const container = scrollRef.current;
-    const x = e.pageX - container.offsetLeft;
-    const walk = (x - startX) * 2;
-    container.scrollLeft = scrollLeft - walk;
-  };
-
-  // Fast auto-scroll effect - LIFO: newly clicked items appear on top
-  useEffect(() => {
-    if (!autoScroll || offers.length === 0 || showAllBrands) return;
-
-    const container = scrollRef.current;
-    if (!container) return;
-
-    const interval = setInterval(() => {
-      const maxScroll = container.scrollWidth - container.clientWidth;
-      const currentScroll = container.scrollLeft;
-      
-      if (currentScroll >= maxScroll - 1) {
-        container.scrollTo({ left: 0, behavior: 'smooth' });
-      } else {
-        // Faster scrolling: increased from 1px to 4px per tick
-        container.scrollTo({ left: currentScroll + 4, behavior: 'smooth' });
-      }
-    }, 20); // Faster interval: reduced from 30ms to 20ms
-
-    return () => clearInterval(interval);
-  }, [offers, autoScroll, showAllBrands]);
-
-  if (loading) {
-    return (
-      <div className="loading-container">
-        <div className="loading-spinner">
-          <div className="spinner-ring"></div>
-          <div className="spinner-ring"></div>
-          <div className="spinner-ring"></div>
-        </div>
-        <p className="loading-text">Loading Amazing Offers...</p>
-        <div className="loading-bar">
-          <div className="loading-progress"></div>
-        </div>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="error-container">
-        <div className="error-icon">😕</div>
-        <p className="error-message">{error}</p>
-        <button onClick={fetchAllOfferImages} className="retry-btn">
-          <span className="retry-icon">⟳</span> Try Again
-        </button>
-      </div>
-    );
-  }
-
-  if (offers.length === 0) {
-    return (
-      <div className="empty-container">
-        <div className="empty-icon">🏷️</div>
-        <h3 className="empty-title">No Brands Available</h3>
-        <p className="empty-message">Check back later for exciting brands from our partner brands!</p>
-      </div>
-    );
-  }
+  const shown = brands.filter((b) =>
+    (cat === "all" || b.category === cat) &&
+    (!q.trim() || b.name.toLowerCase().includes(q.trim().toLowerCase()))
+  );
 
   return (
-    <div className="gallery-container">
-      <div className="gallery-header">
-        <div className="header-content">
-          <span className="header-badge">Companies and Brands</span>
-          <h2 className="gallery-title">Trusted By Industries Brands</h2>
-          <p className="gallery-subtitle">Partnering with top brands to create meaningful connections with students</p>
-        </div>
-      </div>
+    <div className="tdcw">
+      <WebNav />
+      <main>
+        <PageHero eyebrow="Karachi, Lahore, Islamabad" title="brands on tdc" lead="flat student discounts at cafes, restaurants, salons, gyms, fashion and more. claim in the app, scan at the counter, sorted.">
+          <div className="hero-ctas">
+            <a href={LINKS.getApp} className="btn btn-primary">get the app to claim</a>
+            <Link to="/brands" className="btn btn-secondary">add your brand</Link>
+          </div>
+        </PageHero>
 
-      <div className="gallery-wrapper">
-        <div 
-          className="offers-scroll-container" 
-          ref={scrollRef}
-          onMouseDown={handleMouseDown}
-          onMouseLeave={handleMouseLeave}
-          onMouseUp={handleMouseUp}
-          onMouseMove={handleMouseMove}
-          style={{ cursor: 'grab' }}
-        >
-          {offers.map((offer, index) => (
-            <div 
-              key={offer.offerId || index} 
-              className={`offer-card ${hoveredOffer === offer.offerId ? 'hovered' : ''}`}
-              onClick={() => handleImageClick(offer)}
-              onMouseEnter={() => setHoveredOffer(offer.offerId)}
-              onMouseLeave={() => setHoveredOffer(null)}
-              style={{ animationDelay: `${index * 0.05}s` }}
-            >
-              <div className="card-glow"></div>
-              <div className="offer-image-wrapper">
-                <img 
-                  src={offer.image} 
-                  alt={offer.title || 'Offer'}
-                  className="offer-image"
-                  loading="lazy"
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/120x120?text=Logo';
-                    e.target.alt = 'Image not available';
-                  }}
-                />
-                <div className="image-ring-animation"></div>
-              </div>
-              <div className="offer-info">
-                <h3 className="offer-title">{offer.title || 'Offer'}</h3>
-                <div className="offer-meta">
-                  <span className="offer-category">{offer.category || 'General'}</span>
-                  <span className="offer-discount-badge">Partners</span>
-                </div>
-              </div>
-              <div className="card-shimmer"></div>
+        <section className="wrap section" style={{ paddingTop: 56 }}>
+          <div className="row-between" style={{ marginBottom: 16, alignItems: "flex-end" }}>
+            <div className="field" style={{ flex: "1 1 280px", maxWidth: 360 }}>
+              <label htmlFor="brand-search">search brands</label>
+              <input id="brand-search" className="input" type="search" placeholder="e.g. coffee" value={q} onChange={(e) => setQ(e.target.value)} />
             </div>
-          ))}
-        </div>
-      </div>
-      
-      <div className="header-actions">
-        <button className="view-all-btn" onClick={handleViewAll}>
-          <span>View All</span>
-          <svg viewBox="0 0 24 24" width="18" height="18">
-            <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-          </svg>
-        </button>
-      </div>
+            {!loading && <span className="muted" style={{ fontSize: 14 }}>{shown.length} {shown.length === 1 ? "brand" : "brands"}</span>}
+          </div>
 
-      {/* All Brands Modal - LIFO: newly added items appear on top */}
-      {showAllBrands && (
-        <div className="modal-overlay" onClick={closeAllBrands}>
-          <div className="modal-content all-brands-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="all-brands-header">
-              <div className="all-brands-title-section">
-                <span className="all-brands-badge">All Brands</span>
-                <h2 className="all-brands-title">Our Partner Brands</h2>
-                <p className="all-brands-subtitle">{offers.length} trusted brands</p>
-              </div>
-              <button className="modal-close all-brands-close" onClick={closeAllBrands}>
-                <svg viewBox="0 0 24 24" width="24" height="24">
-                  <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-                </svg>
-              </button>
+          {categories.length > 1 && (
+            <div className="filters" role="group" aria-label="filter by category" style={{ marginBottom: 24 }}>
+              <button type="button" aria-pressed={cat === "all"} onClick={() => setCat("all")}>all</button>
+              {categories.map((c) => (
+                <button key={c} type="button" aria-pressed={cat === c} onClick={() => setCat(c)}>{c}</button>
+              ))}
             </div>
-            
-            <div className="all-brands-grid">
-              {/* LIFO: render offers in reverse order so newest appear first */}
-              {[...offers].reverse().map((offer, index) => (
-                <div 
-                  key={offer.offerId || index} 
-                  className="all-brand-item"
-                  onClick={() => {
-                    closeAllBrands();
-                    handleImageClick(offer);
-                  }}
-                  style={{ animationDelay: `${index * 0.03}s` }}
-                >
-                  <div className="all-brand-image-wrapper">
-                    <img 
-                      src={offer.image} 
-                      alt={offer.title || 'Brand'}
-                      className="all-brand-image"
-                      loading="lazy"
-                      onError={(e) => {
-                        e.target.src = 'https://via.placeholder.com/120x120?text=Brand';
-                      }}
-                    />
+          )}
+
+          {loading ? (
+            <div className="brand-grid" aria-busy="true">
+              {Array.from({ length: 8 }).map((_, i) => (
+                <div className="brand-card" key={i}><div className="img" /><b style={{ height: 14, background: "#F5F2EA", borderRadius: 7, width: "70%" }} /></div>
+              ))}
+            </div>
+          ) : shown.length === 0 ? (
+            <div className="card" style={{ textAlign: "center", padding: 40 }}>
+              <h3>nothing here yet<span className="dot" aria-hidden="true">.</span></h3>
+              <p>try another search or category.</p>
+            </div>
+          ) : (
+            <div className="brand-grid">
+              {shown.map((b) => (
+                <div className="brand-card" key={b.name}>
+                  <div className="img">
+                    {b.image ? <img src={b.image} alt="" loading="lazy" /> : <span aria-hidden="true">{b.name.charAt(0).toLowerCase()}</span>}
                   </div>
-                  <h4 className="all-brand-name">{offer.title || 'Brand'}</h4>
-                  <span className="all-brand-category">{offer.category || 'General'}</span>
+                  <div>
+                    <b style={{ display: "block" }}>{b.name}</b>
+                    {b.category && <small>{b.category}</small>}
+                  </div>
                 </div>
               ))}
             </div>
+          )}
+        </section>
 
-            <div className="all-brands-footer">
-              <span className="all-brands-count">{offers.length} Brands Available</span>
+        <section className="wrap section">
+          <div className="cta-box">
+            <div>
+              <h2>see a deal you like<span className="dot">?</span></h2>
+              <p>get tdc, claim it, scan at the counter. free for students, forever.</p>
+            </div>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
+              <a href={LINKS.appStore} className="btn btn-white">app store</a>
+              <a href={LINKS.playStore} className="btn btn-accent">google play</a>
             </div>
           </div>
-        </div>
-      )}
-
-      {/* Single Offer Modal */}
-      {selectedOffer && (
-        <div className="modal-overlay" onClick={closeModal}>
-          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <button className="modal-close" onClick={closeModal}>
-              <svg viewBox="0 0 24 24" width="24" height="24">
-                <path d="M18 6L6 18M6 6l12 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
-              </svg>
-            </button>
-            
-            <div className="modal-image-container">
-              <div className="modal-image-wrapper">
-                <img 
-                  src={selectedOffer.image} 
-                  alt={selectedOffer.title || 'Offer'}
-                  className="modal-image"
-                  onError={(e) => {
-                    e.target.src = 'https://via.placeholder.com/400x400?text=Offer';
-                  }}
-                />
-                <div className="modal-floating-badge">
-                  <span className="badge-discount">{selectedOffer.discountPercentage || 0}% OFF</span>
-                </div>
-              </div>
-            </div>
-            
-            <div className="modal-details">
-              <div className="modal-category-tag">{selectedOffer.category || 'General'}</div>
-              <h2 className="modal-title">{selectedOffer.title || 'Offer'}</h2>
-              
-              <button className="modal-action-btn">
-                <span>View Brands</span>
-                <svg viewBox="0 0 24 24" width="20" height="20">
-                  <path d="M5 12h14M12 5l7 7-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+        </section>
+      </main>
+      <WebFooter />
     </div>
   );
-};
-
-export default OfferImagesGallery;
+}

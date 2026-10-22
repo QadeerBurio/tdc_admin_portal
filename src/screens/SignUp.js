@@ -1,10 +1,9 @@
-// Signup.jsx — Compact Form LEFT + Steps RIGHT (Mobile Fixed Footer)
-import React, { useState, useContext, useEffect, useRef, useMemo } from "react";
+// SignUp.js — partner sign up (brand or employer). Same validation, payload and auto-login as before, new tdc design.
+import React, { useState, useContext, useEffect, useMemo, useRef } from "react";
 import axios from "axios";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
-import "./styles/Signup.css";
-import signupImage from "../assets/login1.jpeg";
+import { Logo, pageTitle, IconTile, ICONS } from "../web/site";
 
 const PAKISTAN_CITIES = [
   "Karachi", "Lahore", "Faisalabad", "Rawalpindi", "Gujranwala",
@@ -13,6 +12,8 @@ const PAKISTAN_CITIES = [
   "Chiniot", "Sheikhupura", "Rahim Yar Khan", "Jhang", "Dera Ghazi Khan",
 ];
 
+const API = "https://the-deft-crew-production.up.railway.app/api";
+
 export default function Signup() {
   const { setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -20,22 +21,20 @@ export default function Signup() {
   const [loading, setLoading] = useState(false);
   const [role, setRole] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
-  const [focusedField, setFocusedField] = useState(null);
   const [agreeTerms, setAgreeTerms] = useState(false);
   const [touchedFields, setTouchedFields] = useState({});
   const [error, setError] = useState("");
-  const [stepsOpen, setStepsOpen] = useState(false);
-
-  const [citySearch, setCitySearch] = useState("");
-  const [showCityDropdown, setShowCityDropdown] = useState(false);
-  const cityDropdownRef = useRef(null);
-  const cityInputRef = useRef(null);
 
   const [formData, setFormData] = useState({
     fullName: "", brandName: "", email: "", phone: "",
     password: "", confirmPassword: "", city: "",
   });
+
+  // City: searchable list as on the old page (empty = Karachi when the form is sent)
+  const [citySearch, setCitySearch] = useState("");
+  const [showCityDropdown, setShowCityDropdown] = useState(false);
+  const cityDropdownRef = useRef(null);
+  const cityInputRef = useRef(null);
 
   const filteredCities = useMemo(() => {
     if (!citySearch.trim()) return PAKISTAN_CITIES;
@@ -45,28 +44,22 @@ export default function Signup() {
 
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target)) {
-        setShowCityDropdown(false);
-      }
+      if (cityDropdownRef.current && !cityDropdownRef.current.contains(e.target)) setShowCityDropdown(false);
     };
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
 
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth > 900) setStepsOpen(false);
-    };
-    window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
-  }, []);
+  const handleSelectCity = (city) => {
+    setFormData((prev) => ({ ...prev, city }));
+    setCitySearch(city);
+    setShowCityDropdown(false);
+    setTouchedFields((prev) => ({ ...prev, city: true }));
+  };
 
   useEffect(() => {
-    if (window.innerWidth <= 900) {
-      document.body.style.overflow = stepsOpen ? "hidden" : "";
-    }
-    return () => { document.body.style.overflow = ""; };
-  }, [stepsOpen]);
+    document.title = pageTitle("partner sign up");
+  }, []);
 
   const validatePassword = (p) => /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d).{6,}$/.test(p);
   const validatePhone = (n) => /^[0]\d{10}$/.test(n);
@@ -77,22 +70,7 @@ export default function Signup() {
     setError("");
   };
 
-  const handleBlur = (field) => {
-    setTouchedFields({ ...touchedFields, [field]: true });
-    setFocusedField(null);
-  };
-
-  const handleFocus = (field) => {
-    setFocusedField(field);
-    setError("");
-  };
-
-  const handleSelectCity = (city) => {
-    setFormData((prev) => ({ ...prev, city }));
-    setCitySearch(city);
-    setShowCityDropdown(false);
-    setTouchedFields((prev) => ({ ...prev, city: true }));
-  };
+  const touch = (field) => setTouchedFields((t) => ({ ...t, [field]: true }));
 
   const isFieldValid = (field) => {
     switch (field) {
@@ -104,31 +82,28 @@ export default function Signup() {
       case "confirmPassword": return formData.confirmPassword === formData.password && formData.confirmPassword.length > 0;
       case "role": return role !== "";
       case "terms": return agreeTerms;
-      case "city": return true;
       default: return true;
     }
   };
 
   const isFieldInvalid = (field) => touchedFields[field] && !isFieldValid(field);
 
-  const getFieldError = (field) => {
-    if (!touchedFields[field]) return null;
-    switch (field) {
-      case "fullName": return "Full name is required";
-      case "brandName": return "Brand name is required";
-      case "email": return "Enter a valid email";
-      case "phone": return "Must be 11 digits (starts with 0)";
-      case "password": return "Uppercase, lowercase & number (6+)";
-      case "confirmPassword": return "Passwords do not match";
-      case "role": return "Select a role to continue";
-      case "terms": return "Please accept the terms";
-      default: return null;
-    }
+  const FIELD_ERRORS = {
+    fullName: "company name is required",
+    brandName: "brand name is required",
+    email: "enter a valid email",
+    phone: "11 digits, starting with 0",
+    password: "use upper and lower case letters and a number (6+ characters)",
+    confirmPassword: "passwords don't match",
+    role: "pick brand or employer to continue",
+    terms: "please accept the terms",
   };
+
+  const errorFor = (field) => (isFieldInvalid(field) ? <span className="field-error" id={`${field}-err`}>{FIELD_ERRORS[field]}</span> : null);
 
   const autoLogin = async (email, password) => {
     try {
-      const res = await axios.post("https://the-deft-crew-production.up.railway.app/api/auth/login", { email, password });
+      const res = await axios.post(`${API}/auth/login`, { email, password });
       const { token, user } = res.data;
       axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
       setToken(token);
@@ -152,14 +127,14 @@ export default function Signup() {
     setTouchedFields(allFields);
 
     const errors = [];
-    if (!role) errors.push("Please select a role");
-    if (role === "brand" && !formData.brandName.trim()) errors.push("Brand name is required");
-    if (role === "employee" && !formData.fullName.trim()) errors.push("Company name is required");
-    if (!validateEmail(formData.email)) errors.push("Please enter a valid email");
-    if (!validatePhone(formData.phone)) errors.push("Phone must be 11 digits starting with 0");
-    if (!validatePassword(formData.password)) errors.push("Password must contain uppercase, lowercase, and number (6+ chars)");
-    if (formData.password !== formData.confirmPassword) errors.push("Passwords do not match");
-    if (!agreeTerms) errors.push("Please agree to the Terms & Conditions");
+    if (!role) errors.push("please pick brand or employer");
+    if (role === "brand" && !formData.brandName.trim()) errors.push("brand name is required");
+    if (role === "employee" && !formData.fullName.trim()) errors.push("company name is required");
+    if (!validateEmail(formData.email)) errors.push("please enter a valid email");
+    if (!validatePhone(formData.phone)) errors.push("phone must be 11 digits starting with 0");
+    if (!validatePassword(formData.password)) errors.push("password needs upper and lower case letters and a number (6+ characters)");
+    if (formData.password !== formData.confirmPassword) errors.push("passwords don't match");
+    if (!agreeTerms) errors.push("please agree to the terms");
 
     if (errors.length > 0) {
       setError(errors.join("\n"));
@@ -179,7 +154,7 @@ export default function Signup() {
       else if (role === "employee") data.fullName = formData.fullName;
       else data.fullName = formData.fullName || "";
 
-      await axios.post("https://the-deft-crew-production.up.railway.app/api/auth/signup", data, {
+      await axios.post(`${API}/auth/signup`, data, {
         headers: { "Content-Type": "application/json" },
       });
 
@@ -193,383 +168,172 @@ export default function Signup() {
         else if (user.role === "traveler") navigate("/traveler-dashboard");
         else navigate("/home");
       } else {
-        alert(`${role.charAt(0).toUpperCase() + role.slice(1)} account created! Please login.`);
+        alert(`${role === "brand" ? "Brand" : "Employer"} account created! Please log in.`);
         navigate("/login");
       }
     } catch (err) {
-      setError(err.response?.data?.error || err.response?.data?.message || "Signup failed");
+      setError(err.response?.data?.error || err.response?.data?.message || "sign up failed. please try again.");
     } finally {
       setLoading(false);
     }
   };
 
+  const nameField = role === "brand" ? "brandName" : "fullName";
+
   return (
-    <div className="signup-page">
-      {/* Background layers */}
-      <div className="bg-image-layer">
-        <img src={signupImage} alt="" className="bg-image" />
-      </div>
-      <div className="bg-gradient-layer"></div>
-      <div className="bg-noise-layer"></div>
-
-      {/* Orbs */}
-      <div className="orb orb-1"></div>
-      <div className="orb orb-2"></div>
-      <div className="orb orb-3"></div>
-
-      {/* Particles */}
-      <div className="particles">
-        {[...Array(20)].map((_, i) => (
-          <span
-            key={i}
-            className="particle"
-            style={{
-              left: `${Math.random() * 100}%`,
-              top: `${Math.random() * 100}%`,
-              animationDelay: `${Math.random() * 8}s`,
-              animationDuration: `${6 + Math.random() * 6}s`,
-            }}
-          />
-        ))}
-      </div>
-
-      {/* Layout: FORM LEFT, STEPS RIGHT */}
-      <div className="signup-layout">
-        {/* LEFT: Form Card */}
-        <div className="form-side">
-          <div className="form-card">
-            <div className="form-head">
-              <div className="brand-mark">
-                <span>tdc<span className="dot">.</span></span>
-              </div>
-              <div className="head-text">
-                <h2>Create Account</h2>
-                <p>Join thousands of members today</p>
-              </div>
+    <div className="tdcw">
+      <div className="split">
+        <div className="split-form">
+          <Logo />
+          <form className="form-col" onSubmit={handleSignup} noValidate>
+            <div>
+              <h1 style={{ fontWeight: 800, fontSize: 40, letterSpacing: -1.2, lineHeight: 1.05 }}>partner with tdc<span className="dot" aria-hidden="true">.</span></h1>
+              <p className="muted" style={{ marginTop: 10, fontSize: 16 }}>takes about a minute. we'll review and get you live.</p>
             </div>
 
-            {error && (
-              <div className="alert-error">
-                <i className="fas fa-exclamation-circle"></i>
-                <span>{error}</span>
+            {error && <div className="alert alert-error" role="alert">{error}</div>}
+
+            <div className="field">
+              <span className="label" id="role-label">i'm signing up as</span>
+              <div className={`seg ${isFieldInvalid("role") ? "invalid" : ""}`} role="group" aria-labelledby="role-label">
+                <button type="button" aria-pressed={role === "brand"} onClick={() => { setRole("brand"); touch("role"); }}>a brand</button>
+                <button type="button" aria-pressed={role === "employee"} onClick={() => { setRole("employee"); touch("role"); }}>an employer</button>
+              </div>
+              {errorFor("role")}
+            </div>
+
+            {role && (
+              <div className="field">
+                <label htmlFor={nameField}>{role === "brand" ? "brand name" : "company name"}</label>
+                <input
+                  id={nameField}
+                  name={nameField}
+                  className={`input ${isFieldInvalid(nameField) ? "invalid" : ""}`}
+                  value={role === "brand" ? formData.brandName : formData.fullName}
+                  onChange={handleChange}
+                  onBlur={() => touch(nameField)}
+                  placeholder={role === "brand" ? "e.g. Dear Croissant" : "e.g. your company"}
+                  autoComplete="organization"
+                />
+                {errorFor(nameField)}
               </div>
             )}
 
-            <form className="signup-form" onSubmit={handleSignup} noValidate>
-              {/* Role Pills */}
-              <div className={`field ${isFieldInvalid("role") ? "field-error" : ""}`}>
-                <span className="field-label">I am a</span>
-                <div className="role-pills">
-                  <button
-                    type="button"
-                    className={`role-pill ${role === "brand" ? "active" : ""}`}
-                    onClick={() => { setRole("brand"); setTouchedFields(t => ({ ...t, role: true })); }}
-                  >
-                    <i className="fas fa-store"></i>
-                    <span>Brand</span>
-                  </button>
-                  <button
-                    type="button"
-                    className={`role-pill ${role === "employee" ? "active" : ""}`}
-                    onClick={() => { setRole("employee"); setTouchedFields(t => ({ ...t, role: true })); }}
-                  >
-                    <i className="fas fa-briefcase"></i>
-                    <span>Employer</span>
-                  </button>
-                </div>
-                {isFieldInvalid("role") && <span className="err">{getFieldError("role")}</span>}
-              </div>
+            <div className="field">
+              <label htmlFor="email">email</label>
+              <input id="email" name="email" type="email" className={`input ${isFieldInvalid("email") ? "invalid" : ""}`} value={formData.email} onChange={handleChange} onBlur={() => touch("email")} placeholder="you@yourbrand.com" autoComplete="email" />
+              {errorFor("email")}
+            </div>
 
-              {/* Name */}
-              {role && (
-                <div className={`field floating ${focusedField === "name" || (role === "brand" ? formData.brandName : formData.fullName) ? "has-value" : ""} ${isFieldInvalid(role === "brand" ? "brandName" : "fullName") ? "field-error" : ""}`}>
-                  <input
-                    type="text"
-                    name={role === "brand" ? "brandName" : "fullName"}
-                    placeholder=" "
-                    value={role === "brand" ? formData.brandName : formData.fullName}
-                    onChange={handleChange}
-                    onFocus={() => handleFocus("name")}
-                    onBlur={() => handleBlur(role === "brand" ? "brandName" : "fullName")}
-                    required
-                  />
-                  <label>{role === "brand" ? "Brand Name" : "Company Name"}</label>
-                  <i className="field-icon fas fa-building"></i>
-                  {isFieldInvalid(role === "brand" ? "brandName" : "fullName") && (
-                    <span className="err">{getFieldError(role === "brand" ? "brandName" : "fullName")}</span>
-                  )}
-                </div>
-              )}
+            <div className="field">
+              <label htmlFor="phone">phone</label>
+              <input id="phone" name="phone" type="tel" inputMode="numeric" maxLength={11} className={`input ${isFieldInvalid("phone") ? "invalid" : ""}`} value={formData.phone} onChange={handleChange} onBlur={() => touch("phone")} placeholder="03XXXXXXXXX" autoComplete="tel" />
+              {errorFor("phone")}
+            </div>
 
-              {/* Email */}
-              <div className={`field floating ${focusedField === "email" || formData.email ? "has-value" : ""} ${isFieldInvalid("email") ? "field-error" : ""}`}>
-                <input
-                  type="email" name="email" placeholder=" "
-                  value={formData.email} onChange={handleChange}
-                  onFocus={() => handleFocus("email")} onBlur={() => handleBlur("email")} required
-                />
-                <label>Email Address</label>
-                <i className="field-icon fas fa-envelope"></i>
-                {isFieldInvalid("email") && <span className="err">{getFieldError("email")}</span>}
-              </div>
-
-              {/* Phone */}
-              <div className={`field floating ${focusedField === "phone" || formData.phone ? "has-value" : ""} ${isFieldInvalid("phone") ? "field-error" : ""}`}>
-                <input
-                  type="tel" name="phone" placeholder=" "
-                  value={formData.phone} onChange={handleChange}
-                  onFocus={() => handleFocus("phone")} onBlur={() => handleBlur("phone")} required
-                />
-                <label>Phone Number</label>
-                <i className="field-icon fas fa-phone"></i>
-                {isFieldInvalid("phone") && <span className="err">{getFieldError("phone")}</span>}
-              </div>
-
-              {/* City */}
-              <div
-                className={`field floating ${focusedField === "city" || citySearch ? "has-value" : ""}`}
-                ref={cityDropdownRef}
-              >
+            <div className="field city-field" ref={cityDropdownRef}>
+              <label htmlFor="city">city <span className="muted" style={{ fontWeight: 500 }}>(default: Karachi)</span></label>
+              <div className="city-input">
                 <input
                   ref={cityInputRef}
-                  type="text" name="city" placeholder=" "
+                  id="city" name="city" type="text" className="input" autoComplete="off"
+                  placeholder="search your city"
+                  role="combobox" aria-expanded={showCityDropdown} aria-controls="city-list" aria-autocomplete="list"
                   value={citySearch}
                   onChange={(e) => {
                     setCitySearch(e.target.value);
                     setShowCityDropdown(true);
                     if (e.target.value !== formData.city) setFormData((prev) => ({ ...prev, city: "" }));
                   }}
-                  onFocus={() => { handleFocus("city"); setShowCityDropdown(true); }}
-                  onBlur={() => setTimeout(() => setFocusedField(null), 150)}
-                  autoComplete="off"
+                  onFocus={() => setShowCityDropdown(true)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Escape") setShowCityDropdown(false);
+                    if (e.key === "Enter" && showCityDropdown && filteredCities.length) { e.preventDefault(); handleSelectCity(filteredCities[0]); }
+                  }}
                 />
-                <label>City <span className="opt">(default: Karachi)</span></label>
-                <i className="field-icon fas fa-map-marker-alt"></i>
                 {formData.city && (
                   <button
-                    type="button" className="clear-btn"
-                    onClick={() => {
-                      setFormData((prev) => ({ ...prev, city: "" }));
-                      setCitySearch("");
-                      cityInputRef.current?.focus();
-                    }}
-                    tabIndex={-1}
+                    type="button" className="city-clear" aria-label="clear city"
+                    onClick={() => { setFormData((prev) => ({ ...prev, city: "" })); setCitySearch(""); cityInputRef.current?.focus(); }}
                   >
-                    <i className="fas fa-times"></i>
+                    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18" /></svg>
                   </button>
                 )}
-                {showCityDropdown && (
-                  <div className="city-list">
-                    {filteredCities.length > 0 ? (
-                      filteredCities.map((city) => (
-                        <div
-                          key={city}
-                          className={`city-row ${formData.city === city ? "on" : ""}`}
-                          onMouseDown={(e) => { e.preventDefault(); handleSelectCity(city); }}
-                        >
-                          <i className="fas fa-map-pin"></i>
-                          <span>{city}</span>
-                          {formData.city === city && <i className="fas fa-check tick"></i>}
-                        </div>
-                      ))
-                    ) : (
-                      <div className="city-empty">
-                        <i className="fas fa-search"></i>
-                        <span>No match</span>
-                        <small>Karachi will be used</small>
+              </div>
+              {showCityDropdown && (
+                <div className="city-list" id="city-list" role="listbox" aria-label="cities">
+                  {filteredCities.length > 0 ? (
+                    filteredCities.map((city) => (
+                      <div
+                        key={city}
+                        role="option" aria-selected={formData.city === city}
+                        className={`city-row ${formData.city === city ? "on" : ""}`}
+                        onMouseDown={(e) => { e.preventDefault(); handleSelectCity(city); }}
+                      >
+                        <span>{city}</span>
+                        {formData.city === city && (
+                          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d="M5 12l5 5 9-10" /></svg>
+                        )}
                       </div>
-                    )}
-                  </div>
-                )}
-              </div>
+                    ))
+                  ) : (
+                    <div className="city-empty">no match. Karachi will be used.</div>
+                  )}
+                </div>
+              )}
+            </div>
 
-              {/* Password */}
-              <div className={`field floating ${focusedField === "password" || formData.password ? "has-value" : ""} ${isFieldInvalid("password") ? "field-error" : ""}`}>
-                <input
-                  type={showPassword ? "text" : "password"}
-                  name="password" placeholder=" "
-                  value={formData.password} onChange={handleChange}
-                  onFocus={() => handleFocus("password")} onBlur={() => handleBlur("password")} required
-                />
-                <label>Password</label>
-                <i className="field-icon fas fa-lock"></i>
-                <button
-                  type="button" className="eye-btn"
-                  onClick={() => setShowPassword(!showPassword)} tabIndex={-1}
-                >
-                  <i className={showPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
+            <div className="field">
+              <label htmlFor="password">password</label>
+              <div className="pw-wrap">
+                <input id="password" name="password" type={showPassword ? "text" : "password"} className={`input ${isFieldInvalid("password") ? "invalid" : ""}`} value={formData.password} onChange={handleChange} onBlur={() => touch("password")} placeholder="6+ characters, Aa and a number" autoComplete="new-password" />
+                <button type="button" className="pw-toggle" onClick={() => setShowPassword(!showPassword)} aria-label={showPassword ? "hide password" : "show password"}>
+                  {showPassword ? "hide" : "show"}
                 </button>
-                {isFieldInvalid("password") && <span className="err">{getFieldError("password")}</span>}
               </div>
+              {errorFor("password")}
+            </div>
 
-              {/* Confirm Password */}
-              <div className={`field floating ${focusedField === "confirmPassword" || formData.confirmPassword ? "has-value" : ""} ${isFieldInvalid("confirmPassword") ? "field-error" : ""}`}>
-                <input
-                  type={showConfirmPassword ? "text" : "password"}
-                  name="confirmPassword" placeholder=" "
-                  value={formData.confirmPassword} onChange={handleChange}
-                  onFocus={() => handleFocus("confirmPassword")} onBlur={() => handleBlur("confirmPassword")} required
-                />
-                <label>Confirm Password</label>
-                <i className="field-icon fas fa-lock"></i>
-                <button
-                  type="button" className="eye-btn"
-                  onClick={() => setShowConfirmPassword(!showConfirmPassword)} tabIndex={-1}
-                >
-                  <i className={showConfirmPassword ? "fas fa-eye-slash" : "fas fa-eye"}></i>
-                </button>
-                {isFieldInvalid("confirmPassword") && <span className="err">{getFieldError("confirmPassword")}</span>}
-              </div>
+            <div className="field">
+              <label htmlFor="confirmPassword">confirm password</label>
+              <input id="confirmPassword" name="confirmPassword" type={showPassword ? "text" : "password"} className={`input ${isFieldInvalid("confirmPassword") ? "invalid" : ""}`} value={formData.confirmPassword} onChange={handleChange} onBlur={() => touch("confirmPassword")} placeholder="type it again" autoComplete="new-password" />
+              {errorFor("confirmPassword")}
+            </div>
 
-              {/* Terms */}
-              <label className={`terms ${isFieldInvalid("terms") ? "field-error" : ""}`}>
-                <input
-                  type="checkbox" checked={agreeTerms}
-                  onChange={(e) => setAgreeTerms(e.target.checked)}
-                  onBlur={() => handleBlur("terms")}
-                />
-                <span className="checkmark"></span>
-                <span className="terms-text">
-                  I agree to <a href="#terms">Terms</a> & <a href="#privacy">Privacy</a>
-                </span>
+            <div className="field">
+              <label className="check">
+                <input type="checkbox" checked={agreeTerms} onChange={(e) => { setAgreeTerms(e.target.checked); touch("terms"); }} />
+                <span>I agree to the Terms and Privacy Policy</span>
               </label>
-
-              {/* Submit */}
-              <button className="submit-btn" type="submit" disabled={loading}>
-                <span className="btn-glow"></span>
-                {loading ? (
-                  <>
-                    <i className="fas fa-spinner fa-spin"></i>
-                    <span>Creating...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Create Account</span>
-                    <i className="fas fa-arrow-right"></i>
-                  </>
-                )}
-              </button>
-
-              <p className="bottom-link">
-                Already have an account?{" "}
-                <a onClick={() => navigate("/login")}>Sign In</a>
-              </p>
-            </form>
-
-            <div className="trust-row">
-              <i className="fas fa-shield-alt"></i>
-              <span>Secured · Free Forever</span>
+              {errorFor("terms")}
             </div>
-          </div>
-        </div>
 
-        {/* RIGHT: Modern Steps — Collapsible on Mobile */}
-        <div className={`steps-side ${stepsOpen ? "steps-open" : ""}`}>
-          <button
-            type="button"
-            className="steps-toggle"
-            onClick={() => setStepsOpen(!stepsOpen)}
-            aria-expanded={stepsOpen}
-          >
-            <span className="toggle-left">
-              <span className="toggle-icon">
-                <i className="fas fa-list-ol"></i>
-              </span>
-              <span className="toggle-text">
-                <strong>How it works</strong>
-                <small>Your journey in 3 steps</small>
-              </span>
-            </span>
-            <span className={`toggle-chevron ${stepsOpen ? "open" : ""}`}>
-              <i className="fas fa-chevron-down"></i>
-            </span>
-          </button>
+            <button type="submit" className="btn btn-primary btn-block" disabled={loading}>
+              {loading ? (<><span className="spinner" aria-hidden="true" /> creating your account</>) : "create account"}
+            </button>
 
-          <div className="steps-content">
-            <h1 className="steps-title">
-              Your journey <br />
-              <span className="steps-accent">in 3 steps</span>
-            </h1>
-
-            <p className="steps-subtitle">
-              Get started in under a minute. Everything you need to launch your presence on tdc.
+            <p className="muted" style={{ textAlign: "center", fontSize: 15 }}>
+              already a partner? <Link to="/login" style={{ fontWeight: 700 }}>log in</Link>
             </p>
+          </form>
+        </div>
 
-            <div className="steps-list">
-              <div className="step-item" data-step="1">
-                <div className="step-number">
-                  <span>01</span>
-                  <div className="step-ring"></div>
-                </div>
-                <div className="step-content">
-                  <h3 style={{color:'white'}}>Create your account</h3>
-                  <p style={{color:'#a9a2a2'}}>Pick your role and fill in basic details. Takes just 30 seconds.</p>
-                </div>
-              </div>
-
-              <div className="step-divider"></div>
-
-              <div className="step-item" data-step="2">
-                <div className="step-number">
-                  <span>02</span>
-                  <div className="step-ring"></div>
-                </div>
-                <div className="step-content">
-                   <h3 style={{color:'white'}}>Offer Exclusive Discounts</h3>
-    <p style={{color:'#a9a2a2'}}>Create attractive student offers and drive more customers to your business.</p>
-                </div>
-              </div>
-
-              <div className="step-divider"></div>
-
-              <div className="step-item" data-step="3">
-                <div className="step-number">
-                  <span>03</span>
-                  <div className="step-ring"></div>
-                </div>
-                <div className="step-content">
-                  <h3 style={{color:'white'}}>Connect with Students & Grow Revenue</h3>
-    <p style={{color:'#a9a2a2'}}>Reach more students, build loyal customers, and turn offers into revenue.</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="steps-features">
-              <div className="mini-feature">
-                <i className="fas fa-bolt"></i>
-                <span>Instant setup</span>
-              </div>
-              <div className="mini-feature">
-                <i className="fas fa-shield-alt"></i>
-                <span>Fully secured</span>
-              </div>
-              <div className="mini-feature">
-                <i className="fas fa-gift"></i>
-                <span>Free perks</span>
-              </div>
-            </div>
-
-            <div className="steps-footer">
-              <div className="avatar-stack">
-                <span className="av av-1">A</span>
-                <span className="av av-2">S</span>
-                <span className="av av-3">M</span>
-                <span className="av av-4">+9k</span>
-              </div>
-              <div>
-                <p className="footer-text">Trusted by thousands</p>
-                <div className="footer-stars">
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <i className="fas fa-star"></i>
-                  <span>4.9</span>
-                </div>
-              </div>
+        <aside className="split-aside on-dark">
+          <div style={{ maxWidth: 500 }}>
+            <div className="eyebrow">what you get</div>
+            <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>live on tdc in 3 steps<span className="dot" aria-hidden="true">.</span></h2>
+            <ol>
+              <li><IconTile d={ICONS.userPlus} n={1} /><div><b>create your account</b><span>pick brand or employer and add your basic details.</span></div></li>
+              <li><IconTile d={ICONS.percent} n={2} /><div><b>set your student offer</b><span>brands: a flat discount from 15–60%. employers: post your first role.</span></div></li>
+              <li><IconTile d={ICONS.chart} n={3} /><div><b>track it in your portal</b><span>see every claim or applicant live, and which institutes they come from.</span></div></li>
+            </ol>
+            <div className="aside-chips">
+              <span>free in year one</span>
+              <span>100+ brands already live</span>
+              <span>exit anytime, 15 days notice</span>
             </div>
           </div>
-        </div>
+        </aside>
       </div>
     </div>
   );
