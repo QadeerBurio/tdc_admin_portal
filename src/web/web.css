@@ -102,7 +102,7 @@
 .tdcw .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
 
 .tdcw .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; }
-.tdcw .card h3 { font-weight: 700; font-size: 20px; }
+.tdcw .card h3, .tdcw .card .card-h { font-weight: 700; font-size: 20px; }
 .tdcw .card p { margin-top: 6px; font-size: 15px; color: var(--muted); }
 /* icon tile: rounded square, yellow-soft, ink stroke; optional step number badge */
 .tdcw .icon-tile { position: relative; width: 48px; height: 48px; border-radius: 14px; background: var(--yellow-soft); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; flex: none; margin-bottom: 14px; }

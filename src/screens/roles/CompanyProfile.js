@@ -30,7 +30,7 @@ function CandidatesPreview() {
   return (
     <div className="cand-card" aria-hidden="true">
       <div className="cand-head">
-        <span className="cand-title">candidates<span className="dot">.</span></span>
+        <span className="cand-title">candidates<span className="dot" aria-hidden="true">.</span></span>
         <span className="cand-role">growth marketing intern</span>
       </div>
       {[0, 1, 2].map((i) => (
@@ -63,7 +63,7 @@ export default function CompanyProfile() {
 
         <section className="wrap section">
           <div className="section-head">
-            <h2 className="h-lg">why hire on tdc<span className="dot">.</span></h2>
+            <h2 className="h-lg">why hire on tdc<span className="dot" aria-hidden="true">.</span></h2>
             <p>less sorting through generic CVs. more candidates who match.</p>
           </div>
           <div className="grid">
@@ -79,7 +79,7 @@ export default function CompanyProfile() {
 
         <section className="wrap section">
           <div className="band-soft">
-            <h2 className="h-md">how it works<span className="dot">.</span></h2>
+            <h2 className="h-md">how it works<span className="dot" aria-hidden="true">.</span></h2>
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
@@ -112,7 +112,7 @@ export default function CompanyProfile() {
         <section className="wrap section">
           <div className="cta-box">
             <div>
-              <h2>your next hire is on campus<span className="dot">.</span></h2>
+              <h2>your next hire is on campus<span className="dot" aria-hidden="true">.</span></h2>
               <p>create your employer account and post your first role.</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

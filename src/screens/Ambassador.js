@@ -80,13 +80,13 @@ export default function Ambassador() {
         <div className="grid-2" style={{ gap: 56, alignItems: "start" }}>
           <div>
             <span className="chip"><span className="chip-dot" />now recruiting, 5 per campus</span>
-            <h1 className="h-lg" style={{ marginTop: 20 }}>run tdc on your campus<span className="dot">.</span></h1>
+            <h1 className="h-lg" style={{ marginTop: 20 }}>run tdc on your campus<span className="dot" aria-hidden="true">.</span></h1>
             <p className="lead" style={{ marginTop: 18, maxWidth: 480 }}>be the person your campus asks about tdc. bring the crew, run events with your societies, and grow with the founders.</p>
             <div className="grid" style={{ marginTop: 32, gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 220px), 1fr))", gap: 12 }}>
               {PERKS.map((p) => (
                 <div className="card" key={p.title} style={{ padding: 20 }}>
                   <IconTile d={p.icon} />
-                  <h3 style={{ fontSize: 18 }}>{p.title}</h3>
+                  <h2 className="card-h" style={{ fontSize: 18 }}>{p.title}</h2>
                   <p>{p.body}</p>
                 </div>
               ))}
@@ -96,7 +96,7 @@ export default function Ambassador() {
 
           {sent ? (
             <div className="card" style={{ padding: 32, borderRadius: 28 }}>
-              <h2 className="h-md">almost sorted<span className="dot">.</span></h2>
+              <h2 className="h-md">almost sorted<span className="dot" aria-hidden="true">.</span></h2>
               <p style={{ fontSize: 16 }}>your email app should have opened with your application filled in. hit send and we'll get back to you.</p>
               <p style={{ fontSize: 15 }}>nothing opened? email your details to <a href={`mailto:${LINKS.hr}`} style={{ fontWeight: 700 }}>{LINKS.hr}</a>.</p>
               <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
@@ -106,7 +106,7 @@ export default function Ambassador() {
             </div>
           ) : (
             <form className="card" onSubmit={onSubmit} noValidate style={{ padding: 32, borderRadius: 28, display: "flex", flexDirection: "column", gap: 16 }}>
-              <h2 style={{ fontWeight: 800, fontSize: 26, letterSpacing: -0.6 }}>apply now<span className="dot">.</span></h2>
+              <h2 style={{ fontWeight: 800, fontSize: 26, letterSpacing: -0.6 }}>apply now<span className="dot" aria-hidden="true">.</span></h2>
 
               <div className="field">
                 <label htmlFor="a-name">full name</label>

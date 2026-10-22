@@ -79,7 +79,7 @@ export default function AppStoreReviews() {
             </div>
           ) : reviews.length === 0 ? (
             <div className="card" style={{ textAlign: "center", padding: 48 }}>
-              <h3 style={{ fontSize: 24 }}>no reviews to show yet<span className="dot">.</span></h3>
+              <h2 className="card-h" style={{ fontSize: 24 }}>no reviews to show yet<span className="dot" aria-hidden="true">.</span></h2>
               <p style={{ maxWidth: 420, margin: "8px auto 0" }}>using tdc? a quick review helps other students find it.</p>
             </div>
           ) : (
@@ -97,7 +97,7 @@ export default function AppStoreReviews() {
                 {reviews.map((r) => (
                   <article className="card" key={r.id || r.title + r.author} style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                     <Stars n={r.rating} />
-                    {r.title && <h3 style={{ fontSize: 18 }}>{r.title}</h3>}
+                    {r.title && <h2 className="card-h" style={{ fontSize: 18 }}>{r.title}</h2>}
                     <p style={{ marginTop: 0, color: "#111111" }}>{r.content}</p>
                     <p style={{ marginTop: "auto", fontSize: 13 }}>
                       {r.author}{r.date ? ` · ${r.date.toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" })}` : ""}

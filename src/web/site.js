@@ -269,7 +269,7 @@ export function AuthShell({ children, headerAction }) {
 export function CardTitle({ title, sub, mark = "." }) {
   return (
     <div style={{ textAlign: "center" }}>
-      <h1 style={{ fontWeight: 800, fontSize: 34, letterSpacing: -1, lineHeight: 1.1 }}>{title}<span className="dot">{mark}</span></h1>
+      <h1 style={{ fontWeight: 800, fontSize: 34, letterSpacing: -1, lineHeight: 1.1 }}>{title}<span className="dot" aria-hidden={mark === "." ? "true" : undefined}>{mark}</span></h1>
       {sub && <p className="muted" style={{ marginTop: 8, fontSize: 15 }}>{sub}</p>}
     </div>
   );
@@ -291,7 +291,7 @@ export function PageHero({ eyebrow, title, mark = ".", lead, children, aside }) 
   const text = (
     <div>
       {eyebrow && <span className="chip"><span className="chip-dot" />{eyebrow}</span>}
-      <h1 className="h-xl" style={{ marginTop: 20, fontSize: "clamp(42px, 5.6vw, 76px)" }}>{title}<span className="dot">{mark}</span></h1>
+      <h1 className="h-xl" style={{ marginTop: 20, fontSize: "clamp(42px, 5.6vw, 76px)" }}>{title}<span className="dot" aria-hidden={mark === "." ? "true" : undefined}>{mark}</span></h1>
       {lead && <p className="lead" style={{ marginTop: 20, maxWidth: aside ? 560 : 620 }}>{lead}</p>}
       {children}
     </div>

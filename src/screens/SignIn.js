@@ -79,7 +79,7 @@ export default function SignIn() {
         <main>
           <form className="auth-card" onSubmit={handleLogin} noValidate>
             <div style={{ textAlign: "center" }}>
-              <h1 style={{ fontWeight: 800, fontSize: 36, letterSpacing: -1 }}>welcome back<span className="dot">.</span></h1>
+              <h1 style={{ fontWeight: 800, fontSize: 36, letterSpacing: -1 }}>welcome back<span className="dot" aria-hidden="true">.</span></h1>
               <p className="muted" style={{ marginTop: 8, fontSize: 15 }}>log in to your brand or employer portal.</p>
             </div>
 

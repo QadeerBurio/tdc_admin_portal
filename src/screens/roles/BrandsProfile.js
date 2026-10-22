@@ -58,7 +58,7 @@ export default function BrandsProfile() {
 
         <section className="wrap section">
           <div className="section-head">
-            <h2 className="h-lg">why brands join<span className="dot">.</span></h2>
+            <h2 className="h-lg">why brands join<span className="dot" aria-hidden="true">.</span></h2>
             <p>built so a deal turns into a visit, and the visit is tracked end to end.</p>
           </div>
           <div className="grid">
@@ -74,7 +74,7 @@ export default function BrandsProfile() {
 
         <section className="wrap section">
           <div className="band-soft">
-            <h2 className="h-md">live in 3 steps<span className="dot">.</span></h2>
+            <h2 className="h-md">live in 3 steps<span className="dot" aria-hidden="true">.</span></h2>
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
@@ -90,7 +90,7 @@ export default function BrandsProfile() {
         <section className="wrap section">
           <div className="grid-2" style={{ gap: 40, alignItems: "start" }}>
             <div>
-              <h2 className="h-lg">the terms<span className="dot">.</span></h2>
+              <h2 className="h-lg">the terms<span className="dot" aria-hidden="true">.</span></h2>
               <p className="lead" style={{ marginTop: 16, fontSize: 17, maxWidth: 440 }}>short and simple. the signed agreement is a formality on top of the sign up form.</p>
             </div>
             <div className="ladder">
@@ -109,7 +109,7 @@ export default function BrandsProfile() {
         {logos.length > 0 && (
           <section className="wrap section">
             <div className="section-head" style={{ marginBottom: 28 }}>
-              <h2 className="h-md">in good company<span className="dot">.</span></h2>
+              <h2 className="h-md">in good company<span className="dot" aria-hidden="true">.</span></h2>
               <Link to="/OfferImagesGallery" style={{ fontWeight: 700, fontSize: 15 }}>see all brands</Link>
             </div>
             <div className="logo-grid">
@@ -125,7 +125,7 @@ export default function BrandsProfile() {
         <section className="wrap section">
           <div className="cta-box">
             <div>
-              <h2>your first year is on us<span className="dot">.</span></h2>
+              <h2>your first year is on us<span className="dot" aria-hidden="true">.</span></h2>
               <p>no listing fee, no commission. just students at your counter.</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

@@ -187,7 +187,7 @@ export default function Signup() {
           <Logo />
           <form className="form-col" onSubmit={handleSignup} noValidate>
             <div>
-              <h1 style={{ fontWeight: 800, fontSize: 40, letterSpacing: -1.2, lineHeight: 1.05 }}>partner with tdc<span className="dot">.</span></h1>
+              <h1 style={{ fontWeight: 800, fontSize: 40, letterSpacing: -1.2, lineHeight: 1.05 }}>partner with tdc<span className="dot" aria-hidden="true">.</span></h1>
               <p className="muted" style={{ marginTop: 10, fontSize: 16 }}>takes about a minute. we'll review and get you live.</p>
             </div>
 
@@ -321,7 +321,7 @@ export default function Signup() {
         <aside className="split-aside on-dark">
           <div style={{ maxWidth: 500 }}>
             <div className="eyebrow">what you get</div>
-            <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>live on tdc in 3 steps<span className="dot">.</span></h2>
+            <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>live on tdc in 3 steps<span className="dot" aria-hidden="true">.</span></h2>
             <ol>
               <li><IconTile d={ICONS.userPlus} n={1} /><div><b>create your account</b><span>pick brand or employer and add your basic details.</span></div></li>
               <li><IconTile d={ICONS.percent} n={2} /><div><b>set your student offer</b><span>brands: a flat discount from 15–60%. employers: post your first role.</span></div></li>

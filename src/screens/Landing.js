@@ -66,7 +66,7 @@ export default function Landing() {
         <div className="wrap hero">
           <div>
             <span className="chip"><span className="chip-dot" />live in Karachi, Lahore and Islamabad</span>
-            <h1 className="h-xl">student life,<br />sorted<span className="dot">.</span></h1>
+            <h1 className="h-xl">student life,<br />sorted<span className="dot" aria-hidden="true">.</span></h1>
             <p className="lead">tdc is the free app for university, college and O/A level students. deals at 100+ brands, internships, a CV builder and your campus feed, in one place.</p>
             <div className="hero-ctas">
               <a href={LINKS.getApp} className="btn btn-primary">get the app, it's free <Arrow /></a>
@@ -94,12 +94,12 @@ export default function Landing() {
                   <div className="ph-opts"><span>library</span><span>cafe</span><span>the lawn</span></div>
                   <small>vote to see what campus thinks.</small>
                 </div>
-                <div className="ph-title"><b>on campus<span className="dot">.</span></b><span>open feed</span></div>
+                <div className="ph-title"><b>on campus<span className="dot" aria-hidden="true">.</span></b><span>open feed</span></div>
                 <div className="ph-card">
                   <small>latest confession · anonymous</small>
                   <p>been sitting in the 8am class for a month. it's not my class.</p>
                 </div>
-                <div className="ph-title"><b>deals near you<span className="dot">.</span></b><span>see all</span></div>
+                <div className="ph-title"><b>deals near you<span className="dot" aria-hidden="true">.</span></b><span>see all</span></div>
                 <div className="ph-deals">
                   <div className="ph-deal"><i /><b>Jenpharm</b><small>health and beauty</small></div>
                   <div className="ph-deal"><i /><b>Dear Croissant</b><small>food and drinks</small></div>
@@ -121,7 +121,7 @@ export default function Landing() {
         {/* app */}
         <section id="app" className="wrap section">
           <div className="section-head">
-            <h2 className="h-lg">one app.<br />everything sorted<span className="dot">.</span></h2>
+            <h2 className="h-lg">one app.<br />everything sorted<span className="dot" aria-hidden="true">.</span></h2>
             <p>the stuff students juggle across ten apps and fifty group chats, in one calm place.</p>
           </div>
           <div className="grid">
@@ -138,7 +138,7 @@ export default function Landing() {
         {/* how deals work */}
         <section className="wrap section">
           <div className="band-soft">
-            <h2 className="h-md">how a deal works<span className="dot">.</span></h2>
+            <h2 className="h-md">how a deal works<span className="dot" aria-hidden="true">.</span></h2>
             <div className="grid" style={{ marginTop: 32 }}>
               {STEPS.map((s, i) => (
                 <div className="card" key={s.title}>
@@ -155,7 +155,7 @@ export default function Landing() {
         <section className="wrap section">
           <div className="grid-2" style={{ gap: 40, alignItems: "center" }}>
             <div>
-              <h2 className="h-lg">join the crew<span className="dot">.</span></h2>
+              <h2 className="h-lg">join the crew<span className="dot" aria-hidden="true">.</span></h2>
               <p className="lead" style={{ marginTop: 16, maxWidth: 460, fontSize: 17 }}>one referral code. bring friends, use tdc, earn crew points. points level you up and unlock brand perks.</p>
               <p className="muted" style={{ marginTop: 14, fontSize: 14 }}>founder circle: 50 seats, hand-picked by the founders. applications close 30 Dec 2026.</p>
             </div>
@@ -177,7 +177,7 @@ export default function Landing() {
           <div className="wrap dark-inner">
             <div>
               <div className="eyebrow">for brands</div>
-              <h2 className="h-lg" style={{ marginTop: 12 }}>reach students where they decide what's next<span className="dot">.</span></h2>
+              <h2 className="h-lg" style={{ marginTop: 12 }}>reach students where they decide what's next<span className="dot" aria-hidden="true">.</span></h2>
               <p className="lead" style={{ marginTop: 20, maxWidth: 460, fontSize: 17 }}>list a flat discount for tdc verified users. pay nothing in year one: no listing fee, no commission.</p>
               <div className="hero-ctas">
                 <Link to="/signup" className="btn btn-accent">list your brand</Link>
@@ -199,7 +199,7 @@ export default function Landing() {
         {/* partner brands (live) */}
         <section className="wrap section">
           <div className="section-head" style={{ marginBottom: 28 }}>
-            <h2 className="h-md">100+ brands already on tdc<span className="dot">.</span></h2>
+            <h2 className="h-md">100+ brands already on tdc<span className="dot" aria-hidden="true">.</span></h2>
             <a href={LINKS.getApp} style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
           </div>
           <div className="partners">
@@ -219,7 +219,7 @@ export default function Landing() {
             <div id="employers" className="card block">
               <IconTile d={ICONS.briefcase} />
               <div className="eyebrow">for employers</div>
-              <h2 className="h-md" style={{ fontSize: 34 }}>hire interns and fresh grads<span className="dot">.</span></h2>
+              <h2 className="h-md" style={{ fontSize: 34 }}>hire interns and fresh grads<span className="dot" aria-hidden="true">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0 }}>post internships and entry-level roles to the career hub. students who've built their CV on tdc see how well they match before they apply, and you see candidates who fit.</p>
               <div className="block-actions">
                 <Link to="/signup" className="btn btn-primary">register as employer</Link>
@@ -229,7 +229,7 @@ export default function Landing() {
             <div id="campus" className="card block block-soft">
               <IconTile d={ICONS.building} />
               <div className="eyebrow" style={{ color: "#111111" }}>for campuses and societies</div>
-              <h2 className="h-md" style={{ fontSize: 34 }}>bring tdc to your campus<span className="dot">.</span></h2>
+              <h2 className="h-md" style={{ fontSize: 34 }}>bring tdc to your campus<span className="dot" aria-hidden="true">.</span></h2>
               <p style={{ fontSize: 16, marginTop: 0, color: "#4A473F" }}>12+ universities already work with us on events, activations and the campus ambassador program.</p>
               <div className="block-actions">
                 <a href={`mailto:${LINKS.hello}`} className="btn btn-primary">partner with us</a>
@@ -246,7 +246,7 @@ export default function Landing() {
                 <img src={dotExcited} alt="" width="48" height="48" loading="lazy" />
                 <img src={dotCheeky} alt="" width="48" height="48" loading="lazy" />
               </div>
-              <h2>get tdc. it's free.<br />scene sorted<span className="dot">.</span></h2>
+              <h2>get tdc. it's free.<br />scene sorted<span className="dot" aria-hidden="true">.</span></h2>
               <p>for students, alumni and faculty.</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

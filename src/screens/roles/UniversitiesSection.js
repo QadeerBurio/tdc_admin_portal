@@ -43,7 +43,7 @@ export default function UniversitiesSection() {
                   <img src={u.logo} alt="" style={{ maxWidth: "100%", maxHeight: "100%", objectFit: "contain" }} />
                 </div>
                 <div>
-                  <h3 style={{ fontSize: 18 }}>{u.name}</h3>
+                  <h2 className="card-h" style={{ fontSize: 18 }}>{u.name}</h2>
                   <p style={{ marginTop: 2, fontSize: 14 }}>{u.city}</p>
                 </div>
               </div>
@@ -53,7 +53,7 @@ export default function UniversitiesSection() {
 
         <section className="wrap section">
           <div className="section-head">
-            <h2 className="h-lg">what your campus gets<span className="dot">.</span></h2>
+            <h2 className="h-lg">what your campus gets<span className="dot" aria-hidden="true">.</span></h2>
             <p>no cost to the institute or its students.</p>
           </div>
           <div className="grid">
@@ -70,7 +70,7 @@ export default function UniversitiesSection() {
         <section className="wrap section">
           <div className="cta-box">
             <div>
-              <h2>bring tdc to your campus<span className="dot">.</span></h2>
+              <h2>bring tdc to your campus<span className="dot" aria-hidden="true">.</span></h2>
               <p>placement offices, student affairs and society heads: let's talk.</p>
             </div>
             <div style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>

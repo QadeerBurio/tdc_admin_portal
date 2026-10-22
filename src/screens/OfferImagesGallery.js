@@ -58,7 +58,7 @@ export default function OfferImagesGallery() {
             </div>
           ) : shown.length === 0 ? (
             <div className="card" style={{ textAlign: "center", padding: 40 }}>
-              <h3>nothing here yet<span className="dot">.</span></h3>
+              <h3>nothing here yet<span className="dot" aria-hidden="true">.</span></h3>
               <p>try another search or category.</p>
             </div>
           ) : (
