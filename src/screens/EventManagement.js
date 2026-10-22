@@ -1,59 +1,7 @@
+// EventManagement.js: events admin (design/portal/AdEvents). Same calls and handlers as before; kit UI.
 import React, { useState, useEffect, useContext, useRef } from "react";
+import { useTheme, useMediaQuery } from "@mui/material";
 import { withTdcTheme } from "../portal/muiTheme";
-import {
-  Box,
-  Container,
-  Grid,
-  Paper,
-  Typography,
-  Button,
-  Table,
-  TableBody,
-  TableCell,
-  TableContainer,
-  TableHead,
-  TableRow,
-  IconButton,
-  Chip,
-  Card,
-  CardContent,
-  CardActions,
-  Dialog,
-  DialogContent,
-  DialogActions,
-  Snackbar,
-  Alert,
-  CircularProgress,
-  Tabs,
-  Tab,
-  Avatar,
-  Divider,
-  Tooltip,
-  Stack,
-  Fade,
-  Slide,
-  useTheme,
-  useMediaQuery,
-} from "@mui/material";
-import {
-  Add as AddIcon,
-  Edit as EditIcon,
-  Delete as DeleteIcon,
-  Visibility as VisibilityIcon,
-  People as PeopleIcon,
-  CalendarToday as CalendarIcon,
-  LocationOn as LocationIcon,
-  Close as CloseIcon,
-  Event as EventIcon,
-  TrendingUp as TrendingUpIcon,
-  Person as PersonIcon,
-  CloudUpload as CloudUploadIcon,
-  Groups as GroupsIcon,
-  Timer as TimerIcon,
-  EmojiEvents as EmojiEventsIcon,
-  AutoAwesome as AutoAwesomeIcon,
-  Rocket as RocketIcon,
-} from "@mui/icons-material";
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import ".//styles/EventManagement.css";
@@ -61,23 +9,11 @@ import EventFormV2 from "./events/EventFormV2";
 import RegistrationsTab, { StatusChip } from "./events/RegistrationsTab";
 import { API_BASE, eventsApi, authProblem, errorMessage, uploadImage, MAX_IMAGE_BYTES, IMAGE_TYPES } from "./events/eventsApi";
 import { emptyForm, formFromEvent, validateForm, buildPayload, isLegacyEvent, eventNeedsAppUpdate, UPDATE_WARNING } from "./events/formLogic";
+import Ico from "../portal/Ico";
+import { PageLoading, PageHeader, Button, IconButton, StatCard, Tabs, Modal, EmptyState, FileUpload, Pill, Table, Facts, toast, confirmDialog } from "../portal/kit";
 
 const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
-
-// ─── Loading Spinner ──────────────────────────────────────────────────
-
-const LoadingSpinner = () => (
-  <div className="loading-spinner">
-    <div className="loading-spinner-wrapper">
-      <CircularProgress size={72} sx={{ color: "#111111" }} />
-      <div className="loading-spinner-icon">
-        <RocketIcon />
-      </div>
-    </div>
-    <div className="loading-title">Loading Dashboard</div>
-    <div className="loading-subtitle">Please wait while we fetch your data</div>
-  </div>
-);
+const CATEGORY_TONE = { Hackathons: "blue", Workshops: "purple", Conferences: "red", Competitions: "orange", "Career Fairs": "green", Concerts: "pink" };
 
 // ─── Main Component ──────────────────────────────────────────────────
 
@@ -320,7 +256,7 @@ const EventManagement = () => {
   };
 
   const handleDeleteEvent = async (eventId) => {
-    if (!window.confirm("Are you sure you want to delete this event?")) return;
+    if (!(await confirmDialog("Are you sure you want to delete this event?"))) return;
     try {
       await axios.delete(`${API_BASE}/event/${eventId}`, {
         headers: { Authorization: `Bearer ${token}` },
@@ -415,29 +351,14 @@ const EventManagement = () => {
     setTabValue(newValue);
   };
 
-  const getCategoryColor = (category) => {
-    const colors = {
-      Hackathons: "#2B7FC0",
-      Workshops: "#8E44AD",
-      Conferences: "#D9443F",
-      Competitions: "#C77700",
-      "Career Fairs": "#2E8B3E",
-      Concerts: "#C2185B",
-    };
-    return colors[category] || "#D9D2C2";
-  };
+  const getCategoryTone = (category) => CATEGORY_TONE[category] || "sand";
 
-  const getCategoryEmoji = (category) => {
-    const emojis = {
-      Hackathons: "💻",
-      Workshops: "🔧",
-      Conferences: "🎤",
-      Competitions: "🏆",
-      "Career Fairs": "💼",
-      Concerts: "🎵",
-    };
-    return emojis[category] || "📌";
-  };
+  // notices from showSnackbar / setSnackbar show as kit toasts (same text)
+  useEffect(() => {
+    if (!snackbar.open) return;
+    toast(snackbar.message, snackbar.severity === "error" ? "bad" : snackbar.severity === "success" ? "ok" : undefined);
+    setSnackbar((s) => ({ ...s, open: false }));
+  }, [snackbar]);
 
   const totalRegistrations = regTotal;
   const totalEvents = events.length;
@@ -445,587 +366,191 @@ const EventManagement = () => {
   const activeEvents = events.filter(e => e.date && new Date(e.date) > new Date()).length || 0;
 
   if (loading) {
-    return <LoadingSpinner />;
+    return <div className="tdcp k-page"><PageLoading label="loading events…" /></div>;
   }
 
+  const dialogTitle = dialogType === "create" ? "create new event" : dialogType === "edit" ? "edit event" : "event details";
+
   return (
-    <div className="event-dashboard">
-      <div className="event-container">
-        {/* ─── Header ─────────────────────────────────────────────────── */}
-        <div className="event-header">
-          <div className="event-header-left">
-            <div className="event-title">
-              <span>events<span className="dot" aria-hidden="true">.</span></span>
-            </div>
-            <div className="event-subtitle">
-              campus events, competitions and partner tickets in the app.
-            </div>
-          </div>
-          <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="gradient-btn" onClick={handleOpenCsvDialog} style={{ background: '#111111' }}>
-              <CloudUploadIcon /> Upload Events CSV
-            </button>
-            <button className="gradient-btn" onClick={handleCreateEvent}>
-              <AddIcon /> Create New Event
-            </button>
-          </div>
-        </div>
+    <div className="tdcp k-page" data-screen="events">
+      <PageHeader
+        title="events"
+        sub="campus events, competitions and partner tickets in the app."
+        actions={<>
+          <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog}>upload events CSV</Button>
+          <Button icon="plus" onClick={handleCreateEvent}>create new event</Button>
+        </>}
+      />
 
-        {/* ─── Stats Cards ───────────────────────────────────────────── */}
-        <div className="stats-grid">
-          <div className="stat-card" style={{ background: "#FFFFFF" }}>
-            <div className="stat-card-content">
-              <div>
-                <div className="stat-label">Total Events</div>
-                <div className="stat-value">{totalEvents}</div>
-                <div className="stat-footer">
-                  <TrendingUpIcon className="stat-footer-icon" style={{ color: "#1E6B3A" }} />
-                  <span className="stat-footer-text" style={{ color: "#1E6B3A" }}>Active</span>
-                </div>
-              </div>
-              <div className="icon-wrapper" style={{ background: "rgba(0,0,0,0.05)", color: "#111111" }}>
-                <EventIcon />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card" style={{ background: "#FFFFFF" }}>
-            <div className="stat-card-content">
-              <div>
-                <div className="stat-label">Registrations</div>
-                <div className="stat-value">{totalRegistrations}</div>
-                <div className="stat-footer">
-                  <GroupsIcon className="stat-footer-icon" style={{ color: "#2B7FC0" }} />
-                  <span className="stat-footer-text" style={{ color: "#2B7FC0" }}>Total</span>
-                </div>
-              </div>
-              <div className="icon-wrapper" style={{ background: "rgba(59,130,246,0.1)", color: "#2B7FC0" }}>
-                <PeopleIcon />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card" style={{ background: "#FFFFFF" }}>
-            <div className="stat-card-content">
-              <div>
-                <div className="stat-label">Ave Registrations</div>
-                <div className="stat-value">{averageRegistrations}</div>
-                <div className="stat-footer">
-                  <AutoAwesomeIcon className="stat-footer-icon" style={{ color: "#8E44AD" }} />
-                  <span className="stat-footer-text" style={{ color: "#8E44AD" }}>Per event</span>
-                </div>
-              </div>
-              <div className="icon-wrapper" style={{ background: "rgba(139,92,246,0.1)", color: "#8E44AD" }}>
-                <TrendingUpIcon />
-              </div>
-            </div>
-          </div>
-
-          <div className="stat-card" style={{ background: "#FFFFFF" }}>
-            <div className="stat-card-content">
-              <div>
-                <div className="stat-label">Active Events</div>
-                <div className="stat-value">{activeEvents}</div>
-                <div className="stat-footer">
-                  <TimerIcon className="stat-footer-icon" style={{ color: "#1E6B3A" }} />
-                  <span className="stat-footer-text" style={{ color: "#1E6B3A" }}>Running</span>
-                </div>
-              </div>
-              <div className="icon-wrapper" style={{ background: "rgba(16,185,129,0.1)", color: "#1E6B3A" }}>
-                <RocketIcon />
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* ─── Tabs ──────────────────────────────────────────────────── */}
-        <Paper className="main-paper">
-          <div className="tabs-header">
-            <Tabs
-              value={tabValue}
-              onChange={handleTabChange}
-              variant={isMobile ? "fullWidth" : "standard"}
-              sx={{
-                "& .MuiTabs-indicator": {
-                  backgroundColor: "#111111",
-                  height: 3,
-                  borderRadius: "3px 3px 0 0",
-                },
-              }}
-            >
-              <Tab
-                className={`tab-item ${tabValue === 0 ? "active" : ""}`}
-                label={isMobile ? `Events (${events.length})` : `Events (${events.length})`}
-                icon={<EventIcon className="tab-icon" />}
-                iconPosition="start"
-              />
-              <Tab
-                className={`tab-item ${tabValue === 1 ? "active" : ""}`}
-                label={`Registrations (${regTotal})`}
-                icon={<PeopleIcon className="tab-icon" />}
-                iconPosition="start"
-              />
-            </Tabs>
-          </div>
-
-          {/* ─── Events Tab ──────────────────────────────────────────── */}
-          {tabValue === 0 && (
-            <div className="tab-content">
-              {events.length === 0 ? (
-                <div className="empty-state">
-                  <div className="empty-icon-wrapper">
-                    <EventIcon />
-                  </div>
-                  <div className="empty-title">No Events Created</div>
-                  <div className="empty-subtitle">Create your first event to get started</div>
-                  <button className="gradient-btn" onClick={handleCreateEvent}>
-                    <AddIcon /> Create Event
-                  </button>
-                </div>
-              ) : (
-                <div className="events-grid">
-                  {events.map((event, index) => (
-                    <Fade in timeout={300 + index * 80} key={event._id}>
-                      <div className="glass-card">
-                        <div className="event-image-container">
-                          <img
-                            src={event.image || "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200"}
-                            alt={event.title}
-                            onError={(e) => {
-                              e.target.src = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
-                            }}
-                          />
-                          <div 
-                            className="event-category-chip"
-                            style={{
-                              backgroundColor: `${getCategoryColor(event.type)}20`,
-                              color: getCategoryColor(event.type),
-                            }}
-                          >
-                            {getCategoryEmoji(event.type)} {event.type || "Event"}
-                          </div>
-                          <div className="event-register-chip">
-                            {event.registrations?.length || 0} registered
-                            {event.capacity ? ` · ${event.registeredCount || 0}/${event.capacity} seats` : ""}
-                          </div>
-                        </div>
-                        <div className="event-card-content">
-                          <div className="event-card-title">{event.title}</div>
-                          {eventNeedsAppUpdate(event) && (
-                            <Tooltip title={UPDATE_WARNING}>
-                              <span className="ev2-status pending" style={{ marginBottom: 6 }}>app update needed</span>
-                            </Tooltip>
-                          )}
-                          <div className="event-card-details">
-                            <div className="event-card-detail">
-                              <LocationIcon />
-                              <span>{event.city || "TBD"}</span>
-                            </div>
-                            <div className="event-card-detail">
-                              <CalendarIcon />
-                              <span>{event.date || "TBA"}</span>
-                            </div>
-                            <div className="event-card-detail">
-                              <PersonIcon />
-                              <span>{event.organizer || "TBD"}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <hr className="event-card-divider" />
-                        <div className="event-card-actions">
-                          <div className="event-action-buttons">
-                            <Tooltip title="View Details">
-                              <button className="event-action-btn" onClick={() => handleViewEvent(event)}>
-                                <VisibilityIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
-                              </button>
-                            </Tooltip>
-                            <Tooltip title="Edit Event">
-                              <button className="event-action-btn" onClick={() => handleEditEvent(event)}>
-                                <EditIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
-                              </button>
-                            </Tooltip>
-                            <Tooltip title="Delete Event">
-                              <button className="event-action-btn delete" onClick={() => handleDeleteEvent(event._id)}>
-                                <DeleteIcon sx={{ fontSize: isMobile ? 18 : 20 }} />
-                              </button>
-                            </Tooltip>
-                          </div>
-                          <button className="view-registrations-btn" onClick={() => handleViewEvent(event)}>
-                            {isMobile ? "View" : "View Registrations"}
-                          </button>
-                        </div>
-                      </div>
-                    </Fade>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          {/* ─── Registrations Tab ───────────────────────────────────── */}
-          {tabValue === 1 && (
-            <RegistrationsTab
-              token={token}
-              events={events}
-              onAuthError={handleAuthError}
-              notify={showSnackbar}
-              isMobile={isMobile}
-              onChanged={() => {
-                fetchEvents();
-                fetchAllRegistrations();
-              }}
-            />
-          )}
-        </Paper>
+      <div className="k-stats">
+        <StatCard label="total events" value={totalEvents} icon="calendar" tone="purple" />
+        <StatCard label="registrations" value={totalRegistrations} icon="users" tone="blue" />
+        <StatCard label="average registrations" value={averageRegistrations} sub="per event" icon="chart" tone="green" />
+        <StatCard label="upcoming events" value={activeEvents} sub="date still ahead" icon="clock" tone="orange" />
       </div>
 
-      {/* ─── Create/Edit/View Dialog ───────────────────────────────── */}
-      <Dialog
-        className="modern-dialog"
+      <Tabs
+        label="events sections"
+        value={tabValue}
+        onChange={(v) => handleTabChange(null, v)}
+        tabs={[{ id: 0, label: "events", count: events.length, icon: "calendar" }, { id: 1, label: "registrations", count: regTotal, icon: "users" }]}
+      />
+
+      {tabValue === 0 && (
+        events.length === 0 ? (
+          <div className="k-card"><EmptyState icon="calendar" tone="purple" title="no events created" text="create your first event to get started." action={<Button icon="plus" onClick={handleCreateEvent}>create event</Button>} /></div>
+        ) : (
+          <div className="k-grid">
+            {events.map((event) => (
+              <article className="k-card ev-card" key={event._id}>
+                <div className="ev-card-img">
+                  <img src={event.image || DEFAULT_IMAGE} alt="" onError={(e) => { e.target.src = DEFAULT_IMAGE; }} />
+                  <span className="ev-card-type"><Pill tone={getCategoryTone(event.type)}>{event.type || "Event"}</Pill></span>
+                  <span className="ev-card-reg"><Pill tone="ink">{event.registrations?.length || 0} registered{event.capacity ? ` · ${event.registeredCount || 0}/${event.capacity} seats` : ""}</Pill></span>
+                </div>
+                <div className="ev-card-body">
+                  <h3>{event.title}</h3>
+                  {eventNeedsAppUpdate(event) && <span title={UPDATE_WARNING}><Pill tone="yellow">app update needed</Pill></span>}
+                  <div className="ev-card-meta">
+                    <span><Ico kind="pin" tone="plain" size={15} />{event.city || "TBD"}</span>
+                    <span><Ico kind="calendar" tone="plain" size={15} />{event.date || "TBA"}</span>
+                    <span><Ico kind="user" tone="plain" size={15} />{event.organizer || "TBD"}</span>
+                  </div>
+                </div>
+                <div className="ev-card-actions">
+                  <IconButton icon="eye" label="view details" onClick={() => handleViewEvent(event)} />
+                  <IconButton icon="edit" label="edit event" onClick={() => handleEditEvent(event)} />
+                  <IconButton icon="trash" label="delete event" variant="danger" onClick={() => handleDeleteEvent(event._id)} />
+                  <Button size="sm" variant="secondary" onClick={() => handleViewEvent(event)} style={{ marginLeft: "auto" }}>{isMobile ? "view" : "view registrations"}</Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )
+      )}
+
+      {tabValue === 1 && (
+        <RegistrationsTab
+          token={token}
+          events={events}
+          onAuthError={handleAuthError}
+          notify={showSnackbar}
+          isMobile={isMobile}
+          onChanged={() => {
+            fetchEvents();
+            fetchAllRegistrations();
+          }}
+        />
+      )}
+
+      {/* create / edit / view */}
+      <Modal
         open={openDialog}
         onClose={() => setOpenDialog(false)}
-        maxWidth="md"
-        fullWidth
-        scroll="paper"
-        TransitionComponent={Slide}
-        TransitionProps={{ direction: "up" }}
-        PaperProps={{
-          sx: {
-            display: "flex",
-            flexDirection: "column",
-            maxHeight: "90vh",
-            overflow: "hidden",
-            borderRadius: "20px",
-          },
-        }}
+        size="lg"
+        title={dialogTitle}
+        icon={dialogType === "create" ? "plus" : dialogType === "edit" ? "edit" : "eye"}
+        tone={dialogType === "view" ? "purple" : "yellow"}
+        footer={dialogType !== "view" ? <>
+          <Button variant="secondary" onClick={() => setOpenDialog(false)}>cancel</Button>
+          <Button onClick={handleSubmit} loading={submitting} disabled={submitting || templatesState !== "ready" || !form}>
+            {dialogType === "create" ? "create event" : "update event"}
+          </Button>
+        </> : null}
       >
-        <div className="dialog-header">
-          <div className="dialog-header-left">
-            <div className="dialog-header-icon">
-              {dialogType === "create" ? <AddIcon /> : dialogType === "edit" ? <EditIcon /> : <VisibilityIcon />}
-            </div>
-            <div className="dialog-header-title">
-              {dialogType === "create" ? "Create New Event" : 
-               dialogType === "edit" ? "Edit Event" : 
-               "Event Details"}
-            </div>
-          </div>
-          <button className="dialog-close-btn" onClick={() => setOpenDialog(false)}>
-            <CloseIcon />
-          </button>
-        </div>
-
-        <DialogContent
-          className="dialog-content"
-          sx={{
-            flex: "1 1 auto",
-            minHeight: 0,
-            overflowY: "auto",
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch",
-            overscrollBehavior: "contain",
-          }}
-        >
-          {dialogType === "view" && selectedEvent ? (
-            <EventDetailsView 
-              event={selectedEvent} 
-              getCategoryColor={getCategoryColor}
-              getCategoryEmoji={getCategoryEmoji}
-              isMobile={isMobile}
-            />
-          ) : (
-            <EventDialogBody
-              templates={templates}
-              templatesState={templatesState}
-              onRetry={() => (dialogType === "edit" && editingEvent ? handleEditEvent(editingEvent) : handleCreateEvent())}
-              form={form}
-              setForm={setForm}
-              errors={formErrors}
-              imagePreview={imagePreview}
-              onPickImage={handleFileSelect}
-              onRemoveImage={handleRemoveImage}
-              imageError={imageError}
-              uploadProgress={uploadProgress}
-              fileInputRef={fileInputRef}
-            />
-          )}
-        </DialogContent>
-
-        {dialogType !== "view" && (
-          <div className="dialog-actions" style={{ flexShrink: 0 }}>
-            <button className="dialog-cancel-btn" onClick={() => setOpenDialog(false)}>
-              Cancel
-            </button>
-            <button className="gradient-btn" onClick={handleSubmit} disabled={submitting || templatesState !== "ready" || !form}>
-              {submitting ? <CircularProgress size={24} sx={{ color: "#fff" }} /> : 
-                dialogType === "create" ? "Create Event" : "Update Event"}
-            </button>
-          </div>
+        {dialogType === "view" && selectedEvent ? (
+          <EventDetailsView event={selectedEvent} getCategoryTone={getCategoryTone} />
+        ) : (
+          <EventDialogBody
+            templates={templates}
+            templatesState={templatesState}
+            onRetry={() => (dialogType === "edit" && editingEvent ? handleEditEvent(editingEvent) : handleCreateEvent())}
+            form={form}
+            setForm={setForm}
+            errors={formErrors}
+            imagePreview={imagePreview}
+            onPickImage={handleFileSelect}
+            onRemoveImage={handleRemoveImage}
+            imageError={imageError}
+            uploadProgress={uploadProgress}
+            fileInputRef={fileInputRef}
+          />
         )}
-      </Dialog>
+      </Modal>
 
-      {/* ─── Snackbar ───────────────────────────────────────────────── */}
-      <Snackbar
-        open={snackbar.open}
-        autoHideDuration={5000}
-        onClose={() => setSnackbar({ ...snackbar, open: false })}
-        anchorOrigin={{ vertical: "bottom", horizontal: isMobile ? "center" : "right" }}
-        TransitionComponent={Slide}
-      >
-        <Alert
-          className={`snackbar-alert ${snackbar.severity === "error" ? "error" : ""}`}
-          onClose={() => setSnackbar({ ...snackbar, open: false })}
-          severity={snackbar.severity}
-        >
-          {snackbar.message}
-        </Alert>
-      </Snackbar>
-
-      {/* ─── CSV Upload Dialog ────────────────────────────────────────── */}
-      <Dialog
+      {/* CSV / XLSX upload */}
+      <Modal
         open={openCsvDialog}
         onClose={handleCloseCsvDialog}
-        maxWidth="sm"
-        fullWidth
-        scroll="paper"
-        PaperProps={{
-          sx: {
-            display: "flex",
-            flexDirection: "column",
-            maxHeight: "90vh",
-            overflow: "hidden",
-            borderRadius: "16px",
-          },
-        }}
+        title="upload events CSV / XLSX"
+        icon="upload"
+        tone="green"
+        footer={<>
+          <Button variant="secondary" onClick={handleCloseCsvDialog} disabled={csvUploading}>cancel</Button>
+          <Button type="submit" form="ev-csv-form" disabled={!csvFile || csvUploading} loading={csvUploading}>{csvUploading ? "uploading..." : "upload & import"}</Button>
+        </>}
       >
-        <DialogContent
-          sx={{
-            p: 3,
-            flex: "1 1 auto",
-            minHeight: 0,
-            overflowY: "auto",
-            overflowX: "hidden",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CloudUploadIcon sx={{ color: '#1E6B3A' }} /> Upload Events CSV / XLSX
-            </Typography>
-            <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <form onSubmit={handleUploadCsvSubmit}>
-            <Box
-              sx={{
-                border: '2px dashed #ECE7DB',
-                borderRadius: 2,
-                p: 4,
-                textAlign: 'center',
-                backgroundColor: '#FAF8F3',
-                cursor: 'pointer',
-                mb: 3,
-                transition: 'all 0.2s',
-                '&:hover': { backgroundColor: '#F0ECE2', borderColor: '#2E8B3E' }
-              }}
-              onClick={() => csvFileInputRef.current?.click()}
-            >
-              <input
-                type="file"
-                ref={csvFileInputRef}
-                accept=".csv, .xlsx, .xls"
-                style={{ display: 'none' }}
-                onChange={handleCsvFileChange}
-              />
-              <CloudUploadIcon sx={{ fontSize: 48, color: '#6B675E', mb: 1 }} />
-              <Typography variant="body1" sx={{ fontWeight: 600, color: '#111111' }}>
-                {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
-              </Typography>
-              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
-                Expected columns: name, date, venue, description, category, source_url
-              </Typography>
-            </Box>
-
-            {csvUploading && (
-              <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress size={36} sx={{ color: '#1E6B3A' }} />
-                <Typography variant="body2" sx={{ mt: 1, color: '#6B675E' }}>
-                  Processing & importing events...
-                </Typography>
-              </Box>
-            )}
-
-            {csvResult && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Upload successful: {csvResult.added} events added
-                </Typography>
-                {csvResult.skipped > 0 && (
-                  <Typography variant="body2">
-                    {csvResult.skipped} duplicates skipped
-                  </Typography>
-                )}
-              </Alert>
-            )}
-
-            {csvError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {csvError}
-              </Alert>
-            )}
-
-            <DialogActions sx={{ px: 0, pb: 0 }}>
-              <Button onClick={handleCloseCsvDialog} disabled={csvUploading} color="inherit">
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={!csvFile || csvUploading}
-                sx={{
-                  background: '#111111',
-                  color: '#fff',
-                  fontWeight: 600,
-                  '&:hover': { background: '#2E8B3E' }
-                }}
-              >
-                {csvUploading ? "Uploading..." : "Upload & Import"}
-              </Button>
-            </DialogActions>
-          </form>
-        </DialogContent>
-      </Dialog>
+        <form id="ev-csv-form" onSubmit={handleUploadCsvSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <FileUpload
+            accept=".csv, .xlsx, .xls"
+            onChange={handleCsvFileChange}
+            inputRef={csvFileInputRef}
+            file={csvFile}
+            label="click to select or drop a .csv / .xlsx file"
+            hint="expected columns: name, date, venue, description, category, source_url"
+            disabled={csvUploading}
+          />
+          {csvUploading && <PageLoading label="processing & importing events..." minHeight={110} />}
+          {csvResult && (
+            <div className="k-note ok">
+              <b>Upload successful: {csvResult.added} events added</b>
+              {csvResult.skipped > 0 && <div>{csvResult.skipped} duplicates skipped</div>}
+            </div>
+          )}
+          {csvError && <div className="k-note bad">{csvError}</div>}
+        </form>
+      </Modal>
     </div>
   );
 };
 
+// ─── Event Details View ──────────────────────────────────
 
-// ─── Event Details View Component ──────────────────────────────────
-
-const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile }) => (
+const EventDetailsView = ({ event, getCategoryTone }) => (
   <>
-    <div className="event-detail-image">
-      <img
-        src={event.image || "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200"}
-        alt={event.title}
-        onError={(e) => {
-          e.target.src = "https://images.unsplash.com/photo-1523240715632-d984bb4b970e?w=1200";
-        }}
-      />
-      <div 
-        className="event-category-chip"
-        style={{
-          position: "absolute",
-          top: 16,
-          right: 16,
-          backgroundColor: `${getCategoryColor(event.type)}20`,
-          color: getCategoryColor(event.type),
-        }}
-      >
-        {getCategoryEmoji(event.type)} {event.type || "Event"}
-      </div>
+    <div className="ev-detail-img">
+      <img src={event.image || DEFAULT_IMAGE} alt="" onError={(e) => { e.target.src = DEFAULT_IMAGE; }} />
+      <span className="ev-card-type"><Pill tone={getCategoryTone(event.type)}>{event.type || "Event"}</Pill></span>
     </div>
-    
-    <div className="event-detail-title">{event.title}</div>
-    {eventNeedsAppUpdate(event) && (
-      <Alert severity="warning" className="ev2-banner">
-        {UPDATE_WARNING}
-      </Alert>
-    )}
-    {event.capacity ? (
-      <div className="ev2-capacity">
-        {event.registeredCount || 0} of {event.capacity} seats taken
-      </div>
-    ) : null}
-    
-    <div className="event-detail-grid">
-      <div>
-        <div className="event-detail-item">
-          <PersonIcon />
-          <span><strong>Organizer:</strong> {event.organizer || "TBD"}</span>
-        </div>
-        <div className="event-detail-item">
-          <LocationIcon />
-          <span><strong>City:</strong> {event.city || "TBD"}</span>
-        </div>
-        <div className="event-detail-item">
-          <EmojiEventsIcon />
-          <span><strong>Prize:</strong> {event.prize || "TBD"}</span>
-        </div>
-      </div>
-      <div>
-        <div className="event-detail-item">
-          <CalendarIcon />
-          <span><strong>Date:</strong> {event.date || "TBA"}</span>
-        </div>
-        <div className="event-detail-item">
-          <GroupsIcon />
-          <span><strong>Team:</strong> {event.teamSize || "1-4"}</span>
-        </div>
-        <div className="event-detail-item">
-          <TimerIcon />
-          <span><strong>Deadline:</strong> {event.deadline || "Limited spots"}</span>
-        </div>
-      </div>
+    <h3 style={{ margin: 0, fontSize: 22, fontWeight: 800, letterSpacing: "-0.4px" }}>{event.title}</h3>
+    {eventNeedsAppUpdate(event) && <div className="k-note warn">{UPDATE_WARNING}</div>}
+    {event.capacity ? <Pill tone="blue">{event.registeredCount || 0} of {event.capacity} seats taken</Pill> : null}
+    <div className="k-card pad" style={{ padding: "6px 18px" }}>
+      <Facts rows={[
+        ["organizer", event.organizer || "TBD"],
+        ["city", event.city || "TBD"],
+        ["prize", event.prize || "TBD"],
+        ["date", event.date || "TBA"],
+        ["team", event.teamSize || "1-4"],
+        ["deadline", event.deadline || "Limited spots"],
+      ]} />
     </div>
-    
-    <div className="event-detail-description">
-      <p><strong>Description:</strong> {event.description || "No description provided."}</p>
-    </div>
-    
-    <hr className="event-detail-divider" />
-    
-    <div className="event-detail-participants">
-      <PeopleIcon /> Registered Participants ({event.registrations?.length || 0})
-    </div>
-    
-    {event.registrations?.length > 0 ? (
-      <TableContainer sx={{ 
-        borderRadius: 14, 
-        border: "1px solid rgba(0,0,0,0.04)", 
-        overflowX: "auto", 
-        mt: 2,
-        boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-      }}>
-        <Table size="small">
-          <TableHead sx={{ bgcolor: "rgba(0,0,0,0.02)" }}>
-            <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>#</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>WhatsApp</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Payment</TableCell>
-            </TableRow>
-          </TableHead>
-          <TableBody>
-            {event.registrations.map((reg, index) => (
-              <TableRow key={reg._id} sx={{ "&:hover": { bgcolor: "rgba(0,0,0,0.02)" } }}>
-                <TableCell sx={{ fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{index + 1}</TableCell>
-                <TableCell sx={{ fontWeight: 500, fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.studentName || "Unknown"}</TableCell>
-                <TableCell sx={{ fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.email || "N/A"}</TableCell>
-                <TableCell sx={{ fontSize: isMobile ? "0.7rem" : "0.875rem" }}>{reg.whatsapp || "N/A"}</TableCell>
-                <TableCell><StatusChip status={reg.payment?.status} /></TableCell>
-              </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </TableContainer>
-    ) : (
-      <Box sx={{ 
-        textAlign: "center", 
-        py: 4, 
-        bgcolor: "rgba(0,0,0,0.02)", 
-        borderRadius: 14, 
-        mt: 2,
-        border: "1px solid rgba(0,0,0,0.04)",
-      }}>
-        <Typography color="text.secondary" fontWeight="500" sx={{ fontSize: isMobile ? "0.8rem" : "0.85rem" }}>
-          No participants registered yet
-        </Typography>
-      </Box>
-    )}
+    <p style={{ margin: 0, fontSize: 14.5, lineHeight: 1.55 }}><b>description:</b> {event.description || "No description provided."}</p>
+    <h4 style={{ margin: "6px 0 0", fontFamily: "var(--heading)", fontSize: 17, fontWeight: 700, display: "flex", alignItems: "center", gap: 8 }}>
+      <Ico kind="users" tone="blue" size={32} /> registered participants ({event.registrations?.length || 0})
+    </h4>
+    <Table
+      minWidth={560}
+      rows={event.registrations || []}
+      empty={<div className="k-empty" style={{ padding: 24 }}><p>No participants registered yet</p></div>}
+      columns={[
+        { key: "n", label: "#", render: (r, i) => i + 1 },
+        { key: "name", label: "name", render: (r) => <b>{r.studentName || "Unknown"}</b> },
+        { key: "email", label: "email", render: (r) => r.email || "N/A" },
+        { key: "wa", label: "WhatsApp", render: (r) => r.whatsapp || "N/A" },
+        { key: "pay", label: "payment", render: (r) => <StatusChip status={r.payment?.status} /> },
+      ]}
+    />
   </>
 );
 
@@ -1034,26 +559,14 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
 const EventDialogBody = ({ templates, templatesState, onRetry, form, ...formProps }) => {
   if (templatesState === "error") {
     return (
-      <Alert
-        severity="error"
-        sx={{ borderRadius: "14px" }}
-        action={
-          <Button color="inherit" size="small" onClick={onRetry}>
-            Try again
-          </Button>
-        }
-      >
-        The event form couldn't load its category fields from the server. Check your connection and try again.
-      </Alert>
+      <div className="k-note bad" style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <span style={{ flex: 1, minWidth: 200 }}>The event form couldn't load its category fields from the server. Check your connection and try again.</span>
+        <Button size="sm" variant="secondary" onClick={onRetry}>try again</Button>
+      </div>
     );
   }
   if (templatesState !== "ready" || !form || !templates) {
-    return (
-      <Box sx={{ textAlign: "center", py: 6 }}>
-        <CircularProgress size={32} sx={{ color: "#111111" }} />
-        <Typography sx={{ mt: 1.5, color: "#6B675E", fontSize: "0.85rem" }}>Loading the form…</Typography>
-      </Box>
-    );
+    return <PageLoading label="loading the form…" minHeight={180} />;
   }
   return <EventFormV2 templates={templates} form={form} {...formProps} />;
 };

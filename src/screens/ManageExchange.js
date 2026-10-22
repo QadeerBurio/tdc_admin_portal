@@ -1,18 +1,13 @@
+// src/screens/ManageExchange.js
+// Scholarships (design/portal/AdScholarships): study abroad programs and funding students see in the app.
 import React, { useState, useEffect, useContext, useRef } from 'react';
 import axios from 'axios';
-import { 
-  Plus, Trash2, X, Edit3, 
-  GraduationCap, Calendar, Clock, ExternalLink, MapPin, CheckCircle2,
-  Info, Users, Sparkles, Globe, Award,
-  Upload, FileSpreadsheet, Database, Filter, Search, Download,
-  Loader2, ChevronDown, ChevronUp, Zap, Star, 
-  Shield, BookOpen, Target, ArrowRight, TrendingUp,
-  Menu, X as CloseIcon
-} from 'lucide-react';
-import { AuthContext } from '../context/AuthContext'; 
+import { AuthContext } from '../context/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import * as XLSX from 'xlsx';
-import { motion, AnimatePresence } from 'framer-motion';
+import Ico from '../portal/Ico';
+import { PageHeader, PageLoading, Button, Spinner, Field, Input, Textarea, Select, DateInput, Checkbox, SearchInput, StatCard, Tabs, Modal, EmptyState, Pill, Progress, toast, confirmDialog } from '../portal/kit';
+import './styles/ManageExchange.css';
 
 const ManageExchange = () => {
   const navigate = useNavigate();
@@ -40,13 +35,11 @@ const ManageExchange = () => {
   const [filterStatus, setFilterStatus] = useState('All');
   const [fileLoaded, setFileLoaded] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
-      setIsTablet(window.innerWidth <= 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -196,7 +189,7 @@ const ManageExchange = () => {
       setFormData(initialFormState);
       fetchPrograms();
     } catch (err) { 
-      alert(err.response?.data?.message || err.message || "Operation failed."); 
+      toast(err.response?.data?.message || err.message || "Operation failed."); 
     } finally {
       setLoading(false);
     }
@@ -215,13 +208,13 @@ const ManageExchange = () => {
   };
 
   const deleteProgram = async (id) => {
-    if (window.confirm("⚠️ Permanent Action: Delete this program?")) {
+    if (await confirmDialog("⚠️ Permanent Action: Delete this program?")) {
       setDeletingId(id);
       try {
         await api.delete(`${BASE_URL}/delete/${id}`);
         setPrograms(programs.filter(p => p._id !== id));
       } catch (err) { 
-        alert("Delete failed"); 
+        toast("Delete failed"); 
       } finally {
         setDeletingId(null);
       }
@@ -239,7 +232,7 @@ const ManageExchange = () => {
       'application/csv'
     ];
     if (!validTypes.includes(file.type) && !file.name.match(/\.(xlsx|xls|csv)$/i)) {
-      alert('Please upload a valid Excel or CSV file (.xlsx, .xls, or .csv)');
+      toast('Please upload a valid Excel or CSV file (.xlsx, .xls, or .csv)');
       return;
     }
     
@@ -259,7 +252,7 @@ const ManageExchange = () => {
         const jsonData = XLSX.utils.sheet_to_json(firstSheet);
         
         if (jsonData.length === 0) {
-          alert('The Excel file is empty. Please add data and try again.');
+          toast('The Excel file is empty. Please add data and try again.');
           return;
         }
         
@@ -287,7 +280,7 @@ const ManageExchange = () => {
         }).filter(item => item.title && item.university);
         
         if (transformedData.length === 0) {
-          alert('No valid programs found in the Excel file. Please check that each row has a Program Title and University.');
+          toast('No valid programs found in the Excel file. Please check that each row has a Program Title and University.');
           return;
         }
         
@@ -298,7 +291,7 @@ const ManageExchange = () => {
         
       } catch (error) {
         console.error('Error reading Excel:', error);
-        alert('Error reading Excel file. Please check the format.\n' + error.message);
+        toast('Error reading Excel file. Please check the format.\n' + error.message);
         setFileLoaded(false);
       }
     };
@@ -334,7 +327,7 @@ const ManageExchange = () => {
 
   const uploadExcelData = async () => {
     if (!excelFile) {
-      alert('No file selected. Please choose an Excel or CSV file first.');
+      toast('No file selected. Please choose an Excel or CSV file first.');
       return;
     }
 
@@ -378,7 +371,7 @@ const ManageExchange = () => {
       console.error('Bulk upload error:', error);
       const errorMsg = error.response?.data?.message || error.response?.data?.error || error.message || 'Upload failed';
       setUploadStatus('❌ Upload failed: ' + errorMsg);
-      alert('Error uploading programs: ' + errorMsg);
+      toast('Error uploading programs: ' + errorMsg);
       setIsUploading(false);
     }
   };
@@ -435,2051 +428,355 @@ const ManageExchange = () => {
 
   const activeCount = programs.filter(p => p.active).length;
 
-  // Mobile Program Card Component
-  const MobileProgramCard = ({ item }) => (
-    <motion.div 
-      style={styles.mobileCard}
-      initial={{ opacity: 0, y: 10 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
+  const statusBtn = (item) => (
+    <button
+      type="button"
+      className={`mx-status${item.active ? ' on' : ''}`}
+      onClick={() => toggleStatus(item._id)}
+      disabled={togglingId === item._id}
+      title={item.active ? 'Active: click to set to draft' : 'Draft: click to make active'}
     >
-      <div style={styles.mobileCardHeader}>
-        <div style={styles.mobileCardIcon}>
-          <GraduationCap size={20} color={item.active ? '#111111' : '#ECE7DB'} />
-        </div>
-        <div style={styles.mobileCardTitleSection}>
-          <div style={styles.mobileCardTitle}>
-            {item.title}
-            {item.scholarship?.name && (
-              <span style={styles.scholarshipBadge}>
-                <Award size={10} /> Scholarship
-              </span>
-            )}
+      {togglingId === item._id ? <Spinner size="sm" /> : item.active ? 'Active' : 'Draft'}
+    </button>
+  );
+  const reqList = (items, onRemove, emptyText) => (
+    <div className="mx-reqs">
+      {items.length === 0 ? (
+        <div className="k-hint">{emptyText}</div>
+      ) : (
+        items.map((req, idx) => (
+          <div key={idx} className="mx-req">
+            <Ico kind="checkCircle" tone="plain" size={15} />
+            <span style={{ flex: 1, minWidth: 0, overflowWrap: 'anywhere' }}>{req}</span>
+            <button type="button" className="k-icon-btn ghost sm" aria-label="remove" title="remove" onClick={() => onRemove(idx)}>
+              <Ico kind="close" tone="plain" size={13} />
+            </button>
           </div>
-          <div style={styles.mobileCardSub}>
-            {item.university} • <span style={styles.degreeTag}>{item.degree}</span>
-          </div>
-        </div>
-        <button 
-          onClick={() => toggleStatus(item._id)}
-          disabled={togglingId === item._id}
-          style={{
-            ...styles.mobileStatusBadge,
-            backgroundColor: item.active ? '#E3F3E8' : '#F0ECE2',
-            color: item.active ? '#1E6B3A' : '#6B675E'
-          }}
-        >
-          {togglingId === item._id ? (
-            <div style={styles.spinnerSmall}></div>
-          ) : item.active ? 'Active' : 'Draft'
-          }
-        </button>
-      </div>
-
-      <div style={styles.mobileCardDetails}>
-        <div style={styles.mobileCardDetail}>
-          <MapPin size={14} color="#9A958B" /> {item.location}
-        </div>
-        <div style={styles.mobileCardDetail}>
-          <Clock size={14} color="#9A958B" /> {item.duration}
-        </div>
-        <div style={{...styles.mobileCardDetail, color: '#B42318'}}>
-          <Calendar size={13} color="#B42318" /> Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}
-        </div>
-      </div>
-
-      <div style={styles.mobileCardActions}>
-        <button 
-          onClick={() => navigate('/program', { state: { programId: item._id, programTitle: item.title } })}
-          style={styles.mobileActionBtn}
-        >
-          <Users size={14} /> Apps
-        </button>
-        <button 
-          onClick={() => window.open(item.link, '_blank')}
-          style={styles.mobileActionBtn}
-        >
-          <ExternalLink size={14} /> Link
-        </button>
-        <button 
-          onClick={() => openModal(item)}
-          style={{...styles.mobileActionBtn, background: '#2E8B3E', color: '#fff'}}
-        >
-          <Edit3 size={14} /> Edit
-        </button>
-        <button 
-          onClick={() => deleteProgram(item._id)}
-          disabled={deletingId === item._id}
-          style={{...styles.mobileActionBtn, background: '#D9443F', color: '#fff'}}
-        >
-          {deletingId === item._id ? (
-            <div style={styles.spinnerSmall}></div>
-          ) : (
-            <Trash2 size={14} />
-          )}
-        </button>
-      </div>
-    </motion.div>
-  );
-
-  // Create/Edit Modal
-  const renderModal = () => (
-    <AnimatePresence>
-      {modalVisible && (
-        <motion.div 
-          className="modal-overlay" 
-          style={styles.modalOverlay} 
-          onClick={() => setModalVisible(false)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div 
-            className="modal-content" 
-            style={{
-              ...styles.modalContent,
-              maxWidth: isMobile ? '95%' : '620px',
-              borderRadius: isMobile ? '20px' : '28px',
-            }} 
-            onClick={e => e.stopPropagation()}
-            initial={{ scale: 0.9, y: 30, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 30, opacity: 0 }}
-            transition={{ type: "spring", damping: 25 }}
-          >
-            <div style={{
-              ...styles.modalHeader,
-              padding: isMobile ? '16px 20px 12px' : '24px 28px 16px',
-            }}>
-              <div>
-                <div style={styles.modalBadge}>
-                  <Globe size={14} />
-                  <span>{editingId ? 'Edit Program' : 'New Scholarship Program'}</span>
-                </div>
-                <h2 style={{
-                  ...styles.modalTitle,
-                  fontSize: isMobile ? '18px' : '22px',
-                }}>
-                  {editingId ? 'Update Program Details' : 'Create Scholarship Program'}
-                </h2>
-              </div>
-              <button className="close-modal" onClick={() => setModalVisible(false)} style={styles.closeBtn}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{
-              ...styles.tabs,
-              padding: isMobile ? '0 16px' : '0 28px',
-              gap: isMobile ? '12px' : '24px',
-            }}>
-              <button 
-                className="tab-btn"
-                style={activeTab === 'details' ? styles.activeTab : styles.tab}
-                onClick={() => setActiveTab('details')}
-              >
-                <Info size={16} /> {isMobile ? '' : 'Details'}
-              </button>
-              <button 
-                className="tab-btn"
-                style={activeTab === 'requirements' ? styles.activeTab : styles.tab}
-                onClick={() => setActiveTab('requirements')}
-              >
-                <Shield size={16} /> {isMobile ? '' : 'Requirements'}
-              </button>
-              <button 
-                className="tab-btn"
-                style={activeTab === 'scholarship' ? styles.activeTab : styles.tab}
-                onClick={() => setActiveTab('scholarship')}
-              >
-                <Award size={16} /> {isMobile ? '' : 'Scholarship'}
-              </button>
-            </div>
-
-            <form onSubmit={handleSubmit} style={{
-              ...styles.form,
-              padding: isMobile ? '16px' : '20px 28px 28px',
-            }}>
-              <div style={styles.tabContent}>
-                {activeTab === 'details' && (
-                  <div>
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Program Title *</label>
-                      <input
-                        style={styles.input}
-                        value={formData.title}
-                        onChange={(e) => setFormData({...formData, title: e.target.value})}
-                        placeholder="e.g., Global Leadership Semester"
-                        required
-                      />
-                    </div>
-
-                    <div style={{
-                      ...styles.inputRow,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: isMobile ? '12px' : '16px',
-                    }}>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>University/Institution *</label>
-                        <input
-                          style={styles.input}
-                          value={formData.university}
-                          onChange={(e) => setFormData({...formData, university: e.target.value})}
-                          placeholder="e.g., University of Cambridge"
-                          required
-                        />
-                      </div>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Location *</label>
-                        <input
-                          style={styles.input}
-                          value={formData.location}
-                          onChange={(e) => setFormData({...formData, location: e.target.value})}
-                          placeholder="e.g., Cambridge, UK"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{
-                      ...styles.inputRow,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: isMobile ? '12px' : '16px',
-                    }}>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Degree Type *</label>
-                        <select
-                          style={styles.input}
-                          value={formData.degree}
-                          onChange={(e) => setFormData({...formData, degree: e.target.value})}
-                        >
-                          <option value="Bachelors">Bachelors</option>
-                          <option value="Masters">Masters</option>
-                          <option value="PhD">PhD</option>
-                          <option value="Exchange">Exchange</option>
-                        </select>
-                      </div>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Duration *</label>
-                        <input
-                          style={styles.input}
-                          value={formData.duration}
-                          onChange={(e) => setFormData({...formData, duration: e.target.value})}
-                          placeholder="e.g., 1 Semester"
-                          required
-                        />
-                      </div>
-                    </div>
-
-                    <div style={{
-                      ...styles.inputRow,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: isMobile ? '12px' : '16px',
-                    }}>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Application Start Date</label>
-                        <input
-                          style={styles.input}
-                          type="date"
-                          value={formData.appStart}
-                          onChange={(e) => setFormData({...formData, appStart: e.target.value})}
-                        />
-                      </div>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Application Deadline</label>
-                        <input
-                          style={styles.input}
-                          type="date"
-                          value={formData.deadline}
-                          onChange={(e) => setFormData({...formData, deadline: e.target.value})}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Application URL</label>
-                      <input
-                        style={styles.input}
-                        value={formData.link}
-                        onChange={(e) => setFormData({...formData, link: e.target.value})}
-                        placeholder="https://example.com/apply"
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'requirements' && (
-                  <div>
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Program Requirements</label>
-                      <div style={styles.requirementHeader}>
-                        <div style={{display: 'flex', gap: '10px', width: '100%', flexDirection: isMobile ? 'column' : 'row'}}>
-                          <input
-                            style={{...styles.input, flex: 1}}
-                            value={reqInput}
-                            onChange={(e) => setReqInput(e.target.value)}
-                            placeholder="e.g., Strong academic record"
-                            onKeyDown={(e) => e.key === 'Enter' && addRequirement(e)}
-                          />
-                          <button
-                            type="button"
-                            style={{
-                              ...styles.smallAddBtn,
-                              width: isMobile ? '100%' : 'auto',
-                              padding: isMobile ? '10px' : '0 24px',
-                            }}
-                            onClick={addRequirement}
-                          >
-                            <Plus size={16} /> Add
-                          </button>
-                        </div>
-                      </div>
-                      <div style={styles.requirementList}>
-                        {formData.requirements.length === 0 ? (
-                          <div style={styles.emptyReqs}>No requirements added yet</div>
-                        ) : (
-                          formData.requirements.map((req, idx) => (
-                            <div key={idx} className="req-item" style={styles.reqBadge}>
-                              <CheckCircle2 size={14} color="#1E6B3A" />
-                              <span style={{flex: 1, fontSize: '13px'}}>{req}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeRequirement(idx)}
-                                style={styles.removeReqIcon}
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {activeTab === 'scholarship' && (
-                  <div>
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Scholarship Name</label>
-                      <input
-                        style={styles.input}
-                        value={formData.scholarship.name}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          scholarship: {...formData.scholarship, name: e.target.value}
-                        })}
-                        placeholder="e.g., Global Excellence Scholarship"
-                      />
-                    </div>
-
-                    <div style={{
-                      ...styles.inputRow,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      gap: isMobile ? '12px' : '16px',
-                    }}>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Amount</label>
-                        <input
-                          style={styles.input}
-                          value={formData.scholarship.amount}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            scholarship: {...formData.scholarship, amount: e.target.value}
-                          })}
-                          placeholder="e.g., 5000"
-                        />
-                      </div>
-                      <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Currency</label>
-                        <select
-                          style={styles.input}
-                          value={formData.scholarship.currency}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            scholarship: {...formData.scholarship, currency: e.target.value}
-                          })}
-                        >
-                          <option value="USD">USD</option>
-                          <option value="EUR">EUR</option>
-                          <option value="GBP">GBP</option>
-                          <option value="PKR">PKR</option>
-                        </select>
-                      </div>
-                    </div>
-
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Description</label>
-                      <textarea
-                        style={{...styles.input, minHeight: '60px', resize: 'vertical'}}
-                        value={formData.scholarship.description}
-                        onChange={(e) => setFormData({
-                          ...formData,
-                          scholarship: {...formData.scholarship, description: e.target.value}
-                        })}
-                        placeholder="Describe the scholarship opportunity..."
-                      />
-                    </div>
-
-                    <div style={styles.inputRow}>
-                      <div style={{flex: 1}}>
-                        <label style={styles.label}>Scholarship Deadline</label>
-                        <input
-                          style={styles.input}
-                          type="date"
-                          value={formData.scholarship.deadline}
-                          onChange={(e) => setFormData({
-                            ...formData,
-                            scholarship: {...formData.scholarship, deadline: e.target.value}
-                          })}
-                        />
-                      </div>
-                    </div>
-
-                    <div style={styles.fieldGroup}>
-                      <label style={styles.label}>Scholarship Requirements</label>
-                      <div style={styles.requirementHeader}>
-                        <div style={{display: 'flex', gap: '10px', width: '100%', flexDirection: isMobile ? 'column' : 'row'}}>
-                          <input
-                            id="scholarshipReq"
-                            style={{...styles.input, flex: 1}}
-                            placeholder="e.g., Minimum GPA 3.5"
-                            onKeyDown={(e) => e.key === 'Enter' && addScholarshipRequirement(e)}
-                          />
-                          <button
-                            type="button"
-                            style={{
-                              ...styles.smallAddBtn,
-                              width: isMobile ? '100%' : 'auto',
-                              padding: isMobile ? '10px' : '0 24px',
-                            }}
-                            onClick={addScholarshipRequirement}
-                          >
-                            <Plus size={16} /> Add
-                          </button>
-                        </div>
-                      </div>
-                      <div style={styles.requirementList}>
-                        {(formData.scholarship.requirements || []).length === 0 ? (
-                          <div style={styles.emptyReqs}>No scholarship requirements added</div>
-                        ) : (
-                          (formData.scholarship.requirements || []).map((req, idx) => (
-                            <div key={idx} className="req-item" style={styles.reqBadge}>
-                              <CheckCircle2 size={14} color="#1E6B3A" />
-                              <span style={{flex: 1, fontSize: '13px'}}>{req}</span>
-                              <button
-                                type="button"
-                                onClick={() => removeScholarshipRequirement(idx)}
-                                style={styles.removeReqIcon}
-                              >
-                                <X size={14} />
-                              </button>
-                            </div>
-                          ))
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div style={{
-                ...styles.modalFooter,
-                flexDirection: isMobile ? 'column' : 'row',
-                gap: isMobile ? '8px' : '12px',
-              }}>
-                <button 
-                  type="button" 
-                  style={{
-                    ...styles.cancelBtn,
-                    width: isMobile ? '100%' : 'auto',
-                  }} 
-                  onClick={() => setModalVisible(false)}
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  style={{
-                    ...styles.submitBtn,
-                    width: isMobile ? '100%' : 'auto',
-                    justifyContent: 'center',
-                  }}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <div style={styles.spinnerSmall}></div>
-                      Saving...
-                    </>
-                  ) : (
-                    <>
-                      {editingId ? 'Update Program' : 'Create Program'}
-                      <ArrowRight size={16} />
-                    </>
-                  )}
-                </button>
-              </div>
-            </form>
-          </motion.div>
-        </motion.div>
+        ))
       )}
-    </AnimatePresence>
+    </div>
   );
-
-  // Upload Modal
-  const renderUploadModal = () => (
-    <AnimatePresence>
-      {uploadModalVisible && (
-        <motion.div 
-          className="modal-overlay" 
-          style={styles.modalOverlay} 
-          onClick={() => setUploadModalVisible(false)}
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-        >
-          <motion.div 
-            className="modal-content" 
-            style={{
-              ...styles.modalContent,
-              maxWidth: isMobile ? '95%' : '800px',
-              borderRadius: isMobile ? '20px' : '28px',
-            }} 
-            onClick={e => e.stopPropagation()}
-            initial={{ scale: 0.9, y: 30, opacity: 0 }}
-            animate={{ scale: 1, y: 0, opacity: 1 }}
-            exit={{ scale: 0.9, y: 30, opacity: 0 }}
-            transition={{ type: "spring", damping: 25 }}
-          >
-            <div style={{
-              ...styles.modalHeader,
-              padding: isMobile ? '16px 20px 12px' : '24px 28px 16px',
-            }}>
-              <div>
-                <div style={styles.modalBadge}>
-                  <FileSpreadsheet size={14} />
-                  <span>Bulk Upload</span>
-                </div>
-                <h2 style={{
-                  ...styles.modalTitle,
-                  fontSize: isMobile ? '18px' : '22px',
-                }}>Upload Scholarships</h2>
-              </div>
-              <button className="close-modal" onClick={() => setUploadModalVisible(false)} style={styles.closeBtn}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div style={{
-              padding: isMobile ? '16px' : '20px 28px 24px',
-              overflowY: 'auto',
-              flex: 1,
-              maxHeight: 'calc(90vh - 85px)'
-            }}>
-              <div style={styles.uploadArea}>
-                <div style={{
-                  ...styles.uploadBox,
-                  padding: isMobile 
-                    ? (fileLoaded ? '16px 12px' : '24px') 
-                    : (fileLoaded ? '20px 24px' : '36px'),
-                }}>
-                  <input
-                    ref={fileInputRef}
-                    type="file"
-                    accept=".xlsx,.xls,.csv"
-                    onChange={handleFileUpload}
-                    style={styles.fileInput}
-                    disabled={isUploading}
-                  />
-                  <div style={styles.uploadIcon}>
-                    <FileSpreadsheet size={isMobile ? 28 : (fileLoaded ? 32 : 44)} color="#C77700" />
-                  </div>
-                  <h4 style={{color: '#111111', marginBottom: '4px', fontSize: isMobile ? '14px' : '16px'}}>
-                    {fileLoaded ? '📄 File Loaded!' : 'Upload Excel or CSV File'}
-                  </h4>
-                  <p style={{color: '#9A958B', fontSize: isMobile ? '12px' : '13px', margin: 0}}>
-                    {fileLoaded 
-                      ? `${previewData.length} programs found. Click "Upload All Programs" to continue.`
-                      : 'Drag & drop or click to select .xlsx, .xls, or .csv file'}
-                  </p>
-                  {!fileLoaded && (
-                    <button 
-                      onClick={downloadTemplate}
-                      style={{
-                        ...styles.smallAddBtn,
-                        background: '#111111',
-                        padding: isMobile ? '8px 16px' : '8px 20px',
-                        marginTop: '12px',
-                        fontSize: isMobile ? '12px' : '13px',
-                      }}
-                      disabled={isUploading}
-                    >
-                      <Download size={16} /> Download Template
-                    </button>
-                  )}
-                </div>
-
-                {previewData.length > 0 && (
-                  <div style={styles.previewSection}>
-                    <div style={{
-                      ...styles.previewHeader,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      alignItems: isMobile ? 'flex-start' : 'center',
-                    }}>
-                      <span style={{fontWeight: 600, color: '#111111', fontSize: isMobile ? '13px' : '14px'}}>
-                        📊 Preview ({previewData.length} programs found)
-                      </span>
-                      <label style={styles.autoScholarshipLabel}>
-                        <input
-                          type="checkbox"
-                          checked={autoCreateScholarships}
-                          onChange={(e) => setAutoCreateScholarships(e.target.checked)}
-                          disabled={isUploading}
-                        />
-                        Auto-create scholarships
-                      </label>
-                    </div>
-                    
-                    <div style={{
-                      ...styles.previewTable,
-                      maxHeight: isMobile ? '120px' : '180px',
-                      fontSize: isMobile ? '11px' : '13px',
-                    }}>
-                      <table style={{width: '100%', borderCollapse: 'collapse'}}>
-                        <thead>
-                          <tr style={{background: '#FAF8F3'}}>
-                            <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>#</th>
-                            <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>Program</th>
-                            <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>University</th>
-                            <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>Degree</th>
-                            <th style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'left'}}>Scholarship</th>
-                          </tr>
-                        </thead>
-                        <tbody>
-                          {previewData.slice(0, isMobile ? 3 : 5).map((prog, idx) => (
-                            <tr key={idx} style={{borderBottom: '1px solid #F0ECE2'}}>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', color: '#9A958B'}}>{idx + 1}</td>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', fontWeight: 500, fontSize: isMobile ? '11px' : '13px'}}>{prog.title}</td>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', fontSize: isMobile ? '11px' : '13px'}}>{prog.university}</td>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px'}}>
-                                <span style={{...styles.degreeTag, fontSize: isMobile ? '9px' : '11px'}}>{prog.degree}</span>
-                              </td>
-                              <td style={{padding: isMobile ? '4px 8px' : '8px 12px', fontSize: isMobile ? '11px' : '13px'}}>
-                                {prog.scholarship?.name ? '✅' : '❌'}
-                              </td>
-                            </tr>
-                          ))}
-                          {previewData.length > (isMobile ? 3 : 5) && (
-                            <tr>
-                              <td colSpan={5} style={{padding: isMobile ? '4px 8px' : '8px 12px', textAlign: 'center', color: '#9A958B', fontSize: isMobile ? '11px' : '13px'}}>
-                                ... and {previewData.length - (isMobile ? 3 : 5)} more programs
-                              </td>
-                            </tr>
-                          )}
-                        </tbody>
-                      </table>
-                    </div>
-
-                    {uploadStatus && (
-                      <div style={styles.uploadStatus}>
-                        <div style={styles.progressBar}>
-                          <div 
-                            style={{
-                              ...styles.progressFill, 
-                              width: `${uploadProgress}%`,
-                              transition: 'width 0.5s ease-in-out',
-                              background: uploadComplete 
-                                ? '#111111' 
-                                : '#111111'
-                            }}
-                          >
-                            <span style={styles.progressText}>{uploadProgress}%</span>
-                          </div>
-                        </div>
-                        <p style={{
-                          fontSize: isMobile ? '12px' : '14px',
-                          color: '#6B675E',
-                          marginTop: '8px',
-                          whiteSpace: 'pre-wrap',
-                          wordBreak: 'break-word'
-                        }}>
-                          {uploadStatus}
-                        </p>
-                        {uploadComplete && (
-                          <div style={styles.completeBadge}>
-                            ✅ Upload Complete! All valid programs have been processed.
-                          </div>
-                        )}
-                        {skippedRows && skippedRows.length > 0 && (
-                          <div style={{
-                            marginTop: '12px',
-                            padding: '12px',
-                            borderRadius: '12px',
-                            backgroundColor: '#FFF1CC',
-                            border: '1px solid #FFF1CC'
-                          }}>
-                            <div style={{ fontWeight: 600, color: '#8A5A00', fontSize: '13px', marginBottom: '8px', display: 'flex', alignItems: 'center', gap: '6px' }}>
-                              <span>⚠️ Skipped Rows Details ({skippedRows.length}):</span>
-                            </div>
-                            <div style={{ maxHeight: '160px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '6px' }}>
-                              {skippedRows.map((sr, i) => (
-                                <div key={i} style={{ fontSize: '12px', color: '#8A5A00', backgroundColor: '#ffffff', padding: '8px 12px', borderRadius: '8px', border: '1px solid #FFF1CC', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-                                  <div>
-                                    <strong>Row {sr.row}</strong>: {sr.title ? `${sr.title}${sr.university ? ` (${sr.university})` : ''}` : 'Untitled Row'}
-                                  </div>
-                                  <span style={{ backgroundColor: '#FFF1CC', padding: '2px 8px', borderRadius: '4px', fontSize: '11px', fontWeight: 500 }}>
-                                    {sr.reason}
-                                  </span>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-                        )}
-                      </div>
-                    )}
-
-                    <div style={{
-                      ...styles.uploadActions,
-                      flexDirection: isMobile ? 'column' : 'row',
-                      position: 'sticky',
-                      bottom: 0,
-                      background: '#ffffff',
-                      paddingTop: '14px',
-                      paddingBottom: '4px',
-                      marginTop: '16px',
-                      borderTop: '1px solid #F0ECE2',
-                      zIndex: 10
-                    }}>
-                      {uploadComplete ? (
-                        <>
-                          <button
-                            onClick={resetUploadState}
-                            style={{
-                              ...styles.cancelBtn,
-                              width: isMobile ? '100%' : 'auto',
-                            }}
-                          >
-                            🔄 Upload Another File
-                          </button>
-                          <button
-                            onClick={() => {
-                              setUploadModalVisible(false);
-                              resetUploadState();
-                            }}
-                            style={{
-                              ...styles.submitBtn,
-                              width: isMobile ? '100%' : 'auto',
-                              justifyContent: 'center',
-                              background: '#2E8B3E',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ✅ Done & Close
-                          </button>
-                        </>
-                      ) : (
-                        <>
-                          <button
-                            onClick={resetUploadState}
-                            style={{
-                              ...styles.cancelBtn,
-                              width: isMobile ? '100%' : 'auto',
-                            }}
-                            disabled={isUploading}
-                          >
-                            Clear
-                          </button>
-                          <button
-                            onClick={uploadExcelData}
-                            disabled={isUploading}
-                            style={{
-                              ...styles.submitBtn,
-                              width: isMobile ? '100%' : 'auto',
-                              justifyContent: 'center',
-                              background: isUploading ? '#ECE7DB' : '#111111',
-                              cursor: isUploading ? 'default' : 'pointer'
-                            }}
-                          >
-                            {isUploading ? (
-                              <>
-                                <div style={styles.spinnerSmall}></div>
-                                Uploading...
-                              </>
-                            ) : (
-                              '📤 Upload All Programs'
-                            )}
-                          </button>
-                        </>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+  const degreeSelect = (props) => (
+    <Select {...props}>
+      <option value="All">All Degrees</option>
+      <option value="Bachelors">Bachelors</option>
+      <option value="Masters">Masters</option>
+      <option value="PhD">PhD</option>
+      <option value="Exchange">Exchange</option>
+    </Select>
   );
+  const statusSelect = (props) => (
+    <Select {...props}>
+      <option value="All">All Status</option>
+      <option value="Active">Active</option>
+      <option value="Draft">Draft</option>
+    </Select>
+  );
+  const setSch = (patch) => setFormData({ ...formData, scholarship: { ...formData.scholarship, ...patch } });
 
   return (
-    <div style={{
-      ...styles.pageWrapper,
-      padding: 0,
-      borderRadius: 0,
-    }}>
-      <div style={styles.bgDecoration1}></div>
-      <div style={styles.bgDecoration2}></div>
-      <div style={styles.bgDecoration3}></div>
+    <div className="tdcp k-page mx" data-screen="scholarships">
+      <PageHeader
+        title="scholarships"
+        sub="study abroad programs and funding students see in the app."
+        actions={<>
+          <Button variant="secondary" icon="upload" onClick={() => setUploadModalVisible(true)}>{isMobile ? 'Upload' : 'Bulk Upload'}</Button>
+          <Button icon="plus" onClick={() => openModal()}>{isMobile ? 'Create' : 'Create Program'}</Button>
+        </>}
+      />
 
-      <div style={styles.container}>
-        <motion.div 
-          className="animate-header" 
-          style={{
-            ...styles.header,
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: isMobile ? 'stretch' : 'flex-start',
-            gap: isMobile ? '16px' : '20px',
-          }}
-          initial={{ opacity: 0, y: -20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-        >
-          <div>
-            <h1 style={{
-              ...styles.headerTitle,
-              fontSize: isMobile ? '24px' : isTablet ? '28px' : '32px',
-            }}>scholarships<span className="dot" aria-hidden="true">.</span></h1>
-            <p style={{
-              ...styles.headerSub,
-              fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
-            }}>
-              study abroad programs and funding students see in the app.
-            </p>
-          </div>
-          <div style={{
-            ...styles.headerActions,
-            flexDirection: isMobile ? 'column' : 'row',
-            alignItems: isMobile ? 'stretch' : 'center',
-            width: isMobile ? '100%' : 'auto',
-          }}>
-            <div className="stats-group" style={{
-              ...styles.statsRow,
-              flexWrap: isMobile ? 'wrap' : 'nowrap',
-              justifyContent: isMobile ? 'center' : 'flex-start',
-              width: isMobile ? '100%' : 'auto',
-            }}>
-              <motion.div className="stat-card" style={{
-                ...styles.statCard,
-                padding: isMobile ? '8px 14px' : '10px 20px',
-                flex: isMobile ? 1 : 'auto',
-                minWidth: isMobile ? 'auto' : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
-                <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <GraduationCap size={isMobile ? 14 : 18} color="#1E6B3A" />
-                </div>
-                <div>
-                  <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{programs.length}</div>
-                  <div style={{...styles.statLab, fontSize: isMobile ? '8px' : '10px'}}>Total</div>
-                </div>
-              </motion.div>
-              <motion.div className="stat-card" style={{
-                ...styles.statCard,
-                padding: isMobile ? '8px 14px' : '10px 20px',
-                flex: isMobile ? 1 : 'auto',
-                minWidth: isMobile ? 'auto' : 'auto',
-              }} whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}>
-                <div style={{...styles.statIcon, width: isMobile ? '32px' : '36px', height: isMobile ? '32px' : '36px'}}>
-                  <Award size={isMobile ? 14 : 18} color="#2B7FC0" />
-                </div>
-                <div>
-                  <div style={{...styles.statVal, fontSize: isMobile ? '16px' : '20px'}}>{activeCount}</div>
-                  <div style={{...styles.statLab, fontSize: isMobile ? '8px' : '10px'}}>Active</div>
-                </div>
-              </motion.div>
-             
-            </div>
-            <div style={{
-              display: 'flex',
-              gap: '8px',
-              flexDirection: isMobile ? 'column' : 'row',
-              width: isMobile ? '100%' : 'auto',
-            }}>
-              <motion.button 
-                className="add-btn" 
-                style={{
-                  ...styles.addButton,
-                  width: isMobile ? '100%' : 'auto',
-                  justifyContent: 'center',
-                  padding: isMobile ? '10px 16px' : '10px 24px',
-                  fontSize: isMobile ? '13px' : '14px',
-                }} 
-                onClick={() => openModal()}
-                whileHover={{ y: -2, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Plus size={isMobile ? 16 : 18} /> 
-                <span>{isMobile ? 'Create' : 'Create Program'}</span>
-              </motion.button>
-              <motion.button 
-                className="add-btn" 
-                style={{
-                  ...styles.addButton,
-                  background: '#111111',
-                  width: isMobile ? '100%' : 'auto',
-                  justifyContent: 'center',
-                  padding: isMobile ? '10px 16px' : '10px 24px',
-                  fontSize: isMobile ? '13px' : '14px',
-                }} 
-                onClick={() => setUploadModalVisible(true)}
-                whileHover={{ y: -2, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
-                whileTap={{ scale: 0.95 }}
-              >
-                <Upload size={isMobile ? 16 : 18} /> 
-                <span>{isMobile ? 'Upload' : 'Bulk Upload'}</span>
-              </motion.button>
-            </div>
-          </div>
-        </motion.div>
-
-        {/* Filters */}
-        <motion.div 
-          style={{
-            ...styles.filterBar,
-            flexDirection: isMobile ? 'column' : 'row',
-            gap: isMobile ? '10px' : '16px',
-            padding: isMobile ? '12px 0 16px' : '16px 0 24px',
-          }}
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.1 }}
-        >
-          <div style={{
-            ...styles.searchWrapper,
-            width: isMobile ? '100%' : 'auto',
-            padding: isMobile ? '0 12px' : '0 16px',
-          }}>
-            <Search size={isMobile ? 16 : 18} color="#9A958B" />
-            <input
-              type="text"
-              placeholder={isMobile ? "Search..." : "Search programs, universities..."}
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              style={{
-                ...styles.searchInput,
-                padding: isMobile ? '8px 0' : '10px 0',
-                fontSize: isMobile ? '13px' : '14px',
-              }}
-            />
-          </div>
-          
-          {isMobile ? (
-            <button 
-              style={styles.mobileFilterToggle}
-              onClick={() => setIsFilterOpen(!isFilterOpen)}
-            >
-              <Filter size={16} /> Filters {isFilterOpen ? <ChevronUp size={14} /> : <ChevronDown size={14} />}
-            </button>
-          ) : (
-            <div style={styles.filterGroup}>
-              <select
-                value={filterDegree}
-                onChange={(e) => setFilterDegree(e.target.value)}
-                style={{
-                  ...styles.filterSelect,
-                  padding: isTablet ? '8px 12px' : '10px 16px',
-                  fontSize: isTablet ? '12px' : '13px',
-                }}
-              >
-                <option value="All">All Degrees</option>
-                <option value="Bachelors">Bachelors</option>
-                <option value="Masters">Masters</option>
-                <option value="PhD">PhD</option>
-                <option value="Exchange">Exchange</option>
-              </select>
-              <select
-                value={filterStatus}
-                onChange={(e) => setFilterStatus(e.target.value)}
-                style={{
-                  ...styles.filterSelect,
-                  padding: isTablet ? '8px 12px' : '10px 16px',
-                  fontSize: isTablet ? '12px' : '13px',
-                }}
-              >
-                <option value="All">All Status</option>
-                <option value="Active">Active</option>
-                <option value="Draft">Draft</option>
-              </select>
-            </div>
-          )}
-        </motion.div>
-
-        {/* Mobile Filters */}
-        {isMobile && isFilterOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            style={styles.mobileFilters}
-          >
-            <select
-              value={filterDegree}
-              onChange={(e) => setFilterDegree(e.target.value)}
-              style={styles.mobileFilterSelect}
-            >
-              <option value="All">All Degrees</option>
-              <option value="Bachelors">Bachelors</option>
-              <option value="Masters">Masters</option>
-              <option value="PhD">PhD</option>
-              <option value="Exchange">Exchange</option>
-            </select>
-            <select
-              value={filterStatus}
-              onChange={(e) => setFilterStatus(e.target.value)}
-              style={styles.mobileFilterSelect}
-            >
-              <option value="All">All Status</option>
-              <option value="Active">Active</option>
-              <option value="Draft">Draft</option>
-            </select>
-            <button
-              style={styles.mobileClearFilters}
-              onClick={() => { setFilterDegree('All'); setFilterStatus('All'); setIsFilterOpen(false); }}
-            >
-              Clear Filters
-            </button>
-          </motion.div>
-        )}
-
-        <main style={styles.main}>
-          {loading ? (
-            <div className="loader-container" style={styles.loaderContainer}>
-              <div className="spinner" style={styles.spinner}></div>
-              <p style={{marginTop: '16px', color: '#6B675E', fontWeight: 500, fontSize: isMobile ? '13px' : '14px'}}>
-                Loading scholarship programs...
-              </p>
-            </div>
-          ) : (
-            <motion.div 
-              className="list-container" 
-              style={{
-                ...styles.listContainer,
-                borderRadius: isMobile ? '16px' : isTablet ? '20px' : '24px',
-              }}
-              initial={{ opacity: 0, scale: 0.98 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.5 }}
-            >
-              {!isMobile && (
-                <div style={{
-                  ...styles.listHeader,
-                  padding: isTablet ? '12px 16px' : '16px 24px',
-                  fontSize: isTablet ? '10px' : '11px',
-                }}>
-                  <div style={{flex: 2.5}}>PROGRAM DETAILS</div>
-                  <div style={{flex: 1}}>LOCATION</div>
-                  <div style={{flex: 1}}>SCHEDULE</div>
-                  <div style={{flex: 0.8, textAlign: 'center'}}>STATUS</div>
-                  <div style={{flex: 1.2, textAlign: 'right'}}>ACTIONS</div>
-                </div>
-              )}
-
-              {filteredPrograms.length === 0 ? (
-                <div className="empty-state" style={{
-                  ...styles.emptyState,
-                  padding: isMobile ? '40px 16px' : isTablet ? '60px 24px' : '80px 24px',
-                }}>
-                  <div style={{...styles.emptyIcon, fontSize: isMobile ? '40px' : '64px'}}>🌍</div>
-                  <h3 style={{color: '#111111', marginBottom: '4px', fontSize: isMobile ? '16px' : '18px'}}>
-                    {programs.length === 0 ? 'No Programs Registered' : 'No matching programs found'}
-                  </h3>
-                  <p style={{fontSize: isMobile ? '13px' : '14px'}}>
-                    {programs.length === 0 
-                      ? 'Start by adding your first scholarship opportunity'
-                      : 'Try adjusting your search filters'}
-                  </p>
-                </div>
-              ) : (
-                isMobile ? (
-                  <div style={styles.mobileCardList}>
-                    {filteredPrograms.map((item) => (
-                      <MobileProgramCard key={item._id} item={item} />
-                    ))}
-                  </div>
-                ) : (
-                  filteredPrograms.map((item, index) => (
-                    <motion.div 
-                      key={item._id} 
-                      className="program-row" 
-                      style={{
-                        ...styles.row,
-                        padding: isTablet ? '14px 16px' : '18px 24px',
-                      }}
-                      initial={{ opacity: 0, x: -20 }}
-                      animate={{ opacity: 1, x: 0 }}
-                      transition={{ duration: 0.4, delay: index * 0.05 }}
-                      whileHover={{ backgroundColor: '#FAF8F3', x: 4 }}
-                    >
-                      <div style={{flex: 2.5, display: 'flex', gap: '14px', alignItems: 'center'}}>
-                        <div style={{
-                          ...styles.iconBox,
-                          width: isTablet ? '36px' : '44px',
-                          height: isTablet ? '36px' : '44px',
-                        }}>
-                          <GraduationCap size={isTablet ? 16 : 20} color={item.active ? '#111111' : '#ECE7DB'} />
-                        </div>
-                        <div>
-                          <div style={styles.rowTitle}>
-                            <span style={{fontSize: isTablet ? '13px' : '15px'}}>{item.title}</span>
-                            {item.scholarship?.name && (
-                              <span style={{...styles.scholarshipBadge, fontSize: isTablet ? '9px' : '10px'}}>
-                                <Award size={isTablet ? 10 : 12} /> Scholarship
-                              </span>
-                            )}
-                          </div>
-                          <div style={{...styles.rowSub, fontSize: isTablet ? '11px' : '12px'}}>
-                            {item.university} • <span style={styles.degreeTag}>{item.degree}</span>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div style={{flex: 1, ...styles.cellText, fontSize: isTablet ? '12px' : '13px'}}>
-                        <MapPin size={isTablet ? 12 : 14} color="#9A958B" /> {item.location}
-                      </div>
-
-                      <div style={{flex: 1}}>
-                        <div style={{...styles.cellText, marginBottom: '4px', fontSize: isTablet ? '12px' : '13px'}}>
-                          <Clock size={isTablet ? 12 : 14} /> {item.duration}
-                        </div>
-                        <div style={{...styles.cellText, fontSize: isTablet ? '11px' : '12px', color: '#B42318'}}>
-                          <Calendar size={isTablet ? 11 : 13} /> Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}
-                        </div>
-                      </div>
-
-                      <div style={{flex: 0.8, display: 'flex', justifyContent: 'center'}}>
-                        <button 
-                          className="status-btn"
-                          onClick={() => toggleStatus(item._id)}
-                          disabled={togglingId === item._id}
-                          style={{
-                            ...styles.statusBadge,
-                            fontSize: isTablet ? '10px' : '11px',
-                            padding: isTablet ? '4px 10px' : '5px 14px',
-                            backgroundColor: item.active ? '#E3F3E8' : '#F0ECE2', 
-                            color: item.active ? '#1E6B3A' : '#6B675E' 
-                          }}
-                        >
-                          {togglingId === item._id ? (
-                            <div style={styles.spinnerSmall}></div>
-                          ) : item.active ? 'Active' : 'Draft'
-                          }
-                        </button>
-                      </div>
-
-                      <div style={{flex: 1.2, display: 'flex', justifyContent: 'flex-end', gap: isTablet ? '4px' : '8px'}}>
-                        <motion.button 
-                          className="action-icon"
-                          title="View Applications" 
-                          onClick={() => navigate('/program', { state: { programId: item._id, programTitle: item.title } })} 
-                          style={{
-                            ...styles.actionBtn,
-                            padding: isTablet ? '6px' : '8px',
-                            color: '#2B7FC0',
-                            borderColor: '#E1F1FA',
-                          }}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Users size={isTablet ? 14 : 16} />
-                        </motion.button>
-                        <motion.button 
-                          className="action-icon"
-                          title="External Link" 
-                          onClick={() => window.open(item.link, '_blank')} 
-                          style={{
-                            ...styles.actionBtn,
-                            padding: isTablet ? '6px' : '8px',
-                          }}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <ExternalLink size={isTablet ? 14 : 16} />
-                        </motion.button>
-                        <motion.button 
-                          className="action-icon"
-                          title="Edit Program" 
-                          onClick={() => openModal(item)} 
-                          style={{
-                            ...styles.actionBtn,
-                            padding: isTablet ? '6px' : '8px',
-                          }}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          <Edit3 size={isTablet ? 14 : 16} />
-                        </motion.button>
-                        <motion.button 
-                          className="action-icon"
-                          title="Delete" 
-                          onClick={() => deleteProgram(item._id)} 
-                          disabled={deletingId === item._id}
-                          style={{
-                            ...styles.actionBtn,
-                            padding: isTablet ? '6px' : '8px',
-                            color: '#B42318',
-                            borderColor: '#FDECEA',
-                          }}
-                          whileHover={{ y: -2 }}
-                          whileTap={{ scale: 0.95 }}
-                        >
-                          {deletingId === item._id ? (
-                            <div style={styles.spinnerSmall}></div>
-                          ) : (
-                            <Trash2 size={isTablet ? 14 : 16} />
-                          )}
-                        </motion.button>
-                      </div>
-                    </motion.div>
-                  ))
-                )
-              )}
-            </motion.div>
-          )}
-        </main>
+      <div className="k-stats">
+        <StatCard label="Total" value={programs.length} icon="grad" tone="green" />
+        <StatCard label="Active" value={activeCount} icon="award" tone="blue" />
       </div>
 
-      {renderModal()}
-      {renderUploadModal()}
+      <div className="k-toolbar">
+        <SearchInput
+          className="k-grow"
+          placeholder={isMobile ? "Search..." : "Search programs, universities..."}
+          aria-label="search programs"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        {isMobile ? (
+          <Button variant="secondary" icon="filter" aria-expanded={isFilterOpen} onClick={() => setIsFilterOpen(!isFilterOpen)}>Filters</Button>
+        ) : (
+          <>
+            {degreeSelect({ 'aria-label': 'degree', style: { width: 'auto' }, value: filterDegree, onChange: (e) => setFilterDegree(e.target.value) })}
+            {statusSelect({ 'aria-label': 'status', style: { width: 'auto' }, value: filterStatus, onChange: (e) => setFilterStatus(e.target.value) })}
+          </>
+        )}
+      </div>
 
-      <style>
-        {`
-          @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(0.98); }
-          }
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          
-          .program-row {
-            transition: all 0.3s ease;
-          }
-          
-          .action-icon {
-            transition: all 0.2s ease;
-          }
-          
-          .status-btn {
-            transition: all 0.2s ease;
-          }
-          
-          .tab-btn {
-            transition: all 0.2s ease;
-          }
-          .tab-btn:hover {
-            color: #C77700;
-          }
-          
-          .req-item {
-            transition: all 0.2s ease;
-          }
-          .req-item:hover {
-            background: #e6f7ec;
-            transform: translateX(3px);
-          }
-          
-          input:focus, select:focus, textarea:focus {
-            outline: none;
-            border-color: #C77700;
-            box-shadow: 0 0 0 3px rgba(249, 195, 73,0.1);
-          }
+      {isMobile && isFilterOpen && (
+        <div className="k-card pad mx-filters">
+          {degreeSelect({ 'aria-label': 'degree', value: filterDegree, onChange: (e) => setFilterDegree(e.target.value) })}
+          {statusSelect({ 'aria-label': 'status', value: filterStatus, onChange: (e) => setFilterStatus(e.target.value) })}
+          <Button variant="secondary" onClick={() => { setFilterDegree('All'); setFilterStatus('All'); setIsFilterOpen(false); }}>Clear Filters</Button>
+        </div>
+      )}
 
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #111111;
-          }
-        `}
-      </style>
+      {loading ? (
+        <PageLoading label="Loading scholarship programs..." />
+      ) : filteredPrograms.length === 0 ? (
+        <div className="k-card">
+          <EmptyState
+            icon="globe"
+            tone="sky"
+            title={programs.length === 0 ? 'No Programs Registered' : 'No matching programs found'}
+            text={programs.length === 0 ? 'Start by adding your first scholarship opportunity' : 'Try adjusting your search filters'}
+          />
+        </div>
+      ) : (
+        <div className="k-table-card">
+          <div className="k-table-scroll">
+            <table className="k-table" style={{ minWidth: 900 }}>
+              <thead>
+                <tr><th>program details</th><th>location</th><th>schedule</th><th style={{ textAlign: 'center' }}>status</th><th style={{ textAlign: 'right' }}>actions</th></tr>
+              </thead>
+              <tbody>
+                {filteredPrograms.map((item) => (
+                  <tr key={item._id}>
+                    <td>
+                      <div className="k-row" style={{ flexWrap: 'nowrap' }}>
+                        <Ico kind="grad" tone={item.active ? 'yellow' : 'sand'} size={40} />
+                        <div style={{ minWidth: 0 }}>
+                          <div className="k-row" style={{ gap: 6 }}>
+                            <b>{item.title}</b>
+                            {item.scholarship?.name && <Pill tone="purple"><Ico kind="award" tone="plain" size={11} />Scholarship</Pill>}
+                          </div>
+                          <div className="k-hint">{item.university} • <Pill tone="sand">{item.degree}</Pill></div>
+                        </div>
+                      </div>
+                    </td>
+                    <td><span className="k-row" style={{ gap: 6 }}><Ico kind="pin" tone="plain" size={13} />{item.location}</span></td>
+                    <td>
+                      <div className="k-row" style={{ gap: 6 }}><Ico kind="clock" tone="plain" size={13} />{item.duration}</div>
+                      <div className="k-row mx-deadline" style={{ gap: 6 }}><Ico kind="calendar" tone="plain" size={12} />Deadline: {item.deadline ? new Date(item.deadline).toLocaleDateString() : 'N/A'}</div>
+                    </td>
+                    <td style={{ textAlign: 'center' }}>{statusBtn(item)}</td>
+                    <td style={{ textAlign: 'right' }}>
+                      <span className="k-row" style={{ gap: 6, justifyContent: 'flex-end', flexWrap: 'nowrap' }}>
+                        <IconBtn icon="users" label="View Applications" onClick={() => navigate('/program', { state: { programId: item._id, programTitle: item.title } })} />
+                        <IconBtn icon="external" label="External Link" onClick={() => window.open(item.link, '_blank')} />
+                        <IconBtn icon="edit" label="Edit Program" onClick={() => openModal(item)} />
+                        <button type="button" className="k-icon-btn sm danger" title="Delete" aria-label="Delete" onClick={() => deleteProgram(item._id)} disabled={deletingId === item._id}>
+                          {deletingId === item._id ? <Spinner size="sm" /> : <Ico kind="trash" tone="plain" size={15} />}
+                        </button>
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* create / edit program */}
+      <Modal
+        open={modalVisible}
+        onClose={() => setModalVisible(false)}
+        size="lg"
+        icon="globe"
+        tone="yellow"
+        title={editingId ? 'Update Program Details' : 'Create Scholarship Program'}
+        sub={editingId ? 'Edit Program' : 'New Scholarship Program'}
+        footer={<>
+          <Button variant="secondary" onClick={() => setModalVisible(false)}>Cancel</Button>
+          <Button type="submit" form="program-form" loading={loading} iconRight={loading ? undefined : 'chevronRight'}>
+            {loading ? 'Saving...' : editingId ? 'Update Program' : 'Create Program'}
+          </Button>
+        </>}
+      >
+        <Tabs
+          label="program sections"
+          value={activeTab}
+          onChange={setActiveTab}
+          tabs={[
+            { id: 'details', label: 'Details', icon: 'info' },
+            { id: 'requirements', label: 'Requirements', icon: 'shield' },
+            { id: 'scholarship', label: 'Scholarship', icon: 'award' },
+          ]}
+        />
+        <form id="program-form" onSubmit={handleSubmit} className="mx-form">
+          {activeTab === 'details' && (
+            <>
+              <Field label="Program Title *" htmlFor="mx-title">
+                <Input id="mx-title" value={formData.title} onChange={(e) => setFormData({...formData, title: e.target.value})} placeholder="e.g., Global Leadership Semester" required />
+              </Field>
+              <div className="mx-two">
+                <Field label="University/Institution *" htmlFor="mx-uni">
+                  <Input id="mx-uni" value={formData.university} onChange={(e) => setFormData({...formData, university: e.target.value})} placeholder="e.g., University of Cambridge" required />
+                </Field>
+                <Field label="Location *" htmlFor="mx-loc">
+                  <Input id="mx-loc" value={formData.location} onChange={(e) => setFormData({...formData, location: e.target.value})} placeholder="e.g., Cambridge, UK" required />
+                </Field>
+              </div>
+              <div className="mx-two">
+                <Field label="Degree Type *" htmlFor="mx-degree">
+                  <Select id="mx-degree" value={formData.degree} onChange={(e) => setFormData({...formData, degree: e.target.value})}>
+                    <option value="Bachelors">Bachelors</option>
+                    <option value="Masters">Masters</option>
+                    <option value="PhD">PhD</option>
+                    <option value="Exchange">Exchange</option>
+                  </Select>
+                </Field>
+                <Field label="Duration *" htmlFor="mx-dur">
+                  <Input id="mx-dur" value={formData.duration} onChange={(e) => setFormData({...formData, duration: e.target.value})} placeholder="e.g., 1 Semester" required />
+                </Field>
+              </div>
+              <div className="mx-two">
+                <Field label="Application Start Date" htmlFor="mx-start">
+                  <DateInput id="mx-start" value={formData.appStart} onChange={(e) => setFormData({...formData, appStart: e.target.value})} />
+                </Field>
+                <Field label="Application Deadline" htmlFor="mx-deadline">
+                  <DateInput id="mx-deadline" value={formData.deadline} onChange={(e) => setFormData({...formData, deadline: e.target.value})} />
+                </Field>
+              </div>
+              <Field label="Application URL" htmlFor="mx-link">
+                <Input id="mx-link" value={formData.link} onChange={(e) => setFormData({...formData, link: e.target.value})} placeholder="https://example.com/apply" />
+              </Field>
+            </>
+          )}
+
+          {activeTab === 'requirements' && (
+            <Field label="Program Requirements">
+              <div className="mx-add">
+                <Input value={reqInput} onChange={(e) => setReqInput(e.target.value)} placeholder="e.g., Strong academic record" aria-label="new requirement" onKeyDown={(e) => e.key === 'Enter' && addRequirement(e)} />
+                <Button type="button" variant="secondary" icon="plus" onClick={addRequirement}>Add</Button>
+              </div>
+              {reqList(formData.requirements, removeRequirement, 'No requirements added yet')}
+            </Field>
+          )}
+
+          {activeTab === 'scholarship' && (
+            <>
+              <Field label="Scholarship Name" htmlFor="mx-sname">
+                <Input id="mx-sname" value={formData.scholarship.name} onChange={(e) => setSch({ name: e.target.value })} placeholder="e.g., Global Excellence Scholarship" />
+              </Field>
+              <div className="mx-two">
+                <Field label="Amount" htmlFor="mx-amount">
+                  <Input id="mx-amount" value={formData.scholarship.amount} onChange={(e) => setSch({ amount: e.target.value })} placeholder="e.g., 5000" />
+                </Field>
+                <Field label="Currency" htmlFor="mx-cur">
+                  <Select id="mx-cur" value={formData.scholarship.currency} onChange={(e) => setSch({ currency: e.target.value })}>
+                    <option value="USD">USD</option>
+                    <option value="EUR">EUR</option>
+                    <option value="GBP">GBP</option>
+                    <option value="PKR">PKR</option>
+                  </Select>
+                </Field>
+              </div>
+              <Field label="Description" htmlFor="mx-sdesc">
+                <Textarea id="mx-sdesc" rows={3} value={formData.scholarship.description} onChange={(e) => setSch({ description: e.target.value })} placeholder="Describe the scholarship opportunity..." />
+              </Field>
+              <Field label="Scholarship Deadline" htmlFor="mx-sdead">
+                <DateInput id="mx-sdead" value={formData.scholarship.deadline} onChange={(e) => setSch({ deadline: e.target.value })} />
+              </Field>
+              <Field label="Scholarship Requirements">
+                <div className="mx-add">
+                  <Input id="scholarshipReq" placeholder="e.g., Minimum GPA 3.5" aria-label="new scholarship requirement" onKeyDown={(e) => e.key === 'Enter' && addScholarshipRequirement(e)} />
+                  <Button type="button" variant="secondary" icon="plus" onClick={addScholarshipRequirement}>Add</Button>
+                </div>
+                {reqList(formData.scholarship.requirements || [], removeScholarshipRequirement, 'No scholarship requirements added')}
+              </Field>
+            </>
+          )}
+        </form>
+      </Modal>
+
+      {/* bulk upload */}
+      <Modal
+        open={uploadModalVisible}
+        onClose={() => setUploadModalVisible(false)}
+        size="lg"
+        icon="upload"
+        tone="green"
+        title="Upload Scholarships"
+        sub="Bulk Upload"
+        footer={previewData.length > 0 ? (uploadComplete ? <>
+          <Button variant="secondary" icon="refresh" onClick={resetUploadState}>Upload Another File</Button>
+          <Button variant="success" icon="check" onClick={() => { setUploadModalVisible(false); resetUploadState(); }}>Done & Close</Button>
+        </> : <>
+          <Button variant="secondary" onClick={resetUploadState} disabled={isUploading}>Clear</Button>
+          <Button icon="upload" onClick={uploadExcelData} loading={isUploading}>{isUploading ? 'Uploading...' : 'Upload All Programs'}</Button>
+        </>) : null}
+      >
+        <div className="k-drop mx-drop" data-kit="upload">
+          <input ref={fileInputRef} type="file" accept=".xlsx,.xls,.csv" onChange={handleFileUpload} className="mx-file" disabled={isUploading} aria-label="choose Excel or CSV file" />
+          <Ico kind="file" tone="yellow" size={fileLoaded ? 36 : 48} />
+          <span><b>{fileLoaded ? 'File Loaded!' : 'Upload Excel or CSV File'}</b></span>
+          <span className="k-hint">
+            {fileLoaded
+              ? `${previewData.length} programs found. Click "Upload All Programs" to continue.`
+              : 'Drag & drop or click to select .xlsx, .xls, or .csv file'}
+          </span>
+          {!fileLoaded && (
+            <Button size="sm" variant="secondary" icon="download" onClick={downloadTemplate} disabled={isUploading} className="mx-template">Download Template</Button>
+          )}
+        </div>
+
+        {previewData.length > 0 && (
+          <>
+            <div className="k-row" style={{ justifyContent: 'space-between' }}>
+              <b>Preview ({previewData.length} programs found)</b>
+              <Checkbox checked={autoCreateScholarships} onChange={(e) => setAutoCreateScholarships(e.target.checked)} disabled={isUploading} label="Auto-create scholarships" />
+            </div>
+            <div className="k-table-card">
+              <div className="k-table-scroll">
+                <table className="k-table" style={{ minWidth: 560 }}>
+                  <thead><tr><th>#</th><th>program</th><th>university</th><th>degree</th><th>scholarship</th></tr></thead>
+                  <tbody>
+                    {previewData.slice(0, isMobile ? 3 : 5).map((prog, idx) => (
+                      <tr key={idx}>
+                        <td className="k-muted">{idx + 1}</td>
+                        <td><b>{prog.title}</b></td>
+                        <td>{prog.university}</td>
+                        <td><Pill tone="sand">{prog.degree}</Pill></td>
+                        <td>{prog.scholarship?.name ? <Pill tone="green">yes</Pill> : <Pill tone="sand">no</Pill>}</td>
+                      </tr>
+                    ))}
+                    {previewData.length > (isMobile ? 3 : 5) && (
+                      <tr><td colSpan={5} className="k-muted" style={{ textAlign: 'center' }}>... and {previewData.length - (isMobile ? 3 : 5)} more programs</td></tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            {uploadStatus && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                <Progress value={uploadProgress} label={`${uploadProgress}%`} />
+                <p className="k-muted" style={{ margin: 0, whiteSpace: 'pre-wrap', wordBreak: 'break-word', fontSize: 14 }}>{uploadStatus}</p>
+                {uploadComplete && <div className="k-note ok">Upload Complete! All valid programs have been processed.</div>}
+                {skippedRows && skippedRows.length > 0 && (
+                  <div className="k-note warn">
+                    <b>Skipped Rows Details ({skippedRows.length}):</b>
+                    <div className="mx-skipped">
+                      {skippedRows.map((sr, i) => (
+                        <div key={i} className="mx-skip">
+                          <span><strong>Row {sr.row}</strong>: {sr.title ? `${sr.title}${sr.university ? ` (${sr.university})` : ''}` : 'Untitled Row'}</span>
+                          <Pill tone="yellow">{sr.reason}</Pill>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+          </>
+        )}
+      </Modal>
     </div>
   );
 };
 
-const styles = {
-  pageWrapper: { 
-    minHeight: "auto",
-    background: "transparent",
-    padding: '20px 30px', 
-    position: 'relative',
-    borderRadius: '32px',
-    overflow: 'hidden',
-    boxShadow: "none",
-    border: "none",
-    margin: "0",
-  },
-  bgDecoration1: {
-    position: 'absolute',
-    top: '-100px',
-    right: '-50px',
-    width: '300px',
-    height: '300px',
-    background: 'transparent',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  bgDecoration2: {
-    position: 'absolute',
-    bottom: '-80px',
-    left: '-60px',
-    width: '250px',
-    height: '250px',
-    background: 'transparent',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  bgDecoration3: {
-    position: 'absolute',
-    top: '50%',
-    right: '10%',
-    width: '150px',
-    height: '150px',
-    background: 'transparent',
-    borderRadius: '50%',
-    pointerEvents: 'none'
-  },
-  container: { 
-    maxWidth: '1400px', 
-    margin: '0 auto',
-    position: 'relative',
-    zIndex: 1
-  },
-  header: { 
-    padding: '20px 0', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start', 
-    flexWrap: 'wrap', 
-    gap: '20px',
-    marginBottom: '10px'
-  },
-  headerBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '8px',
-    background: '#FFF1CC',
-    padding: '6px 16px',
-    borderRadius: '40px',
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#C77700',
-    marginBottom: '16px'
-  },
-  headerActions: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '12px', 
-    flexWrap: 'wrap' 
-  },
-  headerTitle: { 
-    fontSize: '32px', 
-    fontWeight: '800', 
-    margin: 0, 
-    color: '#111111', 
-    letterSpacing: '-0.5px' 
-  },
-  headerSub: { 
-    color: '#6B675E', 
-    fontSize: '14px', 
-    marginTop: '8px' 
-  },
-  statsRow: { 
-    display: 'flex', 
-    gap: '12px' 
-  },
-  statCard: { 
-    background: '#fff', 
-    padding: '10px 20px', 
-    borderRadius: '20px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '12px', 
-    border: '1px solid #ECE7DB',
-    transition: 'all 0.3s ease'
-  },
-  statIcon: {
-    width: '36px',
-    height: '36px',
-    borderRadius: '12px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  statVal: { 
-    fontSize: '20px', 
-    fontWeight: '800', 
-    color: '#111111',
-    lineHeight: '1.2'
-  },
-  statLab: { 
-    fontSize: '10px', 
-    color: '#9A958B', 
-    textTransform: 'uppercase', 
-    fontWeight: '600' 
-  },
-  addButton: { 
-    backgroundColor: '#111111', 
-    color: '#fff', 
-    border: 'none', 
-    padding: '10px 24px', 
-    borderRadius: '16px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    fontWeight: '600', 
-    cursor: 'pointer', 
-    transition: 'all 0.3s ease',
-    fontSize: '14px'
-  },
-  filterBar: {
-    display: 'flex',
-    gap: '16px',
-    padding: '16px 0 24px',
-    flexWrap: 'wrap',
-    alignItems: 'center'
-  },
-  searchWrapper: {
-    flex: 1,
-    minWidth: '200px',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '10px',
-    background: '#fff',
-    padding: '0 16px',
-    borderRadius: '16px',
-    border: '2px solid #ECE7DB',
-    transition: 'all 0.2s ease'
-  },
-  searchInput: {
-    flex: 1,
-    padding: '10px 0',
-    border: 'none',
-    background: 'transparent',
-    fontSize: '14px',
-    outline: 'none',
-    color: '#111111'
-  },
-  filterGroup: {
-    display: 'flex',
-    gap: '10px'
-  },
-  filterSelect: {
-    padding: '10px 16px',
-    borderRadius: '12px',
-    border: '2px solid #ECE7DB',
-    background: '#fff',
-    fontSize: '13px',
-    color: '#111111',
-    cursor: 'pointer',
-    outline: 'none',
-    transition: 'all 0.2s ease'
-  },
-  main: { 
-    padding: '0', 
-    width: '100%' 
-  },
-  listContainer: { 
-    backgroundColor: '#fff', 
-    borderRadius: '24px', 
-    border: '1px solid #ECE7DB', 
-    overflow: 'hidden', 
-    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)' 
-  },
-  listHeader: { 
-    display: 'flex', 
-    padding: '16px 24px', 
-    backgroundColor: '#FAF8F3', 
-    borderBottom: '2px solid #ECE7DB', 
-    color: '#6B675E', 
-    fontSize: '11px', 
-    fontWeight: '700', 
-    letterSpacing: '0.5px',
-    textTransform: 'uppercase'
-  },
-  row: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    padding: '18px 24px', 
-    borderBottom: '1px solid #F0ECE2', 
-    transition: 'all 0.2s ease' 
-  },
-  rowTitle: { 
-    fontSize: '15px', 
-    fontWeight: '700', 
-    color: '#111111',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    flexWrap: 'wrap'
-  },
-  rowSub: { 
-    fontSize: '12px', 
-    color: '#6B675E', 
-    marginTop: '4px' 
-  },
-  degreeTag: { 
-    color: '#C77700', 
-    fontWeight: 600, 
-    fontSize: '11px' 
-  },
-  scholarshipBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '4px',
-    background: '#FFF1CC',
-    color: '#8A5A00',
-    padding: '2px 10px',
-    borderRadius: '12px',
-    fontSize: '10px',
-    fontWeight: '600'
-  },
-  cellText: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '6px', 
-    fontSize: '13px', 
-    color: '#6B675E' 
-  },
-  iconBox: { 
-    width: '44px', 
-    height: '44px', 
-    borderRadius: '14px', 
-    display: 'flex', 
-    alignItems: 'center', 
-    justifyContent: 'center', 
-    border: '1px solid #ECE7DB' 
-  },
-  statusBadge: { 
-    fontSize: '11px', 
-    fontWeight: '700', 
-    padding: '5px 14px', 
-    borderRadius: '20px', 
-    border: 'none', 
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
-  },
-  actionBtn: { 
-    padding: '8px', 
-    borderRadius: '10px', 
-    border: '1px solid #ECE7DB', 
-    backgroundColor: '#fff', 
-    cursor: 'pointer', 
-    color: '#6B675E', 
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  modalOverlay: { 
-    position: 'fixed', 
-    inset: 0, 
-    backgroundColor: 'rgba(15, 23, 42, 0.75)', 
-    display: 'flex', 
-    justifyContent: 'center', 
-    alignItems: 'center', 
-    zIndex: 1000, 
-    backdropFilter: 'blur(8px)' 
-  },
-  modalContent: { 
-    backgroundColor: '#fff', 
-    width: '90%', 
-    maxWidth: '620px', 
-    maxHeight: '90vh',
-    borderRadius: '28px', 
-    overflow: 'hidden', 
-    display: 'flex',
-    flexDirection: 'column',
-    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)' 
-  },
-  modalHeader: { 
-    padding: '24px 28px 16px', 
-    borderBottom: '2px solid #F0ECE2', 
-    display: 'flex', 
-    justifyContent: 'space-between', 
-    alignItems: 'flex-start',
-    flexShrink: 0
-  },
-  modalBadge: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-    background: '#FFF1CC',
-    padding: '4px 12px',
-    borderRadius: '20px',
-    fontSize: '11px',
-    fontWeight: '600',
-    color: '#C77700',
-    marginBottom: '12px'
-  },
-  modalTitle: {
-    fontSize: '22px',
-    fontWeight: '700',
-    color: '#111111',
-    margin: 0
-  },
-  tabs: { 
-    display: 'flex', 
-    gap: '24px', 
-    padding: '0 28px', 
-    borderBottom: '1px solid #F0ECE2' 
-  },
-  tab: { 
-    padding: '14px 0', 
-    border: 'none', 
-    background: 'none', 
-    fontSize: '14px', 
-    color: '#6B675E', 
-    cursor: 'pointer', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    borderBottom: '2px solid transparent',
-    transition: 'all 0.2s ease'
-  },
-  activeTab: { 
-    padding: '14px 0', 
-    border: 'none', 
-    background: 'none', 
-    fontSize: '14px', 
-    color: '#C77700', 
-    cursor: 'pointer', 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '8px', 
-    borderBottom: '2px solid #111111', 
-    fontWeight: 600 
-  },
-  form: { 
-    padding: '20px 28px 28px' 
-  },
-  tabContent: { 
-    minHeight: '280px', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '18px' 
-  },
-  fieldGroup: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '6px' 
-  },
-  inputRow: { 
-    display: 'flex', 
-    gap: '16px' 
-  },
-  label: { 
-    fontSize: '12px', 
-    fontWeight: '700', 
-    color: '#6B675E',
-    textTransform: 'uppercase',
-    letterSpacing: '0.5px'
-  },
-  input: { 
-    padding: '12px 14px', 
-    borderRadius: '14px', 
-    border: '2px solid #ECE7DB', 
-    fontSize: '14px', 
-    width: '100%', 
-    boxSizing: 'border-box', 
-    outline: 'none', 
-    transition: 'all 0.2s ease',
-    backgroundColor: '#FAF8F3',
-  },
-  smallAddBtn: { 
-    backgroundColor: '#111111', 
-    color: '#fff', 
-    border: 'none', 
-    padding: '0 24px', 
-    borderRadius: '14px', 
-    cursor: 'pointer', 
-    fontWeight: '600', 
-    fontSize: '13px',
-    transition: 'all 0.2s ease',
-    whiteSpace: 'nowrap'
-  },
-  requirementHeader: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '10px', 
-    marginBottom: '8px' 
-  },
-  requirementList: { 
-    display: 'flex', 
-    flexDirection: 'column', 
-    gap: '10px', 
-    overflowY: 'auto', 
-    maxHeight: '240px', 
-    paddingRight: '6px' 
-  },
-  reqBadge: { 
-    display: 'flex', 
-    alignItems: 'center', 
-    gap: '12px', 
-    backgroundColor: '#E3F3E8', 
-    color: '#1E6B3A', 
-    padding: '10px 14px', 
-    borderRadius: '12px', 
-    border: '1px solid #E3F3E8',
-    transition: 'all 0.2s ease'
-  },
-  removeReqIcon: { 
-    cursor: 'pointer', 
-    opacity: 0.6, 
-    transition: 'opacity 0.2s' 
-  },
-  modalFooter: { 
-    padding: '20px 0 0', 
-    display: 'flex', 
-    justifyContent: 'flex-end', 
-    gap: '12px',
-    borderTop: '1px solid #F0ECE2',
-    marginTop: '8px'
-  },
-  cancelBtn: { 
-    padding: '12px 24px', 
-    borderRadius: '14px', 
-    border: '2px solid #ECE7DB', 
-    background: '#fff', 
-    fontWeight: '600', 
-    cursor: 'pointer',
-    transition: 'all 0.2s ease'
-  },
-  submitBtn: { 
-    backgroundColor: '#111111', 
-    color: '#fff', 
-    padding: '12px 28px', 
-    borderRadius: '14px', 
-    border: 'none', 
-    fontWeight: '600', 
-    cursor: 'pointer',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    transition: 'all 0.2s ease'
-  },
-  closeBtn: { 
-    border: 'none', 
-    background: '#F0ECE2', 
-    borderRadius: '50%', 
-    padding: '8px', 
-    cursor: 'pointer', 
-    color: '#6B675E',
-    transition: 'all 0.2s ease',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  emptyState: { 
-    padding: '80px 24px', 
-    textAlign: 'center', 
-    display: 'flex', 
-    flexDirection: 'column', 
-    alignItems: 'center', 
-    gap: '12px', 
-    color: '#9A958B' 
-  },
-  emptyIcon: {
-    fontSize: '64px',
-    marginBottom: '8px',
-    opacity: 0.5
-  },
-  emptyReqs: { 
-    textAlign: 'center', 
-    color: '#9A958B', 
-    padding: '30px', 
-    fontSize: '13px',
-    background: '#FAF8F3',
-    borderRadius: '16px'
-  },
-  loaderContainer: { 
-    textAlign: 'center', 
-    padding: '100px 0',
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: '16px'
-  },
-  spinner: {
-    width: '40px',
-    height: '40px',
-    border: '3px solid #ECE7DB',
-    borderTop: '3px solid #111111',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite'
-  },
-  spinnerSmall: {
-    width: '16px',
-    height: '16px',
-    border: '2px solid #ECE7DB',
-    borderTop: '2px solid #111111',
-    borderRadius: '50%',
-    animation: 'spin 0.8s linear infinite'
-  },
-  uploadArea: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '20px'
-  },
-  uploadBox: {
-    border: '2px dashed #ECE7DB',
-    borderRadius: '20px',
-    padding: '40px',
-    textAlign: 'center',
-    background: '#fafbfc',
-    position: 'relative',
-    transition: 'all 0.2s ease',
-    cursor: 'pointer'
-  },
-  fileInput: {
-    position: 'absolute',
-    inset: 0,
-    opacity: 0,
-    cursor: 'pointer',
-    width: '100%',
-    height: '100%'
-  },
-  uploadIcon: {
-    marginBottom: '16px'
-  },
-  previewSection: {
-    border: '1px solid #ECE7DB',
-    borderRadius: '16px',
-    padding: '16px',
-    background: '#fff'
-  },
-  previewHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: '12px',
-    flexWrap: 'wrap',
-    gap: '8px'
-  },
-  autoScholarshipLabel: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    fontSize: '13px',
-    color: '#6B675E',
-    cursor: 'pointer'
-  },
-  previewTable: {
-    maxHeight: '200px',
-    overflow: 'auto',
-    border: '1px solid #F0ECE2',
-    borderRadius: '12px'
-  },
-  uploadStatus: {
-    marginTop: '12px'
-  },
-  progressBar: {
-    width: '100%',
-    height: '24px',
-    background: '#ECE7DB',
-    borderRadius: '12px',
-    overflow: 'hidden',
-    position: 'relative'
-  },
-  progressFill: {
-    height: '100%',
-    borderRadius: '12px',
-    transition: 'width 0.5s ease-in-out',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center'
-  },
-  progressText: {
-    fontSize: '11px',
-    fontWeight: '700',
-    color: '#fff',
-    textShadow: '0 1px 2px rgba(0,0,0,0.2)'
-  },
-  completeBadge: {
-    marginTop: '8px',
-    padding: '8px 16px',
-    background: '#E3F3E8',
-    color: '#1E6B3A',
-    borderRadius: '8px',
-    fontSize: '14px',
-    fontWeight: '600',
-    textAlign: 'center'
-  },
-  uploadActions: {
-    display: 'flex',
-    justifyContent: 'flex-end',
-    gap: '12px',
-    marginTop: '16px'
-  },
-  // Mobile Styles
-  mobileFilterToggle: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '8px',
-    padding: '8px 16px',
-    background: '#fff',
-    border: '2px solid #ECE7DB',
-    borderRadius: '12px',
-    fontSize: '13px',
-    fontWeight: '500',
-    color: '#111111',
-    cursor: 'pointer',
-    width: '100%',
-    justifyContent: 'center'
-  },
-  mobileFilters: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '10px',
-    padding: '12px',
-    background: '#fff',
-    borderRadius: '12px',
-    border: '1px solid #ECE7DB',
-    marginBottom: '16px'
-  },
-  mobileFilterSelect: {
-    padding: '10px 14px',
-    borderRadius: '10px',
-    border: '2px solid #ECE7DB',
-    fontSize: '13px',
-    background: '#fff',
-    color: '#111111',
-    cursor: 'pointer',
-    outline: 'none',
-  },
-  mobileClearFilters: {
-    padding: '8px',
-    background: '#F0ECE2',
-    border: 'none',
-    borderRadius: '8px',
-    fontSize: '13px',
-    fontWeight: '600',
-    color: '#6B675E',
-    cursor: 'pointer'
-  },
-  mobileCardList: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: '12px',
-    padding: '12px'
-  },
-  mobileCard: {
-    background: '#fff',
-    border: '1px solid #ECE7DB',
-    borderRadius: '16px',
-    padding: '16px',
-    boxShadow: '0 2px 8px rgba(0,0,0,0.04)'
-  },
-  mobileCardHeader: {
-    display: 'flex',
-    alignItems: 'flex-start',
-    gap: '12px',
-    marginBottom: '12px'
-  },
-  mobileCardIcon: {
-    width: '40px',
-    height: '40px',
-    borderRadius: '12px',
-    background: '#FAF8F3',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    border: '1px solid #ECE7DB',
-    flexShrink: 0
-  },
-  mobileCardTitleSection: {
-    flex: 1
-  },
-  mobileCardTitle: {
-    fontSize: '14px',
-    fontWeight: '700',
-    color: '#111111',
-    display: 'flex',
-    alignItems: 'center',
-    gap: '6px',
-    flexWrap: 'wrap'
-  },
-  mobileCardSub: {
-    fontSize: '12px',
-    color: '#6B675E',
-    marginTop: '2px'
-  },
-  mobileStatusBadge: {
-    fontSize: '10px',
-    fontWeight: '700',
-    padding: '4px 12px',
-    borderRadius: '16px',
-    border: 'none',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-    flexShrink: 0
-  },
-  mobileCardDetails: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: '6px',
-    padding: '10px 0',
-    borderTop: '1px solid #F0ECE2',
-    borderBottom: '1px solid #F0ECE2',
-    marginBottom: '12px'
-  },
-  mobileCardDetail: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: '4px',
-    fontSize: '12px',
-    color: '#6B675E'
-  },
-  mobileCardActions: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: '6px'
-  },
-  mobileActionBtn: {
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: '4px',
-    padding: '6px 8px',
-    background: '#FAF8F3',
-    border: '1px solid #ECE7DB',
-    borderRadius: '8px',
-    fontSize: '11px',
-    fontWeight: '500',
-    color: '#6B675E',
-    cursor: 'pointer',
-    transition: 'all 0.2s ease',
-  }
-};
+// small icon button for table rows
+const IconBtn = ({ icon, label, onClick }) => (
+  <button type="button" className="k-icon-btn sm" title={label} aria-label={label} onClick={onClick}>
+    <Ico kind={icon} tone="plain" size={15} />
+  </button>
+);
 
 export default ManageExchange;

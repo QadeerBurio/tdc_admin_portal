@@ -2,42 +2,9 @@
 // All registrations (admin): filters, pagination, payment review, answers panel, CSV,
 // tickets (codes + status, cancel / restore, re-send; search finds a ticket code).
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  IconButton,
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableRow,
-  CircularProgress,
-  Alert,
-  Button,
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
-  Drawer,
-  Tooltip,
-} from "@mui/material";
-import {
-  People as PeopleIcon,
-  Search as SearchIcon,
-  Clear as ClearIcon,
-  Download as DownloadIcon,
-  Close as CloseIcon,
-  CheckCircle as CheckCircleIcon,
-  Cancel as CancelIcon,
-  OpenInNew as OpenInNewIcon,
-  Refresh as RefreshIcon,
-  Send as SendIcon,
-  Link as LinkIcon,
-} from "@mui/icons-material";
 import { format } from "date-fns";
+import Ico from "../../portal/Ico";
+import { Button, IconButton, SearchInput, Select, Field, Textarea, Modal, Drawer, Table, EmptyState, PageLoading } from "../../portal/kit";
 import { eventsApi, authProblem, errorMessage, API_BASE } from "./eventsApi";
 
 const STATUSES = [
@@ -53,13 +20,13 @@ const BASE_LABELS = { studentName: "Name", email: "Email", whatsapp: "WhatsApp",
 const LIMIT = 25;
 
 const pkr = (n) => `PKR ${Number(n || 0).toLocaleString("en-US")}`;
-const when = (d) => (d ? format(new Date(d), "MMM dd, yyyy HH:mm") : "—");
+const when = (d) => (d ? format(new Date(d), "MMM dd, yyyy HH:mm") : "–");
 const humanize = (k) => String(k).replace(/^q_/, "").replace(/_/g, " ").replace(/([a-z])([A-Z])/g, "$1 $2").replace(/^./, (c) => c.toUpperCase());
-const answerText = (v) => (Array.isArray(v) ? v.join("\n") : v == null || v === "" ? "—" : String(v));
+const answerText = (v) => (Array.isArray(v) ? v.join("\n") : v == null || v === "" ? "–" : String(v));
 
 // tickets: same chip colours as payments (valid = green, cancelled = red, used = grey)
 const TICKET_CHIP = { valid: "verified", cancelled: "rejected", used: "not_required" };
-export const TicketChip = ({ status }) => <span className={`ev2-status ${TICKET_CHIP[status] || "not_required"}`}>{status || "—"}</span>;
+export const TicketChip = ({ status }) => <span className={`ev2-status ${TICKET_CHIP[status] || "not_required"}`}>{status || "–"}</span>;
 const ticketList = (reg) => (Array.isArray(reg?.tickets) ? reg.tickets : []);
 // the public ticket page (the email's "download ticket")
 export const ticketLink = (t) => (t?.pageToken ? `${API_BASE}/ticket/${t.pageToken}` : "");
@@ -97,14 +64,12 @@ async function copyText(text) {
 // table / card cell: every code with its status (a registration can hold several seats)
 export const TicketCodes = ({ reg }) => {
   const list = ticketList(reg);
-  if (!list.length) return <span style={{ color: "#aaa" }}>—</span>;
+  if (!list.length) return <span className="k-muted">–</span>;
   return (
-    <span style={{ display: "inline-flex", flexDirection: "column", gap: 2 }}>
+    <span style={{ display: "inline-flex", flexDirection: "column", gap: 4 }}>
       {list.map((t) => (
         <span key={t.code} style={{ display: "inline-flex", alignItems: "center", gap: 6, whiteSpace: "nowrap" }}>
-          <span className="ev2-mono" style={t.status === "cancelled" ? { textDecoration: "line-through", color: "#999" } : undefined}>
-            {t.code}
-          </span>
+          <span className={`ev2-mono${t.status === "cancelled" ? " ev2-struck" : ""}`}>{t.code}</span>
           <TicketChip status={t.status} />
         </span>
       ))}
@@ -280,38 +245,30 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
     notify(copied ? `Ticket link copied (${t.code}).` : `Couldn't copy. The link is: ${url}`, copied ? "success" : "warning");
   };
 
-  // compact: icon buttons for table rows (labels in tooltips / aria-label)
+  // compact: icon buttons for table rows (labels in title / aria-label)
   const actionsFor = (reg, compact = false) => {
     const s = reg.payment?.status || "not_required";
     if (compact) {
       return (
-        <span style={{ display: "inline-flex", gap: 2 }}>
+        <span style={{ display: "inline-flex", gap: 6 }}>
           {(s === "pending" || s === "rejected") && (
-            <Tooltip title="Verify payment">
-              <IconButton size="small" color="success" aria-label="Verify" onClick={(e) => openConfirm(reg, "verify", e)}>
-                <CheckCircleIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton icon="checkCircle" label="Verify payment" variant="success" size="sm" onClick={(e) => openConfirm(reg, "verify", e)} />
           )}
           {(s === "pending" || s === "verified") && (
-            <Tooltip title="Reject payment">
-              <IconButton size="small" color="error" aria-label="Reject" onClick={(e) => openConfirm(reg, "reject", e)}>
-                <CancelIcon />
-              </IconButton>
-            </Tooltip>
+            <IconButton icon="xCircle" label="Reject payment" variant="danger" size="sm" onClick={(e) => openConfirm(reg, "reject", e)} />
           )}
         </span>
       );
     }
     return (
-      <span style={{ display: "inline-flex", gap: 6 }}>
+      <span style={{ display: "inline-flex", gap: 8, flexWrap: "wrap" }}>
         {(s === "pending" || s === "rejected") && (
-          <Button size="small" variant="outlined" color="success" startIcon={<CheckCircleIcon />} onClick={(e) => openConfirm(reg, "verify", e)}>
+          <Button size="sm" variant="success" icon="checkCircle" onClick={(e) => openConfirm(reg, "verify", e)}>
             Verify
           </Button>
         )}
         {(s === "pending" || s === "verified") && (
-          <Button size="small" variant="outlined" color="error" startIcon={<CancelIcon />} onClick={(e) => openConfirm(reg, "reject", e)}>
+          <Button size="sm" variant="danger" icon="xCircle" onClick={(e) => openConfirm(reg, "reject", e)}>
             Reject
           </Button>
         )}
@@ -331,95 +288,97 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
         }}
       />
     ) : (
-      <span style={{ color: "#aaa" }}>—</span>
+      <span className="k-muted">–</span>
     );
 
-  const tickets = (reg) => (reg.ticket?.tier ? `${reg.ticket.tier} × ${reg.ticket.quantity || 1}` : "—");
+  const tickets = (reg) => (reg.ticket?.tier ? `${reg.ticket.tier} × ${reg.ticket.quantity || 1}` : "–");
   const rows = data.registrations;
 
-  return (
-    <div className="tab-content">
-      <div className="registrations-header">
-        <div className="registrations-title">
-          <PeopleIcon />
-          All Registrations
-          <span className="registrations-count">{data.total}</span>
+  const columns = [
+    {
+      key: "student",
+      label: "Student",
+      render: (reg) => (
+        <div className="student-cell">
+          <div className="student-avatar">{reg.studentName?.charAt(0).toUpperCase() || "S"}</div>
+          <div style={{ minWidth: 0 }}>
+            <div className="student-name">{reg.studentName || "Unknown"}</div>
+            <div className="k-muted" style={{ fontSize: 12.5 }}>{reg.email}</div>
+          </div>
         </div>
-        <div className="registrations-controls ev2-filters">
-          <TextField
-            className="search-field"
-            size="small"
+      ),
+    },
+    { key: "event", label: "Event", render: (reg) => <span className="event-chip">{reg.eventTitle || "Unknown event"}</span> },
+    { key: "tickets", label: "Tickets", render: (reg) => tickets(reg) },
+    { key: "amount", label: "Amount", render: (reg) => (reg.payment?.amount ? pkr(reg.payment.amount) : "Free") },
+    { key: "method", label: "Method", render: (reg) => METHOD_LABEL[reg.payment?.method] || "–" },
+    { key: "trx", label: "Transaction ID", render: (reg) => <span className="ev2-mono">{reg.payment?.transactionId || "–"}</span> },
+    { key: "receipt", label: "Receipt", render: (reg) => receiptThumb(reg) },
+    { key: "status", label: "Status", render: (reg) => <StatusChip status={reg.payment?.status} /> },
+    { key: "code", label: "Ticket code", render: (reg) => <TicketCodes reg={reg} /> },
+    { key: "actions", label: "Actions", thStyle: { textAlign: "right" }, style: { textAlign: "right" }, render: (reg) => actionsFor(reg, true) },
+  ];
+
+  return (
+    <div className="ev2-regs" data-tab="registrations">
+      <div className="k-card pad ev2-regs-bar">
+        <div className="ev2-regs-title">
+          <Ico kind="users" tone="blue" size={36} />
+          <h3>All Registrations</h3>
+          <span className="k-count">{data.total}</span>
+        </div>
+        <div className="k-toolbar">
+          <SearchInput
+            className="k-grow"
             placeholder="Name, email, WhatsApp, transaction ID, ticket code"
+            aria-label="search registrations"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            fullWidth={isMobile}
-            slotProps={{
-              input: {
-                startAdornment: <SearchIcon sx={{ mr: 1, color: "#999" }} />,
-                endAdornment: search ? (
-                  <IconButton size="small" aria-label="clear search" onClick={() => setSearch("")}>
-                    <ClearIcon />
-                  </IconButton>
-                ) : null,
-              },
-            }}
           />
-          <FormControl className="filter-select" size="small" sx={{ minWidth: 180 }}>
-            <InputLabel id="reg-event">Event</InputLabel>
-            <Select labelId="reg-event" label="Event" value={eventId} onChange={(e) => { setEventId(e.target.value); setPage(1); }}>
-              <MenuItem value="">All events</MenuItem>
-              {(events || []).map((ev) => (
-                <MenuItem key={ev._id} value={ev._id}>
-                  {ev.title}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <FormControl className="filter-select" size="small" sx={{ minWidth: 170 }}>
-            <InputLabel id="reg-status">Payment</InputLabel>
-            <Select labelId="reg-status" label="Payment" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }}>
-              {STATUSES.map((s) => (
-                <MenuItem key={s.value} value={s.value}>
-                  {s.label}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
-          <button className="outline-btn" onClick={exportCsv} disabled={exporting}>
-            {exporting ? <CircularProgress size={16} /> : <DownloadIcon />} {isMobile ? "CSV" : "Export CSV"}
-          </button>
+          <Select aria-label="Event" value={eventId} onChange={(e) => { setEventId(e.target.value); setPage(1); }} style={{ width: "auto", minWidth: 180, maxWidth: "100%" }}>
+            <option value="">All events</option>
+            {(events || []).map((ev) => (
+              <option key={ev._id} value={ev._id}>
+                {ev.title}
+              </option>
+            ))}
+          </Select>
+          <Select aria-label="Payment" value={status} onChange={(e) => { setStatus(e.target.value); setPage(1); }} style={{ width: "auto", minWidth: 170, maxWidth: "100%" }}>
+            {STATUSES.map((s) => (
+              <option key={s.value} value={s.value}>
+                {s.label}
+              </option>
+            ))}
+          </Select>
+          <Button variant="secondary" icon="download" onClick={exportCsv} loading={exporting}>
+            {isMobile ? "CSV" : "Export CSV"}
+          </Button>
         </div>
       </div>
 
       {error ? (
-        <div className="empty-state">
-          <Alert severity="error" sx={{ borderRadius: "14px", mb: 2 }}>
-            {error}
-          </Alert>
-          <Button startIcon={<RefreshIcon />} onClick={load}>
-            Try again
-          </Button>
+        <div className="k-card">
+          <EmptyState icon="alert" tone="red" title={error} action={<Button variant="secondary" icon="refresh" onClick={load}>Try again</Button>} />
         </div>
       ) : loading && !rows.length ? (
-        <div className="empty-state">
-          <CircularProgress size={32} sx={{ color: "#000" }} />
-        </div>
+        <div className="k-card"><PageLoading label="loading registrations…" minHeight={220} /></div>
       ) : !rows.length ? (
-        <div className="empty-state">
-          <div className="empty-icon-wrapper">
-            <PeopleIcon />
-          </div>
-          <div className="empty-title">No registrations found</div>
-          <div className="empty-subtitle">{eventId || status !== "all" || q ? "Try other filters" : "Registrations appear here when students sign up"}</div>
+        <div className="k-card">
+          <EmptyState
+            icon="users"
+            tone="blue"
+            title="No registrations found"
+            text={eventId || status !== "all" || q ? "Try other filters" : "Registrations appear here when students sign up"}
+          />
         </div>
       ) : (
-        <div className="table-container ev2-scroll" style={{ opacity: loading ? 0.6 : 1 }}>
+        <div style={{ opacity: loading ? 0.6 : 1 }}>
           {isMobile ? (
-            <div style={{ padding: 16 }}>
+            <div className="ev2-cards">
               {rows.map((reg) => (
-                <div className="mobile-reg-card ev2-row-click" key={reg._id} onClick={() => setPanel(reg)}>
+                <div className="k-card mobile-reg-card ev2-row-click" key={reg._id} onClick={() => setPanel(reg)}>
                   <div className="mobile-reg-header">
-                    <div className="mobile-reg-avatar">{reg.studentName?.charAt(0).toUpperCase() || "S"}</div>
+                    <div className="student-avatar">{reg.studentName?.charAt(0).toUpperCase() || "S"}</div>
                     <div className="mobile-reg-info">
                       <div className="mobile-reg-name">{reg.studentName || "Unknown"}</div>
                       <div className="mobile-reg-email">{reg.eventTitle || "Unknown event"}</div>
@@ -427,8 +386,8 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
                     <StatusChip status={reg.payment?.status} />
                   </div>
                   <div className="mobile-reg-tags">
-                    <span className="mobile-reg-tag outlined">{tickets(reg)}</span>
-                    <span className="mobile-reg-tag outlined">{pkr(reg.payment?.amount)}</span>
+                    <span className="mobile-reg-tag">{tickets(reg)}</span>
+                    <span className="mobile-reg-tag">{pkr(reg.payment?.amount)}</span>
                     {reg.payment?.transactionId && <span className="mobile-reg-tag dark ev2-mono">{reg.payment.transactionId}</span>}
                     {receiptThumb(reg)}
                   </div>
@@ -442,62 +401,17 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
               ))}
             </div>
           ) : (
-            <Table size="small" sx={{ minWidth: 1140 }}>
-              <TableHead className="table-header">
-                <TableRow>
-                  <TableCell>Student</TableCell>
-                  <TableCell>Event</TableCell>
-                  <TableCell>Tickets</TableCell>
-                  <TableCell>Amount</TableCell>
-                  <TableCell>Method</TableCell>
-                  <TableCell>Transaction ID</TableCell>
-                  <TableCell>Receipt</TableCell>
-                  <TableCell>Status</TableCell>
-                  <TableCell>Ticket code</TableCell>
-                  <TableCell align="right">Actions</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {rows.map((reg) => (
-                  <TableRow className="table-row ev2-row-click" key={reg._id} hover onClick={() => setPanel(reg)}>
-                    <TableCell>
-                      <div className="student-cell">
-                        <div className="student-avatar">{reg.studentName?.charAt(0).toUpperCase() || "S"}</div>
-                        <div>
-                          <div className="student-name">{reg.studentName || "Unknown"}</div>
-                          <div style={{ fontSize: "0.75rem", color: "#777" }}>{reg.email}</div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <span className="event-chip">{reg.eventTitle || "Unknown event"}</span>
-                    </TableCell>
-                    <TableCell>{tickets(reg)}</TableCell>
-                    <TableCell>{reg.payment?.amount ? pkr(reg.payment.amount) : "Free"}</TableCell>
-                    <TableCell>{METHOD_LABEL[reg.payment?.method] || "—"}</TableCell>
-                    <TableCell className="ev2-mono">{reg.payment?.transactionId || "—"}</TableCell>
-                    <TableCell>{receiptThumb(reg)}</TableCell>
-                    <TableCell>
-                      <StatusChip status={reg.payment?.status} />
-                    </TableCell>
-                    <TableCell>
-                      <TicketCodes reg={reg} />
-                    </TableCell>
-                    <TableCell align="right">{actionsFor(reg, true)}</TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
+            <Table columns={columns} rows={rows} rowKey={(r) => r._id} onRowClick={(reg) => setPanel(reg)} minWidth={1140} />
           )}
           <div className="ev2-pager">
             <span>
               {(page - 1) * LIMIT + 1}–{Math.min(page * LIMIT, data.total)} of {data.total}
             </span>
-            <span>
-              <Button size="small" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)}>
+            <span style={{ display: "inline-flex", gap: 8 }}>
+              <Button size="sm" variant="secondary" icon="chevronLeft" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)}>
                 Previous
               </Button>
-              <Button size="small" disabled={page >= data.pages || loading} onClick={() => setPage((p) => p + 1)}>
+              <Button size="sm" variant="secondary" iconRight="chevronRight" disabled={page >= data.pages || loading} onClick={() => setPage((p) => p + 1)}>
                 Next
               </Button>
             </span>
@@ -506,19 +420,10 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
       )}
 
       {/* side panel: everything the student sent */}
-      <Drawer anchor="right" open={!!panel} onClose={() => setPanel(null)}>
+      <Drawer open={!!panel} onClose={() => setPanel(null)} title={panel?.studentName} sub={panel?.eventTitle}>
         {panel && (
           <div className="ev2-panel">
-            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{panel.studentName}</div>
-                <div style={{ color: "#666", fontSize: "0.85rem" }}>{panel.eventTitle}</div>
-              </div>
-              <IconButton aria-label="close" onClick={() => setPanel(null)}>
-                <CloseIcon />
-              </IconButton>
-            </div>
-            <div style={{ margin: "8px 0 12px" }}>
+            <div>
               <StatusChip status={panel.payment?.status} />
             </div>
             {[
@@ -528,8 +433,8 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
               ...Object.entries(panel.answers || {}).map(([k, v]) => [labelFor(panel, k), answerText(v)]),
               ["Tickets", tickets(panel)],
               ["Amount", panel.payment?.amount ? pkr(panel.payment.amount) : "Free"],
-              ["Method", METHOD_LABEL[panel.payment?.method] || "—"],
-              ["Transaction ID", panel.payment?.transactionId || "—"],
+              ["Method", METHOD_LABEL[panel.payment?.method] || "–"],
+              ["Transaction ID", panel.payment?.transactionId || "–"],
               ["Registered", when(panel.createdAt)],
               ["Payment sent", when(panel.payment?.submittedAt)],
               ["Reviewed", when(panel.payment?.reviewedAt)],
@@ -537,22 +442,22 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
             ].map(([label, value]) => (
               <div className="ev2-panel-item" key={label}>
                 <div className="ev2-panel-label">{label}</div>
-                <div className={`ev2-panel-value ${label === "Transaction ID" ? "ev2-mono" : ""}`}>{value || "—"}</div>
+                <div className={`ev2-panel-value ${label === "Transaction ID" ? "ev2-mono" : ""}`}>{value || "–"}</div>
               </div>
             ))}
             {panel.payment?.receiptUrl && (
               <div className="ev2-panel-item">
                 <div className="ev2-panel-label">Receipt</div>
-                <img src={panel.payment.receiptUrl} alt="receipt" style={{ width: "100%", borderRadius: 12, cursor: "zoom-in" }} onClick={() => setReceipt(panel.payment.receiptUrl)} />
+                <img src={panel.payment.receiptUrl} alt="receipt" style={{ width: "100%", borderRadius: 14, cursor: "zoom-in", marginTop: 6 }} onClick={() => setReceipt(panel.payment.receiptUrl)} />
               </div>
             )}
-            <div style={{ marginTop: 16 }}>{actionsFor(panel)}</div>
+            <div style={{ marginTop: 8 }}>{actionsFor(panel)}</div>
 
             {/* tickets: one code per seat */}
-            <div className="ev2-panel-item" style={{ marginTop: 20 }}>
+            <div className="ev2-panel-item" style={{ marginTop: 12 }}>
               <div className="ev2-panel-label">Tickets</div>
               {ticketList(panel).length === 0 ? (
-                <div className="ev2-panel-value" style={{ color: "#777" }}>
+                <div className="ev2-panel-value k-muted">
                   {panel.payment?.status === "pending"
                     ? "Issued when the payment is verified."
                     : panel.payment?.status === "rejected"
@@ -562,43 +467,36 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
               ) : (
                 <>
                   {ticketList(panel).map((t) => (
-                    <div
-                      key={t.code}
-                      data-ticket={t.code}
-                      style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 8, padding: "6px 0", borderBottom: "1px solid #eee" }}
-                    >
-                      <div>
-                        <div className="ev2-mono" style={{ fontWeight: 700, ...(t.status === "cancelled" ? { textDecoration: "line-through", color: "#999" } : {}) }}>
+                    <div key={t.code} data-ticket={t.code} className="ev2-ticket">
+                      <div style={{ minWidth: 0 }}>
+                        <div className={`ev2-mono${t.status === "cancelled" ? " ev2-struck" : ""}`} style={{ fontWeight: 700 }}>
                           {t.code}
                         </div>
-                        <div style={{ fontSize: "0.75rem", color: "#777" }}>
+                        <div className="ev2-small k-muted">
                           {[t.tier, t.of > 1 ? `seat ${t.seat} of ${t.of}` : null, t.status === "cancelled" && t.cancelReason === "payment_rejected" ? "cancelled with the payment" : null]
                             .filter(Boolean)
                             .join(" · ") || "1 seat"}
                         </div>
-                        <div
-                          data-email-state={emailState(panel).tone}
-                          style={{ fontSize: "0.75rem", marginTop: 2, color: emailState(panel).tone === "bad" ? "#b42318" : emailState(panel).tone === "ok" ? "#1e6b3a" : "#777" }}
-                        >
+                        <div data-email-state={emailState(panel).tone} className={`ev2-small ev2-mail ${emailState(panel).tone}`}>
                           {emailState(panel).text}
                         </div>
                         {ticketLink(t) ? (
-                          <Button size="small" startIcon={<LinkIcon />} onClick={() => copyLink(t)} sx={{ px: 0, minWidth: 0, mt: 0.5 }} aria-label={`copy ticket link for ${t.code}`}>
+                          <Button size="sm" variant="ghost" icon="link" onClick={() => copyLink(t)} aria-label={`copy ticket link for ${t.code}`} style={{ paddingLeft: 0, marginTop: 4 }}>
                             Copy ticket link
                           </Button>
                         ) : (
-                          <div style={{ fontSize: "0.75rem", color: "#777", marginTop: 2 }}>No link yet: re-send creates it.</div>
+                          <div className="ev2-small k-muted" style={{ marginTop: 2 }}>No link yet: re-send creates it.</div>
                         )}
                       </div>
-                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6 }}>
+                      <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap", justifyContent: "flex-end" }}>
                         <TicketChip status={t.status} />
                         {t.status === "valid" && (
-                          <Button size="small" color="error" disabled={!!ticketBusy} onClick={() => setTicketConfirm({ reg: panel, code: t.code, action: "cancel" })}>
+                          <Button size="sm" variant="danger" disabled={!!ticketBusy} onClick={() => setTicketConfirm({ reg: panel, code: t.code, action: "cancel" })}>
                             Cancel
                           </Button>
                         )}
                         {t.status === "cancelled" && ["verified", "not_required", undefined].includes(panel.payment?.status) && (
-                          <Button size="small" disabled={!!ticketBusy} onClick={() => setTicketConfirm({ reg: panel, code: t.code, action: "restore" })}>
+                          <Button size="sm" variant="secondary" disabled={!!ticketBusy} onClick={() => setTicketConfirm({ reg: panel, code: t.code, action: "restore" })}>
                             Restore
                           </Button>
                         )}
@@ -607,18 +505,19 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
                   ))}
                   {ticketList(panel).some((t) => t.status === "valid") && (
                     <Button
-                      size="small"
-                      variant="outlined"
-                      startIcon={ticketBusy === "resend" ? <CircularProgress size={14} /> : <SendIcon />}
+                      size="sm"
+                      variant="secondary"
+                      icon="send"
+                      loading={ticketBusy === "resend"}
                       disabled={!!ticketBusy}
                       onClick={() => resend(panel)}
-                      sx={{ mt: 1.5 }}
+                      style={{ marginTop: 12 }}
                     >
                       Re-send ticket (push + email)
                     </Button>
                   )}
                   {emailState(panel).tone === "bad" && (
-                    <div style={{ fontSize: "0.75rem", color: "#b42318", marginTop: 6 }}>The ticket is still valid. Fix the cause, then re-send.</div>
+                    <div className="ev2-small ev2-mail bad" style={{ marginTop: 6 }}>The ticket is still valid. Fix the cause, then re-send.</div>
                   )}
                 </>
               )}
@@ -628,92 +527,103 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
       </Drawer>
 
       {/* ticket cancel / restore confirmation */}
-      <Dialog open={!!ticketConfirm} onClose={() => !ticketBusy && setTicketConfirm(null)} maxWidth="xs" fullWidth>
+      <Modal
+        open={!!ticketConfirm}
+        onClose={() => !ticketBusy && setTicketConfirm(null)}
+        size="sm"
+        icon="ticket"
+        tone={ticketConfirm?.action === "cancel" ? "red" : "green"}
+        title={ticketConfirm ? (ticketConfirm.action === "cancel" ? "Cancel this ticket?" : "Restore this ticket?") : ""}
+        footer={ticketConfirm ? <>
+          <Button variant="secondary" onClick={() => setTicketConfirm(null)} disabled={!!ticketBusy}>
+            Back
+          </Button>
+          <Button variant={ticketConfirm.action === "cancel" ? "danger" : "success"} onClick={ticketAction} loading={!!ticketBusy}>
+            {ticketConfirm.action === "cancel" ? "Cancel ticket" : "Restore ticket"}
+          </Button>
+        </> : null}
+      >
         {ticketConfirm && (
           <>
-            <DialogTitle>{ticketConfirm.action === "cancel" ? "Cancel this ticket?" : "Restore this ticket?"}</DialogTitle>
-            <DialogContent>
-              <div style={{ fontSize: "0.9rem" }}>
-                <span className="ev2-mono">{ticketConfirm.code}</span> · {ticketConfirm.reg.studentName} · {ticketConfirm.reg.eventTitle}
-              </div>
-              <div style={{ color: "#555", fontSize: "0.85rem", marginTop: 8 }}>
-                {ticketConfirm.action === "cancel"
-                  ? "The student's app shows it as cancelled and it won't get them in. You can restore it later."
-                  : "The ticket becomes valid again."}
-              </div>
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setTicketConfirm(null)} disabled={!!ticketBusy}>
-                Back
-              </Button>
-              <Button variant="contained" color={ticketConfirm.action === "cancel" ? "error" : "success"} onClick={ticketAction} disabled={!!ticketBusy}>
-                {ticketBusy ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : ticketConfirm.action === "cancel" ? "Cancel ticket" : "Restore ticket"}
-              </Button>
-            </DialogActions>
+            <div style={{ fontSize: 14.5 }}>
+              <span className="ev2-mono">{ticketConfirm.code}</span> · {ticketConfirm.reg.studentName} · {ticketConfirm.reg.eventTitle}
+            </div>
+            <div className="k-muted" style={{ fontSize: 14 }}>
+              {ticketConfirm.action === "cancel"
+                ? "The student's app shows it as cancelled and it won't get them in. You can restore it later."
+                : "The ticket becomes valid again."}
+            </div>
           </>
         )}
-      </Dialog>
+      </Modal>
 
       {/* receipt, large */}
-      <Dialog open={!!receipt} onClose={() => setReceipt(null)} maxWidth="md">
-        <DialogContent sx={{ p: 1 }}>
-          {receipt && <img src={receipt} alt="receipt" style={{ maxWidth: "100%", maxHeight: "80vh", display: "block" }} />}
-        </DialogContent>
-        <DialogActions>
-          <Button startIcon={<OpenInNewIcon />} href={receipt || undefined} target="_blank" rel="noopener noreferrer">
+      <Modal
+        open={!!receipt}
+        onClose={() => setReceipt(null)}
+        size="lg"
+        icon="receipt"
+        title="receipt"
+        footer={<>
+          <a className="k-btn secondary" href={receipt || undefined} target="_blank" rel="noopener noreferrer">
+            <Ico kind="external" tone="plain" size={18} />
             Open in new tab
-          </Button>
+          </a>
           <Button onClick={() => setReceipt(null)}>Close</Button>
-        </DialogActions>
-      </Dialog>
+        </>}
+      >
+        {receipt && <img src={receipt} alt="receipt" style={{ maxWidth: "100%", maxHeight: "70vh", display: "block", margin: "0 auto", borderRadius: 14 }} />}
+      </Modal>
 
       {/* verify / reject confirmation */}
-      <Dialog open={!!confirm} onClose={() => !acting && setConfirm(null)} maxWidth="xs" fullWidth>
+      <Modal
+        open={!!confirm}
+        onClose={() => !acting && setConfirm(null)}
+        size="sm"
+        icon={confirm?.action === "verify" ? "checkCircle" : "xCircle"}
+        tone={confirm?.action === "verify" ? "green" : "red"}
+        title={confirm ? (confirm.action === "verify" ? "Verify this payment?" : "Reject this payment?") : ""}
+        footer={confirm ? <>
+          <Button variant="secondary" onClick={() => setConfirm(null)} disabled={acting}>
+            Cancel
+          </Button>
+          <span title={confirm.action === "reject" && !reason.trim() ? "Write a short reason" : undefined}>
+            <Button
+              variant={confirm.action === "verify" ? "success" : "danger"}
+              onClick={review}
+              loading={acting}
+              disabled={acting || (confirm.action === "reject" && !reason.trim())}
+            >
+              {confirm.action === "verify" ? "Verify" : "Reject"}
+            </Button>
+          </span>
+        </> : null}
+      >
         {confirm && (
           <>
-            <DialogTitle>{confirm.action === "verify" ? "Verify this payment?" : "Reject this payment?"}</DialogTitle>
-            <DialogContent>
-              <div style={{ fontSize: "0.9rem", marginBottom: 12 }}>
-                {confirm.reg.studentName} · {confirm.reg.eventTitle}
-                <br />
-                {pkr(confirm.reg.payment?.amount)} by {METHOD_LABEL[confirm.reg.payment?.method] || "—"}, transaction{" "}
-                <span className="ev2-mono">{confirm.reg.payment?.transactionId || "—"}</span>
-              </div>
-              {confirm.action === "reject" ? (
-                <TextField
+            <div style={{ fontSize: 14.5, lineHeight: 1.55 }}>
+              {confirm.reg.studentName} · {confirm.reg.eventTitle}
+              <br />
+              {pkr(confirm.reg.payment?.amount)} by {METHOD_LABEL[confirm.reg.payment?.method] || "–"}, transaction{" "}
+              <span className="ev2-mono">{confirm.reg.payment?.transactionId || "–"}</span>
+            </div>
+            {confirm.action === "reject" ? (
+              <Field label="Reason *" htmlFor="ev2-reject-reason" hint={`The student sees this. ${reason.length}/300`}>
+                <Textarea
+                  id="ev2-reject-reason"
                   autoFocus
-                  fullWidth
-                  size="small"
-                  label="Reason *"
+                  rows={2}
                   placeholder="e.g. no payment with this transaction ID"
                   value={reason}
                   onChange={(e) => setReason(e.target.value.slice(0, 300))}
-                  helperText={`The student sees this. ${reason.length}/300`}
                 />
-              ) : (
-                <div style={{ color: "#555", fontSize: "0.85rem" }}>Only verify after you see this amount in the account. The student is notified.</div>
-              )}
-            </DialogContent>
-            <DialogActions>
-              <Button onClick={() => setConfirm(null)} disabled={acting}>
-                Cancel
-              </Button>
-              <Tooltip title={confirm.action === "reject" && !reason.trim() ? "Write a short reason" : ""}>
-                <span>
-                  <Button
-                    variant="contained"
-                    color={confirm.action === "verify" ? "success" : "error"}
-                    onClick={review}
-                    disabled={acting || (confirm.action === "reject" && !reason.trim())}
-                  >
-                    {acting ? <CircularProgress size={18} sx={{ color: "#fff" }} /> : confirm.action === "verify" ? "Verify" : "Reject"}
-                  </Button>
-                </span>
-              </Tooltip>
-            </DialogActions>
+              </Field>
+            ) : (
+              <div className="k-muted" style={{ fontSize: 14 }}>Only verify after you see this amount in the account. The student is notified.</div>
+            )}
           </>
         )}
-      </Dialog>
+      </Modal>
     </div>
   );
 }

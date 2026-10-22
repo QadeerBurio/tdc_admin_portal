@@ -3,6 +3,7 @@
    into screens that are not inside the portal shell. */
 @import url("https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
 
+:root,
 .tdcp {
   --yellow: #F9C349;
   --yellow-soft: #FFF1CC;
@@ -20,7 +21,14 @@
   --success-bg: #E3F3E8;
   --heading: 'Outfit', system-ui, sans-serif;
   --body: 'DM Sans', system-ui, sans-serif;
-
+  /* design colours used outside the core set */
+  --ink-soft: #4A473F;   /* body text on yellow cards */
+  --orange: #C77700;     /* Ico orange tone */
+  --green: #2E8B3E;      /* Ico green tone */
+  --red: #D9443F;        /* Ico red tone */
+  --red-bg: #FDE3E1;     /* Ico red tile */
+}
+.tdcp {
   font-family: var(--body);
   color: var(--ink);
   background: var(--paper);
@@ -47,7 +55,7 @@
   border: 0; background: transparent; color: var(--ink); font-family: var(--body); font-size: 15px; font-weight: 500; text-align: left; cursor: pointer; width: 100%;
 }
 .tdcp-nav-item:hover { background: var(--sand); }
-.tdcp-nav-item[aria-current="page"] { background: var(--ink); color: #FFFFFF; font-weight: 700; }
+.tdcp-nav-item[aria-current="page"] { background: var(--ink); color: var(--card); font-weight: 700; }
 .tdcp-nav-item .lbl { flex: 1; }
 .tdcp-nav-item .pip { width: 7px; height: 7px; border-radius: 4px; background: transparent; }
 .tdcp-nav-item[aria-current="page"] .pip { background: var(--yellow); }
@@ -88,8 +96,8 @@
 .tdcp-actions { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; }
 
 .tdcp-btn { height: 44px; padding: 0 20px; border-radius: 22px; border: 1.5px solid transparent; display: inline-flex; align-items: center; justify-content: center; gap: 8px; font-family: var(--body); font-weight: 700; font-size: 14.5px; cursor: pointer; text-decoration: none; white-space: nowrap; }
-.tdcp-btn-primary { background: var(--ink); color: #FFFFFF; }
-.tdcp-btn-primary:hover { background: #2A2A28; }
+.tdcp-btn-primary { background: var(--ink); color: var(--card); }
+.tdcp-btn-primary:hover { opacity: 0.88; }
 .tdcp-btn-secondary { background: var(--card); color: var(--ink); border-color: var(--line); }
 .tdcp-btn-secondary:hover { background: var(--sand); }
 .tdcp-btn-accent { background: var(--yellow); color: var(--ink); }
@@ -103,8 +111,8 @@
 .tdcp-grid-small { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .tdcp-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; }
 .tdcp-stat { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 22px; padding: 20px; text-align: left; font-family: var(--body); cursor: pointer; display: block; width: 100%; }
-.tdcp-stat:hover { border-color: #D9D2C2; }
-.tdcp-stat.dark { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+.tdcp-stat:hover { border-color: var(--line); }
+.tdcp-stat.dark { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .tdcp-stat .ico { margin-bottom: 14px; line-height: 0; }
 .tdcp-stat .lbl { font-size: 14px; opacity: .75; }
 .tdcp-stat .num { font-family: var(--heading); font-weight: 800; font-size: 38px; line-height: 1.15; margin-top: 6px; font-variant-numeric: tabular-nums; }
@@ -116,15 +124,15 @@
 .tdcp-stat.small .sub { font-size: 12px; color: var(--muted); opacity: 1; }
 
 .tdcp-row { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 16px 22px; border-top: 1px solid var(--line-soft); background: transparent; border-left: 0; border-right: 0; border-bottom: 0; width: 100%; font-family: var(--body); color: var(--ink); text-align: left; cursor: pointer; }
-.tdcp-row:hover { background: #FCFBF8; }
+.tdcp-row:hover { background: var(--paper); }
 .tdcp-count { height: 28px; min-width: 28px; padding: 0 10px; border-radius: 14px; background: var(--yellow); font-weight: 800; font-size: 13px; display: inline-flex; align-items: center; justify-content: center; }
 .tdcp-count.zero { background: var(--sand); color: var(--muted); }
 
 .tdcp-chip { height: 30px; padding: 0 12px; border-radius: 15px; display: inline-flex; align-items: center; gap: 6px; font-size: 12.5px; font-weight: 700; background: var(--sand); color: var(--ink); white-space: nowrap; }
 .tdcp-chip.ok { background: var(--success-bg); color: var(--success); }
-.tdcp-chip.warn { background: var(--yellow-soft); color: #8A5A00; }
+.tdcp-chip.warn { background: var(--yellow-soft); color: var(--ink); }
 .tdcp-chip.bad { background: var(--danger-bg); color: var(--danger); }
-.tdcp-chip.dark { background: var(--ink); color: #FFFFFF; }
+.tdcp-chip.dark { background: var(--ink); color: var(--card); }
 
 .tdcp-soft { background: var(--yellow-soft); border-radius: 22px; padding: 22px; }
 .tdcp-muted { color: var(--muted); }
@@ -135,13 +143,13 @@
 .tdcp-input { height: 44px; border-radius: 22px; border: 1px solid var(--line); background: var(--card); padding: 0 16px; font-family: var(--body); font-size: 14.5px; color: var(--ink); min-width: 0; }
 .tdcp-input:focus { outline: none; border-color: var(--ink); }
 .tdcp-filter { height: 38px; padding: 0 14px; border-radius: 19px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-family: var(--body); font-weight: 600; font-size: 13.5px; cursor: pointer; }
-.tdcp-filter[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; border-color: var(--ink); }
+.tdcp-filter[aria-pressed="true"] { background: var(--ink); color: var(--card); border-color: var(--ink); }
 .tdcp-table-wrap { overflow-x: auto; }
 .tdcp-table { width: 100%; border-collapse: collapse; font-size: 14px; }
 .tdcp-table th { text-align: left; font-size: 12.5px; font-weight: 700; color: var(--muted); padding: 12px 16px; border-bottom: 1px solid var(--line); white-space: nowrap; }
 .tdcp-table td { padding: 12px 16px; border-bottom: 1px solid var(--line-soft); vertical-align: middle; }
 .tdcp-table tbody tr { cursor: pointer; }
-.tdcp-table tbody tr:hover { background: #FCFBF8; }
+.tdcp-table tbody tr:hover { background: var(--paper); }
 .tdcp-person { display: flex; align-items: center; gap: 12px; min-width: 200px; }
 .tdcp-person .av { width: 38px; height: 38px; border-radius: 19px; background: var(--sand); display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; overflow: hidden; flex: none; }
 .tdcp-person .av img { width: 100%; height: 100%; object-fit: cover; }
