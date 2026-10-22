@@ -1,0 +1,9 @@
+/* AllBrandsRevenue: ranking table and drill-down. Kit tokens only. */
+.tdcp .br-label { font-size: 13px; font-weight: 600; color: var(--muted); }
+.tdcp .br .k-table tr.br-top td { background: var(--yellow-soft); }
+.tdcp .br-logo { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 13px; background: var(--sand); display: inline-flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; overflow: hidden; }
+.tdcp .br-logo img { width: 100%; height: 100%; object-fit: cover; }
+.tdcp .br-pending { color: var(--danger); }
+.tdcp .br-ok { color: var(--success); }
+.tdcp .br-split { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; }
+.tdcp .br-split-card { border: 1px solid var(--line); border-radius: 16px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; }
