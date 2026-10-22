@@ -1,0 +1,13 @@
+/* CardManager: payment cards and logistics table. Kit tokens only. */
+.tdcp .cm-card { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+.tdcp .cm-avatar { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 13px; background: var(--yellow); display: inline-flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; }
+.tdcp .cm-name { margin: 0 0 4px; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.tdcp .cm-receipt { position: relative; display: block; width: 100%; height: 160px; padding: 0; border: 1px solid var(--line); border-radius: 16px; overflow: hidden; background: var(--sand); cursor: zoom-in; }
+.tdcp .cm-receipt img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .cm-receipt.big { height: auto; max-height: 280px; }
+.tdcp .cm-receipt.big img { height: auto; max-height: 280px; object-fit: contain; }
+.tdcp .cm-receipt-tag { position: absolute; right: 10px; bottom: 10px; display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 12px; background: var(--ink); color: var(--card); font-size: 12px; font-weight: 700; }
+.tdcp .cm-bar { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 12px; padding: 14px 16px; border-bottom: 1px solid var(--line); }
+.tdcp .cm-check { width: 18px; height: 18px; accent-color: var(--ink); margin: 0; }
+.tdcp .cm-address { max-width: 240px; overflow-wrap: anywhere; }
+.tdcp .cm-detail { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 260px), 1fr)); gap: 14px; }
