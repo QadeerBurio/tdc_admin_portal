@@ -1,6 +1,8 @@
-// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin menu.
-// Items keep the admin dashboard's page ids, so selecting one switches the page inside /admin as before.
+// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin and brand menus.
+// Admin items keep the admin dashboard's page ids, so selecting one switches the page inside /admin as before.
+// Items with a path (fifth field) are real links, so every brand screen has its own URL.
 import React from "react";
+import { Link } from "react-router-dom";
 import Ico from "./Ico";
 import logoInk from "./assets/tdc-logo-ink.png";
 
@@ -40,13 +42,29 @@ export const ADMIN_MENU = [
   },
 ];
 
+// brand portal (design/portal/BrDashboard ... BrSettings), on today's paths.
+// Campaigns stays routed at /brand-campaigns but is not in the menu.
+export const BRAND_MENU = [
+  {
+    title: "",
+    items: [
+      ["dashboard", "dashboard", "home", "orange", "/home"],
+      ["discounts", "discounts", "tag", "red", "/discount"],
+      ["branches", "branches", "pin", "sky", "/Branches"],
+      ["verify", "verify student", "qr", "green", "/verifyclaim"],
+      ["reward", "verify reward", "gift", "purple", "/verifyrward"],
+      ["redemptions", "redemptions", "receipt", "blue", "/savinghistory"],
+    ],
+  },
+];
+
 // label for a page id (used for the mobile top bar and page titles)
 export const pageLabel = (id) => {
   for (const s of ADMIN_MENU) for (const [pid, label] of s.items) if (pid === id) return label;
   return "";
 };
 
-export default function PortalNav({ active, onSelect, userName, userRole = "admin", portalLabel = "admin", onLogout, onClose }) {
+export default function PortalNav({ menu = ADMIN_MENU, active, onSelect, userName, userRole = "admin", portalLabel = "admin", onLogout, onClose, settingsHref }) {
   const initial = (userName || "a").trim().charAt(0).toUpperCase();
   return (
     <aside className="tdcp-nav" aria-label="portal menu">
@@ -60,16 +78,25 @@ export default function PortalNav({ active, onSelect, userName, userRole = "admi
         )}
       </div>
       <nav aria-label="portal">
-        {ADMIN_MENU.map((s) => (
+        {menu.map((s) => (
           <div className="tdcp-nav-group" key={s.title || "main"}>
             {s.title && <div className="tdcp-nav-title">{s.title}</div>}
-            {s.items.map(([id, label, icon, tone]) => {
+            {s.items.map(([id, label, icon, tone, href]) => {
               const on = id === active;
-              return (
-                <button key={id} type="button" className="tdcp-nav-item" aria-current={on ? "page" : undefined} onClick={() => onSelect(id)}>
+              const inner = (
+                <>
                   <Ico kind={icon} tone={on ? "yellow" : tone} size={32} />
                   <span className="lbl">{label}</span>
                   <span className="pip" />
+                </>
+              );
+              return href ? (
+                <Link key={id} to={href} className="tdcp-nav-item" aria-current={on ? "page" : undefined} onClick={() => onSelect && onSelect(id)}>
+                  {inner}
+                </Link>
+              ) : (
+                <button key={id} type="button" className="tdcp-nav-item" aria-current={on ? "page" : undefined} onClick={() => onSelect(id)}>
+                  {inner}
                 </button>
               );
             })}
@@ -82,6 +109,11 @@ export default function PortalNav({ active, onSelect, userName, userRole = "admi
           <b>{userName || "admin"}</b>
           <span>{userRole}</span>
         </div>
+        {settingsHref && (
+          <Link to={settingsHref} className="tdcp-icon-btn" aria-label="settings" title="settings">
+            <Ico kind="settings" tone="plain" size={18} />
+          </Link>
+        )}
         <button type="button" className="tdcp-icon-btn" onClick={onLogout} aria-label="log out" title="log out">
           <Ico kind="logout" tone="plain" size={18} />
         </button>
