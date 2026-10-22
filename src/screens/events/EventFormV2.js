@@ -1,29 +1,8 @@
 // src/screens/events/EventFormV2.js
 // Create / edit form built from the server's category templates.
 import React from "react";
-import {
-  TextField,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
-  FormHelperText,
-  Switch,
-  FormControlLabel,
-  Alert,
-  IconButton,
-  Tooltip,
-  Chip,
-  LinearProgress,
-  Button,
-} from "@mui/material";
-import {
-  Close as CloseIcon,
-  CloudUpload as CloudUploadIcon,
-  Add as AddIcon,
-  Delete as DeleteIcon,
-  Lock as LockIcon,
-} from "@mui/icons-material";
+import Ico from "../../portal/Ico";
+import { Field, Input, Select, DateInput, Checkbox, Button, IconButton, Pill, Progress } from "../../portal/kit";
 import FieldInput, { fieldLabel } from "./FieldInput";
 import {
   findTemplate,
@@ -59,6 +38,13 @@ const Section = ({ title, hint, children }) => (
   </div>
 );
 
+// a small kit text field: label, input, error or hint
+const Text = ({ label, error, hint, invalid, style, ...rest }) => (
+  <Field label={label} error={error} hint={hint} style={style}>
+    <Input invalid={invalid ?? !!error} {...rest} />
+  </Field>
+);
+
 export default function EventFormV2({
   templates,
   form,
@@ -84,47 +70,32 @@ export default function EventFormV2({
   if (form.type && !categoryNames.some((n) => n.toLowerCase() === String(form.type).toLowerCase())) categoryNames.push(form.type);
 
   return (
-    <div style={{ marginTop: 8 }}>
-      {needsAppUpdate(templates, form) && (
-        <Alert severity="warning" className="ev2-banner">
-          {UPDATE_WARNING}
-        </Alert>
-      )}
-      {errors._form && (
-        <Alert severity="error" className="ev2-banner">
-          {errors._form}
-        </Alert>
-      )}
+    <div className="ev2-form">
+      {needsAppUpdate(templates, form) && <div className="k-note warn ev2-banner">{UPDATE_WARNING}</div>}
+      {errors._form && <div className="k-note bad ev2-banner">{errors._form}</div>}
 
       <div className="form-grid">
         {/* category */}
         <div className="full-width">
-          <FormControl fullWidth size="small" className="form-field">
-            <InputLabel id="ev2-category">Category *</InputLabel>
-            <Select
-              labelId="ev2-category"
-              value={form.type}
-              label="Category *"
-              onChange={(e) => setForm((f) => switchCategory(templates, f, e.target.value))}
-            >
+          <Field label="Category *" htmlFor="ev2-category" hint="Changing the category rebuilds the form; title, organizer, city, description and image stay.">
+            <Select id="ev2-category" value={form.type} onChange={(e) => setForm((f) => switchCategory(templates, f, e.target.value))}>
+              {!form.type && <option value="">choose…</option>}
               {categoryNames.map((c) => (
-                <MenuItem key={c} value={c}>
+                <option key={c} value={c}>
                   {c}
-                </MenuItem>
+                </option>
               ))}
             </Select>
-            <FormHelperText>Changing the category rebuilds the form; title, organizer, city, description and image stay.</FormHelperText>
-          </FormControl>
+          </Field>
           {form.legacy && (
-            <Alert severity="info" className="ev2-banner" action={
-              findTemplate(templates, form.type)?.generic ? null : (
-                <Button color="inherit" size="small" onClick={() => setForm((f) => switchCategory(templates, f, f.type))}>
+            <div className="k-note ev2-banner" style={{ marginTop: 12, display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap" }}>
+              <span style={{ flex: "1 1 260px" }}>This event was created before category forms. It keeps today's fields and today's registration form, so every app version can still register.</span>
+              {findTemplate(templates, form.type)?.generic ? null : (
+                <Button size="sm" variant="secondary" onClick={() => setForm((f) => switchCategory(templates, f, f.type))}>
                   Use the {form.type} form
                 </Button>
-              )
-            }>
-              This event was created before category forms. It keeps today's fields and today's registration form, so every app version can still register.
-            </Alert>
+              )}
+            </div>
           )}
         </div>
 
@@ -150,7 +121,7 @@ export default function EventFormV2({
 
         {/* image */}
         <div className="full-width upload-section">
-          <label className="upload-label">Event Image</label>
+          <span className="k-label">Event Image</span>
           <input
             type="file"
             accept="image/jpeg,image/png,image/webp,image/gif"
@@ -158,132 +129,93 @@ export default function EventFormV2({
             style={{ display: "none" }}
             onChange={onPickImage}
           />
-          <div className="upload-zone" onClick={() => fileInputRef.current?.click()}>
-            {imagePreview ? (
-              <div className="upload-preview">
-                <img src={imagePreview} alt="Preview" />
-                <button
-                  type="button"
-                  className="upload-preview-remove"
-                  aria-label="remove image"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    onRemoveImage();
-                  }}
-                >
-                  <CloseIcon sx={{ fontSize: 16 }} />
-                </button>
-              </div>
-            ) : (
-              <div className="upload-placeholder">
-                <CloudUploadIcon />
-                <div className="upload-placeholder-text">Click to upload image</div>
-                <div className="upload-placeholder-sub">JPG, PNG, WebP or GIF, up to 5 MB</div>
-              </div>
-            )}
-          </div>
-          {imageError && (
-            <Alert severity="error" sx={{ mt: 1 }}>
-              {imageError}
-            </Alert>
-          )}
-          {uploadProgress > 0 && uploadProgress < 100 && (
-            <div className="upload-progress">
-              <div className="upload-progress-bar">
-                <LinearProgress variant="determinate" value={uploadProgress} sx={{ height: 8, borderRadius: 8 }} />
-              </div>
-              <span className="upload-progress-text">Uploading... {uploadProgress}%</span>
+          {imagePreview ? (
+            <div className="upload-preview">
+              <img src={imagePreview} alt="Preview" />
+              <IconButton
+                icon="close"
+                label="remove image"
+                className="upload-preview-remove"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onRemoveImage();
+                }}
+              />
+            </div>
+          ) : (
+            <div
+              className="k-drop"
+              role="button"
+              tabIndex={0}
+              data-kit="upload"
+              onClick={() => fileInputRef.current?.click()}
+              onKeyDown={(e) => { if (e.key === "Enter" || e.key === " ") { e.preventDefault(); fileInputRef.current?.click(); } }}
+            >
+              <Ico kind="image" tone="sand" size={40} />
+              <span><b>Click to upload image</b></span>
+              <span className="k-hint">JPG, PNG, WebP or GIF, up to 5 MB</span>
             </div>
           )}
+          {imageError && <div className="k-note bad">{imageError}</div>}
+          {uploadProgress > 0 && uploadProgress < 100 && <Progress value={uploadProgress} label={`Uploading... ${uploadProgress}%`} />}
         </div>
 
         {/* fee, tickets, seats */}
         <Section title="Fee, tickets and seats">
-          <FormControlLabel
-            control={
-              <Switch
-                checked={!!form.paid}
-                onChange={(e) => set({ paid: e.target.checked, accounts: e.target.checked && !form.accounts.length ? [newAccount()] : form.accounts })}
-              />
-            }
+          <Checkbox
+            checked={!!form.paid}
+            onChange={(e) => set({ paid: e.target.checked, accounts: e.target.checked && !form.accounts.length ? [newAccount()] : form.accounts })}
             label={form.paid ? "Paid event" : "Free event"}
           />
-          {errors.paid && <FormHelperText error>{errors.paid}</FormHelperText>}
+          {errors.paid && <span className="k-error">{errors.paid}</span>}
           <div className="form-grid">
             {form.paid && !tiered && (
-              <div>
-                <TextField
-                  fullWidth
-                  size="small"
-                  className="form-field"
-                  label="Fee (PKR) *"
-                  value={form.fee}
-                  onChange={(e) => set({ fee: e.target.value.replace(/[^\d]/g, "") })}
-                  error={!!errors.fee}
-                  helperText={errors.fee || "Whole rupees, no paisa"}
-                  slotProps={{ htmlInput: { inputMode: "numeric" } }}
-                />
-              </div>
+              <Text
+                label="Fee (PKR) *"
+                value={form.fee}
+                onChange={(e) => set({ fee: e.target.value.replace(/[^\d]/g, "") })}
+                error={errors.fee}
+                hint="Whole rupees, no paisa"
+                inputMode="numeric"
+              />
             )}
-            <div>
-              <TextField
-                fullWidth
-                size="small"
-                className="form-field"
-                label="Capacity"
-                value={form.capacity}
-                onChange={(e) => set({ capacity: e.target.value.replace(/[^\d]/g, "") })}
-                error={!!errors.capacity}
-                helperText={errors.capacity || "Total seats. Empty = unlimited"}
-                slotProps={{ htmlInput: { inputMode: "numeric" } }}
-              />
-            </div>
-            <div>
-              <TextField
-                fullWidth
-                size="small"
-                className="form-field"
-                type="datetime-local"
-                label="Registration closes"
-                value={form.registrationCloses}
-                onChange={(e) => set({ registrationCloses: e.target.value })}
-                error={!!errors.registrationCloses}
-                helperText={errors.registrationCloses || "Empty = open until the event is removed"}
-                slotProps={{ inputLabel: { shrink: true } }}
-              />
-            </div>
+            <Text
+              label="Capacity"
+              value={form.capacity}
+              onChange={(e) => set({ capacity: e.target.value.replace(/[^\d]/g, "") })}
+              error={errors.capacity}
+              hint="Total seats. Empty = unlimited"
+              inputMode="numeric"
+            />
+            <Field label="Registration closes" error={errors.registrationCloses} hint="Empty = open until the event is removed">
+              <DateInput withTime value={form.registrationCloses} className={errors.registrationCloses ? "invalid" : undefined} onChange={(e) => set({ registrationCloses: e.target.value })} />
+            </Field>
           </div>
 
           {tiered && (
             <div className="ev2-tiers">
               <div className="ev2-subtitle">Ticket tiers</div>
-              {errors.tiers && <FormHelperText error>{errors.tiers}</FormHelperText>}
+              {errors.tiers && <span className="k-error">{errors.tiers}</span>}
               {form.tiers.map((t, i) => (
                 <div className="ev2-row" key={i}>
-                  <TextField size="small" className="form-field" label="Name *" value={t.name} onChange={(e) => setTier(i, { name: e.target.value })} error={!!errors[`tiers.${i}.name`]} helperText={errors[`tiers.${i}.name`] || " "} />
-                  <TextField
-                    size="small"
-                    className="form-field"
+                  <Text label="Name *" value={t.name} onChange={(e) => setTier(i, { name: e.target.value })} error={errors[`tiers.${i}.name`]} />
+                  <Text
                     label={form.paid ? "Price (PKR) *" : "Price"}
                     value={form.paid ? t.price : "0"}
                     disabled={!form.paid}
                     onChange={(e) => setTier(i, { price: e.target.value.replace(/[^\d]/g, "") })}
-                    error={!!errors[`tiers.${i}.price`]}
-                    helperText={errors[`tiers.${i}.price`] || (form.paid ? " " : "free event")}
+                    error={errors[`tiers.${i}.price`]}
+                    hint={form.paid ? undefined : "free event"}
                   />
-                  <TextField size="small" className="form-field" label="Quantity *" value={t.quantity} onChange={(e) => setTier(i, { quantity: e.target.value.replace(/[^\d]/g, "") })} error={!!errors[`tiers.${i}.quantity`]} helperText={errors[`tiers.${i}.quantity`] || (t.sold ? `${t.sold} taken` : " ")} />
-                  <TextField size="small" className="form-field" label="Max per student *" value={t.maxPerStudent} onChange={(e) => setTier(i, { maxPerStudent: e.target.value.replace(/[^\d]/g, "") })} error={!!errors[`tiers.${i}.maxPerStudent`]} helperText={errors[`tiers.${i}.maxPerStudent`] || " "} />
-                  <Tooltip title={t.sold ? "This tier has registrations" : "Remove tier"}>
-                    <span>
-                      <IconButton aria-label="remove tier" disabled={!!t.sold} onClick={() => set({ tiers: form.tiers.filter((_, j) => j !== i) })}>
-                        <DeleteIcon />
-                      </IconButton>
-                    </span>
-                  </Tooltip>
+                  <Text label="Quantity *" value={t.quantity} onChange={(e) => setTier(i, { quantity: e.target.value.replace(/[^\d]/g, "") })} error={errors[`tiers.${i}.quantity`]} hint={t.sold ? `${t.sold} taken` : undefined} />
+                  <Text label="Max per student *" value={t.maxPerStudent} onChange={(e) => setTier(i, { maxPerStudent: e.target.value.replace(/[^\d]/g, "") })} error={errors[`tiers.${i}.maxPerStudent`]} />
+                  <span className="ev2-row-btn" title={t.sold ? "This tier has registrations" : "Remove tier"}>
+                    <IconButton icon="trash" label="remove tier" variant="danger" disabled={!!t.sold} onClick={() => set({ tiers: form.tiers.filter((_, j) => j !== i) })} />
+                  </span>
                 </div>
               ))}
               {form.tiers.length < 10 && (
-                <Button size="small" startIcon={<AddIcon />} onClick={() => set({ tiers: [...form.tiers, newTier()] })}>
+                <Button size="sm" variant="ghost" icon="plus" onClick={() => set({ tiers: [...form.tiers, newTier()] })}>
                   Add tier
                 </Button>
               )}
@@ -294,48 +226,45 @@ export default function EventFormV2({
         {/* payment accounts */}
         {form.paid && (
           <Section title="Payment accounts" hint="students see these when they register">
-            {errors.accounts && <FormHelperText error>{errors.accounts}</FormHelperText>}
+            {errors.accounts && <span className="k-error">{errors.accounts}</span>}
             {form.accounts.map((a, i) => {
               const p = `accounts.${i}`;
               return (
                 <div className="ev2-account" key={i}>
                   <div className="ev2-row">
-                    <FormControl size="small" className="form-field" sx={{ minWidth: 150 }} error={!!errors[`${p}.method`]}>
-                      <InputLabel id={`m-${i}`}>Method *</InputLabel>
-                      <Select labelId={`m-${i}`} label="Method *" value={a.method} onChange={(e) => setAccount(i, { method: e.target.value })}>
+                    <Field label="Method *" error={errors[`${p}.method`]} style={{ flex: "0 1 170px" }}>
+                      <Select value={a.method} invalid={!!errors[`${p}.method`]} onChange={(e) => setAccount(i, { method: e.target.value })}>
+                        {!a.method && <option value="">choose…</option>}
                         {Object.entries(METHOD_LABEL).map(([v, l]) => (
-                          <MenuItem key={v} value={v}>
+                          <option key={v} value={v}>
                             {l}
-                          </MenuItem>
+                          </option>
                         ))}
                       </Select>
-                    </FormControl>
+                    </Field>
                     {a.method === "bank" && (
-                      <TextField size="small" className="form-field" label="Bank name *" value={a.bankName} onChange={(e) => setAccount(i, { bankName: e.target.value })} error={!!errors[`${p}.bankName`]} helperText={errors[`${p}.bankName`] || " "} />
+                      <Text label="Bank name *" value={a.bankName} onChange={(e) => setAccount(i, { bankName: e.target.value })} error={errors[`${p}.bankName`]} />
                     )}
-                    <TextField size="small" className="form-field" label={a.method === "bank" ? "Account title *" : "Account title"} value={a.accountTitle} onChange={(e) => setAccount(i, { accountTitle: e.target.value })} error={!!errors[`${p}.accountTitle`]} helperText={errors[`${p}.accountTitle`] || " "} />
-                    <TextField
-                      size="small"
-                      className="form-field"
+                    <Text label={a.method === "bank" ? "Account title *" : "Account title"} value={a.accountTitle} onChange={(e) => setAccount(i, { accountTitle: e.target.value })} error={errors[`${p}.accountTitle`]} />
+                    <Text
                       label={a.method === "bank" ? "Account number" : "Mobile number *"}
                       placeholder={a.method === "bank" ? "" : "03XXXXXXXXX"}
                       value={a.accountNumber}
                       onChange={(e) => setAccount(i, { accountNumber: e.target.value })}
-                      error={!!errors[`${p}.accountNumber`]}
-                      helperText={errors[`${p}.accountNumber`] || " "}
+                      error={errors[`${p}.accountNumber`]}
                     />
                     {a.method === "bank" && (
-                      <TextField size="small" className="form-field" label="IBAN" placeholder="PK36SCBL0000001123456702" value={a.iban} onChange={(e) => setAccount(i, { iban: e.target.value })} error={!!errors[`${p}.iban`]} helperText={errors[`${p}.iban`] || "Account number or IBAN"} />
+                      <Text label="IBAN" placeholder="PK36SCBL0000001123456702" value={a.iban} onChange={(e) => setAccount(i, { iban: e.target.value })} error={errors[`${p}.iban`]} hint="Account number or IBAN" />
                     )}
-                    <IconButton aria-label="remove account" onClick={() => set({ accounts: form.accounts.filter((_, j) => j !== i) })}>
-                      <DeleteIcon />
-                    </IconButton>
+                    <span className="ev2-row-btn">
+                      <IconButton icon="trash" label="remove account" variant="danger" onClick={() => set({ accounts: form.accounts.filter((_, j) => j !== i) })} />
+                    </span>
                   </div>
                 </div>
               );
             })}
             {form.accounts.length < MAX_ACCOUNTS && (
-              <Button size="small" startIcon={<AddIcon />} onClick={() => set({ accounts: [...form.accounts, newAccount()] })}>
+              <Button size="sm" variant="ghost" icon="plus" onClick={() => set({ accounts: [...form.accounts, newAccount()] })}>
                 Add account
               </Button>
             )}
@@ -357,49 +286,46 @@ export default function EventFormV2({
                 <div className={`ev2-question ${q.custom ? "custom" : ""}`} key={q.key}>
                   {q.custom ? (
                     <div className="ev2-row">
-                      <TextField size="small" className="form-field" label="Question *" value={q.label} onChange={(e) => setQuestion(q.key, { label: e.target.value })} error={!!errors[`${p}.label`]} helperText={errors[`${p}.label`] || " "} sx={{ flex: 2 }} />
-                      <FormControl size="small" className="form-field" sx={{ minWidth: 140 }}>
-                        <InputLabel id={`qt-${q.key}`}>Answer type</InputLabel>
-                        <Select labelId={`qt-${q.key}`} label="Answer type" value={q.type} onChange={(e) => setQuestion(q.key, { type: e.target.value })}>
+                      <Text label="Question *" value={q.label} onChange={(e) => setQuestion(q.key, { label: e.target.value })} error={errors[`${p}.label`]} style={{ flex: "2 1 200px" }} />
+                      <Field label="Answer type" style={{ flex: "0 1 160px" }}>
+                        <Select value={q.type} onChange={(e) => setQuestion(q.key, { type: e.target.value })}>
                           {QUESTION_TYPES.map((t) => (
-                            <MenuItem key={t.value} value={t.value}>
+                            <option key={t.value} value={t.value}>
                               {t.label}
-                            </MenuItem>
+                            </option>
                           ))}
                         </Select>
-                      </FormControl>
+                      </Field>
                       {q.type === "select" && (
-                        <TextField
-                          size="small"
-                          className="form-field"
+                        <Text
                           label="Choices *"
                           placeholder="Yes, No"
                           value={(q.options || []).join(", ")}
                           onChange={(e) => setQuestion(q.key, { options: e.target.value.split(",").map((s) => s.trimStart()) })}
-                          error={!!errors[`${p}.options`]}
-                          helperText={errors[`${p}.options`] || "Separate with commas"}
-                          sx={{ flex: 2 }}
+                          error={errors[`${p}.options`]}
+                          hint="Separate with commas"
+                          style={{ flex: "2 1 200px" }}
                         />
                       )}
-                      <FormControlLabel control={<Switch checked={!!q.required} onChange={(e) => setQuestion(q.key, { required: e.target.checked })} />} label="Required" />
-                      <IconButton aria-label="remove question" onClick={() => set({ regForm: form.regForm.filter((x) => x.key !== q.key) })}>
-                        <DeleteIcon />
-                      </IconButton>
+                      <span className="ev2-row-btn">
+                        <Checkbox checked={!!q.required} onChange={(e) => setQuestion(q.key, { required: e.target.checked })} label="Required" />
+                      </span>
+                      <span className="ev2-row-btn">
+                        <IconButton icon="trash" label="remove question" variant="danger" onClick={() => set({ regForm: form.regForm.filter((x) => x.key !== q.key) })} />
+                      </span>
                     </div>
                   ) : (
                     <div className="ev2-row ev2-question-fixed">
                       <span className="ev2-question-label">
                         {fieldLabel(q)}
                         {base && (
-                          <Tooltip title="Base field: always on the form">
-                            <LockIcon sx={{ fontSize: 14, ml: 0.5, color: "#999", verticalAlign: "middle" }} />
-                          </Tooltip>
+                          <span title="Base field: always on the form" style={{ marginLeft: 6, verticalAlign: "middle", color: "var(--muted)", display: "inline-flex" }}>
+                            <Ico kind="lock" tone="plain" size={14} />
+                          </span>
                         )}
                       </span>
-                      <Chip size="small" label={TYPE_LABEL[q.type] || q.type} />
-                      {!locked && (
-                        <FormControlLabel control={<Switch size="small" checked={!!q.required} onChange={(e) => setQuestion(q.key, { required: e.target.checked })} />} label="Required" />
-                      )}
+                      <Pill tone="sand">{TYPE_LABEL[q.type] || q.type}</Pill>
+                      {!locked && <Checkbox checked={!!q.required} onChange={(e) => setQuestion(q.key, { required: e.target.checked })} label="Required" />}
                       {ticket && !tiered && <span className="ev2-section-hint">used when the event has ticket tiers</span>}
                     </div>
                   )}
@@ -409,8 +335,9 @@ export default function EventFormV2({
           </div>
           {!form.legacy && form.regForm.length < 30 && (
             <Button
-              size="small"
-              startIcon={<AddIcon />}
+              size="sm"
+              variant="ghost"
+              icon="plus"
               onClick={() => set({ regForm: [...form.regForm, { key: makeKey(`question ${form.regForm.length + 1}`, form.regForm), label: "", type: "text", required: false, options: [], helpText: "", store: "answers", custom: true }] })}
             >
               Add question
