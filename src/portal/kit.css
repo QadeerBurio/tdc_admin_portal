@@ -145,7 +145,7 @@
 .tdcp .k-stat.dark { background: var(--ink); border-color: var(--ink); color: var(--card); }
 .tdcp .k-stat.dark .k-stat-lbl, .tdcp .k-stat.dark .k-stat-sub { color: rgba(255, 255, 255, 0.75); }
 .tdcp .k-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
-.tdcp .k-page { display: flex; flex-direction: column; gap: 20px; width: 100%; min-width: 0; }
+.tdcp .k-page, .tdcp.k-page { display: flex; flex-direction: column; gap: 20px; width: 100%; min-width: 0; }
 .tdcp .k-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .tdcp .k-head h1 { margin: 0; font-weight: 800; font-size: 32px; letter-spacing: -0.8px; line-height: 1.1; }
 .tdcp .k-head p { margin: 6px 0 0; font-size: 15px; color: var(--muted); max-width: 640px; }
