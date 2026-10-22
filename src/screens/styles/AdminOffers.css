@@ -1,0 +1,16 @@
+/* AdminOffers: offer cards and list rows. Kit tokens only. */
+.tdcp .ao-filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.tdcp .ao-filters > .k-field { flex: 1 1 180px; }
+.tdcp .ao-card { display: flex; flex-direction: column; overflow: hidden; }
+.tdcp .ao-img { position: relative; height: 160px; background: var(--sand); }
+.tdcp .ao-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .ao-badge { position: absolute; top: 10px; right: 10px; }
+.tdcp .ao-body { padding: 14px 16px 6px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.tdcp .ao-title { margin: 0; font-size: 16px; font-weight: 700; overflow-wrap: anywhere; }
+.tdcp .ao-desc { margin: 0; font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
+.tdcp .ao-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px 14px; }
+.tdcp .ao-list { display: flex; flex-direction: column; gap: 10px; }
+.tdcp .ao-row { display: flex; align-items: center; gap: 14px; padding: 12px 14px; }
+.tdcp .ao-thumb { width: 80px; height: 80px; flex: 0 0 80px; border-radius: 14px; object-fit: cover; background: var(--sand); }
+.tdcp .ao-row-main { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 6px; }
+@media (max-width: 600px) { .tdcp .ao-row { flex-wrap: wrap; } .tdcp .ao-thumb { width: 100%; height: 140px; flex-basis: 100%; } }

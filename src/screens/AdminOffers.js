@@ -1,13 +1,9 @@
+// src/screens/AdminOffers.js
+// Manage offers (design/portal/AdOffers): every slider and offer banner in the app.
 import React, { useState, useEffect } from "react";
-import { 
-  FaImage, FaTag, FaEye, FaEyeSlash, FaTrashAlt, 
-  FaCheckCircle, FaClock, FaSpinner, FaArrowUp,
-  FaChartLine, FaCalendarAlt, FaSearch, FaPlus,
-  FaFilter, FaSort, FaTh, FaBars, FaStar,
-  FaFire, FaRocket, FaShieldAlt, FaAward,
-  FaChevronDown, FaChevronUp
-} from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import Ico from "../portal/Ico";
+import { PageHeader, PageLoading, Button, Spinner, Field, Select, SearchInput, Segmented, StatCard, EmptyState, Pill, toast, confirmDialog } from "../portal/kit";
+import "./styles/AdminOffers.css";
 
 export default function AdminOffers() {
   const [items, setItems] = useState([]);
@@ -20,12 +16,10 @@ export default function AdminOffers() {
   const [sortBy, setSortBy] = useState("newest");
   const [showFilters, setShowFilters] = useState(false);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
 
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
-      setIsTablet(window.innerWidth <= 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -54,14 +48,14 @@ export default function AdminOffers() {
       await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/toggle/${id}`, { method: "PATCH" });
       await fetchItems();
     } catch (error) {
-      alert("Failed to update status");
+      toast("Failed to update status");
     } finally {
       setTogglingId(null);
     }
   };
 
   const handleDelete = async (id) => {
-    if (!window.confirm("⚠️ Permanent delete? This action cannot be undone.")) return;
+    if (!(await confirmDialog("⚠️ Permanent delete? This action cannot be undone."))) return;
     setDeletingId(id);
     try {
       await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
@@ -73,7 +67,7 @@ export default function AdminOffers() {
       await fetchItems();
     } catch (error) {
       console.error("Delete error:", error);
-      alert("Failed to delete");
+      toast("Failed to delete");
     } finally {
       setDeletingId(null);
     }
@@ -95,1339 +89,166 @@ export default function AdminOffers() {
   const activeCount = items.filter(item => item.active).length;
   const draftCount = items.filter(item => !item.active).length;
 
+  const toggleBtn = (item) => (
+    <button
+      type="button"
+      className="k-icon-btn sm"
+      onClick={() => handleToggle(item._id)}
+      disabled={togglingId === item._id}
+      title={item.active ? "Hide (back to draft)" : "Make live"}
+      aria-label={item.active ? "Hide (back to draft)" : "Make live"}
+    >
+      {togglingId === item._id ? <Spinner size="sm" /> : <Ico kind={item.active ? "lock" : "eye"} tone="plain" size={15} />}
+    </button>
+  );
+  const deleteBtn = (item) => (
+    <button
+      type="button"
+      className="k-icon-btn sm danger"
+      onClick={() => handleDelete(item._id)}
+      disabled={deletingId === item._id}
+      title="Delete"
+      aria-label="Delete"
+    >
+      {deletingId === item._id ? <Spinner size="sm" /> : <Ico kind="trash" tone="plain" size={15} />}
+    </button>
+  );
+  const statusPill = (item) => <Pill tone={item.active ? "green" : "sand"} dot>{item.active ? "Live" : "Draft"}</Pill>;
+  const typePill = (item) => <Pill tone="sand">{item.type === "slider" ? "Slider" : "Offer"}</Pill>;
+
   return (
-    <div style={{
-      ...styles.container,
-      padding: 0,
-      borderRadius: 0,
-    }}>
-      {/* Decorative Background */}
-      <div style={styles.bgDecoration1}></div>
-      <div style={styles.bgDecoration2}></div>
-      <div style={styles.bgDecoration3}></div>
-
-      {/* Header Section */}
-      <motion.div 
-        className="animate-header" 
-        style={{
-          ...styles.header,
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "flex-start" : "flex-start",
-        }}
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-      >
-        <div>
-          <h1 style={{
-            ...styles.mainTitle,
-            fontSize: isMobile ? "22px" : isTablet ? "26px" : "30px",
-          }}>manage offers<span className="dot" aria-hidden="true">.</span></h1>
-          <p style={{
-            ...styles.subtitle,
-            fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
-          }}>every slider and offer in the app. {items.length} total.</p>
-        </div>
-
-        <div style={{
-          ...styles.rightHeader,
-          flexDirection: isMobile ? "column" : "row",
-          alignItems: isMobile ? "stretch" : "center",
-          width: isMobile ? "100%" : "auto",
-          gap: isMobile ? "12px" : "20px",
-        }}>
-          <div style={{
-            ...styles.statsGroup,
-            padding: isMobile ? "6px 12px" : "8px 16px",
-            gap: isMobile ? "8px" : "12px",
-            flexWrap: isMobile ? "wrap" : "nowrap",
-            justifyContent: isMobile ? "center" : "flex-start",
-            width: isMobile ? "100%" : "auto",
-          }}>
-            <motion.div 
-              style={styles.statBadge}
-              whileHover={{ scale: 1.05 }}
-            >
-              <FaCheckCircle color="#1E6B3A" size={isMobile ? 12 : 14} />
-              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{activeCount}</span>
-              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Live</span>
-            </motion.div>
-            <motion.div 
-              style={styles.statBadge}
-              whileHover={{ scale: 1.05 }}
-            >
-              <FaClock color="#9A958B" size={isMobile ? 12 : 14} />
-              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{draftCount}</span>
-              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Draft</span>
-            </motion.div>
-            <motion.div 
-              style={styles.statBadge}
-              whileHover={{ scale: 1.05 }}
-            >
-              <FaChartLine color="#2B7FC0" size={isMobile ? 12 : 14} />
-              <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{items.length}</span>
-              <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Total</span>
-            </motion.div>
-          </div>
-
-          <div className="filter-group" style={{
-            ...styles.filterGroup,
-            width: isMobile ? "100%" : "auto",
-            justifyContent: isMobile ? "center" : "flex-start",
-          }}>
-            <motion.button 
-              className={`filter-btn ${filter === 'slider' ? 'active' : ''}`}
-              style={{
-                ...styles.filterBtn,
-                ...(filter === 'slider' ? styles.activeFilter : {}),
-                padding: isMobile ? "8px 16px" : "10px 24px",
-                fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
-                flex: isMobile ? 1 : "auto",
-                justifyContent: "center",
-              }} 
-              onClick={() => setFilter('slider')}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaImage style={{marginRight: '6px'}} />
-              {isMobile ? "Sliders" : "Sliders"}
-            </motion.button>
-            <motion.button 
-              className={`filter-btn ${filter === 'offer' ? 'active' : ''}`}
-              style={{
-                ...styles.filterBtn,
-                ...(filter === 'offer' ? styles.activeFilter : {}),
-                padding: isMobile ? "8px 16px" : "10px 24px",
-                fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
-                flex: isMobile ? 1 : "auto",
-                justifyContent: "center",
-              }} 
-              onClick={() => setFilter('offer')}
-              whileHover={{ y: -2 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaTag style={{marginRight: '6px'}} />
-              {isMobile ? "Banners" : "Banners"}
-            </motion.button>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Search & Filter Bar */}
-      <motion.div 
-        className="animate-search" 
-        style={{
-          ...styles.searchWrapper,
-          flexDirection: isMobile ? "column" : "row",
-          gap: isMobile ? "10px" : "16px",
-        }}
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-      >
-        <div style={{
-          ...styles.searchContainer,
-          width: isMobile ? "100%" : "auto",
-        }}>
-          <FaSearch style={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder={isMobile ? "Search..." : `Search ${filter}s by title or ID...`}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={{
-              ...styles.searchInput,
-              padding: isMobile ? "8px 32px 8px 36px" : "10px 40px 10px 40px",
-              fontSize: isMobile ? "13px" : "14px",
-            }}
+    <div className="tdcp k-page ao" data-screen="offers">
+      <PageHeader
+        title="manage offers"
+        sub={`every slider and offer in the app. ${items.length} total.`}
+        actions={
+          <Segmented
+            label="asset type"
+            value={filter}
+            onChange={setFilter}
+            options={[{ value: "slider", label: "Sliders" }, { value: "offer", label: "Banners" }]}
           />
-          {searchTerm && (
-            <motion.button 
-              style={styles.clearSearch} 
-              onClick={() => setSearchTerm("")}
-              whileHover={{ scale: 1.1 }}
-              whileTap={{ scale: 0.9 }}
-            >
-              ✕
-            </motion.button>
-          )}
+        }
+      />
+
+      <div className="k-stats">
+        <StatCard label="Live" value={activeCount} icon="checkCircle" tone="green" />
+        <StatCard label="Draft" value={draftCount} icon="clock" tone="sand" />
+        <StatCard label="Total" value={items.length} icon="chart" tone="blue" />
+      </div>
+
+      <div className="k-toolbar">
+        <SearchInput
+          className="k-grow"
+          placeholder={isMobile ? "Search..." : `Search ${filter}s by title or ID...`}
+          aria-label="search offers"
+          value={searchTerm}
+          onChange={(e) => setSearchTerm(e.target.value)}
+        />
+        <Button variant="secondary" icon="filter" onClick={() => setShowFilters(!showFilters)} aria-expanded={showFilters}>Filters</Button>
+        <div className="k-seg" role="group" aria-label="view">
+          <button type="button" aria-pressed={viewMode === "grid"} onClick={() => setViewMode("grid")} aria-label="grid view" title="grid view"><Ico kind="image" tone="plain" size={16} /></button>
+          <button type="button" aria-pressed={viewMode === "list"} onClick={() => setViewMode("list")} aria-label="list view" title="list view"><Ico kind="menu" tone="plain" size={16} /></button>
         </div>
+        <Select aria-label="sort" style={{ width: "auto" }} value={sortBy} onChange={(e) => setSortBy(e.target.value)}>
+          <option value="newest">Newest</option>
+          <option value="oldest">Oldest</option>
+          <option value="title">Title</option>
+          <option value="status">Status</option>
+        </Select>
+      </div>
 
-        <div style={{
-          ...styles.controlsGroup,
-          flexWrap: isMobile ? "wrap" : "nowrap",
-          justifyContent: isMobile ? "center" : "flex-start",
-          width: isMobile ? "100%" : "auto",
-        }}>
-          <motion.button 
-            style={{
-              ...styles.filterToggle,
-              padding: isMobile ? "8px 12px" : "10px 16px",
-              fontSize: isMobile ? "12px" : "13px",
-            }}
-            onClick={() => setShowFilters(!showFilters)}
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-          >
-            <FaFilter /> {isMobile ? "Filters" : "Filters"}
-          </motion.button>
-          
-          <div style={styles.viewToggle}>
-            <motion.button
-              style={{
-                ...styles.viewBtn,
-                ...(viewMode === 'grid' ? styles.activeView : {}),
-                padding: isMobile ? "6px 8px" : "8px 10px",
-              }}
-              onClick={() => setViewMode('grid')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaTh />
-            </motion.button>
-            <motion.button
-              style={{
-                ...styles.viewBtn,
-                ...(viewMode === 'list' ? styles.activeView : {}),
-                padding: isMobile ? "6px 8px" : "8px 10px",
-              }}
-              onClick={() => setViewMode('list')}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaBars />
-            </motion.button>
-          </div>
-
-          <select 
-            style={{
-              ...styles.sortSelect,
-              padding: isMobile ? "8px 10px" : "10px 14px",
-              fontSize: isMobile ? "12px" : "13px",
-              minWidth: isMobile ? "100px" : "auto",
-            }}
-            value={sortBy}
-            onChange={(e) => setSortBy(e.target.value)}
-          >
-            <option value="newest">Newest</option>
-            <option value="oldest">Oldest</option>
-            <option value="title">Title</option>
-            <option value="status">Status</option>
-          </select>
+      {showFilters && (
+        <div className="k-card pad ao-filters">
+          <Field label="Status">
+            <Select>
+              <option value="all">All</option>
+              <option value="active">Live</option>
+              <option value="draft">Draft</option>
+            </Select>
+          </Field>
+          <Field label="Date Range">
+            <Select>
+              <option value="all">All Time</option>
+              <option value="week">This Week</option>
+              <option value="month">This Month</option>
+            </Select>
+          </Field>
+          <Button style={{ alignSelf: "flex-end" }}>Apply Filters</Button>
         </div>
-      </motion.div>
+      )}
 
-      {/* Filters Dropdown */}
-      <AnimatePresence>
-        {showFilters && (
-          <motion.div 
-            style={styles.filtersDropdown}
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-          >
-            <div style={{
-              ...styles.filtersContent,
-              flexDirection: isMobile ? "column" : "row",
-              padding: isMobile ? "16px" : "20px 24px",
-              gap: isMobile ? "12px" : "20px",
-            }}>
-              <div style={{
-                ...styles.filterGroup,
-                minWidth: isMobile ? "100%" : "150px",
-              }}>
-                <label style={{fontSize: isMobile ? "12px" : "13px"}}>Status</label>
-                <select style={styles.filterSelect}>
-                  <option value="all">All</option>
-                  <option value="active">Live</option>
-                  <option value="draft">Draft</option>
-                </select>
+      {loading ? (
+        <PageLoading label="Loading assets..." />
+      ) : filteredItems.length === 0 ? (
+        <div className="k-card">
+          <EmptyState
+            icon="tag"
+            tone="sand"
+            title={`No ${filter} assets found`}
+            text={searchTerm ? "Try a different search term" : "Create your first asset using the admin panel"}
+            action={<Button icon="plus">Create New</Button>}
+          />
+        </div>
+      ) : viewMode === "grid" ? (
+        <div className="k-grid">
+          {filteredItems.map((item) => (
+            <article key={item._id} className="k-card ao-card">
+              <div className="ao-img">
+                <img
+                  src={item.image}
+                  alt={item.title || "Preview"}
+                  onError={(e) => {
+                    e.target.src = 'https://via.placeholder.com/400x200?text=No+Image';
+                  }}
+                />
+                <span className="ao-badge">{item.active ? <Pill tone="green" dot>LIVE</Pill> : <Pill tone="ink">DRAFT</Pill>}</span>
               </div>
-              <div style={{
-                ...styles.filterGroup,
-                minWidth: isMobile ? "100%" : "150px",
-              }}>
-                <label style={{fontSize: isMobile ? "12px" : "13px"}}>Date Range</label>
-                <select style={styles.filterSelect}>
-                  <option value="all">All Time</option>
-                  <option value="week">This Week</option>
-                  <option value="month">This Month</option>
-                </select>
-              </div>
-              <button style={{
-                ...styles.applyFiltersBtn,
-                width: isMobile ? "100%" : "auto",
-                padding: isMobile ? "10px" : "10px 24px",
-              }}>Apply Filters</button>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Main Content */}
-      <main>
-        {loading ? (
-          <motion.div 
-            className="loader-container" 
-            style={{
-              ...styles.loader,
-              padding: isMobile ? "40px" : isTablet ? "60px" : "80px",
-            }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div className="spinner" style={styles.spinner}></div>
-            <p style={{fontSize: isMobile ? "13px" : "14px"}}>Loading assets...</p>
-          </motion.div>
-        ) : filteredItems.length === 0 ? (
-          <motion.div 
-            className="empty-state" 
-            style={{
-              ...styles.emptyState,
-              padding: isMobile ? "30px" : isTablet ? "40px" : "60px",
-            }}
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-          >
-            <div style={{
-              ...styles.emptyIcon,
-              fontSize: isMobile ? "40px" : "64px",
-            }}>📦</div>
-            <p style={{
-              ...styles.emptyTitle,
-              fontSize: isMobile ? "16px" : isTablet ? "17px" : "18px",
-            }}>No {filter} assets found</p>
-            <span style={{
-              ...styles.emptySubtitle,
-              fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
-            }}>
-              {searchTerm ? "Try a different search term" : "Create your first asset using the admin panel"}
-            </span>
-            <motion.button 
-              style={{
-                ...styles.emptyBtn,
-                padding: isMobile ? "10px 20px" : "12px 24px",
-                fontSize: isMobile ? "13px" : "14px",
-              }}
-              whileHover={{ scale: 1.05 }}
-              whileTap={{ scale: 0.95 }}
-            >
-              <FaPlus /> Create New
-            </motion.button>
-          </motion.div>
-        ) : (
-          <motion.div 
-            className="items-grid" 
-            style={{
-              ...(viewMode === 'grid' ? styles.grid : styles.listGrid),
-              gap: isMobile ? "12px" : isTablet ? "16px" : "20px",
-              gridTemplateColumns: viewMode === 'grid' ? 
-                (isMobile ? "1fr" : isTablet ? "repeat(2, 1fr)" : "repeat(auto-fill, minmax(280px, 1fr))") : 
-                "1fr",
-            }}
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ duration: 0.5 }}
-          >
-            {filteredItems.map((item, index) => (
-              <motion.div 
-                key={item._id} 
-                className="asset-card"
-                style={viewMode === 'grid' ? {
-                  ...styles.card,
-                  borderRadius: isMobile ? "14px" : isTablet ? "16px" : "20px",
-                } : {
-                  ...styles.listCard,
-                  borderRadius: isMobile ? "12px" : isTablet ? "14px" : "16px",
-                  padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-                  flexDirection: isMobile ? "column" : "row",
-                  alignItems: isMobile ? "stretch" : "center",
-                }}
-                initial={{ opacity: 0, y: 30 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.4, delay: index * 0.05 }}
-                whileHover={{ 
-                  y: -4, 
-                  boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-                  borderColor: "rgba(249, 195, 73,0.2)"
-                }}
-              >
-                {viewMode === 'grid' ? (
-                  <>
-                    {/* Grid View */}
-                    <div style={{
-                      ...styles.cardImageWrapper,
-                      height: isMobile ? "140px" : isTablet ? "150px" : "160px",
-                    }}>
-                      <img 
-                        src={item.image} 
-                        alt={item.title || "Preview"} 
-                        style={styles.cardImage} 
-                        onError={(e) => { 
-                          e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'; 
-                        }} 
-                      />
-                      {!item.active && <div style={styles.draftOverlay}>DRAFT</div>}
-                      {item.active && (
-                        <div style={styles.liveBadge}>
-                          <FaCheckCircle size={10} />
-                          LIVE
-                        </div>
-                      )}
-                    </div>
-                    <div style={{
-                      ...styles.cardContent,
-                      padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-                    }}>
-                      <div style={styles.cardMeta}>
-                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#2E8B3E" : "#ECE7DB"}} />
-                        <span style={styles.cardStatus}>{item.active ? "Live" : "Draft"}</span>
-                        <span style={styles.cardType}>
-                          {item.type === "slider" ? "Slider" : "Offer"}
-                        </span>
-                      </div>
-                      <h3 style={{
-                        ...styles.cardTitle,
-                        fontSize: isMobile ? "14px" : isTablet ? "15px" : "16px",
-                      }}>{item.title || "Untitled Campaign"}</h3>
-                      {item.type === "offer" && item.description && (
-                        <p style={{
-                          ...styles.cardDescription,
-                          fontSize: isMobile ? "12px" : isTablet ? "12px" : "13px",
-                        }}>
-                          {item.description.length > (isMobile ? 40 : 60) 
-                            ? item.description.substring(0, isMobile ? 40 : 60) + "..." 
-                            : item.description}
-                        </p>
-                      )}
-                      <div style={styles.cardFooter}>
-                        <span style={{
-                          ...styles.cardDate,
-                          fontSize: isMobile ? "10px" : "11px",
-                        }}>
-                          <FaCalendarAlt size={isMobile ? 8 : 10} />
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                        <div style={styles.cardActions}>
-                          <motion.button 
-                            className="action-btn toggle-btn"
-                            onClick={() => handleToggle(item._id)}
-                            disabled={togglingId === item._id}
-                            style={{
-                              ...styles.smallBtn,
-                              padding: isMobile ? "4px 8px" : "6px 10px",
-                              fontSize: isMobile ? "10px" : "12px",
-                              background: item.active 
-                                ? "#F0ECE2" 
-                                : "#111111",
-                              color: item.active ? "#6B675E" : "#fff",
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            {togglingId === item._id ? (
-                              <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
-                            ) : (
-                              item.active ? <FaEyeSlash size={isMobile ? 10 : 12} /> : <FaEye size={isMobile ? 10 : 12} />
-                            )}
-                          </motion.button>
-                          <motion.button 
-                            className="action-btn delete-btn"
-                            onClick={() => handleDelete(item._id)}
-                            disabled={deletingId === item._id}
-                            style={{
-                              ...styles.smallDeleteBtn,
-                              padding: isMobile ? "4px 8px" : "6px 10px",
-                              fontSize: isMobile ? "10px" : "12px",
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            {deletingId === item._id ? (
-                              <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
-                            ) : (
-                              <FaTrashAlt size={isMobile ? 10 : 12} />
-                            )}
-                          </motion.button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
-                ) : (
-                  /* List View */
-                  <>
-                    <div style={{
-                      ...styles.listImageWrapper,
-                      width: isMobile ? "100%" : "80px",
-                      height: isMobile ? "120px" : "80px",
-                      borderRadius: isMobile ? "10px" : "12px",
-                    }}>
-                      <img 
-                        src={item.image} 
-                        alt={item.title || "Preview"} 
-                        style={styles.listImage} 
-                        onError={(e) => { 
-                          e.target.src = 'https://via.placeholder.com/80x80?text=No+Image'; 
-                        }} 
-                      />
-                    </div>
-                    <div style={{
-                      ...styles.listContent,
-                      width: isMobile ? "100%" : "auto",
-                    }}>
-                      <div style={styles.listMeta}>
-                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#2E8B3E" : "#ECE7DB"}} />
-                        <span style={{
-                          ...styles.listStatus,
-                          fontSize: isMobile ? "10px" : "11px",
-                        }}>{item.active ? "Live" : "Draft"}</span>
-                        <span style={{
-                          ...styles.listType,
-                          fontSize: isMobile ? "9px" : "10px",
-                        }}>
-                          {item.type === "slider" ? "Slider" : "Offer"}
-                        </span>
-                        <span style={{
-                          ...styles.listId,
-                          fontSize: isMobile ? "9px" : "10px",
-                        }}>ID: {item._id.slice(-8).toUpperCase()}</span>
-                      </div>
-                      <h3 style={{
-                        ...styles.listTitle,
-                        fontSize: isMobile ? "14px" : isTablet ? "14px" : "15px",
-                      }}>{item.title || "Untitled Campaign"}</h3>
-                      {item.type === "offer" && item.description && (
-                        <p style={{
-                          ...styles.listDescription,
-                          fontSize: isMobile ? "12px" : isTablet ? "12px" : "13px",
-                        }}>{item.description}</p>
-                      )}
-                      <div style={{
-                        ...styles.listFooter,
-                        flexDirection: isMobile ? "column" : "row",
-                        alignItems: isMobile ? "stretch" : "center",
-                      }}>
-                        <span style={{
-                          ...styles.listDate,
-                          fontSize: isMobile ? "10px" : "11px",
-                        }}>
-                          <FaCalendarAlt size={isMobile ? 8 : 10} />
-                          {new Date(item.createdAt).toLocaleDateString()}
-                        </span>
-                        <div style={styles.listActions}>
-                          <motion.button 
-                            className="action-btn toggle-btn"
-                            onClick={() => handleToggle(item._id)}
-                            disabled={togglingId === item._id}
-                            style={{
-                              ...styles.smallBtn,
-                              padding: isMobile ? "4px 8px" : "6px 10px",
-                              fontSize: isMobile ? "10px" : "12px",
-                              background: item.active 
-                                ? "#F0ECE2" 
-                                : "#111111",
-                              color: item.active ? "#6B675E" : "#fff",
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            {togglingId === item._id ? (
-                              <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
-                            ) : (
-                              item.active ? <FaEyeSlash size={isMobile ? 10 : 12} /> : <FaEye size={isMobile ? 10 : 12} />
-                            )}
-                          </motion.button>
-                          <motion.button 
-                            className="action-btn delete-btn"
-                            onClick={() => handleDelete(item._id)}
-                            disabled={deletingId === item._id}
-                            style={{
-                              ...styles.smallDeleteBtn,
-                              padding: isMobile ? "4px 8px" : "6px 10px",
-                              fontSize: isMobile ? "10px" : "12px",
-                            }}
-                            whileHover={{ scale: 1.05 }}
-                            whileTap={{ scale: 0.95 }}
-                          >
-                            {deletingId === item._id ? (
-                              <FaSpinner style={{animation: 'spin 1s linear infinite'}} />
-                            ) : (
-                              <FaTrashAlt size={isMobile ? 10 : 12} />
-                            )}
-                          </motion.button>
-                        </div>
-                      </div>
-                    </div>
-                  </>
+              <div className="ao-body">
+                <div className="k-row" style={{ gap: 6 }}>{statusPill(item)}{typePill(item)}</div>
+                <h3 className="ao-title">{item.title || "Untitled Campaign"}</h3>
+                {item.type === "offer" && item.description && (
+                  <p className="ao-desc">
+                    {item.description.length > (isMobile ? 40 : 60)
+                      ? item.description.substring(0, isMobile ? 40 : 60) + "..."
+                      : item.description}
+                  </p>
                 )}
-              </motion.div>
-            ))}
-          </motion.div>
-        )}
-      </main>
-
-      <style>
-        {`
-          @keyframes slideUp {
-            from { opacity: 0; transform: translateY(30px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes fadeInScale {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes pulse {
-            0%, 100% { opacity: 1; transform: scale(1); }
-            50% { opacity: 0.6; transform: scale(1.1); }
-          }
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-          @keyframes shimmer {
-            0% { background-position: -200% 0; }
-            100% { background-position: 200% 0; }
-          }
-          @keyframes statusPulse {
-            0%, 100% { opacity: 0.6; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.3); }
-          }
-          
-          .filter-btn {
-            transition: all 0.3s ease;
-          }
-          .filter-btn:hover {
-            transform: translateY(-2px);
-          }
-          .filter-btn.active {
-            background: #fff;
-            color: #C77700;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
-          }
-          
-          .asset-card {
-            transition: all 0.3s ease;
-          }
-          
-          .action-btn {
-            transition: all 0.2s ease;
-          }
-          
-          .toggle-btn:active, .delete-btn:active {
-            transform: translateY(0);
-          }
-          
-          .loader-container {
-            animation: fadeInScale 0.4s ease;
-          }
-          
-          .empty-state {
-            animation: fadeInScale 0.4s ease;
-          }
-          
-          .status-pulse {
-            animation: statusPulse 1.5s ease infinite;
-          }
-
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f1f1;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb:hover {
-            background: #111111;
-          }
-
-          @media (max-width: 768px) {
-            .header {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .rightHeader {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .statsGroup {
-              flex-wrap: wrap !important;
-              justify-content: center !important;
-            }
-            .filterGroup {
-              width: 100% !important;
-              justify-content: center !important;
-            }
-            .searchWrapper {
-              flex-direction: column !important;
-              gap: 12px !important;
-            }
-            .controlsGroup {
-              flex-wrap: wrap !important;
-              justify-content: center !important;
-            }
-            .filtersContent {
-              flex-direction: column !important;
-            }
-            .filterGroup {
-              min-width: 100% !important;
-            }
-            .applyFiltersBtn {
-              width: 100% !important;
-            }
-            .listCard {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .listImageWrapper {
-              width: 100% !important;
-              height: 120px !important;
-            }
-            .listFooter {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .listActions {
-              justify-content: flex-end !important;
-            }
-            .grid {
-              grid-template-columns: 1fr !important;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .container {
-              padding: 12px !important;
-              border-radius: 12px !important;
-            }
-            .mainTitle {
-              font-size: 18px !important;
-            }
-            .subtitle {
-              font-size: 11px !important;
-            }
-            .statsGroup {
-              padding: 4px 8px !important;
-              gap: 4px !important;
-            }
-            .statBadge {
-              font-size: 11px !important;
-            }
-            .statNumber {
-              font-size: 11px !important;
-            }
-            .statLabel {
-              font-size: 9px !important;
-            }
-            .filterBtn {
-              padding: 6px 12px !important;
-              font-size: 11px !important;
-            }
-            .searchInput {
-              font-size: 12px !important;
-              padding: 6px 28px 6px 32px !important;
-            }
-            .filterToggle {
-              font-size: 11px !important;
-              padding: 6px 10px !important;
-            }
-            .sortSelect {
-              font-size: 11px !important;
-              padding: 6px 8px !important;
-              min-width: 80px !important;
-            }
-            .cardImageWrapper {
-              height: 120px !important;
-            }
-            .cardContent {
-              padding: 10px !important;
-            }
-            .cardTitle {
-              font-size: 13px !important;
-            }
-            .cardDescription {
-              font-size: 11px !important;
-            }
-            .emptyState {
-              padding: 20px !important;
-            }
-            .emptyIcon {
-              font-size: 32px !important;
-            }
-            .emptyTitle {
-              font-size: 14px !important;
-            }
-            .emptySubtitle {
-              font-size: 11px !important;
-            }
-            .emptyBtn {
-              font-size: 12px !important;
-              padding: 8px 16px !important;
-            }
-            .loader {
-              padding: 30px !important;
-            }
-          }
-        `}
-      </style>
+              </div>
+              <div className="ao-foot">
+                <span className="k-hint k-row" style={{ gap: 6 }}><Ico kind="calendar" tone="plain" size={13} />{new Date(item.createdAt).toLocaleDateString()}</span>
+                <span className="k-row" style={{ gap: 6 }}>{toggleBtn(item)}{deleteBtn(item)}</span>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div className="ao-list">
+          {filteredItems.map((item) => (
+            <article key={item._id} className="k-card ao-row">
+              <img
+                className="ao-thumb"
+                src={item.image}
+                alt={item.title || "Preview"}
+                onError={(e) => {
+                  e.target.src = 'https://via.placeholder.com/80x80?text=No+Image';
+                }}
+              />
+              <div className="ao-row-main">
+                <div className="k-row" style={{ gap: 6 }}>
+                  {statusPill(item)}
+                  {typePill(item)}
+                  <span className="k-hint">ID: {item._id.slice(-8).toUpperCase()}</span>
+                </div>
+                <h3 className="ao-title">{item.title || "Untitled Campaign"}</h3>
+                {item.type === "offer" && item.description && <p className="ao-desc">{item.description}</p>}
+                <span className="k-hint k-row" style={{ gap: 6 }}><Ico kind="calendar" tone="plain" size={13} />{new Date(item.createdAt).toLocaleDateString()}</span>
+              </div>
+              <span className="k-row" style={{ gap: 6 }}>{toggleBtn(item)}{deleteBtn(item)}</span>
+            </article>
+          ))}
+        </div>
+      )}
     </div>
   );
 }
-
-const styles = {
-  container: { 
-    padding: "30px 35px", 
-    maxWidth: "1200px", 
-    margin: "0",
-    color: "#111111",
-    minHeight: "auto",
-    position: "relative",
-    background: "transparent",
-    borderRadius: "32px",
-    overflow: "hidden",
-    boxShadow: "none",
-    border: "none",
-  },
-  bgDecoration1: {
-    position: "absolute",
-    top: "-100px",
-    right: "-50px",
-    width: "300px",
-    height: "300px",
-    background: "transparent",
-    borderRadius: "50%",
-    pointerEvents: "none"
-  },
-  bgDecoration2: {
-    position: "absolute",
-    bottom: "-80px",
-    left: "-60px",
-    width: "250px",
-    height: "250px",
-    background: "transparent",
-    borderRadius: "50%",
-    pointerEvents: "none"
-  },
-  bgDecoration3: {
-    position: "absolute",
-    top: "50%",
-    right: "20%",
-    width: "150px",
-    height: "150px",
-    background: "transparent",
-    borderRadius: "50%",
-    pointerEvents: "none"
-  },
-  header: { 
-    display: "flex", 
-    justifyContent: "space-between", 
-    alignItems: "flex-start", 
-    marginBottom: "28px",
-    flexWrap: "wrap",
-    gap: "16px",
-    position: "relative",
-    zIndex: 1
-  },
-  headerBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    background: "#FFF1CC",
-    padding: "6px 16px",
-    borderRadius: "40px",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#C77700",
-    marginBottom: "12px"
-  },
-  rightHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "20px",
-    flexWrap: "wrap"
-  },
-  statsGroup: {
-    display: "flex",
-    gap: "12px",
-    background: "#fff",
-    padding: "8px 16px",
-    borderRadius: "60px",
-    border: "1px solid #ECE7DB",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
-  },
-  statBadge: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
-    cursor: "pointer"
-  },
-  statNumber: {
-    fontWeight: "700",
-    color: "#111111",
-    fontSize: "14px"
-  },
-  statLabel: {
-    color: "#6B675E",
-    fontSize: "12px"
-  },
-  mainTitle: { 
-    fontSize: "30px", 
-    fontWeight: "800", 
-    margin: 0, 
-    color: "#111111", 
-    letterSpacing: "-0.5px" 
-  },
-  subtitle: { 
-    color: "#6B675E", 
-    fontSize: "14px", 
-    margin: "6px 0 0 0" 
-  },
-  filterGroup: { 
-    display: "flex", 
-    gap: "6px", 
-    backgroundColor: "#F0ECE2", 
-    padding: "6px", 
-    borderRadius: "60px" 
-  },
-  filterBtn: { 
-    padding: "10px 24px", 
-    border: "none", 
-    borderRadius: "40px", 
-    cursor: "pointer", 
-    fontWeight: "600", 
-    fontSize: "14px",
-    background: "transparent",
-    color: "#6B675E",
-    transition: "all 0.3s ease",
-    display: "flex",
-    alignItems: "center"
-  },
-  activeFilter: { 
-    background: "#fff", 
-    color: "#C77700", 
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" 
-  },
-  searchWrapper: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "24px",
-    gap: "16px",
-    flexWrap: "wrap",
-    position: "relative",
-    zIndex: 1
-  },
-  searchContainer: {
-    position: "relative",
-    flex: 1,
-    minWidth: "200px"
-  },
-  searchIcon: {
-    position: "absolute",
-    left: "14px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#9A958B",
-    fontSize: "14px"
-  },
-  searchInput: {
-    width: "100%",
-    padding: "10px 40px 10px 40px",
-    borderRadius: "14px",
-    border: "2px solid #ECE7DB",
-    fontSize: "14px",
-    backgroundColor: "#fff",
-    transition: "all 0.2s ease",
-    outline: "none"
-  },
-  clearSearch: {
-    position: "absolute",
-    right: "14px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    background: "none",
-    border: "none",
-    cursor: "pointer",
-    color: "#9A958B",
-    fontSize: "14px",
-    padding: "4px"
-  },
-  controlsGroup: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    flexWrap: "wrap"
-  },
-  filterToggle: {
-    padding: "10px 16px",
-    borderRadius: "14px",
-    border: "2px solid #ECE7DB",
-    background: "#fff",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#6B675E",
-    transition: "all 0.2s ease"
-  },
-  viewToggle: {
-    display: "flex",
-    gap: "4px",
-    background: "#F0ECE2",
-    padding: "4px",
-    borderRadius: "12px"
-  },
-  viewBtn: {
-    padding: "8px 10px",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    background: "transparent",
-    color: "#9A958B",
-    transition: "all 0.2s ease"
-  },
-  activeView: {
-    background: "#fff",
-    color: "#C77700",
-    boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
-  },
-  sortSelect: {
-    padding: "10px 14px",
-    borderRadius: "14px",
-    border: "2px solid #ECE7DB",
-    background: "#fff",
-    fontSize: "13px",
-    color: "#6B675E",
-    cursor: "pointer",
-    outline: "none"
-  },
-  filtersDropdown: {
-    background: "#fff",
-    borderRadius: "16px",
-    padding: "0",
-    marginBottom: "20px",
-    border: "1px solid #ECE7DB",
-    boxShadow: "0 24px 60px rgba(17, 17, 17, 0.16)",
-    overflow: "hidden"
-  },
-  filtersContent: {
-    padding: "20px 24px",
-    display: "flex",
-    gap: "20px",
-    flexWrap: "wrap",
-    alignItems: "flex-end"
-  },
-  filterGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "6px",
-    flex: 1,
-    minWidth: "150px"
-  },
-  filterSelect: {
-    padding: "10px 14px",
-    borderRadius: "10px",
-    border: "1px solid #ECE7DB",
-    fontSize: "14px",
-    background: "#FAF8F3"
-  },
-  applyFiltersBtn: {
-    padding: "10px 24px",
-    background: "#F9C349",
-    border: "none",
-    borderRadius: "10px",
-    color: "#fff",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.3s ease"
-  },
-  grid: { 
-    display: "grid", 
-    gridTemplateColumns: "repeat(auto-fill, minmax(280px, 1fr))", 
-    gap: "20px",
-    position: "relative",
-    zIndex: 1
-  },
-  listGrid: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    position: "relative",
-    zIndex: 1
-  },
-  card: { 
-    background: "#fff",
-    borderRadius: "20px",
-    border: "1px solid #ECE7DB",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-    transition: "all 0.3s ease",
-    overflow: "hidden"
-  },
-  listCard: {
-    background: "#fff",
-    borderRadius: "16px",
-    border: "1px solid #ECE7DB",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-    transition: "all 0.3s ease",
-    display: "flex",
-    padding: "16px",
-    gap: "16px",
-    alignItems: "center"
-  },
-  cardImageWrapper: {
-    width: "100%",
-    height: "160px",
-    position: "relative",
-    overflow: "hidden",
-    backgroundColor: "#F0ECE2"
-  },
-  cardImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover"
-  },
-  cardContent: {
-    padding: "16px"
-  },
-  cardMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    marginBottom: "8px"
-  },
-  statusDot: {
-    width: "8px",
-    height: "8px",
-    borderRadius: "50%"
-  },
-  cardStatus: {
-    fontSize: "11px",
-    fontWeight: "600",
-    color: "#6B675E",
-    textTransform: "uppercase"
-  },
-  cardType: {
-    fontSize: "10px",
-    fontWeight: "700",
-    padding: "2px 10px",
-    borderRadius: "12px",
-    background: "#FFF1CC",
-    color: "#C77700"
-  },
-  cardTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
-    margin: "0 0 4px 0",
-    color: "#111111"
-  },
-  cardDescription: {
-    fontSize: "13px",
-    color: "#6B675E",
-    margin: "0 0 12px 0",
-    lineHeight: "1.4"
-  },
-  cardFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    borderTop: "1px solid #F0ECE2",
-    paddingTop: "12px"
-  },
-  cardDate: {
-    fontSize: "11px",
-    color: "#9A958B",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  },
-  cardActions: {
-    display: "flex",
-    gap: "6px"
-  },
-  smallBtn: {
-    padding: "6px 10px",
-    borderRadius: "8px",
-    border: "none",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  },
-  smallDeleteBtn: {
-    padding: "6px 10px",
-    borderRadius: "8px",
-    border: "1px solid #FDECEA",
-    backgroundColor: "#fff",
-    color: "#B42318",
-    fontSize: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    transition: "all 0.2s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  },
-  draftOverlay: {
-    position: "absolute",
-    inset: 0,
-    backgroundColor: "rgba(15, 23, 42, 0.6)",
-    backdropFilter: "blur(4px)",
-    color: "white",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    fontWeight: "800",
-    letterSpacing: "2px"
-  },
-  liveBadge: {
-    position: "absolute",
-    top: "10px",
-    right: "10px",
-    background: "#2E8B3E",
-    color: "#fff",
-    padding: "4px 10px",
-    borderRadius: "20px",
-    fontSize: "10px",
-    fontWeight: "700",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  },
-  listImageWrapper: {
-    width: "80px",
-    height: "80px",
-    borderRadius: "12px",
-    overflow: "hidden",
-    flexShrink: 0,
-    backgroundColor: "#F0ECE2"
-  },
-  listImage: {
-    width: "100%",
-    height: "100%",
-    objectFit: "cover"
-  },
-  listContent: {
-    flex: 1,
-    minWidth: 0
-  },
-  listMeta: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginBottom: "4px"
-  },
-  listStatus: {
-    fontSize: "11px",
-    fontWeight: "600",
-    color: "#6B675E",
-    textTransform: "uppercase"
-  },
-  listType: {
-    fontSize: "10px",
-    fontWeight: "700",
-    padding: "2px 10px",
-    borderRadius: "12px",
-    background: "#FFF1CC",
-    color: "#C77700"
-  },
-  listId: {
-    fontSize: "10px",
-    color: "#9A958B",
-    fontFamily: "monospace"
-  },
-  listTitle: {
-    fontSize: "15px",
-    fontWeight: "700",
-    margin: "0 0 2px 0",
-    color: "#111111"
-  },
-  listDescription: {
-    fontSize: "13px",
-    color: "#6B675E",
-    margin: "0 0 8px 0",
-    lineHeight: "1.4"
-  },
-  listFooter: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    flexWrap: "wrap",
-    gap: "8px"
-  },
-  listDate: {
-    fontSize: "11px",
-    color: "#9A958B",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px"
-  },
-  listActions: {
-    display: "flex",
-    gap: "6px"
-  },
-  loader: { 
-    textAlign: "center", 
-    padding: "80px", 
-    color: "#6B675E",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "16px"
-  },
-  spinner: {
-    width: "40px",
-    height: "40px",
-    border: "3px solid #ECE7DB",
-    borderTop: "3px solid #111111",
-    borderRadius: "50%",
-    animation: "spin 0.8s linear infinite"
-  },
-  emptyState: { 
-    textAlign: "center", 
-    padding: "60px", 
-    border: "2px dashed #ECE7DB", 
-    borderRadius: "28px",
-    backgroundColor: "#fff",
-    color: "#9A958B"
-  },
-  emptyIcon: {
-    fontSize: "64px",
-    marginBottom: "16px",
-    opacity: 0.5
-  },
-  emptyTitle: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111111",
-    margin: "0 0 8px 0"
-  },
-  emptySubtitle: {
-    fontSize: "14px",
-    color: "#9A958B"
-  },
-  emptyBtn: {
-    marginTop: "20px",
-    padding: "12px 24px",
-    background: "#F9C349",
-    border: "none",
-    borderRadius: "12px",
-    color: "#fff",
-    fontWeight: "600",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)"
-  }
-};
