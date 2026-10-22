@@ -207,15 +207,15 @@ const CardManager = () => {
 
       <div style={styles.mobileLogisticsDetails}>
         <div style={styles.mobileLogisticsDetail}>
-          <Phone size={12} color="#94a3b8" />
+          <Phone size={12} color="#9A958B" />
           <span>{order.shippingDetails?.phone || 'N/A'}</span>
         </div>
         <div style={styles.mobileLogisticsDetail}>
-          <Mail size={12} color="#94a3b8" />
+          <Mail size={12} color="#9A958B" />
           <span>{order.email || 'N/A'}</span>
         </div>
         <div style={styles.mobileLogisticsDetail}>
-          <MapPin size={12} color="#94a3b8" />
+          <MapPin size={12} color="#9A958B" />
           <span>{order.shippingDetails?.city || 'N/A'}</span>
         </div>
         <div style={styles.mobileLogisticsDetail}>
@@ -243,8 +243,8 @@ const CardManager = () => {
   return (
     <div style={{
       ...styles.pageWrapper,
-      padding: isMobile ? '12px 16px' : isTablet ? '16px 24px' : '25px 35px',
-      borderRadius: isMobile ? '16px' : isTablet ? '24px' : '32px',
+      padding: 0,
+      borderRadius: 0,
     }}>
       {/* Decorative Background */}
       <div style={styles.bgDecoration1}></div>
@@ -265,19 +265,15 @@ const CardManager = () => {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <div style={styles.headerBadge}>
-              <CreditCard size={isMobile ? 12 : 14} />
-              <span>Card Management</span>
-            </div>
             <h1 style={{
               ...styles.title,
               fontSize: isMobile ? '22px' : isTablet ? '24px' : '28px',
-            }}>Card Command Center</h1>
+            }}>student cards<span className="dot" aria-hidden="true">.</span></h1>
             <p style={{
               ...styles.subtitle,
               fontSize: isMobile ? '12px' : isTablet ? '13px' : '14px',
             }}>
-              {isMobile ? 'Manage cards & distribution' : 'Streamline verification and physical card distribution'}
+              physical privilege card requests.
             </p>
           </div>
           
@@ -296,24 +292,24 @@ const CardManager = () => {
               label="Total Issued" 
               value={stats.approvedTotal} 
               icon={<Users size={isMobile ? 14 : 18}/>} 
-              color="#10b981" 
-              bg="#d1fae5" 
+              color="#1E6B3A" 
+              bg="#E3F3E8" 
               isMobile={isMobile}
             />
             <StatCard 
               label="Net Revenue" 
               value={`₨ ${stats.totalRevenue.toLocaleString()}`} 
               icon={<Wallet size={isMobile ? 14 : 18}/>} 
-              color="#3b82f6" 
-              bg="#dbeafe"
+              color="#2B7FC0" 
+              bg="#E1F1FA"
               isMobile={isMobile}
             />
             <StatCard 
               label="Awaiting" 
               value={stats.pending} 
               icon={<Clock size={isMobile ? 14 : 18}/>} 
-              color="#f59e0b" 
-              bg="#fef3c7"
+              color="#C77700" 
+              bg="#FFF1CC"
               isMobile={isMobile}
             />
           </motion.div>
@@ -325,7 +321,7 @@ const CardManager = () => {
             ...styles.tabContainer,
             flexDirection: isMobile ? 'column' : 'row',
             gap: isMobile ? '8px' : '30px',
-            borderBottom: isMobile ? 'none' : '2px solid #e2e8f0',
+            borderBottom: isMobile ? 'none' : '2px solid #ECE7DB',
             marginBottom: isMobile ? '16px' : '24px',
           }}
           initial={{ opacity: 0, y: 20 }}
@@ -341,7 +337,7 @@ const CardManager = () => {
               padding: isMobile ? '12px 16px' : '12px 0',
               borderRadius: isMobile ? '10px' : '0',
               background: isMobile && activeTab === 'payments' ? '#08634f' : 'transparent',
-              color: isMobile && activeTab === 'payments' ? '#fff' : '#64748b',
+              color: isMobile && activeTab === 'payments' ? '#fff' : '#6B675E',
             }}
           >
             <Shield size={isMobile ? 16 : 16} /> 
@@ -357,7 +353,7 @@ const CardManager = () => {
               padding: isMobile ? '12px 16px' : '12px 0',
               borderRadius: isMobile ? '10px' : '0',
               background: isMobile && activeTab === 'logistics' ? '#08634f' : 'transparent',
-              color: isMobile && activeTab === 'logistics' ? '#fff' : '#64748b',
+              color: isMobile && activeTab === 'logistics' ? '#fff' : '#6B675E',
             }}
           >
             <Package size={isMobile ? 16 : 16} /> 
@@ -434,7 +430,7 @@ const CardManager = () => {
                     initial={{ opacity: 0, y: 30 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ duration: 0.4, delay: index * 0.05 }}
-                    whileHover={{ y: -8, boxShadow: "0 20px 40px -12px rgba(0,0,0,0.15)" }}
+                    whileHover={{ y: -8, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
                   >
                     <div style={styles.cardHeader}>
                       <div style={styles.cardUser}>
@@ -625,7 +621,7 @@ const CardManager = () => {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.03 }}
-                        whileHover={{ backgroundColor: '#f8fafc' }}
+                        whileHover={{ backgroundColor: '#FAF8F3' }}
                       >
                         <td style={styles.td}><input type="checkbox" checked={selectedIds.includes(order._id)} onChange={() => setSelectedIds(prev => prev.includes(order._id) ? prev.filter(id => id !== order._id) : [...prev, order._id])} /></td>
                         <td style={styles.td}>
@@ -641,17 +637,17 @@ const CardManager = () => {
                         </td>
                         <td style={styles.td}>
                           <div style={styles.contactCell}>
-                            <Phone size={12} color="#94a3b8" />
+                            <Phone size={12} color="#9A958B" />
                             <span>{order.shippingDetails?.phone || 'N/A'}</span>
                           </div>
                           <div style={styles.contactCell}>
-                            <Mail size={12} color="#94a3b8" />
+                            <Mail size={12} color="#9A958B" />
                             <span>{order.email || 'N/A'}</span>
                           </div>
                         </td>
                         <td style={styles.td}>
                           <div style={styles.locationCell}>
-                            <MapPin size={12} color="#94a3b8" />
+                            <MapPin size={12} color="#9A958B" />
                             <span>{order.shippingDetails?.city || 'N/A'}</span>
                           </div>
                           <div style={styles.locationAddress}>
@@ -801,8 +797,8 @@ const CardManager = () => {
                       <span style={styles.modalLabel}>Payment Status</span>
                       <span style={{
                         ...styles.modalPaymentBadge,
-                        backgroundColor: selectedUser.paymentStatus === 'Verified' ? '#d1fae5' : '#fef3c7',
-                        color: selectedUser.paymentStatus === 'Verified' ? '#10b981' : '#f59e0b'
+                        backgroundColor: selectedUser.paymentStatus === 'Verified' ? '#E3F3E8' : '#FFF1CC',
+                        color: selectedUser.paymentStatus === 'Verified' ? '#1E6B3A' : '#C77700'
                       }}>
                         {selectedUser.paymentStatus || 'Pending'}
                       </span>
@@ -916,11 +912,11 @@ const CardManager = () => {
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #111111;
           }
 
           @media (max-width: 768px) {
@@ -1041,7 +1037,7 @@ const StatCard = ({ label, value, icon, color, bg, isMobile }) => (
       minWidth: isMobile ? 'auto' : '140px',
       flex: isMobile ? 1 : 'none',
     }}
-    whileHover={{ y: -3, boxShadow: "0 8px 25px rgba(0,0,0,0.08)" }}
+    whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
   >
     <div style={{
       ...styles.statIconBox,
@@ -1093,13 +1089,15 @@ const EmptyState = ({ message, isMobile }) => (
 // --- STYLES ---
 const styles = {
   pageWrapper: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
+    minHeight: "auto",
+    background: "transparent",
     padding: '25px 35px',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
     position: 'relative',
     borderRadius: '32px',
-    overflow: 'hidden'
+    overflow: 'hidden',
+    boxShadow: "none",
+    border: "none",
+    margin: "0",
   },
   bgDecoration1: {
     position: 'absolute',
@@ -1107,7 +1105,7 @@ const styles = {
     right: '-50px',
     width: '300px',
     height: '300px',
-    background: 'radial-gradient(circle, rgba(8,99,79,0.06) 0%, rgba(8,99,79,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1117,7 +1115,7 @@ const styles = {
     left: '-60px',
     width: '250px',
     height: '250px',
-    background: 'radial-gradient(circle, rgba(8,99,79,0.04) 0%, rgba(8,99,79,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1127,7 +1125,7 @@ const styles = {
     right: '10%',
     width: '150px',
     height: '150px',
-    background: 'radial-gradient(circle, rgba(8,99,79,0.03) 0%, rgba(8,99,79,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none'
   },
@@ -1149,24 +1147,24 @@ const styles = {
     display: 'inline-flex',
     alignItems: 'center',
     gap: '8px',
-    background: '#ecfdf5',
+    background: '#E3F3E8',
     padding: '6px 16px',
     borderRadius: '40px',
     fontSize: '13px',
     fontWeight: '600',
-    color: '#10b981',
+    color: '#1E6B3A',
     marginBottom: '12px'
   },
   title: {
     margin: 0,
     fontSize: '28px',
     fontWeight: '800',
-    color: '#0f172a',
+    color: '#111111',
     letterSpacing: '-0.5px'
   },
   subtitle: {
     margin: '4px 0 0 0',
-    color: '#64748b',
+    color: '#6B675E',
     fontSize: '14px'
   },
   statsRow: {
@@ -1178,7 +1176,7 @@ const styles = {
     backgroundColor: '#fff',
     padding: '14px 20px',
     borderRadius: '16px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     display: 'flex',
     alignItems: 'center',
     gap: '12px',
@@ -1197,7 +1195,7 @@ const styles = {
   statLabel: {
     fontSize: '11px',
     fontWeight: '600',
-    color: '#64748b',
+    color: '#6B675E',
     textTransform: 'uppercase',
     letterSpacing: '0.3px'
   },
@@ -1208,14 +1206,14 @@ const styles = {
   tabContainer: {
     display: 'flex',
     gap: '30px',
-    borderBottom: '2px solid #e2e8f0',
+    borderBottom: '2px solid #ECE7DB',
     marginBottom: '24px'
   },
   tab: {
     padding: '12px 0',
     background: 'none',
     border: 'none',
-    color: '#64748b',
+    color: '#6B675E',
     cursor: 'pointer',
     fontSize: '14px',
     fontWeight: '600',
@@ -1240,7 +1238,7 @@ const styles = {
     position: 'relative'
   },
   tabBadge: {
-    background: '#ef4444',
+    background: '#D9443F',
     color: '#fff',
     fontSize: '10px',
     padding: '1px 8px',
@@ -1251,7 +1249,7 @@ const styles = {
   loaderBar: {
     height: '3px',
     width: '100%',
-    background: 'linear-gradient(90deg, #08634f, #10b981)',
+    background: '#111111',
     borderRadius: '2px',
     marginBottom: '20px'
   },
@@ -1265,18 +1263,18 @@ const styles = {
     left: '14px',
     top: '50%',
     transform: 'translateY(-50%)',
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   searchInput: {
     width: '100%',
     padding: '10px 40px 10px 40px',
     borderRadius: '12px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     fontSize: '14px',
     outline: 'none',
     backgroundColor: '#fff',
     transition: 'all 0.2s ease',
-    color: '#0f172a'
+    color: '#111111'
   },
   clearSearch: {
     position: 'absolute',
@@ -1286,7 +1284,7 @@ const styles = {
     background: 'none',
     border: 'none',
     cursor: 'pointer',
-    color: '#94a3b8',
+    color: '#9A958B',
     fontSize: '14px'
   },
   gridContainer: {
@@ -1306,7 +1304,7 @@ const styles = {
     backgroundColor: '#fff',
     borderRadius: '20px',
     padding: '20px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     transition: 'all 0.3s ease',
     boxShadow: '0 2px 8px rgba(0,0,0,0.02)'
   },
@@ -1325,7 +1323,7 @@ const styles = {
     width: '40px',
     height: '40px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1337,13 +1335,13 @@ const styles = {
     margin: 0,
     fontSize: '15px',
     fontWeight: '700',
-    color: '#0f172a'
+    color: '#111111'
   },
   rollBadge: {
     fontSize: '10px',
     fontWeight: '600',
     color: '#08634f',
-    background: '#ecfdf5',
+    background: '#E3F3E8',
     padding: '2px 10px',
     borderRadius: '12px',
     display: 'inline-block'
@@ -1351,10 +1349,10 @@ const styles = {
   viewBtn: {
     padding: '6px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     background: '#fff',
     cursor: 'pointer',
-    color: '#64748b',
+    color: '#6B675E',
     transition: 'all 0.2s ease'
   },
   imageContainer: {
@@ -1363,7 +1361,7 @@ const styles = {
     overflow: 'hidden',
     position: 'relative',
     cursor: 'pointer',
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
     marginBottom: '16px'
   },
   receiptImg: {
@@ -1393,7 +1391,7 @@ const styles = {
     gap: '16px',
     marginBottom: '16px',
     padding: '12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '12px'
   },
   cardInfo: {
@@ -1403,14 +1401,14 @@ const styles = {
   },
   cardInfoLabel: {
     fontSize: '10px',
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: '600',
     textTransform: 'uppercase'
   },
   cardInfoValue: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#0f172a'
+    color: '#111111'
   },
   actionRow: {
     display: 'flex',
@@ -1423,7 +1421,7 @@ const styles = {
     justifyContent: 'center',
     gap: '8px',
     padding: '10px',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '10px',
@@ -1434,8 +1432,8 @@ const styles = {
   rejectBtn: {
     padding: '10px 14px',
     background: '#fff',
-    color: '#ef4444',
-    border: '1px solid #fee2e2',
+    color: '#B42318',
+    border: '1px solid #FDECEA',
     borderRadius: '10px',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -1446,16 +1444,16 @@ const styles = {
   tableWrapper: {
     background: '#fff',
     borderRadius: '20px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     overflow: 'hidden',
-    boxShadow: '0 4px 12px rgba(0,0,0,0.02)'
+    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)'
   },
   tableHeaderActions: {
     padding: '16px 20px',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     flexWrap: 'wrap',
     gap: '12px'
   },
@@ -1467,9 +1465,9 @@ const styles = {
   subTab: {
     padding: '8px 16px',
     borderRadius: '10px',
-    background: '#f8fafc',
-    color: '#64748b',
-    border: '1px solid #e2e8f0',
+    background: '#FAF8F3',
+    color: '#6B675E',
+    border: '1px solid #ECE7DB',
     cursor: 'pointer',
     fontSize: '12px',
     fontWeight: '600',
@@ -1509,13 +1507,13 @@ const styles = {
     gap: '6px',
     padding: '8px 16px',
     background: '#fff',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     borderRadius: '8px',
     fontWeight: '600',
     cursor: 'pointer',
     fontSize: '12px',
     transition: 'all 0.2s ease',
-    color: '#475569'
+    color: '#6B675E'
   },
   shipBtn: {
     padding: '8px 16px',
@@ -1533,7 +1531,7 @@ const styles = {
   },
   deliveredBtn: {
     padding: '8px 16px',
-    background: '#10b981',
+    background: '#2E8B3E',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -1555,20 +1553,20 @@ const styles = {
   },
   th: {
     padding: '12px 16px',
-    background: '#f8fafc',
-    color: '#64748b',
+    background: '#FAF8F3',
+    color: '#6B675E',
     fontSize: '10px',
     fontWeight: '700',
     textAlign: 'left',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    borderBottom: '1px solid #e2e8f0'
+    borderBottom: '1px solid #ECE7DB'
   },
   td: {
     padding: '12px 16px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     fontSize: '13px',
-    color: '#334155'
+    color: '#111111'
   },
   tr: {
     transition: 'all 0.2s ease'
@@ -1582,7 +1580,7 @@ const styles = {
     width: '32px',
     height: '32px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1592,19 +1590,19 @@ const styles = {
   },
   memberName: {
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#111111',
     fontSize: '13px'
   },
   memberRoll: {
     fontSize: '11px',
-    color: '#94a3b8'
+    color: '#9A958B'
   },
   contactCell: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
     fontSize: '12px',
-    color: '#475569',
+    color: '#6B675E',
     marginBottom: '2px'
   },
   locationCell: {
@@ -1612,12 +1610,12 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     fontSize: '12px',
-    color: '#475569',
+    color: '#6B675E',
     marginBottom: '2px'
   },
   locationAddress: {
     fontSize: '11px',
-    color: '#94a3b8',
+    color: '#9A958B',
     marginLeft: '20px'
   },
   statusBadge: {
@@ -1630,10 +1628,10 @@ const styles = {
   viewBtnSmall: {
     padding: '6px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     background: '#fff',
     cursor: 'pointer',
-    color: '#64748b',
+    color: '#6B675E',
     transition: 'all 0.2s ease'
   },
   emptyContainer: {
@@ -1647,13 +1645,13 @@ const styles = {
     marginBottom: '12px'
   },
   emptyText: {
-    color: '#64748b',
+    color: '#6B675E',
     fontWeight: '600',
     fontSize: '18px',
     marginBottom: '4px'
   },
   emptySubtext: {
-    color: '#94a3b8',
+    color: '#9A958B',
     fontSize: '13px'
   },
   // Modal Styles
@@ -1678,13 +1676,13 @@ const styles = {
     width: '100%',
     maxHeight: '90vh',
     overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.25)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
     display: 'flex',
     flexDirection: 'column'
   },
   modalHeader: {
     padding: '20px 24px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center'
@@ -1698,7 +1696,7 @@ const styles = {
     width: '48px',
     height: '48px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1709,12 +1707,12 @@ const styles = {
   modalTitle: {
     fontSize: '18px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
     margin: 0
   },
   modalSubtitle: {
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     margin: 0
   },
   modalClose: {
@@ -1723,7 +1721,7 @@ const styles = {
     borderRadius: '50%',
     border: 'none',
     background: 'transparent',
-    color: '#64748b',
+    color: '#6B675E',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -1743,10 +1741,10 @@ const styles = {
     marginBottom: '16px'
   },
   modalSection: {
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '12px',
     padding: '16px',
-    border: '1px solid #f1f5f9'
+    border: '1px solid #F0ECE2'
   },
   modalSectionTitle: {
     display: 'flex',
@@ -1754,10 +1752,10 @@ const styles = {
     gap: '6px',
     fontSize: '12px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
     margin: '0 0 10px 0',
     paddingBottom: '8px',
-    borderBottom: '1px solid #f1f5f9'
+    borderBottom: '1px solid #F0ECE2'
   },
   modalDetail: {
     display: 'flex',
@@ -1766,10 +1764,10 @@ const styles = {
     fontSize: '12px'
   },
   modalLabel: {
-    color: '#64748b'
+    color: '#6B675E'
   },
   modalValue: {
-    color: '#0f172a',
+    color: '#111111',
     fontWeight: '500'
   },
   modalStatusBadge: {
@@ -1795,11 +1793,11 @@ const styles = {
     objectFit: 'cover',
     borderRadius: '12px',
     cursor: 'pointer',
-    border: '1px solid #f1f5f9'
+    border: '1px solid #F0ECE2'
   },
   modalFooter: {
     padding: '16px 24px',
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
     display: 'flex',
     justifyContent: 'flex-end',
     gap: '12px'
@@ -1807,9 +1805,9 @@ const styles = {
   modalCloseBtn: {
     padding: '8px 24px',
     borderRadius: '10px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     background: '#fff',
-    color: '#475569',
+    color: '#6B675E',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease'
@@ -1818,7 +1816,7 @@ const styles = {
     padding: '8px 20px',
     borderRadius: '10px',
     border: 'none',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     color: '#fff',
     fontWeight: '600',
     cursor: 'pointer',
@@ -1832,7 +1830,7 @@ const styles = {
     backgroundColor: '#fff',
     borderRadius: '16px',
     padding: '16px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     boxShadow: '0 2px 8px rgba(0,0,0,0.02)',
   },
   mobileCardHeader: {
@@ -1850,13 +1848,13 @@ const styles = {
     margin: 0,
     fontSize: '15px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
   },
   mobileRollBadge: {
     fontSize: '10px',
     fontWeight: '600',
     color: '#08634f',
-    background: '#ecfdf5',
+    background: '#E3F3E8',
     padding: '2px 10px',
     borderRadius: '12px',
     display: 'inline-block',
@@ -1864,10 +1862,10 @@ const styles = {
   mobileViewBtn: {
     padding: '6px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     background: '#fff',
     cursor: 'pointer',
-    color: '#64748b',
+    color: '#6B675E',
     transition: 'all 0.2s ease',
   },
   mobileImageContainer: {
@@ -1876,7 +1874,7 @@ const styles = {
     overflow: 'hidden',
     position: 'relative',
     cursor: 'pointer',
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
     marginBottom: '12px',
   },
   mobileReceiptImg: {
@@ -1904,7 +1902,7 @@ const styles = {
     gap: '12px',
     marginBottom: '12px',
     padding: '10px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '10px',
   },
   mobileCardInfo: {
@@ -1914,14 +1912,14 @@ const styles = {
   },
   mobileCardInfoLabel: {
     fontSize: '9px',
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: '600',
     textTransform: 'uppercase',
   },
   mobileCardInfoValue: {
     fontSize: '14px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
   },
   mobileActionRow: {
     display: 'flex',
@@ -1934,7 +1932,7 @@ const styles = {
     justifyContent: 'center',
     gap: '6px',
     padding: '10px',
-    background: 'linear-gradient(135deg, #08634f 0%, #10b981 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -1945,8 +1943,8 @@ const styles = {
   mobileRejectBtn: {
     padding: '10px 12px',
     background: '#fff',
-    color: '#ef4444',
-    border: '1px solid #fee2e2',
+    color: '#B42318',
+    border: '1px solid #FDECEA',
     borderRadius: '8px',
     cursor: 'pointer',
     display: 'flex',
@@ -1963,7 +1961,7 @@ const styles = {
     backgroundColor: '#fff',
     borderRadius: '14px',
     padding: '14px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
   },
   mobileLogisticsHeader: {
     display: 'flex',
@@ -1973,12 +1971,12 @@ const styles = {
   },
   mobileMemberName: {
     fontWeight: '600',
-    color: '#0f172a',
+    color: '#111111',
     fontSize: '14px',
   },
   mobileMemberRoll: {
     fontSize: '11px',
-    color: '#94a3b8',
+    color: '#9A958B',
   },
   mobileLogisticsStatus: {
     display: 'flex',
@@ -1996,19 +1994,19 @@ const styles = {
     gap: '4px',
     marginBottom: '10px',
     padding: '8px 0',
-    borderTop: '1px solid #f1f5f9',
-    borderBottom: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
+    borderBottom: '1px solid #F0ECE2',
   },
   mobileLogisticsDetail: {
     display: 'flex',
     alignItems: 'center',
     gap: '6px',
     fontSize: '12px',
-    color: '#475569',
+    color: '#6B675E',
   },
   mobileLogisticsAddress: {
     fontSize: '11px',
-    color: '#94a3b8',
+    color: '#9A958B',
     marginLeft: '20px',
   },
   mobileLogisticsFooter: {
@@ -2026,27 +2024,27 @@ const styles = {
   mobileViewBtnSmall: {
     padding: '6px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     background: '#fff',
     cursor: 'pointer',
-    color: '#64748b',
+    color: '#6B675E',
     transition: 'all 0.2s ease',
   },
 };
 
 // Helper functions
 const getStatusBg = (s) => {
-  if (s === 'Printing') return '#fef3c7';
-  if (s === 'Shipped') return '#dbeafe';
-  if (s === 'Delivered') return '#d1fae5';
-  return '#f1f5f9';
+  if (s === 'Printing') return '#FFF1CC';
+  if (s === 'Shipped') return '#E1F1FA';
+  if (s === 'Delivered') return '#E3F3E8';
+  return '#F0ECE2';
 };
 
 const getStatusColor = (s) => {
-  if (s === 'Printing') return '#b45309';
+  if (s === 'Printing') return '#C77700';
   if (s === 'Shipped') return '#4338ca';
-  if (s === 'Delivered') return '#047857';
-  return '#64748b';
+  if (s === 'Delivered') return '#2E8B3E';
+  return '#D9D2C2';
 };
 
 export default CardManager;
