@@ -96,6 +96,7 @@ export default function AppNavigator() {
     return (
       <Routes>
         <Route path="/admin" element={<AdminDashboard />} />
+        <Route path="/admin/users/:role/:id" element={<AdminDashboard />} />
         <Route path="/createofferadmin" element={<CreateOfferAdmin />} />
         <Route path="/adminoffers" element={<AdminOffers />} />
         <Route path="/adminjobsmanager" element={<AdminJobsManager />} />
