@@ -344,7 +344,7 @@ export default function EngagementMetrics() {
                       W{String(w._id?.week || 0).padStart(2, '0')}
                     </span>
                   </td>
-                  <td style={s.td}>{w._id?.year || '—'}</td>
+                  <td style={s.td}>{w._id?.year || '–'}</td>
                   <td style={{ ...s.td, textAlign: 'right' }}>
                     <span style={s.userCount}>{fmt(w.users)}</span>
                   </td>
@@ -652,7 +652,7 @@ function DrilldownModal({ data, onClose }) {
                         <div style={{ minWidth: 0 }}>
                           <div style={s.userName}>{u.name || 'unknown'}</div>
                           <div style={s.userEmail}>
-                            {u.email || u.rollNo || '—'}
+                            {u.email || u.rollNo || '–'}
                           </div>
                         </div>
                       </div>
@@ -661,17 +661,17 @@ function DrilldownModal({ data, onClose }) {
                       {u.role ? (
                         <span style={s.typeTag}>{u.role}</span>
                       ) : (
-                        '—'
+                        '–'
                       )}
                     </td>
                     <td style={s.td}>
                       <span style={s.detailText}>
-                        {u.detail || u.meta || '—'}
+                        {u.detail || u.meta || '–'}
                       </span>
                     </td>
                     <td style={s.td}>
                       <span style={s.mutedText}>
-                        {u.when ? timeAgo(u.when) : '—'}
+                        {u.when ? timeAgo(u.when) : '–'}
                       </span>
                     </td>
                   </tr>

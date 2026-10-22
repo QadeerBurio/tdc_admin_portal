@@ -15,7 +15,6 @@ import {
 import './styles/Brands.css';
 
 const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
-// const API_BASE = 'http://localhost:5000/api';
 
 const BrandApprovalScreen = () => {
   const { token, user, login } = useContext(AuthContext);
@@ -620,7 +619,7 @@ const BrandApprovalScreen = () => {
                       </div>
                       <div className="modal-stat-divider" />
                       <div className="modal-stat">
-                        <span className="modal-stat-value">${brandStats.totalSavings}</span>
+                        <span className="modal-stat-value">rs {brandStats.totalSavings}</span>
                         <span className="modal-stat-label">Savings</span>
                       </div>
                     </div>

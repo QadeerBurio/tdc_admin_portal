@@ -233,7 +233,7 @@ export default function RewardsAdmin() {
           <div style={s.emptyIcon}>🎁</div>
           <div style={s.emptyTitle}>no rewards yet.</div>
           <div style={s.emptySub}>
-            create your first one — students will love it.
+            create your first one: students will love it.
           </div>
           <button style={s.btnPrimary} onClick={openCreate}>
             + create reward
@@ -300,7 +300,7 @@ export default function RewardsAdmin() {
                     setBrandQuery('');
                   }}
                 >
-                  <option value="">— platform-wide (any brand) —</option>
+                  <option value="">platform-wide (any brand)</option>
                   {filteredBrands.map((b) => (
                     <option key={b._id} value={b._id}>
                       {b.name}
@@ -486,7 +486,7 @@ export default function RewardsAdmin() {
                       <tr key={rd._id} style={s.tr}>
                         <td style={s.td}>
                           <div style={{ fontWeight: 700 }}>
-                            {rd.user?.name || '—'}
+                            {rd.user?.name || '–'}
                           </div>
                           <div style={s.smallMuted}>
                             {rd.user?.email || ''}

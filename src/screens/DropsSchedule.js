@@ -400,7 +400,7 @@ export default function DropsSchedule() {
       const message = e?.response?.data?.message || e?.message || 'failed';
       setPickerError(
         status === 404
-          ? 'endpoint not found — check your backend.'
+          ? 'endpoint not found: check your backend.'
           : `failed to load: ${message}`
       );
       setPickerItems([]);
@@ -484,7 +484,7 @@ export default function DropsSchedule() {
                     </span>
                   )}
                 </td>
-                <td style={s.td}>{r.type || '—'}</td>
+                <td style={s.td}>{r.type || '–'}</td>
                 <td style={s.td}>
                   {r.title || (
                     <span style={{ color: '#9A958B' }}>no drop scheduled</span>
@@ -501,7 +501,7 @@ export default function DropsSchedule() {
                         : ''}
                     </span>
                   ) : (
-                    <span style={{ color: '#9A958B' }}>—</span>
+                    <span style={{ color: '#9A958B' }}>–</span>
                   )}
                 </td>
                 <td style={s.td}>
@@ -541,7 +541,7 @@ export default function DropsSchedule() {
       {open && (
         <div style={s.backdrop} onClick={() => setOpen(false)}>
           <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>Edit Drop — {form.dayKey}</h3>
+            <h3 style={s.modalTitle}>Edit Drop: {form.dayKey}</h3>
 
             <div style={s.formGroup}>
               <label style={s.label}>Type</label>

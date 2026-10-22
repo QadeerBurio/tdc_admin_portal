@@ -1255,11 +1255,11 @@ export default function AdminUserList({ role, title }) {
                               }}
                               onError={(e) => {
                                 e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = '<span style="color:#ECE7DB">—</span>';
+                                e.target.parentElement.innerHTML = '<span style="color:#ECE7DB">–</span>';
                               }}
                             />
                           ) : (
-                            <span style={{ color: '#9A958B', fontSize: isMobile ? "10px" : "12px" }}>—</span>
+                            <span style={{ color: '#9A958B', fontSize: isMobile ? "10px" : "12px" }}>–</span>
                           )}
                         </td>
                         <td style={{
@@ -1596,7 +1596,7 @@ export default function AdminUserList({ role, title }) {
                         <span style={{
                           ...styles.modalStatValue,
                           fontSize: isMobile ? "15px" : "18px",
-                        }}>{selectedUser.isVip ? '⭐' : '—'}</span>
+                        }}>{selectedUser.isVip ? '⭐' : '–'}</span>
                         <span style={{
                           ...styles.modalStatLabel,
                           fontSize: isMobile ? "8px" : "10px",

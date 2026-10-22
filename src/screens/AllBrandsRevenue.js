@@ -71,7 +71,6 @@ export default function AllBrandsRevenue() {
     try {
       const res = await fetch(
         `https://the-deft-crew-production.up.railway.app/api/offers/admin/brands-revenue`,
-        // `http://localhost:5000/api/offers/admin/brands-revenue`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -684,7 +683,7 @@ export default function AllBrandsRevenue() {
                               </div>
                             )}
                             {b.qrCount === 0 && b.promoCount === 0 && (
-                              <span style={{ color: "#9A958B", fontSize: "11px" }}>—</span>
+                              <span style={{ color: "#9A958B", fontSize: "11px" }}>–</span>
                             )}
                           </div>
                         </td>

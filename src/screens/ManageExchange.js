@@ -87,7 +87,6 @@ const ManageExchange = () => {
   //   : 'https://the-deft-crew-production.up.railway.app/api/events/admin/exchange';
   
   const BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/exchange';
-  // const BASE_URL = 'http://localhost:5000/api/admin/exchange';
 
   const api = axios.create({ 
     headers: { Authorization: `Bearer ${token}` } 
@@ -367,7 +366,7 @@ const ManageExchange = () => {
       setUploadProgress(100);
       setUploadComplete(true);
 
-      let statusMsg = `Upload successful — ${created} programs added`;
+      let statusMsg = `Upload successful: ${created} programs added`;
       if (skipped > 0) {
         statusMsg += `, ${skipped} rows skipped`;
       }

@@ -1,5 +1,4 @@
 // StudentDossier.js: /dossier now opens the full profile inside the admin shell (/admin/users/:role/:id).
-// Takes the user id from navigation state or ?userId=, as before. Loads through services/api (no localhost).
 import React, { useEffect, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { usersApi } from "../services/api";
