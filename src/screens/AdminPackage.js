@@ -2,7 +2,7 @@ import React, { useState, useEffect, useContext, useCallback } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { 
-  FaUsers, FaCalendarAlt, FaDollarSign, FaClock, 
+  FaUsers, FaCalendarAlt, FaWallet, FaClock, 
   FaCheckCircle, FaTimesCircle, FaEdit, FaTrash,
   FaSyncAlt, FaSearch, FaFilter, FaArrowUp,
   FaArrowDown, FaEye, FaChevronRight, FaSpinner,
@@ -203,10 +203,10 @@ const AdminPackage = () => {
                     transition={{ duration: 0.5, delay: 0.1 }}
                 >
                     {[
-                        { icon: <FaUsers size={20} />, label: 'Total Bookings', value: stats.totalBookings, color: '#3b82f6', bg: '#eff6ff', trend: '+12%' },
+                        { icon: <FaUsers size={20} />, label: 'Total Bookings', value: stats.totalBookings, color: '#3b82f6', bg: '#eff6ff', trend: 'all time' },
                         { icon: <FaClock size={20} />, label: 'Pending', value: stats.pendingBookings, color: '#f59e0b', bg: '#fef3c7', trend: 'Awaiting' },
                         { icon: <FaCheckCircle size={20} />, label: 'Confirmed', value: stats.confirmedBookings, color: '#10b981', bg: '#d1fae5', trend: 'Approved' },
-                        { icon: <FaDollarSign size={20} />, label: 'Total Revenue', value: `$${stats.totalRevenue.toLocaleString()}`, color: '#8b5cf6', bg: '#ede9fe', trend: 'Earnings' }
+                        { icon: <FaWallet size={20} />, label: 'Total Revenue', value: `rs ${stats.totalRevenue.toLocaleString()}`, color: '#8b5cf6', bg: '#ede9fe', trend: 'Earnings' }
                     ].map((stat, index) => (
                         <motion.div 
                             key={index}
