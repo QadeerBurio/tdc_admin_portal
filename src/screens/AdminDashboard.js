@@ -354,7 +354,7 @@ export default function AdminDashboard() {
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;
       case "all offer": return <AdminOffers />;
-      case "manage_jobs": return <AdminJobManager />;
+      case "manage_jobs": return <AdminJobManager userRole="admin" />;
       case "exchange_program": return <ManageExchange />;
       case "traveling": return <AdminPackageScreen />;
       case "students": return <AdminUserList role="student" title="Student Directory" />;
