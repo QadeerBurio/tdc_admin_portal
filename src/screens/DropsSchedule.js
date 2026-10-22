@@ -452,7 +452,10 @@ export default function DropsSchedule() {
   return (
     <div>
       <div style={s.header}>
-        <h2 style={s.title}>Drops Schedule</h2>
+        <div>
+          <h2 style={s.title}>drops schedule<span className="dot" aria-hidden="true">.</span></h2>
+          <p style={{ margin: '6px 0 0', fontSize: 15, color: '#6B675E' }}>one question a day at the top of the app's home screen.</p>
+        </div>
         <button style={s.btnGhost} onClick={load}>
           refresh
         </button>
@@ -476,7 +479,7 @@ export default function DropsSchedule() {
                 <td style={s.td}>
                   <code style={{ fontSize: 12 }}>{r.dayKey}</code>
                   {r.dayKey === weekDays[0] && (
-                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#b45309' }}>
+                    <span style={{ marginLeft: 6, fontSize: 10, fontWeight: 700, color: '#8A5A00' }}>
                       TODAY
                     </span>
                   )}
@@ -484,7 +487,7 @@ export default function DropsSchedule() {
                 <td style={s.td}>{r.type || '—'}</td>
                 <td style={s.td}>
                   {r.title || (
-                    <span style={{ color: '#94a3b8' }}>no drop scheduled</span>
+                    <span style={{ color: '#9A958B' }}>no drop scheduled</span>
                   )}
                 </td>
                 <td style={s.td}>
@@ -498,7 +501,7 @@ export default function DropsSchedule() {
                         : ''}
                     </span>
                   ) : (
-                    <span style={{ color: '#cbd5e1' }}>—</span>
+                    <span style={{ color: '#9A958B' }}>—</span>
                   )}
                 </td>
                 <td style={s.td}>
@@ -789,8 +792,8 @@ export default function DropsSchedule() {
                         <div
                           style={{
                             ...s.pickerRowAvatar,
-                            background: isSelected ? '#0f172a' : '#fef3c7',
-                            color: isSelected ? '#f9c349' : '#b8860b',
+                            background: isSelected ? '#111111' : '#FFF1CC',
+                            color: isSelected ? '#C77700' : '#b8860b',
                           }}
                         >
                           {it.title.charAt(0).toUpperCase()}
@@ -835,19 +838,19 @@ export default function DropsSchedule() {
 // STYLES (unchanged from before)
 // ══════════════════════════════════════════════
 const s = {
-  hint: { fontSize: 11, color: '#94a3b8', marginTop: 4 },
+  hint: { fontSize: 11, color: '#9A958B', marginTop: 4 },
   opensBox: {
     marginTop: 14,
     padding: '10px 12px',
-    background: '#fffbeb',
-    border: '1px solid #fde68a',
+    background: '#FFF1CC',
+    border: '1px solid #FFF1CC',
     borderRadius: 10,
     display: 'flex',
     flexDirection: 'column',
     gap: 3,
   },
-  opensLabel: { fontSize: 11, color: '#92400e', textTransform: 'lowercase' },
-  opensValue: { fontSize: 13, fontWeight: 700, color: '#0f172a' },
+  opensLabel: { fontSize: 11, color: '#8A5A00', textTransform: 'lowercase' },
+  opensValue: { fontSize: 13, fontWeight: 700, color: '#111111' },
   opensNote: { fontSize: 11, color: '#a16207' },
   header: {
     display: 'flex',
@@ -855,11 +858,11 @@ const s = {
     alignItems: 'center',
     marginBottom: 24,
   },
-  title: { fontSize: 24, fontWeight: 800, color: '#0f172a', margin: 0 },
+  title: { fontSize: 32, fontWeight: 800, letterSpacing: '-0.8px', lineHeight: 1.1, color: '#111111', margin: 0 },
   card: {
     background: '#fff',
     borderRadius: 14,
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
     overflow: 'hidden',
   },
   table: { width: '100%', borderCollapse: 'collapse' },
@@ -869,25 +872,25 @@ const s = {
     padding: '12px 16px',
     fontSize: 11,
     fontWeight: 700,
-    color: '#64748b',
+    color: '#6B675E',
     textTransform: 'uppercase',
   },
-  tr: { borderBottom: '1px solid #f8fafc' },
-  td: { padding: '14px 16px', fontSize: 13, color: '#1e293b' },
+  tr: { borderBottom: '1px solid #FAF8F3' },
+  td: { padding: '14px 16px', fontSize: 13, color: '#111111' },
   btnPrimary: {
     padding: '10px 20px',
-    background: 'linear-gradient(135deg, #f9c349 0%, #ff961a 100%)',
+    background: '#F9C349',
     border: 'none',
     borderRadius: 10,
     fontWeight: 700,
     fontSize: 13,
     cursor: 'pointer',
-    color: '#0f172a',
+    color: '#111111',
   },
   btnGhost: {
     padding: '10px 18px',
-    background: '#f1f5f9',
-    border: '1px solid #e2e8f0',
+    background: '#F0ECE2',
+    border: '1px solid #ECE7DB',
     borderRadius: 10,
     cursor: 'pointer',
     fontWeight: 600,
@@ -896,34 +899,34 @@ const s = {
   btnGhostSm: {
     padding: '6px 12px',
     background: '#fff',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     borderRadius: 8,
     cursor: 'pointer',
     fontWeight: 600,
     fontSize: 12,
-    color: '#1e293b',
+    color: '#111111',
   },
   btnPrimarySm: {
     padding: '6px 12px',
-    background: 'linear-gradient(135deg, #f9c349 0%, #ff961a 100%)',
+    background: '#F9C349',
     border: 'none',
     borderRadius: 8,
     cursor: 'pointer',
     fontWeight: 700,
     fontSize: 12,
-    color: '#0f172a',
+    color: '#111111',
   },
   btnDangerSm: {
     padding: '6px 12px',
     background: '#fff',
-    border: '1px solid #fecaca',
+    border: '1px solid #FDECEA',
     borderRadius: 8,
     cursor: 'pointer',
     fontWeight: 600,
     fontSize: 12,
-    color: '#dc2626',
+    color: '#B42318',
   },
-  empty: { padding: 60, textAlign: 'center', color: '#94a3b8' },
+  empty: { padding: 60, textAlign: 'center', color: '#9A958B' },
   backdrop: {
     position: 'fixed',
     inset: 0,
@@ -956,7 +959,7 @@ const s = {
   modalTitle: {
     fontSize: 20,
     fontWeight: 800,
-    color: '#0f172a',
+    color: '#111111',
     marginTop: 0,
     marginBottom: 20,
   },
@@ -965,14 +968,14 @@ const s = {
     display: 'block',
     fontSize: 11,
     fontWeight: 700,
-    color: '#64748b',
+    color: '#6B675E',
     textTransform: 'uppercase',
     marginBottom: 6,
   },
   input: {
     width: '100%',
     padding: '10px 12px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     borderRadius: 10,
     fontSize: 13,
     outline: 'none',
@@ -982,19 +985,19 @@ const s = {
     gap: 10,
     justifyContent: 'flex-end',
     paddingTop: 16,
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
     marginTop: 16,
   },
   divider: {
     marginTop: 8,
     marginBottom: 16,
     paddingTop: 16,
-    borderTop: '1px dashed #e2e8f0',
+    borderTop: '1px dashed #ECE7DB',
   },
   dividerLabel: {
     fontSize: 10,
     fontWeight: 800,
-    color: '#f9c349',
+    color: '#C77700',
     textTransform: 'uppercase',
     letterSpacing: 1,
   },
@@ -1011,7 +1014,7 @@ const s = {
   statusLive: {
     padding: '2px 8px',
     background: '#10b98115',
-    color: '#059669',
+    color: '#1E6B3A',
     borderRadius: 6,
     fontSize: 11,
     fontWeight: 700,
@@ -1026,8 +1029,8 @@ const s = {
   },
   statusEmpty: {
     padding: '2px 8px',
-    background: '#f1f5f9',
-    color: '#94a3b8',
+    background: '#F0ECE2',
+    color: '#9A958B',
     borderRadius: 6,
     fontSize: 11,
     fontWeight: 700,
@@ -1049,31 +1052,31 @@ const s = {
     flex: 1,
     minWidth: 0,
   },
-  selectedChipDot: { color: '#f9c349', fontSize: 14 },
+  selectedChipDot: { color: '#C77700', fontSize: 14 },
   selectedChipTitle: {
     fontSize: 13,
     fontWeight: 800,
-    color: '#0f172a',
+    color: '#111111',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   selectedChipId: {
     fontSize: 10,
-    color: '#94a3b8',
+    color: '#9A958B',
     fontFamily: 'monospace',
     marginTop: 2,
   },
   pickerOpenBtn: {
     width: '100%',
     padding: '14px 16px',
-    background: '#f8fafc',
-    border: '2px dashed #cbd5e1',
+    background: '#FAF8F3',
+    border: '2px dashed #ECE7DB',
     borderRadius: 12,
     cursor: 'pointer',
     fontWeight: 600,
     fontSize: 13,
-    color: '#64748b',
+    color: '#6B675E',
     textAlign: 'left',
     display: 'flex',
     alignItems: 'center',
@@ -1089,19 +1092,19 @@ const s = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
   },
   pickerHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '20px 22px 14px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
   },
   pickerTitle: {
     fontSize: 17,
     fontWeight: 800,
-    color: '#0f172a',
+    color: '#111111',
     margin: 0,
     textTransform: 'lowercase',
   },
@@ -1109,11 +1112,11 @@ const s = {
     width: 32,
     height: 32,
     borderRadius: 10,
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: 'none',
     cursor: 'pointer',
     fontSize: 20,
-    color: '#64748b',
+    color: '#6B675E',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1124,29 +1127,29 @@ const s = {
     gap: 10,
     margin: '14px 22px 6px',
     padding: '10px 14px',
-    background: '#f8fafc',
-    border: '1.5px solid #e2e8f0',
+    background: '#FAF8F3',
+    border: '1.5px solid #ECE7DB',
     borderRadius: 12,
     position: 'relative',
   },
-  pickerSearchIcon: { fontSize: 14, color: '#94a3b8' },
+  pickerSearchIcon: { fontSize: 14, color: '#9A958B' },
   pickerSearchInput: {
     flex: 1,
     border: 'none',
     outline: 'none',
     fontSize: 14,
     background: 'transparent',
-    color: '#0f172a',
+    color: '#111111',
   },
   pickerClearBtn: {
     width: 22,
     height: 22,
     borderRadius: 11,
-    background: '#e2e8f0',
+    background: '#ECE7DB',
     border: 'none',
     cursor: 'pointer',
     fontSize: 14,
-    color: '#64748b',
+    color: '#6B675E',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -1161,31 +1164,31 @@ const s = {
   spinner: {
     width: 28,
     height: 28,
-    border: '3px solid #e2e8f0',
+    border: '3px solid #ECE7DB',
     borderTopColor: '#f9c349',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
   pickerLoaderText: {
     fontSize: 12,
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: 600,
     textTransform: 'lowercase',
   },
   pickerEmpty: {
     padding: '60px 22px',
     textAlign: 'center',
-    color: '#94a3b8',
+    color: '#9A958B',
     fontSize: 13,
     textTransform: 'lowercase',
   },
   pickerError: {
     padding: '40px 22px',
     textAlign: 'center',
-    color: '#dc2626',
+    color: '#B42318',
     fontSize: 13,
     fontWeight: 600,
-    background: '#fef2f2',
+    background: '#FDECEA',
     margin: '14px 22px',
     borderRadius: 12,
   },
@@ -1204,7 +1207,7 @@ const s = {
     gap: 12,
     padding: '12px 12px',
     background: '#fff',
-    border: '1.5px solid #f1f5f9',
+    border: '1.5px solid #F0ECE2',
     borderRadius: 12,
     cursor: 'pointer',
     textAlign: 'left',
@@ -1236,32 +1239,32 @@ const s = {
   pickerRowTitle: {
     fontSize: 13.5,
     fontWeight: 700,
-    color: '#0f172a',
+    color: '#111111',
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   pickerRowSubtitle: {
     fontSize: 11.5,
-    color: '#94a3b8',
+    color: '#9A958B',
     marginTop: 2,
     overflow: 'hidden',
     textOverflow: 'ellipsis',
     whiteSpace: 'nowrap',
   },
   pickerRowRight: { flexShrink: 0 },
-  pickerCheck: { color: '#f9c349', fontSize: 18, fontWeight: 900 },
-  pickerArrow: { color: '#cbd5e1', fontSize: 16 },
+  pickerCheck: { color: '#C77700', fontSize: 18, fontWeight: 900 },
+  pickerArrow: { color: '#9A958B', fontSize: 16 },
   pickerFooter: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '14px 22px 18px',
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
   },
   pickerFooterText: {
     fontSize: 11.5,
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: 600,
     textTransform: 'lowercase',
   },
