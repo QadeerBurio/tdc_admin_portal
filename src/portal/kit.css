@@ -171,3 +171,6 @@
 .tdcp .k-page-btn { min-width: 36px; height: 36px; padding: 0 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-family: var(--body); font-weight: 600; font-size: 13.5px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0; }
 .tdcp .k-page-btn[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
 .tdcp .k-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+/* a kit screen opened on its own route (no admin shell around it) */
+.tdcp.k-standalone { min-height: 100vh; background: var(--paper); padding: 28px 32px 48px; box-sizing: border-box; }
+@media (max-width: 900px) { .tdcp.k-standalone { padding: 20px 16px 40px; } }
