@@ -73,6 +73,12 @@
 }
 @media (prefers-reduced-motion: reduce) { .tdcp-nav { transition: none; } }
 
+/* thin neutral scrollbars inside the portal (AdminDashboard.css styles them globally) */
+.tdcp-nav { scrollbar-width: thin; scrollbar-color: var(--line) transparent; }
+.tdcp-nav::-webkit-scrollbar { width: 6px; }
+.tdcp-nav::-webkit-scrollbar-thumb { background: var(--line); border-radius: 3px; }
+.tdcp-nav::-webkit-scrollbar-track { background: transparent; }
+
 /* ---------- page parts ---------- */
 .tdcp-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; }
 .tdcp-hello { margin: 0; font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
@@ -94,7 +100,7 @@
 .tdcp-card-head h2 { margin: 0; font-weight: 700; font-size: 19px; }
 
 .tdcp-grid-big { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; }
-.tdcp-grid-small { display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tdcp-grid-small { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
 .tdcp-grid-2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; }
 .tdcp-stat { background: var(--card); color: var(--ink); border: 1px solid var(--line); border-radius: 22px; padding: 20px; text-align: left; font-family: var(--body); cursor: pointer; display: block; width: 100%; }
 .tdcp-stat:hover { border-color: #D9D2C2; }
