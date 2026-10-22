@@ -101,8 +101,8 @@ export default function AdminOffers() {
   return (
     <div style={{
       ...styles.container,
-      padding: isMobile ? "16px" : isTablet ? "20px 24px" : "30px 35px",
-      borderRadius: isMobile ? "16px" : isTablet ? "24px" : "32px",
+      padding: 0,
+      borderRadius: 0,
     }}>
       {/* Decorative Background */}
       <div style={styles.bgDecoration1}></div>
@@ -122,18 +122,14 @@ export default function AdminOffers() {
         transition={{ duration: 0.5 }}
       >
         <div>
-          <div style={styles.headerBadge}>
-            <FaImage />
-            <span>Content Library</span>
-          </div>
           <h1 style={{
             ...styles.mainTitle,
             fontSize: isMobile ? "22px" : isTablet ? "26px" : "30px",
-          }}>Asset Management</h1>
+          }}>manage offers<span className="dot" aria-hidden="true">.</span></h1>
           <p style={{
             ...styles.subtitle,
             fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
-          }}>Curate and control your storefront's visual identity</p>
+          }}>every slider and offer in the app. {items.length} total.</p>
         </div>
 
         <div style={{
@@ -155,7 +151,7 @@ export default function AdminOffers() {
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaCheckCircle color="#10b981" size={isMobile ? 12 : 14} />
+              <FaCheckCircle color="#1E6B3A" size={isMobile ? 12 : 14} />
               <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{activeCount}</span>
               <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Live</span>
             </motion.div>
@@ -163,7 +159,7 @@ export default function AdminOffers() {
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaClock color="#94a3b8" size={isMobile ? 12 : 14} />
+              <FaClock color="#9A958B" size={isMobile ? 12 : 14} />
               <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{draftCount}</span>
               <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Draft</span>
             </motion.div>
@@ -171,7 +167,7 @@ export default function AdminOffers() {
               style={styles.statBadge}
               whileHover={{ scale: 1.05 }}
             >
-              <FaChartLine color="#3b82f6" size={isMobile ? 12 : 14} />
+              <FaChartLine color="#2B7FC0" size={isMobile ? 12 : 14} />
               <span style={{...styles.statNumber, fontSize: isMobile ? "12px" : "14px"}}>{items.length}</span>
               <span style={{...styles.statLabel, fontSize: isMobile ? "10px" : "12px"}}>Total</span>
             </motion.div>
@@ -455,8 +451,8 @@ export default function AdminOffers() {
                 transition={{ duration: 0.4, delay: index * 0.05 }}
                 whileHover={{ 
                   y: -4, 
-                  boxShadow: "0 20px 35px -12px rgba(0,0,0,0.15)",
-                  borderColor: "rgba(255,150,26,0.2)"
+                  boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
+                  borderColor: "rgba(249, 195, 73,0.2)"
                 }}
               >
                 {viewMode === 'grid' ? (
@@ -487,7 +483,7 @@ export default function AdminOffers() {
                       padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
                     }}>
                       <div style={styles.cardMeta}>
-                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#10b981" : "#cbd5e1"}} />
+                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#2E8B3E" : "#ECE7DB"}} />
                         <span style={styles.cardStatus}>{item.active ? "Live" : "Draft"}</span>
                         <span style={styles.cardType}>
                           {item.type === "slider" ? "Slider" : "Offer"}
@@ -525,9 +521,9 @@ export default function AdminOffers() {
                               padding: isMobile ? "4px 8px" : "6px 10px",
                               fontSize: isMobile ? "10px" : "12px",
                               background: item.active 
-                                ? "#f1f5f9" 
-                                : "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
-                              color: item.active ? "#475569" : "#fff",
+                                ? "#F0ECE2" 
+                                : "#111111",
+                              color: item.active ? "#6B675E" : "#fff",
                             }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -583,7 +579,7 @@ export default function AdminOffers() {
                       width: isMobile ? "100%" : "auto",
                     }}>
                       <div style={styles.listMeta}>
-                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#10b981" : "#cbd5e1"}} />
+                        <span style={{...styles.statusDot, backgroundColor: item.active ? "#2E8B3E" : "#ECE7DB"}} />
                         <span style={{
                           ...styles.listStatus,
                           fontSize: isMobile ? "10px" : "11px",
@@ -631,9 +627,9 @@ export default function AdminOffers() {
                               padding: isMobile ? "4px 8px" : "6px 10px",
                               fontSize: isMobile ? "10px" : "12px",
                               background: item.active 
-                                ? "#f1f5f9" 
-                                : "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
-                              color: item.active ? "#475569" : "#fff",
+                                ? "#F0ECE2" 
+                                : "#111111",
+                              color: item.active ? "#6B675E" : "#fff",
                             }}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -708,7 +704,7 @@ export default function AdminOffers() {
           }
           .filter-btn.active {
             background: #fff;
-            color: #ff961a;
+            color: #C77700;
             box-shadow: 0 4px 12px rgba(0,0,0,0.08);
           }
           
@@ -744,11 +740,11 @@ export default function AdminOffers() {
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb:hover {
-            background: #ff961a;
+            background: #111111;
           }
 
           @media (max-width: 768px) {
@@ -888,14 +884,15 @@ const styles = {
   container: { 
     padding: "30px 35px", 
     maxWidth: "1200px", 
-    margin: "0 auto", 
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    color: "#1e293b",
-    minHeight: "85vh",
+    margin: "0",
+    color: "#111111",
+    minHeight: "auto",
     position: "relative",
-    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
+    background: "transparent",
     borderRadius: "32px",
-    overflow: "hidden"
+    overflow: "hidden",
+    boxShadow: "none",
+    border: "none",
   },
   bgDecoration1: {
     position: "absolute",
@@ -903,7 +900,7 @@ const styles = {
     right: "-50px",
     width: "300px",
     height: "300px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -913,7 +910,7 @@ const styles = {
     left: "-60px",
     width: "250px",
     height: "250px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.04) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -923,7 +920,7 @@ const styles = {
     right: "20%",
     width: "150px",
     height: "150px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.03) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none"
   },
@@ -941,12 +938,12 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    background: "#fff7ed",
+    background: "#FFF1CC",
     padding: "6px 16px",
     borderRadius: "40px",
     fontSize: "13px",
     fontWeight: "600",
-    color: "#ff961a",
+    color: "#C77700",
     marginBottom: "12px"
   },
   rightHeader: {
@@ -961,7 +958,7 @@ const styles = {
     background: "#fff",
     padding: "8px 16px",
     borderRadius: "60px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     boxShadow: "0 2px 8px rgba(0,0,0,0.02)"
   },
   statBadge: {
@@ -973,29 +970,29 @@ const styles = {
   },
   statNumber: {
     fontWeight: "700",
-    color: "#1e293b",
+    color: "#111111",
     fontSize: "14px"
   },
   statLabel: {
-    color: "#64748b",
+    color: "#6B675E",
     fontSize: "12px"
   },
   mainTitle: { 
     fontSize: "30px", 
     fontWeight: "800", 
     margin: 0, 
-    color: "#0f172a", 
+    color: "#111111", 
     letterSpacing: "-0.5px" 
   },
   subtitle: { 
-    color: "#64748b", 
+    color: "#6B675E", 
     fontSize: "14px", 
     margin: "6px 0 0 0" 
   },
   filterGroup: { 
     display: "flex", 
     gap: "6px", 
-    backgroundColor: "#f1f5f9", 
+    backgroundColor: "#F0ECE2", 
     padding: "6px", 
     borderRadius: "60px" 
   },
@@ -1007,15 +1004,15 @@ const styles = {
     fontWeight: "600", 
     fontSize: "14px",
     background: "transparent",
-    color: "#64748b",
+    color: "#6B675E",
     transition: "all 0.3s ease",
     display: "flex",
     alignItems: "center"
   },
   activeFilter: { 
     background: "#fff", 
-    color: "#ff961a", 
-    boxShadow: "0 4px 12px rgba(0,0,0,0.08)" 
+    color: "#C77700", 
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" 
   },
   searchWrapper: {
     display: "flex",
@@ -1037,18 +1034,17 @@ const styles = {
     left: "14px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#94a3b8",
+    color: "#9A958B",
     fontSize: "14px"
   },
   searchInput: {
     width: "100%",
     padding: "10px 40px 10px 40px",
     borderRadius: "14px",
-    border: "2px solid #e2e8f0",
+    border: "2px solid #ECE7DB",
     fontSize: "14px",
     backgroundColor: "#fff",
     transition: "all 0.2s ease",
-    fontFamily: "inherit",
     outline: "none"
   },
   clearSearch: {
@@ -1059,7 +1055,7 @@ const styles = {
     background: "none",
     border: "none",
     cursor: "pointer",
-    color: "#94a3b8",
+    color: "#9A958B",
     fontSize: "14px",
     padding: "4px"
   },
@@ -1072,7 +1068,7 @@ const styles = {
   filterToggle: {
     padding: "10px 16px",
     borderRadius: "14px",
-    border: "2px solid #e2e8f0",
+    border: "2px solid #ECE7DB",
     background: "#fff",
     cursor: "pointer",
     display: "flex",
@@ -1080,13 +1076,13 @@ const styles = {
     gap: "6px",
     fontSize: "13px",
     fontWeight: "500",
-    color: "#475569",
+    color: "#6B675E",
     transition: "all 0.2s ease"
   },
   viewToggle: {
     display: "flex",
     gap: "4px",
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     padding: "4px",
     borderRadius: "12px"
   },
@@ -1096,21 +1092,21 @@ const styles = {
     borderRadius: "8px",
     cursor: "pointer",
     background: "transparent",
-    color: "#94a3b8",
+    color: "#9A958B",
     transition: "all 0.2s ease"
   },
   activeView: {
     background: "#fff",
-    color: "#ff961a",
+    color: "#C77700",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)"
   },
   sortSelect: {
     padding: "10px 14px",
     borderRadius: "14px",
-    border: "2px solid #e2e8f0",
+    border: "2px solid #ECE7DB",
     background: "#fff",
     fontSize: "13px",
-    color: "#475569",
+    color: "#6B675E",
     cursor: "pointer",
     outline: "none"
   },
@@ -1119,8 +1115,8 @@ const styles = {
     borderRadius: "16px",
     padding: "0",
     marginBottom: "20px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.06)",
+    border: "1px solid #ECE7DB",
+    boxShadow: "0 24px 60px rgba(17, 17, 17, 0.16)",
     overflow: "hidden"
   },
   filtersContent: {
@@ -1140,13 +1136,13 @@ const styles = {
   filterSelect: {
     padding: "10px 14px",
     borderRadius: "10px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     fontSize: "14px",
-    background: "#f8fafc"
+    background: "#FAF8F3"
   },
   applyFiltersBtn: {
     padding: "10px 24px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     border: "none",
     borderRadius: "10px",
     color: "#fff",
@@ -1171,16 +1167,16 @@ const styles = {
   card: { 
     background: "#fff",
     borderRadius: "20px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+    border: "1px solid #ECE7DB",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     transition: "all 0.3s ease",
     overflow: "hidden"
   },
   listCard: {
     background: "#fff",
     borderRadius: "16px",
-    border: "1px solid #e2e8f0",
-    boxShadow: "0 4px 12px rgba(0,0,0,0.02)",
+    border: "1px solid #ECE7DB",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     transition: "all 0.3s ease",
     display: "flex",
     padding: "16px",
@@ -1192,7 +1188,7 @@ const styles = {
     height: "160px",
     position: "relative",
     overflow: "hidden",
-    backgroundColor: "#f1f5f9"
+    backgroundColor: "#F0ECE2"
   },
   cardImage: {
     width: "100%",
@@ -1216,7 +1212,7 @@ const styles = {
   cardStatus: {
     fontSize: "11px",
     fontWeight: "600",
-    color: "#64748b",
+    color: "#6B675E",
     textTransform: "uppercase"
   },
   cardType: {
@@ -1224,18 +1220,18 @@ const styles = {
     fontWeight: "700",
     padding: "2px 10px",
     borderRadius: "12px",
-    background: "#fff7ed",
-    color: "#ff961a"
+    background: "#FFF1CC",
+    color: "#C77700"
   },
   cardTitle: {
     fontSize: "16px",
     fontWeight: "700",
     margin: "0 0 4px 0",
-    color: "#0f172a"
+    color: "#111111"
   },
   cardDescription: {
     fontSize: "13px",
-    color: "#64748b",
+    color: "#6B675E",
     margin: "0 0 12px 0",
     lineHeight: "1.4"
   },
@@ -1243,12 +1239,12 @@ const styles = {
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    borderTop: "1px solid #f1f5f9",
+    borderTop: "1px solid #F0ECE2",
     paddingTop: "12px"
   },
   cardDate: {
     fontSize: "11px",
-    color: "#94a3b8",
+    color: "#9A958B",
     display: "flex",
     alignItems: "center",
     gap: "4px"
@@ -1272,9 +1268,9 @@ const styles = {
   smallDeleteBtn: {
     padding: "6px 10px",
     borderRadius: "8px",
-    border: "1px solid #fee2e2",
+    border: "1px solid #FDECEA",
     backgroundColor: "#fff",
-    color: "#ef4444",
+    color: "#B42318",
     fontSize: "12px",
     fontWeight: "600",
     cursor: "pointer",
@@ -1300,7 +1296,7 @@ const styles = {
     position: "absolute",
     top: "10px",
     right: "10px",
-    background: "#10b981",
+    background: "#2E8B3E",
     color: "#fff",
     padding: "4px 10px",
     borderRadius: "20px",
@@ -1316,7 +1312,7 @@ const styles = {
     borderRadius: "12px",
     overflow: "hidden",
     flexShrink: 0,
-    backgroundColor: "#f1f5f9"
+    backgroundColor: "#F0ECE2"
   },
   listImage: {
     width: "100%",
@@ -1337,7 +1333,7 @@ const styles = {
   listStatus: {
     fontSize: "11px",
     fontWeight: "600",
-    color: "#64748b",
+    color: "#6B675E",
     textTransform: "uppercase"
   },
   listType: {
@@ -1345,23 +1341,23 @@ const styles = {
     fontWeight: "700",
     padding: "2px 10px",
     borderRadius: "12px",
-    background: "#fff7ed",
-    color: "#ff961a"
+    background: "#FFF1CC",
+    color: "#C77700"
   },
   listId: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     fontFamily: "monospace"
   },
   listTitle: {
     fontSize: "15px",
     fontWeight: "700",
     margin: "0 0 2px 0",
-    color: "#0f172a"
+    color: "#111111"
   },
   listDescription: {
     fontSize: "13px",
-    color: "#64748b",
+    color: "#6B675E",
     margin: "0 0 8px 0",
     lineHeight: "1.4"
   },
@@ -1374,7 +1370,7 @@ const styles = {
   },
   listDate: {
     fontSize: "11px",
-    color: "#94a3b8",
+    color: "#9A958B",
     display: "flex",
     alignItems: "center",
     gap: "4px"
@@ -1386,7 +1382,7 @@ const styles = {
   loader: { 
     textAlign: "center", 
     padding: "80px", 
-    color: "#64748b",
+    color: "#6B675E",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
@@ -1395,18 +1391,18 @@ const styles = {
   spinner: {
     width: "40px",
     height: "40px",
-    border: "3px solid #e2e8f0",
-    borderTop: "3px solid #ff961a",
+    border: "3px solid #ECE7DB",
+    borderTop: "3px solid #111111",
     borderRadius: "50%",
     animation: "spin 0.8s linear infinite"
   },
   emptyState: { 
     textAlign: "center", 
     padding: "60px", 
-    border: "2px dashed #e2e8f0", 
+    border: "2px dashed #ECE7DB", 
     borderRadius: "28px",
     backgroundColor: "#fff",
-    color: "#94a3b8"
+    color: "#9A958B"
   },
   emptyIcon: {
     fontSize: "64px",
@@ -1416,17 +1412,17 @@ const styles = {
   emptyTitle: {
     fontSize: "18px",
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#111111",
     margin: "0 0 8px 0"
   },
   emptySubtitle: {
     fontSize: "14px",
-    color: "#94a3b8"
+    color: "#9A958B"
   },
   emptyBtn: {
     marginTop: "20px",
     padding: "12px 24px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     border: "none",
     borderRadius: "12px",
     color: "#fff",
@@ -1435,6 +1431,6 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    boxShadow: "0 4px 15px rgba(255,150,26,0.3)"
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)"
   }
 };
