@@ -7,7 +7,7 @@ import {
   Loader2, AlertCircle, Store, Plane, Building,
   CreditCard, Gift, Ticket, FileCheck, Users,
   Link2, Crown, Clock, CheckCircle, XCircle,
-  Eye, Key, Hash, UserPlus, TrendingUp, Flame
+  Hash, UserPlus, TrendingUp, Flame
 } from 'lucide-react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
@@ -18,7 +18,6 @@ const UserDossier = () => {
   const [loading, setLoading] = useState(true);
   const [userData, setUserData] = useState(null);
   const [error, setError] = useState(null);
-  const [showPassword, setShowPassword] = useState(false);
   const [userDetails, setUserDetails] = useState({
     offers: [],
     jobs: [],
@@ -202,44 +201,15 @@ const UserDossier = () => {
     return { level: 'New', color: '#94a3b8', bg: '#f1f5f9', icon: '💫' };
   };
 
-  const DetailItem = ({ label, value, icon: Icon, isPassword = false }) => {
-    const displayValue = isPassword 
-      ? (showPassword ? value : '••••••••')
-      : (value || '—');
-    
-    return (
-      <div style={styles.detailCard}>
-        <div style={styles.detailLabelWrap}>
-          {Icon && <Icon size={14} style={{ color: '#EAB308' }} />}
-          <label style={styles.detailLabel}>{label}</label>
-          {isPassword && value && (
-            <button 
-              onClick={() => setShowPassword(!showPassword)}
-              style={styles.eyeBtn}
-            >
-              <Eye size={14} />
-            </button>
-          )}
-        </div>
-        <p style={styles.detailValue}>
-          {displayValue}
-          {isPassword && value && showPassword && (
-            <span 
-              style={styles.copyHint} 
-              onClick={(e) => {
-                e.stopPropagation();
-                navigator.clipboard.writeText(value);
-                alert('Password copied to clipboard!');
-              }}
-              title="Click to copy"
-            >
-              📋
-            </span>
-          )}
-        </p>
+  const DetailItem = ({ label, value, icon: Icon }) => (
+    <div style={styles.detailCard}>
+      <div style={styles.detailLabelWrap}>
+        {Icon && <Icon size={14} style={{ color: '#EAB308' }} />}
+        <label style={styles.detailLabel}>{label}</label>
       </div>
-    );
-  };
+      <p style={styles.detailValue}>{value || '—'}</p>
+    </div>
+  );
 
   if (loading) {
     return (
@@ -408,7 +378,6 @@ const UserDossier = () => {
             <div style={styles.grid2Col}>
               <DetailItem label="Full Name" value={name} icon={User} />
               <DetailItem label="Email" value={email} icon={Mail} />
-              <DetailItem label="Password" value={userData.password} icon={Key} isPassword />
               <DetailItem label="Phone" value={phone} icon={Phone} />
               <DetailItem label="Location" value={location} icon={Globe} />
               <DetailItem label="Instagram" value={instagram} icon={Globe} />
@@ -1061,26 +1030,6 @@ const styles = {
     alignItems: 'center',
     gap: '8px',
     flexWrap: 'wrap'
-  },
-  eyeBtn: {
-    background: 'none',
-    border: 'none',
-    cursor: 'pointer',
-    color: '#94a3b8',
-    padding: '2px',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    borderRadius: '4px',
-    transition: 'background 0.2s'
-  },
-  copyHint: {
-    cursor: 'pointer',
-    fontSize: '14px',
-    opacity: 0.6,
-    transition: 'opacity 0.2s',
-    padding: '2px 4px',
-    borderRadius: '4px'
   },
   skillsContainer: {
     marginTop: '16px',
