@@ -11,14 +11,14 @@ import api, { engagementApi } from '../services/api';
 const GOLD = '#f9c349';
 const GOLD_DARK = '#e0a82e';
 const GOLD_LIGHT = '#fffbee';
-const BLACK = '#0f172a';
-const MUTED = '#64748b';
-const BORDER = '#f1f5f9';
-const DANGER = '#ef4444';
-const SUCCESS = '#10b981';
-const INFO = '#3b82f6';
-const PURPLE = '#8b5cf6';
-const ORANGE = '#f97316';
+const BLACK = '#111111';
+const MUTED = '#6B675E';
+const BORDER = '#F0ECE2';
+const DANGER = '#B42318';
+const SUCCESS = '#1E6B3A';
+const INFO = '#2B7FC0';
+const PURPLE = '#8E44AD';
+const ORANGE = '#C77700';
 
 // ─────────────────────────────────────────────
 // ASSET BASE
@@ -37,29 +37,29 @@ const moodImage = (mood) => `${ASSET_BASE}/dots/${mood}.png`;
 
 const MOODS = {
   // 🙂 Happy / positive
-  sorted:   { emoji: '😊', label: 'sorted',   color: '#10b981' },
-  excited:  { emoji: '🤩', label: 'excited',  color: '#f9c349' },
-  hype:     { emoji: '😆', label: 'hype',     color: '#f97316' },
-  smug:     { emoji: '😏', label: 'smug',     color: '#3b82f6' },
+  sorted:   { emoji: '😊', label: 'sorted',   color: '#1E6B3A' },
+  excited:  { emoji: '🤩', label: 'excited',  color: '#C77700' },
+  hype:     { emoji: '😆', label: 'hype',     color: '#C77700' },
+  smug:     { emoji: '😏', label: 'smug',     color: '#2B7FC0' },
 
   // 😅 Wary / cheeky
-  cheeky:   { emoji: '😜', label: 'cheeky',   color: '#ec4899' },
-  sus:      { emoji: '😒', label: 'sus',      color: '#f97316' },
+  cheeky:   { emoji: '😜', label: 'cheeky',   color: '#C2185B' },
+  sus:      { emoji: '😒', label: 'sus',      color: '#C77700' },
 
   // 😟 Negative / worried
-  broke:    { emoji: '😢', label: 'broke',    color: '#94a3b8' },
-  panic:    { emoji: '😰', label: 'panic',    color: '#ef4444' },
-  shock:    { emoji: '😳', label: 'shock',    color: '#eab308' },
-  shook:    { emoji: '😮', label: 'shook',    color: '#a855f7' },
+  broke:    { emoji: '😢', label: 'broke',    color: '#9A958B' },
+  panic:    { emoji: '😰', label: 'panic',    color: '#B42318' },
+  shock:    { emoji: '😳', label: 'shock',    color: '#C77700' },
+  shook:    { emoji: '😮', label: 'shook',    color: '#8E44AD' },
   urgent:   { emoji: '😨', label: 'urgent',   color: '#ff6b6b' },
 
   // 💤 Neutral / sleepy / money / ghost
-  sleepy:   { emoji: '😴', label: 'sleepy',   color: '#8b5cf6' },
-  ghost:    { emoji: '😑', label: 'ghost',    color: '#64748b' },
-  money:    { emoji: '🤑', label: 'money',    color: '#10b981' },
+  sleepy:   { emoji: '😴', label: 'sleepy',   color: '#8E44AD' },
+  ghost:    { emoji: '😑', label: 'ghost',    color: '#6B675E' },
+  money:    { emoji: '🤑', label: 'money',    color: '#1E6B3A' },
 
   // Fallback
-  default:  { emoji: '✨', label: 'default',  color: '#f9c349' },
+  default:  { emoji: '✨', label: 'default',  color: '#C77700' },
 };
 
 
@@ -361,9 +361,9 @@ export default function PushCenter() {
     <div style={s.page}>
       <div style={s.header}>
         <div>
-          <h2 style={s.title}>push center</h2>
+          <h2 style={s.title}>push center<span className="dot" aria-hidden="true">.</span></h2>
           <p style={s.subtitle}>
-            every notification · every scenario · one place
+            compose, test and send notifications. keep them fun, never pushy.
           </p>
         </div>
         <button style={s.refreshBtn} onClick={loadUsers} disabled={loadingUsers}>
@@ -1471,7 +1471,7 @@ const resultBanner = (ok) => ({
   padding: 14,
   borderRadius: 12,
   background: ok ? SUCCESS + '12' : DANGER + '12',
-  color: ok ? '#059669' : '#dc2626',
+  color: ok ? '#1E6B3A' : '#B42318',
   fontWeight: 700,
   fontSize: 13,
   border: `1.5px solid ${ok ? SUCCESS + '30' : DANGER + '30'}`,
@@ -1492,11 +1492,12 @@ const s = {
     flexWrap: 'wrap',
   },
   title: {
-    fontSize: 26,
-    fontWeight: 900,
+    fontSize: 32,
+    fontWeight: 800,
+    letterSpacing: '-0.8px',
+    lineHeight: 1.1,
     color: BLACK,
     margin: 0,
-    letterSpacing: -0.5,
     textTransform: 'lowercase',
   },
   subtitle: {
@@ -1507,7 +1508,7 @@ const s = {
   },
   refreshBtn: {
     padding: '9px 18px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: `1.5px solid ${BORDER}`,
     borderRadius: 10,
     cursor: 'pointer',
@@ -1518,7 +1519,7 @@ const s = {
   },
   refreshBtnSm: {
     padding: '5px 12px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: `1.5px solid ${BORDER}`,
     borderRadius: 8,
     cursor: 'pointer',
@@ -1529,7 +1530,7 @@ const s = {
   },
   btnGhost: {
     padding: '9px 18px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     border: `1.5px solid ${BORDER}`,
     borderRadius: 10,
     cursor: 'pointer',
@@ -1567,13 +1568,12 @@ const s = {
     borderRadius: 14,
     cursor: 'pointer',
     textAlign: 'left',
-    fontFamily: 'inherit',
     transition: 'all 0.15s',
   },
   tabChipActive: {
     background: GOLD,
     borderColor: BLACK,
-    boxShadow: '0 4px 12px rgba(249,195,73,0.35)',
+    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)',
   },
   tabIcon: { fontSize: 20, flexShrink: 0 },
   tabLabel: {
@@ -1650,7 +1650,6 @@ const s = {
     outline: 'none',
     background: '#fafbfc',
     color: BLACK,
-    fontFamily: 'inherit',
     boxSizing: 'border-box',
   },
 
@@ -1674,7 +1673,7 @@ const s = {
   },
   audienceChip: {
     padding: '8px 14px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     border: `1.5px solid ${BORDER}`,
     borderRadius: 10,
     cursor: 'pointer',
@@ -1730,7 +1729,7 @@ const s = {
     background: '#fff',
     border: `1.5px solid ${BORDER}`,
     borderRadius: 12,
-    boxShadow: '0 8px 24px rgba(0,0,0,0.08)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
     maxHeight: 320,
     overflowY: 'auto',
     zIndex: 10,
@@ -1746,7 +1745,6 @@ const s = {
     borderBottom: `1px solid ${BORDER}`,
     cursor: 'pointer',
     textAlign: 'left',
-    fontFamily: 'inherit',
   },
   dropdownRowHighlight: {
     background: GOLD_LIGHT,
@@ -1828,7 +1826,7 @@ const s = {
     background: '#1a1a1a',
     borderRadius: 20,
     padding: 14,
-    border: `6px solid #000`,
+    border: `6px solid #111111`,
   },
   phoneHeader: {
     display: 'flex',
@@ -1882,12 +1880,12 @@ const s = {
     borderRadius: 16,
   },
   notifTitle: { fontSize: 13, fontWeight: 800, color: BLACK, marginBottom: 2 },
-  notifBody: { fontSize: 12, color: '#334155', lineHeight: 1.4 },
+  notifBody: { fontSize: 12, color: '#111111', lineHeight: 1.4 },
 
   bankInfo: {
     marginTop: 16,
     padding: 14,
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
   },
@@ -1926,7 +1924,7 @@ const s = {
   moodStrip: {
     marginTop: 16,
     padding: 12,
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: 12,
     border: `1px solid ${BORDER}`,
   },
@@ -1972,7 +1970,7 @@ const s = {
   featureTagUsed: {
     padding: '2px 8px',
     background: SUCCESS + '15',
-    color: '#059669',
+    color: '#1E6B3A',
     borderRadius: 6,
     fontSize: 10,
     fontWeight: 800,
@@ -1991,7 +1989,7 @@ const s = {
   },
   featureTagMore: {
     padding: '2px 8px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     color: MUTED,
     borderRadius: 6,
     fontSize: 10,
@@ -1999,7 +1997,7 @@ const s = {
   },
   mutedTag: {
     padding: '2px 8px',
-    background: '#f1f5f9',
+    background: '#F0ECE2',
     color: MUTED,
     borderRadius: 6,
     fontSize: 10,
@@ -2038,7 +2036,7 @@ const s = {
   tagSuccess: {
     padding: '3px 8px',
     background: SUCCESS + '15',
-    color: '#059669',
+    color: '#1E6B3A',
     borderRadius: 6,
     fontSize: 10,
     fontWeight: 800,
@@ -2047,7 +2045,7 @@ const s = {
   tagInfo: {
     padding: '3px 8px',
     background: INFO + '15',
-    color: '#2563eb',
+    color: '#2B7FC0',
     borderRadius: 6,
     fontSize: 10,
     fontWeight: 800,
@@ -2087,7 +2085,6 @@ const s = {
     borderRadius: 14,
     cursor: 'pointer',
     textAlign: 'left',
-    fontFamily: 'inherit',
     transition: 'all 0.15s',
   },
   broadcastIconWrap: {
