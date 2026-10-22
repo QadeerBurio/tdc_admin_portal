@@ -1,0 +1,22 @@
+/* Traveling: package cards, list and form. Kit tokens only. */
+.tdcp .tv-dot { width: 7px; height: 7px; border-radius: 4px; background: var(--danger); display: inline-block; margin-left: 2px; }
+.tdcp .tv-filters { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-end; }
+.tdcp .tv-filters > .k-field { flex: 1 1 200px; }
+.tdcp .tv-card { display: flex; flex-direction: column; overflow: hidden; }
+.tdcp .tv-img { position: relative; height: 190px; background: var(--sand); }
+.tdcp .tv-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .tv-cat { position: absolute; top: 12px; left: 12px; }
+.tdcp .tv-price { position: absolute; bottom: 12px; right: 12px; }
+.tdcp .tv-body { padding: 14px 16px 4px; display: flex; flex-direction: column; gap: 6px; flex: 1; }
+.tdcp .tv-title { margin: 0; font-size: 17px; font-weight: 700; overflow-wrap: anywhere; }
+.tdcp .tv-desc { margin: 0; font-size: 13.5px; color: var(--muted); overflow-wrap: anywhere; }
+.tdcp .tv-foot { display: flex; justify-content: space-between; align-items: center; gap: 8px; padding: 10px 14px 14px; }
+.tdcp .tv-thumb { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 14px; object-fit: cover; background: var(--sand); }
+.tdcp .tv-form { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr); gap: 24px; }
+.tdcp .tv-col { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tdcp .tv-two { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; }
+.tdcp .tv-list { display: flex; flex-direction: column; gap: 8px; }
+.tdcp .tv-upload { position: relative; min-height: 170px; overflow: hidden; }
+.tdcp .tv-preview { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; }
+.tdcp .tv-change { position: relative; display: inline-flex; align-items: center; gap: 6px; padding: 6px 12px; border-radius: 14px; background: var(--ink); color: var(--card); font-size: 13px; font-weight: 700; }
+@media (max-width: 760px) { .tdcp .tv-form, .tdcp .tv-two { grid-template-columns: 1fr; } }
