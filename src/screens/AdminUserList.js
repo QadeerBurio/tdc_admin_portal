@@ -1,4 +1,5 @@
-// AdminUserList.js - Complete Component with Password Management, QR Display & Revenue Drill-Down
+// AdminUserList.js: all students / brands / employers / travelers (design/portal/AdStudents, AdBrands, AdEmployers, AdTravelers),
+// quick view, brand offer QR codes and redemptions.
 import React, { useState, useEffect, useRef } from "react";
 import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
@@ -19,6 +20,15 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "framer-motion";
 import QRCode from "qrcode";
+
+// Header copy from the design boards; the number is the count of loaded accounts.
+const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
+const BOARD = {
+  student: { title: "all students", sub: (n) => (n == null ? "registered tdc users." : `${fmtCount(n)} registered tdc users.`) },
+  brand: { title: "all brands", sub: (n) => (n == null ? "partner brands across Karachi, Lahore and Islamabad." : `${fmtCount(n)} partner brands across Karachi, Lahore and Islamabad.`) },
+  employee: { title: "all employers", sub: (n) => (n == null ? "companies hiring through the career hub." : `${fmtCount(n)} companies hiring through the career hub.`) },
+  traveler: { title: "all travelers", sub: (n) => (n == null ? "users with a traveler account." : `users with a traveler account. ${fmtCount(n)} so far.`) },
+};
 
 export default function AdminUserList({ role, title }) {
   const [users, setUsers] = useState([]);
@@ -122,7 +132,6 @@ export default function AdminUserList({ role, title }) {
     try {
       const res = await fetch(
         `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
-        // `http://localhost:5000/api/admin/users/${role}`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -173,7 +182,6 @@ export default function AdminUserList({ role, title }) {
     try {
       const res = await fetch(
         `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
-        // `http://localhost:5000/api/admin/approve-user/${id}`,
         { method: "POST", headers: getAuthHeaders() }
       );
       if (res.ok) fetchUsers();
@@ -186,7 +194,7 @@ export default function AdminUserList({ role, title }) {
 
   const viewUserDetails = (userId) => {
     setShowModal(false);
-    navigate('/dossier', { state: { userId } });
+    navigate(`/admin/users/${role}/${userId}`);
   };
 
   const openUserModal = async (user) => {
@@ -233,7 +241,6 @@ export default function AdminUserList({ role, title }) {
         try {
           const offersRes = await fetch(
             `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
-            // `http://localhost:5000/api/offers/brand/${user._id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const offersData = await offersRes.json();
@@ -243,7 +250,6 @@ export default function AdminUserList({ role, title }) {
           try {
             const statsRes = await fetch(
               `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}/redemptions`,
-              // `http://localhost:5000/api/offers/brand/${user._id}/redemptions`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             const statsData = await statsRes.json();
@@ -258,53 +264,8 @@ export default function AdminUserList({ role, title }) {
         }
       }
 
-      if (user.role === 'employee') {
-        try {
-          const jobsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/jobs/my-jobs`,
-            // `http://localhost:5000/api/jobs/my-jobs`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const jobsData = await jobsRes.json();
-          details.jobs = Array.isArray(jobsData) ? jobsData : [];
-        } catch (err) {
-          console.error("Error fetching employee details:", err);
-        }
-      }
-
-      if (user.role === 'student') {
-        try {
-          const claimedRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/claimed`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const claimedData = await claimedRes.json();
-          details.claimedOffers = Array.isArray(claimedData) ? claimedData : [];
-
-          const savingsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/my-total-savings`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const savingsData = await savingsRes.json();
-          details.savings = savingsData || { totalSaved: 0, redemptionCount: 0 };
-
-          const jobAppsRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/jobs/my-applications`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const jobAppsData = await jobAppsRes.json();
-          details.applications = Array.isArray(jobAppsData) ? jobAppsData : [];
-
-          const resumeRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/resume/primary`,
-            { headers: { Authorization: `Bearer ${token}` } }
-          );
-          const resumeData = await resumeRes.json();
-          details.resume = resumeData.success ? resumeData.data : null;
-        } catch (err) {
-          console.error("Error fetching student details:", err);
-        }
-      }
+      // Students and employers: the API has no per-user admin endpoints for claims, savings, applications,
+      // CV or posted jobs (the /my-... endpoints return the logged-in admin's own data), so none are loaded here.
 
       setUserDetails(details);
     } catch (err) {
@@ -408,7 +369,6 @@ export default function AdminUserList({ role, title }) {
     try {
       const res = await fetch(
         `https://the-deft-crew-production.up.railway.app/api/offers/brand/${brandId}/redemptions`,
-        // `http://localhost:5000/api/offers/brand/${brandId}/redemptions`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -494,20 +454,20 @@ export default function AdminUserList({ role, title }) {
 
   const getRoleColor = (role) => {
     switch (role) {
-      case 'student': return '#3b82f6';
-      case 'brand': return '#8b5cf6';
-      case 'employee': return '#10b981';
-      case 'traveler': return '#f59e0b';
-      case 'admin': return '#ef4444';
-      default: return '#94a3b8';
+      case 'student': return '#2B7FC0';
+      case 'brand': return '#8E44AD';
+      case 'employee': return '#2E8B3E';
+      case 'traveler': return '#111111';
+      case 'admin': return '#D9443F';
+      default: return '#ECE7DB';
     }
   };
 
   const getReferralLevel = (count) => {
-    if (count >= 10) return { level: 'Elite', color: '#8b5cf6', bg: '#f5f3ff', icon: '👑' };
-    if (count >= 5) return { level: 'Pro', color: '#f59e0b', bg: '#fffbeb', icon: '⭐' };
-    if (count >= 1) return { level: 'Starter', color: '#3b82f6', bg: '#eff6ff', icon: '🌟' };
-    return { level: 'New', color: '#94a3b8', bg: '#f1f5f9', icon: '💫' };
+    if (count >= 10) return { level: 'Elite', color: '#8E44AD', bg: '#F1E6F5', icon: '👑' };
+    if (count >= 5) return { level: 'Pro', color: '#C77700', bg: '#FFF1CC', icon: '⭐' };
+    if (count >= 1) return { level: 'Starter', color: '#2B7FC0', bg: '#E1F1FA', icon: '🌟' };
+    return { level: 'New', color: '#9A958B', bg: '#F0ECE2', icon: '💫' };
   };
 
   const handleStatClick = (filterType, value) => {
@@ -669,19 +629,16 @@ export default function AdminUserList({ role, title }) {
           transition={{ duration: 0.5 }}
         >
           <div>
-            <div style={styles.headerBadge}>
-              {getRoleIcon(role)}
-              <span>{role.charAt(0).toUpperCase() + role.slice(1)} Management</span>
-            </div>
             <h2 style={{
               ...styles.title,
-              fontSize: isMobile ? "20px" : isTablet ? "24px" : "26px",
-            }}>{title}</h2>
+              fontSize: isMobile ? "26px" : "32px",
+              letterSpacing: "-0.8px",
+            }}>{BOARD[role]?.title || title}<span className="dot" aria-hidden="true">.</span></h2>
             <p style={{
               ...styles.subtitle,
               fontSize: isMobile ? "12px" : isTablet ? "13px" : "14px",
             }}>
-              Manage and monitor all {role} accounts in your platform
+              {BOARD[role] ? BOARD[role].sub(loading ? null : users.length) : `all ${role} accounts.`}
             </p>
           </div>
           <div style={{
@@ -740,48 +697,48 @@ export default function AdminUserList({ role, title }) {
               icon: <Users size={isMobile ? 14 : 16} />,
               label: 'Total',
               value: stats.total,
-              color: '#10b981',
-              bg: '#ecfdf5',
+              color: '#1E6B3A',
+              bg: '#E3F3E8',
               filter: 'total'
             },
             {
               icon: <CheckCircle size={isMobile ? 14 : 16} />,
               label: 'Verified',
               value: stats.verified,
-              color: '#3b82f6',
-              bg: '#eff6ff',
+              color: '#2B7FC0',
+              bg: '#E1F1FA',
               filter: 'verified'
             },
             {
               icon: <Clock size={isMobile ? 14 : 16} />,
               label: 'Pending',
               value: stats.pending,
-              color: '#f59e0b',
-              bg: '#fef3c7',
+              color: '#C77700',
+              bg: '#FFF1CC',
               filter: 'pending'
             },
             {
               icon: <Crown size={isMobile ? 14 : 16} />,
               label: 'VIP',
               value: stats.vip,
-              color: '#ec4899',
-              bg: '#fdf2f8',
+              color: '#C2185B',
+              bg: '#FCE4EC',
               filter: 'vip'
             },
             {
               icon: <Gift size={isMobile ? 14 : 16} />,
               label: 'Referrals',
               value: stats.totalReferrals,
-              color: '#eab308',
-              bg: '#fefce8',
+              color: '#C77700',
+              bg: '#FFF1CC',
               filter: 'referrals'
             },
             {
               icon: <Image size={isMobile ? 14 : 16} />,
               label: 'With Logo',
               value: stats.withLogo,
-              color: '#8b5cf6',
-              bg: '#f5f3ff',
+              color: '#8E44AD',
+              bg: '#F1E6F5',
               filter: 'logo'
             },
           ].map((stat, index) => (
@@ -800,7 +757,7 @@ export default function AdminUserList({ role, title }) {
               transition={{ duration: 0.3, delay: 0.05 + index * 0.03 }}
               whileHover={{
                 y: -2,
-                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
                 ...(stat.filter !== 'total' && stat.filter !== 'logo' ? { scale: 1.02 } : {})
               }}
               onClick={() => handleStatClick(stat.filter, stat.value)}
@@ -1111,7 +1068,7 @@ export default function AdminUserList({ role, title }) {
                         initial={{ opacity: 0, x: -20 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.3, delay: index * 0.03 }}
-                        whileHover={{ backgroundColor: '#f8fafc' }}
+                        whileHover={{ backgroundColor: '#FAF8F3' }}
                         onClick={() => openUserModal(u)}
                       >
                         <td style={{
@@ -1150,12 +1107,12 @@ export default function AdminUserList({ role, title }) {
                           fontSize: isMobile ? "11px" : "13px",
                         }}>
                           <div style={styles.emailCell}>
-                            <Mail size={isMobile ? 10 : 12} color="#94a3b8" />
+                            <Mail size={isMobile ? 10 : 12} color="#9A958B" />
                             <span style={{ fontSize: isMobile ? "10px" : "12px" }}>{u.email}</span>
                           </div>
                           {u.phone && (
                             <div style={styles.phoneCell}>
-                              <Phone size={isMobile ? 10 : 12} color="#94a3b8" />
+                              <Phone size={isMobile ? 10 : 12} color="#9A958B" />
                               <span style={{ fontSize: isMobile ? "9px" : "11px" }}>{u.phone}</span>
                             </div>
                           )}
@@ -1179,7 +1136,7 @@ export default function AdminUserList({ role, title }) {
                                 ...styles.logoIndicator,
                                 fontSize: isMobile ? "8px" : "10px",
                               }}>
-                                <Image size={isMobile ? 8 : 10} color="#10b981" />
+                                <Image size={isMobile ? 8 : 10} color="#1E6B3A" />
                                 <span>Logo</span>
                               </div>
                             )}
@@ -1217,7 +1174,7 @@ export default function AdminUserList({ role, title }) {
                         }}>
                           <div style={styles.referralInfo}>
                             <div style={styles.referralCode}>
-                              <Link2 size={isMobile ? 10 : 12} color="#eab308" />
+                              <Link2 size={isMobile ? 10 : 12} color="#C77700" />
                               <code style={{ fontSize: isMobile ? "9px" : "11px" }}>{u.referralCode || 'N/A'}</code>
                             </div>
                             <div style={styles.referralStats}>
@@ -1247,7 +1204,7 @@ export default function AdminUserList({ role, title }) {
                                   fontSize: isMobile ? "7px" : "9px",
                                   padding: isMobile ? "1px 4px" : "2px 8px",
                                 }}>
-                                  <Flame size={isMobile ? 8 : 12} color="#8b5cf6" />
+                                  <Flame size={isMobile ? 8 : 12} color="#8E44AD" />
                                   <span>Top</span>
                                 </div>
                               )}
@@ -1265,7 +1222,7 @@ export default function AdminUserList({ role, title }) {
                               padding: isMobile ? "2px 8px" : "4px 12px",
                               fontSize: isMobile ? "9px" : "11px",
                               backgroundColor: u.status === "Verified" ? "#10b98115" : "#f59e0b15",
-                              color: u.status === "Verified" ? "#10b981" : "#f59e0b",
+                              color: u.status === "Verified" ? "#1E6B3A" : "#C77700",
                             }}
                           >
                             {u.status === "Verified" ? (
@@ -1298,11 +1255,11 @@ export default function AdminUserList({ role, title }) {
                               }}
                               onError={(e) => {
                                 e.target.style.display = 'none';
-                                e.target.parentElement.innerHTML = '<span style="color:#94a3b8">—</span>';
+                                e.target.parentElement.innerHTML = '<span style="color:#ECE7DB">—</span>';
                               }}
                             />
                           ) : (
-                            <span style={{ color: '#94a3b8', fontSize: isMobile ? "10px" : "12px" }}>—</span>
+                            <span style={{ color: '#9A958B', fontSize: isMobile ? "10px" : "12px" }}>—</span>
                           )}
                         </td>
                         <td style={{
@@ -1354,7 +1311,7 @@ export default function AdminUserList({ role, title }) {
                                 ...styles.actionBtn,
                                 padding: isMobile ? "4px 6px" : "6px 10px",
                                 backgroundColor: u.status === "Verified" ? "#ef444410" : "#10b98110",
-                                color: u.status === "Verified" ? "#ef4444" : "#10b981",
+                                color: u.status === "Verified" ? "#B42318" : "#1E6B3A",
                                 border: u.status === "Verified"
                                   ? "1px solid #ef444430"
                                   : "1px solid #10b98130",
@@ -1844,7 +1801,7 @@ export default function AdminUserList({ role, title }) {
                             <motion.div
                               onClick={openRedemptionsModal}
                               style={{
-                                background: 'linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%)',
+                                background: '#E3F3E8',
                                 padding: isMobile ? '10px' : '14px',
                                 borderRadius: '12px',
                                 border: '1px solid #10b98130',
@@ -1853,17 +1810,17 @@ export default function AdminUserList({ role, title }) {
                                 flexDirection: 'column',
                                 gap: '4px',
                               }}
-                              whileHover={{ scale: 1.03, boxShadow: '0 4px 12px rgba(16,185,129,0.15)' }}
+                              whileHover={{ scale: 1.03, boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)' }}
                               whileTap={{ scale: 0.97 }}
                             >
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <BarChart4 size={isMobile ? 14 : 16} color="#10b981" />
-                                <ArrowUpRight size={isMobile ? 12 : 14} color="#10b981" />
+                                <BarChart4 size={isMobile ? 14 : 16} color="#1E6B3A" />
+                                <ArrowUpRight size={isMobile ? 12 : 14} color="#1E6B3A" />
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
                                 fontWeight: '700',
-                                color: '#059669',
+                                color: '#1E6B3A',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.3px',
                               }}>
@@ -1872,14 +1829,14 @@ export default function AdminUserList({ role, title }) {
                               <div style={{
                                 fontSize: isMobile ? '14px' : '18px',
                                 fontWeight: '800',
-                                color: '#065f46',
+                                color: '#1E6B3A',
                                 wordBreak: 'break-word',
                               }}>
                                 ₨ {(userDetails.stats?.totalRevenue || 0).toLocaleString()}
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
-                                color: '#047857',
+                                color: '#1E6B3A',
                                 fontWeight: '600',
                               }}>
                                 From {userDetails.stats?.totalRedemptions || 0} redemptions
@@ -1888,7 +1845,7 @@ export default function AdminUserList({ role, title }) {
 
                             {/* Total Saved */}
                             <div style={{
-                              background: 'linear-gradient(135deg, #fef3c7 0%, #fde68a 100%)',
+                              background: '#FFF1CC',
                               padding: isMobile ? '10px' : '14px',
                               borderRadius: '12px',
                               border: '1px solid #f59e0b30',
@@ -1897,12 +1854,12 @@ export default function AdminUserList({ role, title }) {
                               gap: '4px',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Gift size={isMobile ? 14 : 16} color="#f59e0b" />
+                                <Gift size={isMobile ? 14 : 16} color="#C77700" />
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
                                 fontWeight: '700',
-                                color: '#b45309',
+                                color: '#8A5A00',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.3px',
                               }}>
@@ -1911,14 +1868,14 @@ export default function AdminUserList({ role, title }) {
                               <div style={{
                                 fontSize: isMobile ? '14px' : '18px',
                                 fontWeight: '800',
-                                color: '#78350f',
+                                color: '#8A5A00',
                                 wordBreak: 'break-word',
                               }}>
                                 ₨ {(userDetails.stats?.totalSaved || 0).toLocaleString()}
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
-                                color: '#92400e',
+                                color: '#8A5A00',
                                 fontWeight: '600',
                               }}>
                                 By students
@@ -1927,7 +1884,7 @@ export default function AdminUserList({ role, title }) {
 
                             {/* Unique Students */}
                             <div style={{
-                              background: 'linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%)',
+                              background: '#E1F1FA',
                               padding: isMobile ? '10px' : '14px',
                               borderRadius: '12px',
                               border: '1px solid #3b82f630',
@@ -1936,12 +1893,12 @@ export default function AdminUserList({ role, title }) {
                               gap: '4px',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <UsersIcon size={isMobile ? 14 : 16} color="#3b82f6" />
+                                <UsersIcon size={isMobile ? 14 : 16} color="#2B7FC0" />
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
                                 fontWeight: '700',
-                                color: '#1d4ed8',
+                                color: '#2B7FC0',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.3px',
                               }}>
@@ -1950,13 +1907,13 @@ export default function AdminUserList({ role, title }) {
                               <div style={{
                                 fontSize: isMobile ? '14px' : '18px',
                                 fontWeight: '800',
-                                color: '#1e3a8a',
+                                color: '#2B7FC0',
                               }}>
                                 {userDetails.stats?.uniqueStudents || 0}
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
-                                color: '#1e40af',
+                                color: '#2B7FC0',
                                 fontWeight: '600',
                               }}>
                                 Unique redeemers
@@ -1965,7 +1922,7 @@ export default function AdminUserList({ role, title }) {
 
                             {/* Online / In-Store Split */}
                             <div style={{
-                              background: 'linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%)',
+                              background: '#F1E6F5',
                               padding: isMobile ? '10px' : '14px',
                               borderRadius: '12px',
                               border: '1px solid #8b5cf630',
@@ -1974,12 +1931,12 @@ export default function AdminUserList({ role, title }) {
                               gap: '4px',
                             }}>
                               <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-                                <Store size={isMobile ? 14 : 16} color="#8b5cf6" />
+                                <Store size={isMobile ? 14 : 16} color="#8E44AD" />
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
                                 fontWeight: '700',
-                                color: '#6d28d9',
+                                color: '#8E44AD',
                                 textTransform: 'uppercase',
                                 letterSpacing: '0.3px',
                               }}>
@@ -1988,13 +1945,13 @@ export default function AdminUserList({ role, title }) {
                               <div style={{
                                 fontSize: isMobile ? '14px' : '18px',
                                 fontWeight: '800',
-                                color: '#4c1d95',
+                                color: '#8E44AD',
                               }}>
                                 {userDetails.stats?.onlineCount || 0} / {userDetails.stats?.inStoreCount || 0}
                               </div>
                               <div style={{
                                 fontSize: isMobile ? '8px' : '10px',
-                                color: '#5b21b6',
+                                color: '#8E44AD',
                                 fontWeight: '600',
                               }}>
                                 Redemptions
@@ -2004,7 +1961,7 @@ export default function AdminUserList({ role, title }) {
                           <div style={{
                             marginTop: '8px',
                             fontSize: isMobile ? '9px' : '11px',
-                            color: '#64748b',
+                            color: '#6B675E',
                             textAlign: 'center',
                             fontStyle: 'italic',
                           }}>
@@ -2048,13 +2005,13 @@ export default function AdminUserList({ role, title }) {
                                 </div>
                                 <div style={styles.offerItemRight}>
                                   {offer.isOnline && offer.isInStore && (
-                                    <span style={{ ...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#8E44AD', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
                                   )}
                                   {offer.isOnline && !offer.isInStore && (
-                                    <span style={{ ...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px" }}>Online</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#2B7FC0', fontSize: isMobile ? "8px" : "9px" }}>Online</span>
                                   )}
                                   {!offer.isOnline && offer.isInStore && (
-                                    <span style={{ ...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px" }}>In-Store</span>
+                                    <span style={{ ...styles.badgeSmall, background: '#2E8B3E', fontSize: isMobile ? "8px" : "9px" }}>In-Store</span>
                                   )}
                                   <motion.button
                                     className="qr-generate-btn"
@@ -2199,13 +2156,13 @@ export default function AdminUserList({ role, title }) {
                                         'hired': '#05966920'
                                       }[app.status] || '#94a3b820',
                                       color: {
-                                        'pending': '#f59e0b',
-                                        'reviewed': '#3b82f6',
-                                        'shortlisted': '#10b981',
-                                        'interview': '#8b5cf6',
-                                        'rejected': '#ef4444',
-                                        'hired': '#059669'
-                                      }[app.status] || '#94a3b8',
+                                        'pending': '#111111',
+                                        'reviewed': '#2B7FC0',
+                                        'shortlisted': '#2E8B3E',
+                                        'interview': '#8E44AD',
+                                        'rejected': '#D9443F',
+                                        'hired': '#2E8B3E'
+                                      }[app.status] || '#ECE7DB',
                                       fontSize: isMobile ? "9px" : "10px",
                                       padding: isMobile ? "1px 6px" : "2px 8px",
                                     }}>
@@ -2328,7 +2285,7 @@ export default function AdminUserList({ role, title }) {
                     ...styles.qrModalTitle,
                     fontSize: isMobile ? "16px" : "18px",
                   }}>
-                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#ff961a' }} />
+                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#C77700' }} />
                     QR Code - {selectedUser?.brandName || 'Brand'}
                   </h3>
                   <p style={{
@@ -2386,7 +2343,7 @@ export default function AdminUserList({ role, title }) {
                     <span style={styles.qrOfferLabel}>Discount:</span>
                     <span style={{
                       ...styles.qrOfferValue,
-                      color: '#ff961a',
+                      color: '#C77700',
                       fontWeight: 700,
                       fontSize: isMobile ? "13px" : "14px",
                     }}>
@@ -2397,13 +2354,13 @@ export default function AdminUserList({ role, title }) {
                     <span style={styles.qrOfferLabel}>Type:</span>
                     <span style={styles.qrOfferValue}>
                       {selectedOfferForQR.isOnline && selectedOfferForQR.isInStore ? (
-                        <span style={{ ...styles.badgeSmall, background: '#8b5cf6', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
+                        <span style={{ ...styles.badgeSmall, background: '#8E44AD', fontSize: isMobile ? "8px" : "9px" }}>Online & In-Store</span>
                       ) : selectedOfferForQR.isOnline ? (
-                        <span style={{ ...styles.badgeSmall, background: '#3b82f6', fontSize: isMobile ? "8px" : "9px" }}>Online Only</span>
+                        <span style={{ ...styles.badgeSmall, background: '#2B7FC0', fontSize: isMobile ? "8px" : "9px" }}>Online Only</span>
                       ) : selectedOfferForQR.isInStore ? (
-                        <span style={{ ...styles.badgeSmall, background: '#10b981', fontSize: isMobile ? "8px" : "9px" }}>In-Store Only</span>
+                        <span style={{ ...styles.badgeSmall, background: '#2E8B3E', fontSize: isMobile ? "8px" : "9px" }}>In-Store Only</span>
                       ) : (
-                        <span style={{ ...styles.badgeSmall, background: '#94a3b8', fontSize: isMobile ? "8px" : "9px" }}>Standard</span>
+                        <span style={{ ...styles.badgeSmall, background: '#ECE7DB', fontSize: isMobile ? "8px" : "9px" }}>Standard</span>
                       )}
                     </span>
                   </div>
@@ -2431,7 +2388,7 @@ export default function AdminUserList({ role, title }) {
                   <motion.button
                     style={{
                       ...styles.qrActionBtn,
-                      background: '#1e293b',
+                      background: '#111111',
                       color: '#fff',
                       width: isMobile ? "100%" : "auto",
                       justifyContent: "center",
@@ -2447,7 +2404,7 @@ export default function AdminUserList({ role, title }) {
                   <motion.button
                     style={{
                       ...styles.qrActionBtn,
-                      background: '#8b5cf6',
+                      background: '#8E44AD',
                       color: '#fff',
                       width: isMobile ? "100%" : "auto",
                       justifyContent: "center",
@@ -2463,7 +2420,7 @@ export default function AdminUserList({ role, title }) {
                   <motion.button
                     style={{
                       ...styles.qrActionBtn,
-                      background: '#10b981',
+                      background: '#2E8B3E',
                       color: '#fff',
                       width: isMobile ? "100%" : "auto",
                       justifyContent: "center",
@@ -2533,7 +2490,7 @@ export default function AdminUserList({ role, title }) {
                     ...styles.redemptionsTitle,
                     fontSize: isMobile ? "16px" : "20px",
                   }}>
-                    <BarChart4 size={isMobile ? 18 : 22} style={{ marginRight: '8px', color: '#10b981' }} />
+                    <BarChart4 size={isMobile ? 18 : 22} style={{ marginRight: '8px', color: '#1E6B3A' }} />
                     Revenue Details
                   </h3>
                   <p style={{
@@ -2559,42 +2516,42 @@ export default function AdminUserList({ role, title }) {
                 gridTemplateColumns: isMobile ? 'repeat(2, 1fr)' : 'repeat(4, 1fr)',
                 gap: isMobile ? '8px' : '10px',
                 padding: isMobile ? '12px 16px' : '14px 24px',
-                background: '#f8fafc',
-                borderBottom: '1px solid #e5e7eb',
+                background: '#FAF8F3',
+                borderBottom: '1px solid #ECE7DB',
               }}>
                 <div style={styles.redemptionStatBox}>
-                  <BarChart4 size={isMobile ? 14 : 16} color="#10b981" />
-                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#059669' }}>
+                  <BarChart4 size={isMobile ? 14 : 16} color="#1E6B3A" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#1E6B3A' }}>
                     ₨ {(brandRedemptionStats.totalRevenue || 0).toLocaleString()}
                   </div>
-                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#6B675E', fontWeight: 600 }}>
                     NET REVENUE
                   </div>
                 </div>
                 <div style={styles.redemptionStatBox}>
-                  <BarChart4 size={isMobile ? 14 : 16} color="#3b82f6" />
-                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#1d4ed8' }}>
+                  <BarChart4 size={isMobile ? 14 : 16} color="#2B7FC0" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#2B7FC0' }}>
                     ₨ {(brandRedemptionStats.totalBill || 0).toLocaleString()}
                   </div>
-                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#6B675E', fontWeight: 600 }}>
                     TOTAL BILLS
                   </div>
                 </div>
                 <div style={styles.redemptionStatBox}>
-                  <Gift size={isMobile ? 14 : 16} color="#f59e0b" />
-                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#d97706' }}>
+                  <Gift size={isMobile ? 14 : 16} color="#C77700" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#8A5A00' }}>
                     ₨ {(brandRedemptionStats.totalSaved || 0).toLocaleString()}
                   </div>
-                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#6B675E', fontWeight: 600 }}>
                     STUDENT SAVED
                   </div>
                 </div>
                 <div style={styles.redemptionStatBox}>
-                  <UsersIcon size={isMobile ? 14 : 16} color="#8b5cf6" />
-                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#6d28d9' }}>
+                  <UsersIcon size={isMobile ? 14 : 16} color="#8E44AD" />
+                  <div style={{ fontSize: isMobile ? '14px' : '18px', fontWeight: 800, color: '#8E44AD' }}>
                     {brandRedemptionStats.uniqueStudents || 0}
                   </div>
-                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#64748b', fontWeight: 600 }}>
+                  <div style={{ fontSize: isMobile ? '9px' : '10px', color: '#6B675E', fontWeight: 600 }}>
                     STUDENTS
                   </div>
                 </div>
@@ -2605,7 +2562,7 @@ export default function AdminUserList({ role, title }) {
                 display: 'flex',
                 gap: isMobile ? '8px' : '10px',
                 padding: isMobile ? '10px 16px' : '12px 24px',
-                borderBottom: '1px solid #f1f5f9',
+                borderBottom: '1px solid #F0ECE2',
                 flexWrap: 'wrap',
                 alignItems: 'center',
               }}>
@@ -2615,7 +2572,7 @@ export default function AdminUserList({ role, title }) {
                     left: '12px',
                     top: '50%',
                     transform: 'translateY(-50%)',
-                    color: '#94a3b8',
+                    color: '#9A958B',
                   }} />
                   <input
                     type="text"
@@ -2626,9 +2583,8 @@ export default function AdminUserList({ role, title }) {
                       width: '100%',
                       padding: '8px 12px 8px 34px',
                       borderRadius: '10px',
-                      border: '2px solid #e2e8f0',
+                      border: '2px solid #ECE7DB',
                       fontSize: isMobile ? '12px' : '13px',
-                      fontFamily: 'inherit',
                       outline: 'none',
                       background: '#fff',
                     }}
@@ -2637,7 +2593,7 @@ export default function AdminUserList({ role, title }) {
                 <div style={{
                   display: 'flex',
                   gap: '4px',
-                  background: '#f1f5f9',
+                  background: '#F0ECE2',
                   padding: '4px',
                   borderRadius: '24px',
                 }}>
@@ -2654,7 +2610,7 @@ export default function AdminUserList({ role, title }) {
                         borderRadius: '20px',
                         border: 'none',
                         background: redemptionFilter === f.key ? '#fff' : 'transparent',
-                        color: redemptionFilter === f.key ? '#ff961a' : '#64748b',
+                        color: redemptionFilter === f.key ? '#C77700' : '#6B675E',
                         fontWeight: 600,
                         fontSize: isMobile ? '10px' : '12px',
                         cursor: 'pointer',
@@ -2676,14 +2632,14 @@ export default function AdminUserList({ role, title }) {
                 maxHeight: isMobile ? 'calc(95vh - 340px)' : 'calc(90vh - 360px)',
               }}>
                 {loadingRedemptions ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#64748b' }}>
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#6B675E' }}>
                     <div style={styles.spinnerSmall}></div>
                     <p style={{ marginTop: '12px' }}>Loading redemptions...</p>
                   </div>
                 ) : filteredRedemptions.length === 0 ? (
-                  <div style={{ textAlign: 'center', padding: '40px', color: '#94a3b8' }}>
+                  <div style={{ textAlign: 'center', padding: '40px', color: '#9A958B' }}>
                     <div style={{ fontSize: '40px', marginBottom: '8px', opacity: 0.5 }}>💰</div>
-                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#475569' }}>
+                    <p style={{ fontSize: '14px', fontWeight: 600, color: '#6B675E' }}>
                       No redemptions found
                     </p>
                     <p style={{ fontSize: '12px', marginTop: '4px' }}>
@@ -2698,7 +2654,7 @@ export default function AdminUserList({ role, title }) {
                       minWidth: '700px',
                     }}>
                       <thead>
-                        <tr style={{ background: '#f8fafc' }}>
+                        <tr style={{ background: '#FAF8F3' }}>
                           <th style={styles.redemptionTh}>#</th>
                           <th style={styles.redemptionTh}>STUDENT</th>
                           <th style={styles.redemptionTh}>TYPE</th>
@@ -2713,28 +2669,28 @@ export default function AdminUserList({ role, title }) {
                           <tr
                             key={i}
                             style={{
-                              borderBottom: '1px solid #f1f5f9',
+                              borderBottom: '1px solid #F0ECE2',
                               transition: 'background 0.2s',
                             }}
-                            onMouseEnter={(e) => e.currentTarget.style.background = '#f8fafc'}
+                            onMouseEnter={(e) => e.currentTarget.style.background = '#FAF8F3'}
                             onMouseLeave={(e) => e.currentTarget.style.background = 'transparent'}
                           >
                             <td style={styles.redemptionTd}>
-                              <span style={{ color: '#94a3b8', fontWeight: 600, fontSize: '12px' }}>
+                              <span style={{ color: '#9A958B', fontWeight: 600, fontSize: '12px' }}>
                                 {i + 1}
                               </span>
                             </td>
                             <td style={styles.redemptionTd}>
                               <div>
-                                <div style={{ fontWeight: 700, color: '#1e293b', fontSize: '13px' }}>
+                                <div style={{ fontWeight: 700, color: '#111111', fontSize: '13px' }}>
                                   {r.rollNo !== 'N/A' ? r.rollNo : r.studentName}
                                 </div>
-                                <div style={{ fontSize: '11px', color: '#64748b', marginTop: '2px' }}>
+                                <div style={{ fontSize: '11px', color: '#6B675E', marginTop: '2px' }}>
                                   {r.studentName}
                                   {r.university && r.university !== 'N/A' && ` • ${r.university}`}
                                 </div>
                                 {r.email && (
-                                  <div style={{ fontSize: '10px', color: '#94a3b8', marginTop: '2px' }}>
+                                  <div style={{ fontSize: '10px', color: '#9A958B', marginTop: '2px' }}>
                                     {r.email}
                                   </div>
                                 )}
@@ -2747,10 +2703,10 @@ export default function AdminUserList({ role, title }) {
                                     display: 'inline-flex',
                                     alignItems: 'center',
                                     gap: '4px',
-                                    background: r.platform === 'shopify' ? '#e8f5e9' :
-                                      r.platform === 'woocommerce' ? '#e3f2fd' : '#ede9fe',
+                                    background: r.platform === 'shopify' ? '#E3F3E8' :
+                                      r.platform === 'woocommerce' ? '#e3f2fd' : '#F1E6F5',
                                     color: r.platform === 'shopify' ? '#2e7d32' :
-                                      r.platform === 'woocommerce' ? '#1565c0' : '#6d28d9',
+                                      r.platform === 'woocommerce' ? '#1565c0' : '#8E44AD',
                                     padding: '3px 8px',
                                     borderRadius: '12px',
                                     fontSize: '10px',
@@ -2765,10 +2721,10 @@ export default function AdminUserList({ role, title }) {
                                     <div style={{
                                       marginTop: '3px',
                                       fontSize: '10px',
-                                      color: '#64748b',
+                                      color: '#6B675E',
                                       fontFamily: 'monospace',
                                       fontWeight: 700,
-                                      background: '#f8fafc',
+                                      background: '#FAF8F3',
                                       padding: '2px 6px',
                                       borderRadius: '4px',
                                       display: 'inline-block',
@@ -2782,8 +2738,8 @@ export default function AdminUserList({ role, title }) {
                                   display: 'inline-flex',
                                   alignItems: 'center',
                                   gap: '4px',
-                                  background: '#fff7ed',
-                                  color: '#ea580c',
+                                  background: '#FFF1CC',
+                                  color: '#8A5A00',
                                   padding: '3px 8px',
                                   borderRadius: '12px',
                                   fontSize: '10px',
@@ -2796,7 +2752,7 @@ export default function AdminUserList({ role, title }) {
                               )}
                               <div style={{
                                 fontSize: '10px',
-                                color: '#94a3b8',
+                                color: '#9A958B',
                                 marginTop: '3px',
                                 maxWidth: '120px',
                                 overflow: 'hidden',
@@ -2807,15 +2763,15 @@ export default function AdminUserList({ role, title }) {
                               </div>
                             </td>
                             <td style={styles.redemptionTd}>
-                              <span style={{ fontWeight: 600, color: '#1e293b', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontWeight: 600, color: '#111111', whiteSpace: 'nowrap' }}>
                                 ₨ {(r.bill || 0).toLocaleString()}
                               </span>
                             </td>
                             <td style={styles.redemptionTd}>
                               <span style={{
                                 display: 'inline-block',
-                                background: '#f0fdf4',
-                                color: '#10b981',
+                                background: '#E3F3E8',
+                                color: '#1E6B3A',
                                 padding: '2px 8px',
                                 borderRadius: '6px',
                                 fontWeight: 700,
@@ -2828,21 +2784,21 @@ export default function AdminUserList({ role, title }) {
                             <td style={styles.redemptionTd}>
                               <span style={{
                                 fontWeight: 700,
-                                color: '#059669',
+                                color: '#1E6B3A',
                                 whiteSpace: 'nowrap',
                               }}>
                                 ₨ {(r.paid || 0).toLocaleString()}
                               </span>
                             </td>
                             <td style={styles.redemptionTd}>
-                              <span style={{ fontSize: '11px', color: '#64748b', whiteSpace: 'nowrap' }}>
+                              <span style={{ fontSize: '11px', color: '#6B675E', whiteSpace: 'nowrap' }}>
                                 {new Date(r.date).toLocaleDateString('en-US', {
                                   month: 'short',
                                   day: 'numeric',
                                   year: 'numeric',
                                 })}
                               </span>
-                              <div style={{ fontSize: '9px', color: '#94a3b8', marginTop: '2px' }}>
+                              <div style={{ fontSize: '9px', color: '#9A958B', marginTop: '2px' }}>
                                 {new Date(r.date).toLocaleTimeString('en-US', {
                                   hour: '2-digit',
                                   minute: '2-digit',
@@ -2860,7 +2816,7 @@ export default function AdminUserList({ role, title }) {
               {/* Footer */}
               <div style={{
                 padding: isMobile ? '12px 16px' : '16px 24px',
-                borderTop: '1px solid #f1f5f9',
+                borderTop: '1px solid #F0ECE2',
                 display: 'flex',
                 justifyContent: 'space-between',
                 alignItems: 'center',
@@ -2868,15 +2824,15 @@ export default function AdminUserList({ role, title }) {
                 gap: '8px',
                 background: '#fafbfc',
               }}>
-                <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#64748b', fontWeight: 500 }}>
-                  Showing <strong style={{ color: '#1e293b' }}>{filteredRedemptions.length}</strong> of{' '}
-                  <strong style={{ color: '#1e293b' }}>{brandRedemptions.length}</strong> redemptions
+                <div style={{ fontSize: isMobile ? '11px' : '13px', color: '#6B675E', fontWeight: 500 }}>
+                  Showing <strong style={{ color: '#111111' }}>{filteredRedemptions.length}</strong> of{' '}
+                  <strong style={{ color: '#111111' }}>{brandRedemptions.length}</strong> redemptions
                 </div>
                 <motion.button
                   onClick={closeRedemptionsModal}
                   style={{
                     padding: isMobile ? '8px 20px' : '9px 24px',
-                    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+                    background: '#111111',
                     color: '#fff',
                     border: 'none',
                     borderRadius: '10px',
@@ -2930,14 +2886,14 @@ export default function AdminUserList({ role, title }) {
           .filter-btn { transition: all 0.2s ease; }
           .filter-btn.active {
             background: #fff;
-            color: #ff961a;
+            color: #C77700;
             box-shadow: 0 2px 8px rgba(0,0,0,0.05);
           }
           
           .user-row { transition: all 0.2s ease; }
           .user-row.top-referrer {
-            background: linear-gradient(90deg, #faf5ff 0%, #ffffff 100%);
-            border-left: 3px solid #8b5cf6;
+            background: linear-gradient(90deg, #F1E6F5 0%, #ffffff 100%);
+            border-left: 3px solid #8E44AD;
           }
           
           .sortable { cursor: pointer; user-select: none; }
@@ -2988,14 +2944,14 @@ export default function AdminUserList({ role, title }) {
           .modal-body::-webkit-scrollbar { width: 6px; }
           .modal-body::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
           .modal-body::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
 
           ::-webkit-scrollbar { width: 6px; }
           ::-webkit-scrollbar-track { background: #f1f1f1; border-radius: 10px; }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
 
@@ -3054,14 +3010,16 @@ export default function AdminUserList({ role, title }) {
 
 const styles = {
   pageWrapper: {
-    minHeight: '100vh',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)',
-    padding: '0',
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    minHeight: "auto",
+    background: "transparent",
+    padding: "0",
     position: 'relative',
-    borderRadius: '0',
+    borderRadius: "0",
     overflow: 'hidden',
     width: '100%',
+    boxShadow: "none",
+    border: "none",
+    margin: "0",
   },
   bgDecoration1: {
     position: 'absolute',
@@ -3069,7 +3027,7 @@ const styles = {
     right: '-50px',
     width: '300px',
     height: '300px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.06) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none',
   },
@@ -3079,7 +3037,7 @@ const styles = {
     left: '-60px',
     width: '250px',
     height: '250px',
-    background: 'radial-gradient(circle, rgba(139,92,246,0.04) 0%, rgba(139,92,246,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none',
   },
@@ -3090,7 +3048,7 @@ const styles = {
     transform: 'translate(-50%, -50%)',
     width: '600px',
     height: '600px',
-    background: 'radial-gradient(circle, rgba(255,150,26,0.02) 0%, rgba(255,150,26,0) 70%)',
+    background: 'transparent',
     borderRadius: '50%',
     pointerEvents: 'none',
   },
@@ -3119,12 +3077,12 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    background: "linear-gradient(135deg, #fff7ed, #fef3c7)",
+    background: "#FFF1CC",
     padding: "6px 16px",
     borderRadius: "40px",
     fontSize: "13px",
     fontWeight: "600",
-    color: "#ff961a",
+    color: "#C77700",
     marginBottom: "12px",
   },
   headerActions: {
@@ -3133,9 +3091,9 @@ const styles = {
     flexWrap: 'wrap',
   },
   refreshBtn: {
-    background: '#f1f5f9',
-    color: '#475569',
-    border: '1px solid #e2e8f0',
+    background: '#F0ECE2',
+    color: '#6B675E',
+    border: '1px solid #ECE7DB',
     padding: '10px 20px',
     borderRadius: '12px',
     cursor: 'pointer',
@@ -3160,7 +3118,7 @@ const styles = {
     fontWeight: "400",
   },
   downloadBtn: {
-    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    background: "#111111",
     color: "#fff",
     border: "none",
     padding: "10px 22px",
@@ -3198,11 +3156,11 @@ const styles = {
   },
   statValue: {
     fontWeight: "700",
-    color: "#1e293b",
+    color: "#111111",
     lineHeight: 1.2,
   },
   statLabel: {
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: "600",
     marginTop: "2px",
     textTransform: "uppercase",
@@ -3224,19 +3182,18 @@ const styles = {
     left: "14px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#94a3b8",
+    color: "#9A958B",
   },
   searchInput: {
     width: "100%",
     padding: "10px 16px 10px 42px",
     fontSize: "14px",
-    border: "2px solid #e2e8f0",
+    border: "2px solid #ECE7DB",
     borderRadius: "12px",
     backgroundColor: "rgba(255, 255, 255, 0.9)",
     transition: "all 0.2s ease",
     outline: "none",
-    color: "#1e293b",
-    fontFamily: "inherit",
+    color: "#111111",
   },
   clearSearch: {
     position: "absolute",
@@ -3245,7 +3202,7 @@ const styles = {
     transform: "translateY(-50%)",
     background: "none",
     border: "none",
-    color: "#94a3b8",
+    color: "#9A958B",
     cursor: "pointer",
     padding: "4px",
     borderRadius: "50%",
@@ -3268,7 +3225,7 @@ const styles = {
   filterLabel: {
     fontSize: "10px",
     fontWeight: "700",
-    color: "#64748b",
+    color: "#6B675E",
     padding: "0 8px",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
@@ -3281,7 +3238,7 @@ const styles = {
     cursor: "pointer",
     fontSize: "11px",
     fontWeight: "600",
-    color: "#64748b",
+    color: "#6B675E",
     transition: "all 0.2s ease",
     display: "flex",
     alignItems: "center",
@@ -3289,7 +3246,7 @@ const styles = {
   },
   activeFilter: {
     background: "#fff",
-    color: "#ff961a",
+    color: "#C77700",
     boxShadow: "0 2px 8px rgba(0,0,0,0.04)",
   },
   tableWrapper: {
@@ -3314,22 +3271,22 @@ const styles = {
     padding: "12px 16px",
     fontSize: "10px",
     fontWeight: "700",
-    color: "#64748b",
+    color: "#6B675E",
     letterSpacing: "0.05em",
     textTransform: "uppercase",
   },
   tr: {
-    borderBottom: "1px solid #f5f7fa",
+    borderBottom: "1px solid #FAF8F3",
     transition: "background 0.2s ease",
   },
   topReferrerRow: {
-    background: "linear-gradient(90deg, #faf5ff 0%, #ffffff 100%)",
-    borderLeft: "3px solid #8b5cf6",
+    background: "#F1E6F5",
+    borderLeft: "3px solid #8E44AD",
   },
   td: {
     padding: "12px 16px",
     fontSize: "13px",
-    color: "#1e293b",
+    color: "#111111",
     verticalAlign: "middle",
   },
   userCell: {
@@ -3341,8 +3298,8 @@ const styles = {
     width: "36px",
     height: "36px",
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #ff961a10 0%, #f3b24510 100%)",
-    color: "#ff961a",
+    background: "#111111",
+    color: "#C77700",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -3352,9 +3309,9 @@ const styles = {
     position: "relative",
   },
   topAvatar: {
-    background: "linear-gradient(135deg, #8b5cf620 0%, #a78bfa20 100%)",
-    color: "#8b5cf6",
-    border: "2px solid #8b5cf6",
+    background: "#111111",
+    color: "#8E44AD",
+    border: "2px solid #8E44AD",
   },
   crownBadge: {
     position: "absolute",
@@ -3365,20 +3322,20 @@ const styles = {
   },
   userName: {
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#111111",
     display: "block",
     fontSize: "13px",
   },
   userRole: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     textTransform: "capitalize",
   },
   emailCell: {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    color: "#475569",
+    color: "#6B675E",
     fontSize: "12px",
     marginBottom: "2px",
   },
@@ -3386,7 +3343,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    color: "#64748b",
+    color: "#6B675E",
     fontSize: "11px",
   },
   companyTag: {
@@ -3398,7 +3355,7 @@ const styles = {
     borderRadius: "8px",
     fontSize: "11px",
     fontWeight: "500",
-    color: "#475569",
+    color: "#6B675E",
   },
   universityTag: {
     display: "inline-flex",
@@ -3409,14 +3366,14 @@ const styles = {
     borderRadius: "8px",
     fontSize: "11px",
     fontWeight: "500",
-    color: "#475569",
+    color: "#6B675E",
   },
   rollNoText: {
     display: "flex",
     alignItems: "center",
     gap: "4px",
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "2px",
   },
   referralInfo: {
@@ -3457,12 +3414,12 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "4px",
-    background: "#f5f3ff",
+    background: "#F1E6F5",
     padding: "2px 8px",
     borderRadius: "10px",
     fontSize: "9px",
     fontWeight: "700",
-    color: "#8b5cf6",
+    color: "#8E44AD",
     animation: "flamePulse 2s ease-in-out infinite",
   },
   badge: {
@@ -3478,14 +3435,14 @@ const styles = {
     width: "5px",
     height: "5px",
     borderRadius: "50%",
-    backgroundColor: "#10b981",
+    backgroundColor: "#2E8B3E",
     display: "inline-block",
   },
   badgeDotPending: {
     width: "5px",
     height: "5px",
     borderRadius: "50%",
-    backgroundColor: "#f59e0b",
+    backgroundColor: "#111111",
     display: "inline-block",
   },
   roleBadge: {
@@ -3507,9 +3464,9 @@ const styles = {
   viewBtn: {
     padding: "6px",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     background: "#fff",
-    color: "#64748b",
+    color: "#6B675E",
     cursor: "pointer",
     transition: "all 0.2s ease",
     display: "flex",
@@ -3532,9 +3489,9 @@ const styles = {
   expandBtn: {
     padding: "6px",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     background: "#fff",
-    color: "#64748b",
+    color: "#6B675E",
     cursor: "pointer",
     transition: "all 0.2s ease",
     display: "flex",
@@ -3563,7 +3520,7 @@ const styles = {
     width: '100%',
     maxHeight: '90vh',
     overflow: 'hidden',
-    boxShadow: '0 25px 50px -12px rgba(0,0,0,0.3)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
     display: 'flex',
     flexDirection: 'column',
     marginTop: '30px',
@@ -3571,11 +3528,11 @@ const styles = {
   },
   modalHeader: {
     padding: '20px 28px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #fff 100%)',
+    background: '#FAF8F3',
     flexShrink: 0,
   },
   modalHeaderLeft: {
@@ -3587,7 +3544,7 @@ const styles = {
     width: '48px',
     height: '48px',
     borderRadius: '50%',
-    background: 'linear-gradient(135deg, #f9c349 0%, #ff961a 100%)',
+    background: '#F9C349',
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
@@ -3614,12 +3571,12 @@ const styles = {
   modalTitle: {
     fontSize: '20px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
     margin: 0,
   },
   modalSubtitle: {
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     marginTop: '2px',
   },
   modalCloseBtn: {
@@ -3628,7 +3585,7 @@ const styles = {
     borderRadius: '50%',
     border: 'none',
     background: 'transparent',
-    color: '#64748b',
+    color: '#6B675E',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -3648,7 +3605,7 @@ const styles = {
     alignItems: 'center',
     gap: '16px',
     padding: '12px 16px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '12px',
     marginBottom: '20px',
     flexShrink: 0,
@@ -3662,11 +3619,11 @@ const styles = {
   modalStatValue: {
     fontSize: '18px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
   },
   modalStatLabel: {
     fontSize: '10px',
-    color: '#64748b',
+    color: '#6B675E',
     fontWeight: '500',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
@@ -3674,7 +3631,7 @@ const styles = {
   modalStatDivider: {
     width: '1px',
     height: '30px',
-    background: '#e5e7eb',
+    background: '#ECE7DB',
   },
   modalGrid: {
     display: 'grid',
@@ -3682,10 +3639,10 @@ const styles = {
     gap: '16px',
   },
   modalSection: {
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '12px',
     padding: '16px',
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
   },
   modalSectionTitle: {
     display: 'flex',
@@ -3693,10 +3650,10 @@ const styles = {
     gap: '6px',
     fontSize: '12px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
     margin: '0 0 10px 0',
     paddingBottom: '8px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
   },
   modalDetails: {
     display: 'flex',
@@ -3711,13 +3668,13 @@ const styles = {
     gap: '8px',
   },
   modalDetailLabel: {
-    color: '#64748b',
+    color: '#6B675E',
     fontWeight: '500',
     whiteSpace: 'nowrap',
     minWidth: '80px',
   },
   modalDetailValue: {
-    color: '#0f172a',
+    color: '#111111',
     textAlign: 'right',
     wordBreak: 'break-word',
     fontWeight: '500',
@@ -3736,23 +3693,23 @@ const styles = {
     fontFamily: 'monospace',
     fontSize: '12px',
     fontWeight: '600',
-    color: '#eab308',
-    background: '#fefce8',
+    color: '#C77700',
+    background: '#FFF1CC',
     padding: '2px 8px',
     borderRadius: '4px',
   },
   modalReferralBadge: {
     display: 'inline-block',
-    background: 'linear-gradient(135deg, #fefce8, #fef3c7)',
-    color: '#d97706',
+    background: '#FFF1CC',
+    color: '#8A5A00',
     padding: '2px 10px',
     borderRadius: '12px',
     fontWeight: '700',
     fontSize: '12px',
   },
   modalTopReferralBadge: {
-    background: 'linear-gradient(135deg, #f5f3ff, #ede9fe)',
-    color: '#8b5cf6',
+    background: '#F1E6F5',
+    color: '#8E44AD',
   },
   modalLevelBadge: {
     display: 'inline-block',
@@ -3766,21 +3723,21 @@ const styles = {
     height: '60px',
     borderRadius: '8px',
     objectFit: 'cover',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #ECE7DB',
   },
   logoThumb: {
     width: '32px',
     height: '32px',
     borderRadius: '8px',
     objectFit: 'cover',
-    border: '1px solid #e5e7eb',
+    border: '1px solid #ECE7DB',
   },
   logoIndicator: {
     display: 'flex',
     alignItems: 'center',
     gap: '4px',
     fontSize: '10px',
-    color: '#10b981',
+    color: '#1E6B3A',
     marginTop: '2px',
   },
   offerList: {
@@ -3793,20 +3750,20 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '6px 12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '8px',
     fontSize: '12px',
   },
   offerTitle: {
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#111111',
   },
   offerDiscount: {
-    color: '#f59e0b',
+    color: '#C77700',
     fontWeight: '600',
   },
   offerStatus: {
-    color: '#64748b',
+    color: '#6B675E',
     fontSize: '11px',
   },
   offerItemLeft: {
@@ -3834,7 +3791,7 @@ const styles = {
     alignItems: 'center',
     gap: '4px',
     padding: '4px 10px',
-    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '8px',
@@ -3857,19 +3814,19 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '6px 12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '8px',
     fontSize: '12px',
   },
   jobTitle: {
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#111111',
   },
   jobStatus: {
     fontSize: '11px',
   },
   jobApps: {
-    color: '#64748b',
+    color: '#6B675E',
     fontSize: '11px',
   },
   claimedList: {
@@ -3882,20 +3839,20 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '6px 12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '8px',
     fontSize: '12px',
   },
   claimedTitle: {
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#111111',
   },
   claimedBrand: {
-    color: '#64748b',
+    color: '#6B675E',
     fontSize: '11px',
   },
   claimedDiscount: {
-    color: '#10b981',
+    color: '#1E6B3A',
     fontWeight: '600',
   },
   applicationList: {
@@ -3908,13 +3865,13 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '6px 12px',
-    background: '#f8fafc',
+    background: '#FAF8F3',
     borderRadius: '8px',
     fontSize: '12px',
   },
   applicationJob: {
     fontWeight: '500',
-    color: '#0f172a',
+    color: '#111111',
   },
   applicationStatus: {
     padding: '2px 8px',
@@ -3925,7 +3882,7 @@ const styles = {
   moreItems: {
     textAlign: 'center',
     fontSize: '11px',
-    color: '#94a3b8',
+    color: '#9A958B',
     padding: '4px',
   },
   loadingDetails: {
@@ -3935,19 +3892,19 @@ const styles = {
     justifyContent: 'center',
     padding: '40px',
     gap: '12px',
-    color: '#64748b',
+    color: '#6B675E',
   },
   spinnerSmall: {
     width: '16px',
     height: '16px',
-    border: '2px solid #e2e8f0',
-    borderTopColor: '#ff961a',
+    border: '2px solid #ECE7DB',
+    borderTopColor: '#111111',
     borderRadius: '50%',
     animation: 'spin 0.8s linear infinite',
   },
   modalFooter: {
     padding: '16px 28px',
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -3959,7 +3916,7 @@ const styles = {
     alignItems: 'center',
     gap: '6px',
     padding: '8px 20px',
-    background: 'linear-gradient(135deg, #1e293b 0%, #0f172a 100%)',
+    background: '#111111',
     color: '#fff',
     border: 'none',
     borderRadius: '10px',
@@ -3970,10 +3927,10 @@ const styles = {
   },
   modalCloseBtnBottom: {
     padding: '8px 24px',
-    border: '2px solid #e2e8f0',
+    border: '2px solid #ECE7DB',
     borderRadius: '10px',
     background: '#fff',
-    color: '#475569',
+    color: '#6B675E',
     fontWeight: '600',
     cursor: 'pointer',
     transition: 'all 0.2s ease',
@@ -3981,7 +3938,7 @@ const styles = {
   emptyState: {
     textAlign: "center",
     padding: "60px 20px",
-    color: "#94a3b8",
+    color: "#9A958B",
   },
   emptyIcon: {
     fontSize: "48px",
@@ -3991,12 +3948,12 @@ const styles = {
   emptyTitle: {
     fontSize: "16px",
     fontWeight: "600",
-    color: "#1e293b",
+    color: "#111111",
     marginBottom: "4px",
   },
   emptySubtext: {
     fontSize: "12px",
-    color: "#cbd5e1",
+    color: "#9A958B",
     display: "block",
     marginTop: "6px",
   },
@@ -4009,32 +3966,32 @@ const styles = {
     background: "rgba(255, 255, 255, 0.85)",
     backdropFilter: 'blur(20px)',
     borderRadius: "28px",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     minHeight: "400px",
   },
   spinner: {
     width: "40px",
     height: "40px",
-    border: "3px solid #e2e8f0",
-    borderTopColor: "#ff961a",
+    border: "3px solid #ECE7DB",
+    borderTopColor: "#111111",
     borderRadius: "50%",
   },
   loadingText: {
     marginTop: "16px",
-    color: "#64748b",
+    color: "#6B675E",
     fontSize: "14px",
   },
   loadingBar: {
     width: "200px",
     height: "4px",
-    background: "#e5e7eb",
+    background: "#ECE7DB",
     borderRadius: "4px",
     overflow: "hidden",
     marginTop: "8px",
   },
   loadingProgress: {
     height: "100%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     borderRadius: "4px",
   },
   qrModalOverlay: {
@@ -4058,12 +4015,12 @@ const styles = {
     width: '100%',
     maxHeight: '90vh',
     overflow: 'auto',
-    boxShadow: '0 40px 80px -20px rgba(0,0,0,0.4)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
     animation: 'qrModalIn 0.3s ease forwards',
   },
   qrModalHeader: {
     padding: '20px 24px',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
@@ -4071,14 +4028,14 @@ const styles = {
   qrModalTitle: {
     fontSize: '18px',
     fontWeight: '700',
-    color: '#0f172a',
+    color: '#111111',
     margin: 0,
     display: 'flex',
     alignItems: 'center',
   },
   qrModalSubtitle: {
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     marginTop: '4px',
   },
   qrModalCloseBtn: {
@@ -4087,7 +4044,7 @@ const styles = {
     borderRadius: '50%',
     border: 'none',
     background: 'transparent',
-    color: '#64748b',
+    color: '#6B675E',
     cursor: 'pointer',
     display: 'flex',
     alignItems: 'center',
@@ -4106,11 +4063,11 @@ const styles = {
     width: '280px',
     height: '280px',
     borderRadius: '16px',
-    border: '3px solid #f1f5f9',
-    boxShadow: '0 8px 24px rgba(0,0,0,0.06)',
+    border: '3px solid #F0ECE2',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
   },
   qrOfferDetails: {
-    background: '#f8fafc',
+    background: '#FAF8F3',
     padding: '16px',
     borderRadius: '12px',
     marginBottom: '20px',
@@ -4120,15 +4077,15 @@ const styles = {
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '6px 0',
-    borderBottom: '1px solid #f1f5f9',
+    borderBottom: '1px solid #F0ECE2',
     fontSize: '13px',
   },
   qrOfferLabel: {
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: '500',
   },
   qrOfferValue: {
-    color: '#0f172a',
+    color: '#111111',
     fontWeight: '500',
     textAlign: 'right',
   },
@@ -4154,7 +4111,7 @@ const styles = {
   qrScanInstructions: {
     textAlign: 'center',
     padding: '12px',
-    background: '#f0f9ff',
+    background: '#E1F1FA',
     borderRadius: '12px',
     border: '1px solid #bae6fd',
   },
@@ -4166,14 +4123,14 @@ const styles = {
   qrScanSubtext: {
     margin: '4px 0 0',
     fontSize: '12px',
-    color: '#64748b',
+    color: '#6B675E',
   },
   paginationWrapper: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: '16px 20px',
-    borderTop: '1px solid #f1f5f9',
+    borderTop: '1px solid #F0ECE2',
     flexWrap: 'wrap',
     gap: '12px',
     background: 'rgba(255,255,255,0.4)',
@@ -4181,7 +4138,7 @@ const styles = {
   },
   paginationInfo: {
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     fontWeight: '500',
   },
   paginationControls: {
@@ -4192,9 +4149,9 @@ const styles = {
   paginationBtn: {
     padding: '6px 10px',
     borderRadius: '8px',
-    border: '1px solid #e2e8f0',
+    border: '1px solid #ECE7DB',
     background: '#fff',
-    color: '#475569',
+    color: '#6B675E',
     cursor: 'pointer',
     fontSize: '13px',
     fontWeight: '500',
@@ -4210,9 +4167,9 @@ const styles = {
     height: '36px',
   },
   paginationActive: {
-    background: 'linear-gradient(135deg, #ff961a 0%, #f3b245 100%)',
+    background: '#111111',
     color: '#fff',
-    borderColor: '#ff961a',
+    borderColor: '#111111',
   },
   paginationBtnDisabled: {
     opacity: 0.4,
@@ -4220,7 +4177,7 @@ const styles = {
   },
   paginationPageSize: {
     fontSize: '12px',
-    color: '#94a3b8',
+    color: '#9A958B',
     fontWeight: '500',
   },
   // ========== BRAND REDEMPTIONS DRILL-DOWN ==========
@@ -4247,27 +4204,27 @@ const styles = {
     display: 'flex',
     flexDirection: 'column',
     overflow: 'hidden',
-    boxShadow: '0 30px 60px -12px rgba(0,0,0,0.35)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
   },
   redemptionsHeader: {
     display: 'flex',
     justifyContent: 'space-between',
     alignItems: 'center',
-    borderBottom: '1px solid #f1f5f9',
-    background: 'linear-gradient(135deg, #f8fafc 0%, #fff 100%)',
+    borderBottom: '1px solid #F0ECE2',
+    background: '#FAF8F3',
   },
   redemptionsTitle: {
     margin: 0,
     fontSize: '20px',
     fontWeight: 800,
-    color: '#0f172a',
+    color: '#111111',
     display: 'flex',
     alignItems: 'center',
   },
   redemptionsSubtitle: {
     margin: '4px 0 0 0',
     fontSize: '13px',
-    color: '#64748b',
+    color: '#6B675E',
     fontWeight: 500,
   },
   redemptionStatBox: {
@@ -4277,23 +4234,23 @@ const styles = {
     padding: '10px 12px',
     background: '#fff',
     borderRadius: '10px',
-    border: '1px solid #f1f5f9',
+    border: '1px solid #F0ECE2',
   },
   redemptionTh: {
     padding: '10px 12px',
     textAlign: 'left',
     fontSize: '10px',
     fontWeight: 700,
-    color: '#64748b',
+    color: '#6B675E',
     textTransform: 'uppercase',
     letterSpacing: '0.5px',
-    borderBottom: '2px solid #e2e8f0',
+    borderBottom: '2px solid #ECE7DB',
     whiteSpace: 'nowrap',
   },
   redemptionTd: {
     padding: '10px 12px',
     fontSize: '13px',
-    color: '#334155',
+    color: '#111111',
     verticalAlign: 'middle',
   },
 };
