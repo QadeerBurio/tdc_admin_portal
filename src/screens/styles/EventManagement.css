@@ -1717,3 +1717,16 @@
   .ev2-row > .form-field { flex: 1 1 100%; }
   .ev2-panel { width: 100vw; }
 }
+
+/* ─── tdc kit event cards (design/portal/AdEvents) ─────────────── */
+.tdcp .ev-card { display: flex; flex-direction: column; overflow: hidden; }
+.tdcp .ev-card-img, .tdcp .ev-detail-img { position: relative; height: 170px; background: var(--sand); }
+.tdcp .ev-detail-img { height: 220px; border-radius: 18px; overflow: hidden; }
+.tdcp .ev-card-img img, .tdcp .ev-detail-img img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .ev-card-type { position: absolute; top: 12px; left: 12px; }
+.tdcp .ev-card-reg { position: absolute; bottom: 12px; right: 12px; }
+.tdcp .ev-card-body { padding: 16px 18px 6px; display: flex; flex-direction: column; gap: 8px; flex: 1; }
+.tdcp .ev-card-body h3 { margin: 0; font-size: 18px; font-weight: 700; line-height: 1.25; overflow-wrap: anywhere; }
+.tdcp .ev-card-meta { display: flex; flex-direction: column; gap: 6px; font-size: 13.5px; color: var(--muted); }
+.tdcp .ev-card-meta span { display: flex; align-items: center; gap: 8px; min-width: 0; overflow-wrap: anywhere; }
+.tdcp .ev-card-actions { display: flex; align-items: center; gap: 6px; padding: 12px 14px; border-top: 1px solid var(--line-soft); margin-top: 10px; }
