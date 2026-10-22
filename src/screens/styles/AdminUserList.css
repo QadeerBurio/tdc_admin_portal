@@ -1,6 +1,6 @@
 /* AdminUserList: all students / brands / employers / travelers (design/portal/AdStudents and friends). Kit tokens only. */
 .tdcp .aul-filter-label { font-size: 13px; font-weight: 600; color: var(--muted); }
-.tdcp .aul .k-table tr.aul-top td { background: var(--yellow-soft); }
+.tdcp.aul .k-table tr.aul-top td, .tdcp .aul .k-table tr.aul-top td { background: var(--yellow-soft); }
 .tdcp .aul-user { display: flex; align-items: center; gap: 10px; min-width: 0; }
 .tdcp .aul-avatar { position: relative; width: 38px; height: 38px; flex: 0 0 38px; border-radius: 13px; background: var(--sand); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 15px; }
 .tdcp .aul-avatar.lg { width: 64px; height: 64px; flex-basis: 64px; border-radius: 20px; font-size: 24px; overflow: hidden; }
