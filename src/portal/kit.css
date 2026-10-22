@@ -19,11 +19,11 @@
 .tdcp .k-btn.lg { height: 52px; padding: 0 24px; border-radius: 26px; font-size: 15.5px; }
 .tdcp .k-btn.block { width: 100%; }
 .tdcp .k-btn.primary { background: var(--ink); color: #FFFFFF; }
-.tdcp .k-btn.primary:hover:not(:disabled) { background: #2A2A28; }
+.tdcp .k-btn.primary:hover:not(:disabled) { opacity: 0.88; }
 .tdcp .k-btn.secondary { background: var(--card); color: var(--ink); border-color: var(--line); }
 .tdcp .k-btn.secondary:hover:not(:disabled) { background: var(--sand); }
 .tdcp .k-btn.accent { background: var(--yellow); color: var(--ink); }
-.tdcp .k-btn.accent:hover:not(:disabled) { background: #F2B930; }
+.tdcp .k-btn.accent:hover:not(:disabled) { filter: brightness(0.96); }
 .tdcp .k-btn.ghost { background: transparent; color: var(--ink); }
 .tdcp .k-btn.ghost:hover:not(:disabled) { background: var(--sand); }
 .tdcp .k-btn.danger { background: var(--danger-bg); color: var(--danger); }
