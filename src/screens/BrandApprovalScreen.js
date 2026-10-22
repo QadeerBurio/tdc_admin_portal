@@ -267,10 +267,10 @@ const BrandApprovalScreen = () => {
 
   const getStatusBadge = (status) => {
     const configs = {
-      pending: { bg: '#fef3c7', text: '#92400e', icon: '⏳', label: 'Pending' },
-      approved: { bg: '#d1fae5', text: '#065f46', icon: '✅', label: 'Approved' },
-      rejected: { bg: '#fee2e2', text: '#991b1b', icon: '❌', label: 'Rejected' },
-      draft: { bg: '#e0e7ff', text: '#3730a3', icon: '📄', label: 'Draft' }
+      pending: { bg: '#FFF1CC', text: '#C77700', icon: '⏳', label: 'Pending' },
+      approved: { bg: '#E3F3E8', text: '#2E8B3E', icon: '✅', label: 'Approved' },
+      rejected: { bg: '#FDECEA', text: '#D9443F', icon: '❌', label: 'Rejected' },
+      draft: { bg: '#E1F1FA', text: '#2B7FC0', icon: '📄', label: 'Draft' }
     };
 
     const config = configs[status] || configs.pending;
@@ -436,8 +436,8 @@ const BrandApprovalScreen = () => {
       {/* Header */}
       <div className="brand-approval-header">
         <div className="header-left">
-          <h1>Brand Approvals</h1>
-          <p>Review and manage brand applications</p>
+          <h1>brand approvals<span className="dot" aria-hidden="true">.</span></h1>
+          <p>review new brands before they go live in the app.</p>
         </div>
         <button 
           className="refresh-btn" 
@@ -873,7 +873,7 @@ const BrandApprovalScreen = () => {
               <div className="qr-modal-header">
                 <div>
                   <h3 className="qr-modal-title">
-                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#ff961a' }} />
+                    <QrCode size={isMobile ? 16 : 20} style={{ marginRight: '8px', color: '#C77700' }} />
                     QR Code - {selectedBrand?.brandName || 'Brand'}
                   </h3>
                   <p className="qr-modal-subtitle">
