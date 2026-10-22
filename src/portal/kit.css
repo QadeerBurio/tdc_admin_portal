@@ -160,3 +160,7 @@
 .tdcp .k-fact > span:first-child { color: var(--muted); }
 .tdcp .k-fact > span:last-child { text-align: right; font-weight: 600; overflow-wrap: anywhere; min-width: 0; }
 @media (max-width: 600px) { .tdcp .k-head h1 { font-size: 26px; } }
+.tdcp .k-note { border-radius: 16px; padding: 12px 14px; font-size: 14px; line-height: 1.5; background: var(--sand); color: var(--ink); }
+.tdcp .k-note.ok { background: var(--success-bg); color: var(--success); }
+.tdcp .k-note.bad { background: var(--danger-bg); color: var(--danger); }
+.tdcp .k-note.warn { background: var(--yellow-soft); color: var(--ink); }
