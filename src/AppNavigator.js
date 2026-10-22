@@ -1,7 +1,8 @@
 // src/AppNavigator.jsx
-import React, { useContext } from "react";
+import React, { useContext, lazy } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { AuthContext } from "./context/AuthContext";
+import { PortalShell } from "./PortalFallback";
 
 // ── Auth ────────────────────────────────────────────────────────────────
 import SignIn from "./screens/SignIn";
@@ -19,51 +20,57 @@ import OfferImagesGallery from "./screens/OfferImagesGallery";
 import AppStoreReviews from "./screens/roles/AppStoreReviews";
 import UniversitiesSection from "./screens/roles/UniversitiesSection";
 
+// ── Portal screens: loaded on demand, so the public pages ship without portal code ──
+// Their CSS stays in the main stylesheet, in the same order as before (it includes the global reset).
+import "./screens/styles/AdminDashboard.css";
+import "./screens/styles/EventManagement.css";
+import "./screens/styles/Brands.css";
+
 // ── Brand / Student ─────────────────────────────────────────────────────
-import Home from "./screens/Home";
-import ClaimedUsers from "./screens/ClaimedUsers";
-import VerifyClaim from "./screens/VerifyClaim";
-import SavingsHistory from "./screens/SavingsHistory";
-import CreateOffer from "./screens/CreateOffer";
-import Discount from "./screens/Discount";
-import BrandVerifyScreen from "./screens/BrandVerifyScreen";
-import Branches from "./screens/Branches";
+const Home = lazy(() => import("./screens/Home"));
+const ClaimedUsers = lazy(() => import("./screens/ClaimedUsers"));
+const VerifyClaim = lazy(() => import("./screens/VerifyClaim"));
+const SavingsHistory = lazy(() => import("./screens/SavingsHistory"));
+const CreateOffer = lazy(() => import("./screens/CreateOffer"));
+const Discount = lazy(() => import("./screens/Discount"));
+const BrandVerifyScreen = lazy(() => import("./screens/BrandVerifyScreen"));
+const Branches = lazy(() => import("./screens/Branches"));
 
 // ── Admin ───────────────────────────────────────────────────────────────
-import AdminDashboard from "./screens/AdminDashboard";
-import CreateOfferAdmin from "./screens/CreateOfferAdmin";
-import AdminOffers from "./screens/AdminOffers";
-import AdminJobsManager from "./screens/AdminJobsManager";
-import ManageExchange from "./screens/ManageExchange";
-import ProgramApplication from "./screens/ProgramApplication";
-import StudentDossier from "./screens/StudentDossier";
-import AdminPackageScreen from "./screens/Traveling";
-import CardManager from "./screens/CardManager";
-import AdminPackage from "./screens/AdminPackage";
-import TravelDashboard from "./screens/TravelDashboard";
-import CompanyDashboard from "./screens/CompanyDashboard";
-import CandidatesManager from "./screens/CandidateManager";
-import InterviewsManager from "./screens/InterviewsManager";
-import ReportsManager from "./screens/ReportsManager";
-import EventManagement from "./screens/EventManagement";
-import BrandApprovalScreen from "./screens/BrandApprovalScreen";
-import AllBrandsRevenue from "./screens/AllBrandsRevenue";
+const AdminDashboard = lazy(() => import("./screens/AdminDashboard"));
+const CreateOfferAdmin = lazy(() => import("./screens/CreateOfferAdmin"));
+const AdminOffers = lazy(() => import("./screens/AdminOffers"));
+const AdminJobsManager = lazy(() => import("./screens/AdminJobsManager"));
+const ManageExchange = lazy(() => import("./screens/ManageExchange"));
+const ProgramApplication = lazy(() => import("./screens/ProgramApplication"));
+const StudentDossier = lazy(() => import("./screens/StudentDossier"));
+const AdminPackageScreen = lazy(() => import("./screens/Traveling"));
+const CardManager = lazy(() => import("./screens/CardManager"));
+const AdminPackage = lazy(() => import("./screens/AdminPackage"));
+const TravelDashboard = lazy(() => import("./screens/TravelDashboard"));
+const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
+const CandidatesManager = lazy(() => import("./screens/CandidateManager"));
+const InterviewsManager = lazy(() => import("./screens/InterviewsManager"));
+const ReportsManager = lazy(() => import("./screens/ReportsManager"));
+const EventManagement = lazy(() => import("./screens/EventManagement"));
+const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
+const AllBrandsRevenue = lazy(() => import("./screens/AllBrandsRevenue"));
 
 // ── 🆕 Crew (Admin) ─────────────────────────────────────────────────────
-import CrewInbox from "./screens/CrewInbox";
-import CrewPartners from "./screens/CrewPartners";
-import CrewCampaigns from "./screens/CrewCampaigns";
-import CrewCredentials from "./screens/CrewCredentials";
+const CrewInbox = lazy(() => import("./screens/CrewInbox"));
+const CrewPartners = lazy(() => import("./screens/CrewPartners"));
+const CrewCampaigns = lazy(() => import("./screens/CrewCampaigns"));
+const CrewCredentials = lazy(() => import("./screens/CrewCredentials"));
 
 // ── 🆕 Engagement (Admin) ───────────────────────────────────────────────
-import DropsSchedule from "./screens/DropsSchedule";
-import EngagementMetrics from "./screens/EngagementMetrics";
-import RewardsAdmin from "./screens/RewardsAdmin";
-import TestPush from "./screens/TestPush";
+const DropsSchedule = lazy(() => import("./screens/DropsSchedule"));
+const EngagementMetrics = lazy(() => import("./screens/EngagementMetrics"));
+const RewardsAdmin = lazy(() => import("./screens/RewardsAdmin"));
+const TestPush = lazy(() => import("./screens/TestPush"));
 
 // ── 🆕 Brand Campaigns ──────────────────────────────────────────────────
-import BrandCampaigns from "./screens/BrandCampaigns";
-import VerifyReward from "./screens/VerifyReward";
+const BrandCampaigns = lazy(() => import("./screens/BrandCampaigns"));
+const VerifyReward = lazy(() => import("./screens/VerifyReward"));
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -96,6 +103,7 @@ export default function AppNavigator() {
   // ────────────────────────────────────────────────────────────────────────
   if (user.role === "admin") {
     return (
+      <PortalShell>
       <Routes>
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/createofferadmin" element={<CreateOfferAdmin />} />
@@ -129,6 +137,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
+      </PortalShell>
     );
   }
 
@@ -137,11 +146,13 @@ export default function AppNavigator() {
   // ────────────────────────────────────────────────────────────────────────
   if (user.role === "traveler") {
     return (
+      <PortalShell>
       <Routes>
         <Route path="/traveler-dashboard" element={<TravelDashboard />} />
         <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>
+      </PortalShell>
     );
   }
 
@@ -150,6 +161,7 @@ export default function AppNavigator() {
   // ────────────────────────────────────────────────────────────────────────
   if (user.role === "employee") {
     return (
+      <PortalShell>
       <Routes>
         <Route path="/employee-dashboard" element={<CompanyDashboard />} />
         <Route path="/candidate" element={<CandidatesManager />} />
@@ -158,6 +170,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>
+      </PortalShell>
     );
   }
 
@@ -165,6 +178,7 @@ export default function AppNavigator() {
   // BRAND / STUDENT (default)
   // ────────────────────────────────────────────────────────────────────────
   return (
+    <PortalShell>
     <Routes>
       <Route path="/home" element={<Home />} />
       <Route path="/create-offer" element={<CreateOffer />} />
@@ -182,5 +196,6 @@ export default function AppNavigator() {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
+    </PortalShell>
   );
 }
