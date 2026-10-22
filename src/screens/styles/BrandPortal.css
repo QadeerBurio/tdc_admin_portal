@@ -38,3 +38,17 @@
 .tdcp .bo-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; }
 .tdcp .bo-banner { position: relative; border-radius: 16px; overflow: hidden; }
 .tdcp .bo-change { position: absolute; right: 10px; bottom: 10px; cursor: pointer; }
+/* create discount (BrCreate): page and first-discount popup */
+.tdcp .br-create { max-width: 760px; overflow: hidden; }
+.tdcp .br-create-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
+.tdcp .br-create-foot, .tdcp .br-pop-foot { padding: 18px 24px 22px; border-top: 1px solid var(--line-soft); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
+.tdcp .br-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }
+.tdcp .br-logo-drop { flex-direction: row; justify-content: flex-start; text-align: left; gap: 16px; cursor: pointer; }
+.tdcp .br-drop-preview { width: 64px; height: 64px; border-radius: 16px; object-fit: cover; flex: 0 0 64px; }
+.tdcp .br-pcts { display: flex; flex-wrap: wrap; gap: 6px; }
+.tdcp .br-pcts button { height: 40px; min-width: 56px; padding: 0 10px; border-radius: 20px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-family: var(--body); font-weight: 700; font-size: 13.5px; cursor: pointer; }
+.tdcp .br-pcts button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--card); }
+.tdcp .br-fieldset { border: 0; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.tdcp .br-where { height: 44px; padding: 0 16px; border-radius: 22px; border: 1px solid var(--line); background: var(--card); display: inline-flex; align-items: center; gap: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+.tdcp .br-where input { width: 18px; height: 18px; margin: 0; accent-color: var(--yellow); }
+.tdcp .br-where.on { background: var(--ink); border-color: var(--ink); color: var(--card); }
