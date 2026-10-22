@@ -1,19 +1,13 @@
-// src/screens/RewardsAdmin.jsx
-// Modern design · WHITE #ffffff · GOLD #f9c349 · BLACK #0f0f0f
-// Admin manages rewards + assigns optional brand
-
+// src/screens/RewardsAdmin.js
+// Rewards (design/portal/AdRewards): brand perks students unlock with crew points.
 import React, { useEffect, useState, useMemo } from 'react';
 import { engagementApi } from '../services/api';
-
-const GOLD = '#f9c349';
-const GOLD_DARK = '#e0a82e';
-const BLACK = '#0f0f0f';
-const WHITE = '#ffffff';
-const BORDER = 'rgba(15,15,15,0.10)';
-const MUTED = 'rgba(15,15,15,0.55)';
-const DANGER = '#B42318';
+import Ico from '../portal/Ico';
+import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, Dropdown, Checkbox, StatCard, Modal, Table, EmptyState, Pill, toast, confirmDialog } from '../portal/kit';
+import './styles/RewardsAdmin.css';
 
 const KINDS = ['promo_code', 'brand_perk', 'tdc_card_discount'];
+const STATUS_TONE = { active: 'yellow', used: 'ink', expired: 'sand', cancelled: 'red' };
 
 export default function RewardsAdmin() {
   const [rewards, setRewards] = useState([]);
@@ -120,7 +114,7 @@ export default function RewardsAdmin() {
 
   // ─── Save ─────────────────────────────────────────────
   const save = async () => {
-    if (!form.title.trim()) return alert('title required');
+    if (!form.title.trim()) return toast('title required');
 
     const payload = {
       title: form.title.trim(),
@@ -144,7 +138,7 @@ export default function RewardsAdmin() {
       setOpen(false);
       load();
     } catch (e) {
-      alert(e?.response?.data?.message || 'failed');
+      toast(e?.response?.data?.message || 'failed');
     }
   };
 
@@ -155,20 +149,20 @@ export default function RewardsAdmin() {
       await engagementApi.toggleReward(r._id, !r.active);
       load();
     } catch {
-      alert('failed');
+      toast('failed');
     } finally {
       setBusyId(null);
     }
   };
 
   const remove = async (r) => {
-    if (!window.confirm(`Delete "${r.title}"? This cannot be undone.`)) return;
+    if (!(await confirmDialog(`Delete "${r.title}"? This cannot be undone.`))) return;
     setBusyId(r._id);
     try {
       await engagementApi.deleteReward(r._id);
       load();
     } catch {
-      alert('failed');
+      toast('failed');
     } finally {
       setBusyId(null);
     }
@@ -189,58 +183,42 @@ export default function RewardsAdmin() {
   };
 
   const cancelRedemption = async (id) => {
-    if (!window.confirm('Cancel this redemption and refund points?')) return;
+    if (!(await confirmDialog('Cancel this redemption and refund points?'))) return;
     try {
       await engagementApi.cancelRedemption(id);
       if (drawerReward) viewRedemptions(drawerReward);
       load();
     } catch (e) {
-      alert(e?.response?.data?.message || 'failed');
+      toast(e?.response?.data?.message || 'failed');
     }
   };
 
   // ─── Helpers ──────────────────────────────────────────
   const selectedBrand = brands.find((b) => b._id === form.brand);
 
-  if (loading) return <div style={s.empty}>loading rewards…</div>;
+  if (loading) return <div className="tdcp k-page"><PageLoading label="loading rewards…" /></div>;
 
   return (
-    <div>
-      {/* Header */}
-      <div style={s.header}>
-        <div>
-          <h2 style={s.title}>rewards<span className="dot" aria-hidden="true">.</span></h2>
-          <p style={s.subtitle}>
-            brand perks students unlock with crew points.
-          </p>
-        </div>
-        <button style={s.btnPrimary} onClick={openCreate}>
-          + new reward
-        </button>
+    <div className="tdcp k-page" data-screen="rewards">
+      <PageHeader
+        title="rewards"
+        sub="brand perks students unlock with crew points."
+        actions={<Button icon="plus" onClick={openCreate}>new reward</Button>}
+      />
+
+      <div className="k-stats">
+        <StatCard label="total rewards" value={stats.total} icon="gift" tone="sand" />
+        <StatCard label="active" value={stats.active} icon="checkCircle" tone="yellow" />
+        <StatCard label="brand-locked" value={stats.brandLocked} icon="store" tone="purple" />
+        <StatCard label="redeemed" value={stats.totalRedeemed} icon="ticket" tone="yellow" />
       </div>
 
-      {/* Stats */}
-      <div style={s.statsRow}>
-        <Stat label="total rewards" value={stats.total} />
-        <Stat label="active" value={stats.active} accent />
-        <Stat label="brand-locked" value={stats.brandLocked} />
-        <Stat label="redeemed" value={stats.totalRedeemed} accent />
-      </div>
-
-      {/* List */}
       {rewards.length === 0 ? (
-        <div style={s.emptyBox}>
-          <div style={s.emptyIcon}>🎁</div>
-          <div style={s.emptyTitle}>no rewards yet.</div>
-          <div style={s.emptySub}>
-            create your first one: students will love it.
-          </div>
-          <button style={s.btnPrimary} onClick={openCreate}>
-            + create reward
-          </button>
+        <div className="k-card">
+          <EmptyState icon="gift" tone="yellow" title="no rewards yet." text="create your first one: students will love it." action={<Button icon="plus" onClick={openCreate}>create reward</Button>} />
         </div>
       ) : (
-        <div style={s.grid}>
+        <div className="k-grid">
           {rewards.map((r) => (
             <RewardCard
               key={r._id}
@@ -255,304 +233,127 @@ export default function RewardsAdmin() {
         </div>
       )}
 
-      {/* Create/Edit modal */}
-      {open && (
-        <div style={s.backdrop} onClick={() => setOpen(false)}>
-          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>
-              {editing ? 'edit reward' : 'create reward'}
-            </h3>
+      {/* create / edit */}
+      <Modal
+        open={open}
+        onClose={() => setOpen(false)}
+        icon={editing ? 'edit' : 'plus'}
+        tone="yellow"
+        title={editing ? 'edit reward' : 'create reward'}
+        footer={<>
+          <Button variant="secondary" onClick={() => setOpen(false)}>cancel</Button>
+          <Button onClick={save}>{editing ? 'save changes' : 'create reward'}</Button>
+        </>}
+      >
+        <Field label="title" htmlFor="rw-title">
+          <Input id="rw-title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} placeholder="e.g. 20% off at foo cafe" />
+        </Field>
 
-            <Field label="title">
-              <input
-                style={s.input}
-                value={form.title}
-                onChange={(e) => setForm({ ...form, title: e.target.value })}
-                placeholder="e.g. 20% off at foo cafe"
-              />
-            </Field>
+        <Field label="description" htmlFor="rw-desc">
+          <Textarea id="rw-desc" rows={3} value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} placeholder="short line about the perk" />
+        </Field>
 
-            <Field label="description">
-              <textarea
-                style={{ ...s.input, minHeight: 70, resize: 'vertical' }}
-                value={form.description}
-                onChange={(e) =>
-                  setForm({ ...form, description: e.target.value })
-                }
-                placeholder="short line about the perk"
-              />
-            </Field>
-
-            {/* ✅ BRAND PICKER */}
-            <Field
-              label={
-                selectedBrand
-                  ? `brand · ${selectedBrand.name}`
-                  : 'brand (leave empty = any brand can redeem)'
-              }
-            >
-              <div style={s.brandPickerWrap}>
-                <select
-                  style={s.input}
-                  value={form.brand || ''}
-                  onChange={(e) => {
-                    setForm({ ...form, brand: e.target.value });
-                    setBrandQuery('');
-                  }}
-                >
-                  <option value="">platform-wide (any brand)</option>
-                  {filteredBrands.map((b) => (
-                    <option key={b._id} value={b._id}>
-                      {b.name}
-                      {b.category ? ` · ${b.category}` : ''}
-                      {b.city ? ` · ${b.city}` : ''}
-                    </option>
-                  ))}
-                </select>
-
-                {brands.length > 6 && (
-                  <input
-                    style={{ ...s.input, marginTop: 8 }}
-                    value={brandQuery}
-                    onChange={(e) => setBrandQuery(e.target.value)}
-                    placeholder="search brands…"
-                  />
-                )}
-
-                {selectedBrand && (
-                  <div style={s.brandPreview}>
-                    {selectedBrand.logo ? (
-                      <img
-                        src={selectedBrand.logo}
-                        alt=""
-                        style={s.brandLogo}
-                      />
-                    ) : (
-                      <div style={s.brandLogoFallback}>
-                        {selectedBrand.name.charAt(0)}
-                      </div>
-                    )}
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={s.brandPreviewName}>
-                        {selectedBrand.name}
-                      </div>
-                      <div style={s.brandPreviewMeta}>
-                        {selectedBrand.category}
-                        {selectedBrand.city ? ` · ${selectedBrand.city}` : ''}
-                      </div>
-                    </div>
-                    <button
-                      style={s.brandClearBtn}
-                      onClick={() => setForm({ ...form, brand: '' })}
-                      type="button"
-                    >
-                      clear
-                    </button>
-                  </div>
-                )}
+        <Field label={selectedBrand ? `brand · ${selectedBrand.name}` : 'brand (leave empty = any brand can redeem)'}>
+          <Dropdown
+            searchable={brands.length > 6}
+            placeholder="platform-wide (any brand)"
+            value={form.brand || ''}
+            onChange={(v) => {
+              setForm({ ...form, brand: v });
+              setBrandQuery('');
+            }}
+            options={[
+              { value: '', label: 'platform-wide (any brand)' },
+              ...filteredBrands.map((b) => ({ value: b._id, label: b.name, hint: [b.category, b.city].filter(Boolean).join(' · ') })),
+            ]}
+          />
+          {selectedBrand && (
+            <div className="rw-brand">
+              {selectedBrand.logo ? <img src={selectedBrand.logo} alt="" /> : <span className="rw-brand-ph">{selectedBrand.name.charAt(0)}</span>}
+              <div style={{ flex: 1, minWidth: 0 }}>
+                <b>{selectedBrand.name}</b>
+                <div className="k-hint">
+                  {selectedBrand.category}
+                  {selectedBrand.city ? ` · ${selectedBrand.city}` : ''}
+                </div>
               </div>
-            </Field>
-
-            <Field label="image url (optional)">
-              <input
-                style={s.input}
-                value={form.image}
-                onChange={(e) => setForm({ ...form, image: e.target.value })}
-                placeholder="https://…"
-              />
-            </Field>
-
-            <div style={s.twoCol}>
-              <Field label="cost (pts)">
-                <input
-                  type="number"
-                  style={s.input}
-                  value={form.costPoints}
-                  onChange={(e) =>
-                    setForm({ ...form, costPoints: e.target.value })
-                  }
-                />
-              </Field>
-              <Field label="stock (empty = ∞)">
-                <input
-                  type="number"
-                  style={s.input}
-                  value={form.stock}
-                  onChange={(e) => setForm({ ...form, stock: e.target.value })}
-                />
-              </Field>
+              <Button size="sm" variant="secondary" onClick={() => setForm({ ...form, brand: '' })}>clear</Button>
             </div>
+          )}
+        </Field>
 
-            <div style={s.twoCol}>
-              <Field label="per-user limit">
-                <input
-                  type="number"
-                  style={s.input}
-                  value={form.perUserLimit}
-                  onChange={(e) =>
-                    setForm({ ...form, perUserLimit: e.target.value })
-                  }
-                />
-              </Field>
-              <Field label="valid days">
-                <input
-                  type="number"
-                  style={s.input}
-                  value={form.validDays}
-                  onChange={(e) =>
-                    setForm({ ...form, validDays: e.target.value })
-                  }
-                />
-              </Field>
-            </div>
+        <Field label="image url (optional)" htmlFor="rw-image">
+          <Input id="rw-image" value={form.image} onChange={(e) => setForm({ ...form, image: e.target.value })} placeholder="https://…" />
+        </Field>
 
-            <Field label="kind">
-              <select
-                style={s.input}
-                value={form.kind}
-                onChange={(e) => setForm({ ...form, kind: e.target.value })}
-              >
-                {KINDS.map((k) => (
-                  <option key={k} value={k}>
-                    {k.replace(/_/g, ' ')}
-                  </option>
-                ))}
-              </select>
-            </Field>
-
-            <label style={s.checkboxRow}>
-              <input
-                type="checkbox"
-                checked={form.active}
-                onChange={(e) =>
-                  setForm({ ...form, active: e.target.checked })
-                }
-              />
-              <span style={{ fontWeight: 700, fontSize: 13 }}>
-                active (visible to students)
-              </span>
-            </label>
-
-            <div style={s.modalActions}>
-              <button style={s.btnGhost} onClick={() => setOpen(false)}>
-                cancel
-              </button>
-              <button style={s.btnPrimary} onClick={save}>
-                {editing ? 'save changes' : 'create reward'}
-              </button>
-            </div>
-          </div>
+        <div className="rw-two">
+          <Field label="cost (pts)" htmlFor="rw-cost">
+            <Input id="rw-cost" type="number" value={form.costPoints} onChange={(e) => setForm({ ...form, costPoints: e.target.value })} />
+          </Field>
+          <Field label="stock (empty = ∞)" htmlFor="rw-stock">
+            <Input id="rw-stock" type="number" value={form.stock} onChange={(e) => setForm({ ...form, stock: e.target.value })} />
+          </Field>
+          <Field label="per-user limit" htmlFor="rw-limit">
+            <Input id="rw-limit" type="number" value={form.perUserLimit} onChange={(e) => setForm({ ...form, perUserLimit: e.target.value })} />
+          </Field>
+          <Field label="valid days" htmlFor="rw-days">
+            <Input id="rw-days" type="number" value={form.validDays} onChange={(e) => setForm({ ...form, validDays: e.target.value })} />
+          </Field>
         </div>
-      )}
 
-      {/* Redemptions drawer */}
-      {drawerReward && (
-        <div style={s.backdrop} onClick={() => setDrawerReward(null)}>
-          <div
-            style={{ ...s.modal, maxWidth: 820 }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-              <h3 style={{ ...s.modalTitle, flex: 1, marginBottom: 0 }}>
-                redemptions · {drawerReward.title}
-              </h3>
-              <button
-                style={s.btnGhost}
-                onClick={() => setDrawerReward(null)}
-              >
-                close
-              </button>
-            </div>
+        <Field label="kind" htmlFor="rw-kind">
+          <Select id="rw-kind" value={form.kind} onChange={(e) => setForm({ ...form, kind: e.target.value })}>
+            {KINDS.map((k) => (
+              <option key={k} value={k}>
+                {k.replace(/_/g, ' ')}
+              </option>
+            ))}
+          </Select>
+        </Field>
 
-            {redemptionsLoading ? (
-              <div style={s.empty}>loading…</div>
-            ) : redemptions.length === 0 ? (
-              <div style={s.empty}>no redemptions yet.</div>
-            ) : (
-              <div style={s.tableCard}>
-                <table style={s.table}>
-                  <thead>
-                    <tr style={s.thead}>
-                      <th style={s.th}>USER</th>
-                      <th style={s.th}>CODE</th>
-                      <th style={s.th}>STATUS</th>
-                      <th style={s.th}>REDEEMED</th>
-                      <th style={s.th}>EXPIRES</th>
-                      <th style={s.th}></th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    {redemptions.map((rd) => (
-                      <tr key={rd._id} style={s.tr}>
-                        <td style={s.td}>
-                          <div style={{ fontWeight: 700 }}>
-                            {rd.user?.name || '–'}
-                          </div>
-                          <div style={s.smallMuted}>
-                            {rd.user?.email || ''}
-                          </div>
-                        </td>
-                        <td style={{ ...s.td, fontFamily: 'monospace' }}>
-                          {rd.code}
-                        </td>
-                        <td style={s.td}>
-                          <span style={statusPill(rd.status)}>
-                            {rd.status}
-                          </span>
-                        </td>
-                        <td style={s.td}>
-                          {new Date(rd.createdAt).toLocaleDateString()}
-                        </td>
-                        <td style={s.td}>
-                          {new Date(rd.expiresAt).toLocaleDateString()}
-                        </td>
-                        <td style={s.td}>
-                          {rd.status === 'active' && (
-                            <button
-                              style={s.btnDangerSm}
-                              onClick={() => cancelRedemption(rd._id)}
-                            >
-                              cancel + refund
-                            </button>
-                          )}
-                        </td>
-                      </tr>
-                    ))}
-                  </tbody>
-                </table>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
+        <Checkbox checked={form.active} onChange={(e) => setForm({ ...form, active: e.target.checked })} label={<b>active (visible to students)</b>} />
+      </Modal>
+
+      {/* redemptions */}
+      <Modal
+        open={!!drawerReward}
+        onClose={() => setDrawerReward(null)}
+        size="lg"
+        icon="ticket"
+        tone="purple"
+        title={drawerReward ? `redemptions · ${drawerReward.title}` : ''}
+        footer={<Button variant="secondary" onClick={() => setDrawerReward(null)}>close</Button>}
+      >
+        {redemptionsLoading ? (
+          <PageLoading label="loading redemptions…" minHeight={180} />
+        ) : redemptions.length === 0 ? (
+          <EmptyState icon="ticket" title="no redemptions yet." />
+        ) : (
+          <Table
+            minWidth={700}
+            rows={redemptions}
+            columns={[
+              { key: 'user', label: 'user', render: (rd) => <><b>{rd.user?.name || '–'}</b><div className="k-hint">{rd.user?.email || ''}</div></> },
+              { key: 'code', label: 'code', render: (rd) => <code>{rd.code}</code> },
+              { key: 'status', label: 'status', render: (rd) => <Pill tone={STATUS_TONE[rd.status] || 'sand'}>{rd.status}</Pill> },
+              { key: 'redeemed', label: 'redeemed', render: (rd) => new Date(rd.createdAt).toLocaleDateString() },
+              { key: 'expires', label: 'expires', render: (rd) => new Date(rd.expiresAt).toLocaleDateString() },
+              {
+                key: 'act',
+                label: '',
+                render: (rd) => rd.status === 'active' && (
+                  <Button size="sm" variant="danger" onClick={() => cancelRedemption(rd._id)}>cancel + refund</Button>
+                ),
+              },
+            ]}
+          />
+        )}
+      </Modal>
     </div>
   );
 }
 
-// ─── Small components ─────────────────────────────────────────────────
-const Stat = ({ label, value, accent }) => (
-  <div style={{ ...s.statCard, ...(accent ? s.statCardAccent : {}) }}>
-    <div style={{ ...s.statValue, ...(accent ? { color: BLACK } : {}) }}>
-      {value}
-    </div>
-    <div
-      style={{
-        ...s.statLabel,
-        ...(accent ? { color: BLACK, opacity: 0.7 } : {}),
-      }}
-    >
-      {label}
-    </div>
-  </div>
-);
-
-const Field = ({ label, children }) => (
-  <div style={s.formGroup}>
-    <label style={s.label}>{label}</label>
-    {children}
-  </div>
-);
-
+// ─── Reward card ──────────────────────────────────────────────────────
 const RewardCard = ({
   reward,
   busy,
@@ -572,527 +373,47 @@ const RewardCard = ({
     r.brand?.brandName || r.brand?.name || (r.brand ? 'Brand' : null);
 
   return (
-    <div style={s.rewardCard}>
-      <div style={s.rewardTop}>
-        <div style={s.rewardImageWrap}>
-          {r.image ? (
-            <img src={r.image} alt="" style={s.rewardImage} />
-          ) : (
-            <div style={s.rewardImageFallback}>🎁</div>
-          )}
-        </div>
+    <article className="k-card rw-card">
+      <div className="rw-top">
+        {r.image ? <img src={r.image} alt="" className="rw-img" /> : <Ico kind="gift" tone="yellow" size={56} />}
         <div style={{ flex: 1, minWidth: 0 }}>
-          <div style={s.rewardKind}>
-            {r.kind?.replace(/_/g, ' ') || 'promo code'}
-          </div>
-          <div style={s.rewardTitle} title={r.title}>
-            {r.title}
-          </div>
-          {!!r.description && (
-            <div style={s.rewardDesc} title={r.description}>
-              {r.description}
-            </div>
-          )}
+          <div className="k-hint">{r.kind?.replace(/_/g, ' ') || 'promo code'}</div>
+          <h3 className="rw-title" title={r.title}>{r.title}</h3>
+          {!!r.description && <p className="rw-desc" title={r.description}>{r.description}</p>}
           {brandName ? (
-            <div style={s.brandTag}>🏪 {brandName}</div>
+            <Pill tone="purple"><Ico kind="store" tone="plain" size={12} />{brandName}</Pill>
           ) : (
-            <div style={{ ...s.brandTag, ...s.brandTagPlatform }}>
-              🌐 platform-wide · any brand
-            </div>
+            <Pill tone="sand"><Ico kind="globe" tone="plain" size={12} />platform-wide · any brand</Pill>
           )}
         </div>
       </div>
 
-      <div style={s.rewardMeta}>
-        <span style={s.costPill}>★ {r.costPoints}</span>
-        <span style={s.metaPill}>
+      <div className="k-row" style={{ gap: 6 }}>
+        <Pill tone="ink"><Ico kind="star" tone="plain" size={12} />{r.costPoints}</Pill>
+        <Pill tone="sand">
           {stockLeft === null
             ? 'unlimited'
             : stockLeft > 0
             ? `${stockLeft} left`
             : 'sold out'}
-        </span>
-        <span style={s.metaPill}>limit {r.perUserLimit}/user</span>
-        <span style={s.metaPill}>{r.validDays}d valid</span>
-        <span
-          style={{
-            ...s.metaPill,
-            background: r.active ? GOLD : 'rgba(15,15,15,0.08)',
-            color: r.active ? BLACK : MUTED,
-            fontWeight: 800,
-          }}
-        >
-          {r.active ? 'active' : 'inactive'}
-        </span>
+        </Pill>
+        <Pill tone="sand">limit {r.perUserLimit}/user</Pill>
+        <Pill tone="sand">{r.validDays}d valid</Pill>
+        <Pill tone={r.active ? 'yellow' : 'sand'} dot>{r.active ? 'active' : 'inactive'}</Pill>
       </div>
 
-      <div style={s.rewardStats}>
-        <div style={s.rewardStatItem}>
-          <div style={s.rewardStatValue}>{redeemed}</div>
-          <div style={s.rewardStatLabel}>redeemed</div>
-        </div>
-        <div style={s.rewardStatItem}>
-          <div style={s.rewardStatValue}>{activeR}</div>
-          <div style={s.rewardStatLabel}>active</div>
-        </div>
-        <div style={s.rewardStatItem}>
-          <div style={s.rewardStatValue}>{usedR}</div>
-          <div style={s.rewardStatLabel}>used</div>
-        </div>
-        <div style={s.rewardStatItem}>
-          <div style={s.rewardStatValue}>{expiredR}</div>
-          <div style={s.rewardStatLabel}>expired</div>
-        </div>
+      <div className="rw-stats">
+        {[[redeemed, 'redeemed'], [activeR, 'active'], [usedR, 'used'], [expiredR, 'expired']].map(([v, l]) => (
+          <div key={l}><b>{v}</b><span>{l}</span></div>
+        ))}
       </div>
 
-      <div style={s.rewardActions}>
-        <button style={s.btnGhostSm} onClick={onViewRedemptions}>
-          redemptions
-        </button>
-        <button style={s.btnGhostSm} onClick={onEdit}>
-          edit
-        </button>
-        <button style={s.btnGhostSm} onClick={onToggle} disabled={busy}>
-          {r.active ? 'deactivate' : 'activate'}
-        </button>
-        <button style={s.btnDangerSm} onClick={onDelete} disabled={busy}>
-          delete
-        </button>
+      <div className="k-row" style={{ gap: 6 }}>
+        <Button size="sm" variant="secondary" icon="ticket" onClick={onViewRedemptions}>redemptions</Button>
+        <Button size="sm" variant="secondary" icon="edit" onClick={onEdit}>edit</Button>
+        <Button size="sm" variant="secondary" onClick={onToggle} disabled={busy}>{r.active ? 'deactivate' : 'activate'}</Button>
+        <Button size="sm" variant="danger" icon="trash" onClick={onDelete} disabled={busy}>delete</Button>
       </div>
-    </div>
+    </article>
   );
-};
-
-const statusPill = (status) => {
-  const base = {
-    padding: '3px 10px',
-    borderRadius: 999,
-    fontSize: 11,
-    fontWeight: 800,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    display: 'inline-block',
-  };
-  if (status === 'active') return { ...base, background: GOLD, color: BLACK };
-  if (status === 'used') return { ...base, background: BLACK, color: GOLD };
-  if (status === 'expired')
-    return { ...base, background: 'rgba(15,15,15,0.08)', color: MUTED };
-  if (status === 'cancelled')
-    return { ...base, background: 'rgba(239,68,68,0.12)', color: DANGER };
-  return { ...base, background: '#F0ECE2', color: BLACK };
-};
-
-// ─── Styles ───────────────────────────────────────────────────────────
-const s = {
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-end',
-    marginBottom: 20,
-    gap: 16,
-    flexWrap: 'wrap',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 800,
-    letterSpacing: '-0.8px',
-    lineHeight: 1.1,
-    color: BLACK,
-    margin: 0,
-  },
-  subtitle: {
-    fontSize: 13,
-    color: MUTED,
-    margin: '4px 0 0',
-    fontWeight: 500,
-  },
-  btnPrimary: {
-    padding: '12px 22px',
-    background: `linear-gradient(135deg, ${GOLD} 0%, ${GOLD_DARK} 100%)`,
-    border: `1.5px solid ${BLACK}`,
-    borderRadius: 12,
-    fontWeight: 900,
-    fontSize: 13,
-    cursor: 'pointer',
-    color: BLACK,
-    letterSpacing: 0.2,
-  },
-  btnGhost: {
-    padding: '10px 20px',
-    background: WHITE,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 10,
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: 'pointer',
-    color: BLACK,
-  },
-  btnGhostSm: {
-    padding: '7px 12px',
-    background: WHITE,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 12,
-    color: BLACK,
-  },
-  btnDangerSm: {
-    padding: '7px 12px',
-    background: WHITE,
-    border: `1.5px solid rgba(239,68,68,0.4)`,
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 12,
-    color: DANGER,
-  },
-
-  statsRow: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 12,
-    marginBottom: 22,
-  },
-  statCard: {
-    background: WHITE,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 14,
-    padding: '14px 16px',
-  },
-  statCardAccent: {
-    background: GOLD,
-    borderColor: BLACK,
-  },
-  statValue: {
-    fontSize: 26,
-    fontWeight: 900,
-    color: BLACK,
-    letterSpacing: -0.5,
-  },
-  statLabel: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginTop: 4,
-  },
-
-  grid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))',
-    gap: 14,
-  },
-
-  rewardCard: {
-    background: WHITE,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 16,
-    padding: 14,
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 12,
-  },
-  rewardTop: {
-    display: 'flex',
-    gap: 12,
-    alignItems: 'flex-start',
-  },
-  rewardImageWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    overflow: 'hidden',
-    background: `${GOLD}22`,
-    flexShrink: 0,
-  },
-  rewardImage: {
-    width: '100%',
-    height: '100%',
-    objectFit: 'cover',
-    display: 'block',
-  },
-  rewardImageFallback: {
-    width: '100%',
-    height: '100%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 24,
-  },
-  rewardKind: {
-    fontSize: 10,
-    fontWeight: 900,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.6,
-    marginBottom: 3,
-  },
-  rewardTitle: {
-    fontSize: 15,
-    fontWeight: 800,
-    color: BLACK,
-    lineHeight: 1.25,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-  },
-  rewardDesc: {
-    fontSize: 12,
-    color: MUTED,
-    marginTop: 4,
-    lineHeight: 1.35,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    display: '-webkit-box',
-    WebkitLineClamp: 2,
-    WebkitBoxOrient: 'vertical',
-  },
-  brandTag: {
-    display: 'inline-block',
-    fontSize: 11,
-    fontWeight: 800,
-    color: BLACK,
-    background: `${GOLD}55`,
-    padding: '3px 9px',
-    borderRadius: 999,
-    marginTop: 6,
-    letterSpacing: 0.2,
-    width: 'fit-content',
-  },
-  brandTagPlatform: {
-    background: 'rgba(15,15,15,0.08)',
-    color: MUTED,
-  },
-
-  rewardMeta: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-  costPill: {
-    padding: '4px 10px',
-    borderRadius: 999,
-    background: BLACK,
-    color: GOLD,
-    fontSize: 11,
-    fontWeight: 900,
-    letterSpacing: 0.3,
-  },
-  metaPill: {
-    padding: '4px 10px',
-    borderRadius: 999,
-    background: 'rgba(15,15,15,0.05)',
-    color: BLACK,
-    fontSize: 11,
-    fontWeight: 700,
-    letterSpacing: 0.2,
-    textTransform: 'lowercase',
-  },
-
-  rewardStats: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(4, 1fr)',
-    gap: 8,
-    paddingTop: 10,
-    borderTop: `1px dashed ${BORDER}`,
-  },
-  rewardStatItem: { textAlign: 'center' },
-  rewardStatValue: {
-    fontSize: 16,
-    fontWeight: 900,
-    color: BLACK,
-  },
-  rewardStatLabel: {
-    fontSize: 9.5,
-    fontWeight: 700,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginTop: 2,
-  },
-
-  rewardActions: {
-    display: 'flex',
-    gap: 6,
-    flexWrap: 'wrap',
-    paddingTop: 4,
-    borderTop: `1px solid ${BORDER}`,
-  },
-
-  empty: {
-    padding: 60,
-    textAlign: 'center',
-    color: MUTED,
-    fontSize: 13,
-    fontWeight: 600,
-  },
-  emptyBox: {
-    padding: '60px 20px',
-    textAlign: 'center',
-    background: WHITE,
-    border: `1.5px dashed ${BORDER}`,
-    borderRadius: 18,
-    display: 'flex',
-    flexDirection: 'column',
-    alignItems: 'center',
-    gap: 8,
-  },
-  emptyIcon: { fontSize: 42 },
-  emptyTitle: { fontSize: 17, fontWeight: 900, color: BLACK },
-  emptySub: { fontSize: 13, color: MUTED, marginBottom: 10 },
-
-  backdrop: {
-    position: 'fixed',
-    inset: 0,
-    background: 'rgba(15,15,15,0.55)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    zIndex: 9999,
-    padding: 20,
-    backdropFilter: 'blur(6px)',
-  },
-  modal: {
-    background: WHITE,
-    borderRadius: 20,
-    padding: 26,
-    maxWidth: 560,
-    width: '100%',
-    maxHeight: '90vh',
-    overflowY: 'auto',
-    border: `1.5px solid ${BORDER}`,
-    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
-  },
-  modalTitle: {
-    fontSize: 20,
-    fontWeight: 900,
-    color: BLACK,
-    margin: '0 0 18px',
-    letterSpacing: -0.3,
-    textTransform: 'lowercase',
-  },
-  formGroup: { marginBottom: 14 },
-  label: {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    marginBottom: 6,
-    letterSpacing: 0.6,
-  },
-  input: {
-    width: '100%',
-    padding: '11px 13px',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 10,
-    fontSize: 13.5,
-    outline: 'none',
-    background: WHITE,
-    color: BLACK,
-    boxSizing: 'border-box',
-  },
-  twoCol: {
-    display: 'grid',
-    gridTemplateColumns: '1fr 1fr',
-    gap: 12,
-  },
-  checkboxRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    marginTop: 6,
-    cursor: 'pointer',
-  },
-  modalActions: {
-    display: 'flex',
-    gap: 10,
-    justifyContent: 'flex-end',
-    paddingTop: 18,
-    borderTop: `1px solid ${BORDER}`,
-    marginTop: 18,
-  },
-
-  // Brand picker styles
-  brandPickerWrap: {
-    display: 'flex',
-    flexDirection: 'column',
-    gap: 8,
-  },
-  brandPreview: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    padding: '10px 12px',
-    background: `${GOLD}22`,
-    border: `1.5px solid ${GOLD}`,
-    borderRadius: 10,
-  },
-  brandLogo: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    objectFit: 'cover',
-    flexShrink: 0,
-  },
-  brandLogoFallback: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    background: BLACK,
-    color: GOLD,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontWeight: 900,
-    fontSize: 16,
-    flexShrink: 0,
-  },
-  brandPreviewName: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: BLACK,
-  },
-  brandPreviewMeta: {
-    fontSize: 11,
-    color: MUTED,
-    marginTop: 2,
-  },
-  brandClearBtn: {
-    padding: '6px 12px',
-    background: WHITE,
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 8,
-    fontSize: 11,
-    fontWeight: 700,
-    color: BLACK,
-    cursor: 'pointer',
-    flexShrink: 0,
-  },
-
-  tableCard: {
-    background: WHITE,
-    borderRadius: 14,
-    border: `1.5px solid ${BORDER}`,
-    overflow: 'hidden',
-    marginTop: 16,
-  },
-  table: { width: '100%', borderCollapse: 'collapse' },
-  thead: { background: '#fafbfc' },
-  th: {
-    textAlign: 'left',
-    padding: '12px 14px',
-    fontSize: 10.5,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-  },
-  tr: { borderBottom: `1px solid ${BORDER}` },
-  td: { padding: '12px 14px', fontSize: 13, color: BLACK },
-  smallMuted: { fontSize: 11, color: MUTED, marginTop: 2 },
 };
