@@ -3,7 +3,7 @@ import React, { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import * as XLSX from "xlsx";
 import {
-  BarChart4, TrendingUp, TrendingDown, Users, Store, Globe,
+  TrendingUp, TrendingDown, Users, Store, Globe,
   Search, X, Download, RefreshCw, ArrowUpRight, ArrowLeft,
   Building, Trophy, Award, Medal, Crown, Gift, Ticket,
   ChevronDown, ChevronUp, ChevronLeft, ChevronsLeft,
@@ -199,20 +199,20 @@ export default function AllBrandsRevenue() {
   };
 
   const getRankBadge = (index) => {
-    if (index === 0) return { icon: <Crown size={14} />, color: "#f59e0b", bg: "#fef3c7", label: "1st" };
-    if (index === 1) return { icon: <Trophy size={14} />, color: "#8b5cf6", bg: "#f5f3ff", label: "2nd" };
-    if (index === 2) return { icon: <Medal size={14} />, color: "#10b981", bg: "#ecfdf5", label: "3rd" };
-    return { icon: null, color: "#94a3b8", bg: "#f1f5f9", label: `#${index + 1}` };
+    if (index === 0) return { icon: <Crown size={14} />, color: "#C77700", bg: "#FFF1CC", label: "1st" };
+    if (index === 1) return { icon: <Trophy size={14} />, color: "#8E44AD", bg: "#F1E6F5", label: "2nd" };
+    if (index === 2) return { icon: <Medal size={14} />, color: "#1E6B3A", bg: "#E3F3E8", label: "3rd" };
+    return { icon: null, color: "#9A958B", bg: "#F0ECE2", label: `#${index + 1}` };
   };
 
   const getPlatformBadge = (brand) => {
     if (brand.platform === "shopify") {
-      return { label: "Shopify", color: "#2e7d32", bg: "#e8f5e9", icon: <Globe size={10} /> };
+      return { label: "Shopify", color: "#2e7d32", bg: "#E3F3E8", icon: <Globe size={10} /> };
     }
     if (brand.platform === "woocommerce") {
       return { label: "WooCommerce", color: "#1565c0", bg: "#e3f2fd", icon: <Globe size={10} /> };
     }
-    return { label: "Custom", color: "#6d28d9", bg: "#ede9fe", icon: <Globe size={10} /> };
+    return { label: "Custom", color: "#8E44AD", bg: "#F1E6F5", icon: <Globe size={10} /> };
   };
 
   const openDrilldown = (brand) => {
@@ -258,21 +258,17 @@ export default function AllBrandsRevenue() {
           transition={{ duration: 0.4 }}
         >
           <div>
-            <div style={styles.headerBadge}>
-              <BarChart4 size={14} />
-              <span>Platform Analytics</span>
-            </div>
             <h1 style={{
               ...styles.title,
               fontSize: isMobile ? "22px" : isTablet ? "26px" : "30px",
             }}>
-              All Brands Revenue
+              brands revenue<span className="dot" aria-hidden="true">.</span>
             </h1>
             <p style={{
               ...styles.subtitle,
               fontSize: isMobile ? "12px" : "14px",
             }}>
-              Track revenue, savings and redemptions for every brand on the platform
+              what tdc users spend at partner brands, in-store and online.
             </p>
           </div>
           <div style={{
@@ -331,8 +327,8 @@ export default function AllBrandsRevenue() {
             label="Total Revenue"
             value={`₨ ${(summary.totalRevenue || 0).toLocaleString()}`}
             sub={`${summary.brandsWithRevenue || 0} brands`}
-            color="#10b981"
-            bg="#ecfdf5"
+            color="#1E6B3A"
+            bg="#E3F3E8"
             isMobile={isMobile}
           />
           <SummaryCard
@@ -340,8 +336,8 @@ export default function AllBrandsRevenue() {
             label="Total Bills"
             value={`₨ ${(summary.totalBill || 0).toLocaleString()}`}
             sub="Across all brands"
-            color="#3b82f6"
-            bg="#eff6ff"
+            color="#2B7FC0"
+            bg="#E1F1FA"
             isMobile={isMobile}
           />
           <SummaryCard
@@ -349,8 +345,8 @@ export default function AllBrandsRevenue() {
             label="Student Saved"
             value={`₨ ${(summary.totalSaved || 0).toLocaleString()}`}
             sub="Total discounts"
-            color="#f59e0b"
-            bg="#fef3c7"
+            color="#C77700"
+            bg="#FFF1CC"
             isMobile={isMobile}
           />
           <SummaryCard
@@ -358,8 +354,8 @@ export default function AllBrandsRevenue() {
             label="Redemptions"
             value={`${(summary.totalRedemptions || 0).toLocaleString()}`}
             sub="QR + Promo"
-            color="#8b5cf6"
-            bg="#f5f3ff"
+            color="#8E44AD"
+            bg="#F1E6F5"
             isMobile={isMobile}
           />
           <SummaryCard
@@ -367,8 +363,8 @@ export default function AllBrandsRevenue() {
             label="Unique Students"
             value={`${(summary.uniqueStudents || 0).toLocaleString()}`}
             sub="Across all brands"
-            color="#ec4899"
-            bg="#fdf2f8"
+            color="#C2185B"
+            bg="#FCE4EC"
             isMobile={isMobile}
           />
           <SummaryCard
@@ -376,8 +372,8 @@ export default function AllBrandsRevenue() {
             label="Total Brands"
             value={`${summary.totalBrands || 0}`}
             sub={`${summary.brandsWithRevenue || 0} with revenue`}
-            color="#0ea5e9"
-            bg="#f0f9ff"
+            color="#2B7FC0"
+            bg="#E1F1FA"
             isMobile={isMobile}
           />
         </motion.div>
@@ -558,7 +554,7 @@ export default function AllBrandsRevenue() {
                         initial={{ opacity: 0, x: -15 }}
                         animate={{ opacity: 1, x: 0 }}
                         transition={{ duration: 0.2, delay: Math.min(i * 0.02, 0.3) }}
-                        whileHover={{ backgroundColor: "#f8fafc" }}
+                        whileHover={{ backgroundColor: "#FAF8F3" }}
                         onClick={() => openDrilldown(b)}
                       >
                         {/* Rank */}
@@ -677,7 +673,7 @@ export default function AllBrandsRevenue() {
                           <div style={{ display: "flex", flexDirection: "column", gap: "3px" }}>
                             {b.qrCount > 0 && (
                               <div style={styles.breakdownRow}>
-                                <Store size={10} color="#ea580c" />
+                                <Store size={10} color="#8A5A00" />
                                 <span>{b.qrCount} store</span>
                               </div>
                             )}
@@ -688,7 +684,7 @@ export default function AllBrandsRevenue() {
                               </div>
                             )}
                             {b.qrCount === 0 && b.promoCount === 0 && (
-                              <span style={{ color: "#cbd5e1", fontSize: "11px" }}>—</span>
+                              <span style={{ color: "#9A958B", fontSize: "11px" }}>—</span>
                             )}
                           </div>
                         </td>
@@ -859,46 +855,46 @@ export default function AllBrandsRevenue() {
                   gap: "10px",
                 }}>
                   <MiniStat
-                    icon={<CircleDollarSign size={16} color="#10b981" />}
+                    icon={<CircleDollarSign size={16} color="#1E6B3A" />}
                     label="Total Revenue"
                     value={`₨ ${selectedBrand.totalRevenue.toLocaleString()}`}
-                    bg="#ecfdf5"
-                    color="#065f46"
+                    bg="#E3F3E8"
+                    color="#1E6B3A"
                   />
                   <MiniStat
-                    icon={<Wallet size={16} color="#3b82f6" />}
+                    icon={<Wallet size={16} color="#2B7FC0" />}
                     label="Total Bills"
                     value={`₨ ${selectedBrand.totalBill.toLocaleString()}`}
-                    bg="#eff6ff"
-                    color="#1e3a8a"
+                    bg="#E1F1FA"
+                    color="#2B7FC0"
                   />
                   <MiniStat
-                    icon={<Gift size={16} color="#f59e0b" />}
+                    icon={<Gift size={16} color="#C77700" />}
                     label="Student Saved"
                     value={`₨ ${selectedBrand.totalSaved.toLocaleString()}`}
-                    bg="#fef3c7"
-                    color="#78350f"
+                    bg="#FFF1CC"
+                    color="#8A5A00"
                   />
                   <MiniStat
-                    icon={<Ticket size={16} color="#8b5cf6" />}
+                    icon={<Ticket size={16} color="#8E44AD" />}
                     label="Redemptions"
                     value={selectedBrand.totalRedemptions}
-                    bg="#f5f3ff"
-                    color="#4c1d95"
+                    bg="#F1E6F5"
+                    color="#8E44AD"
                   />
                   <MiniStat
-                    icon={<Users size={16} color="#ec4899" />}
+                    icon={<Users size={16} color="#C2185B" />}
                     label="Unique Students"
                     value={selectedBrand.uniqueStudents}
-                    bg="#fdf2f8"
+                    bg="#FCE4EC"
                     color="#831843"
                   />
                   <MiniStat
-                    icon={<Store size={16} color="#0ea5e9" />}
+                    icon={<Store size={16} color="#2B7FC0" />}
                     label="Offers"
                     value={selectedBrand.offersCount}
-                    bg="#f0f9ff"
-                    color="#0c4a6e"
+                    bg="#E1F1FA"
+                    color="#2B7FC0"
                   />
                 </div>
 
@@ -917,8 +913,8 @@ export default function AllBrandsRevenue() {
                       <div style={styles.breakdownHeader}>
                         <div style={{
                           ...styles.breakdownIcon,
-                          background: "#fff7ed",
-                          color: "#ea580c",
+                          background: "#FFF1CC",
+                          color: "#8A5A00",
                         }}>
                           <Store size={16} />
                         </div>
@@ -940,7 +936,7 @@ export default function AllBrandsRevenue() {
                           <span style={styles.breakdownLabel}>Saved</span>
                           <span style={{
                             ...styles.breakdownValue,
-                            color: "#ea580c",
+                            color: "#8A5A00",
                           }}>
                             ₨ {selectedBrand.qrSaved.toLocaleString()}
                           </span>
@@ -990,7 +986,7 @@ export default function AllBrandsRevenue() {
                     </h4>
                     <div style={styles.topOfferCard}>
                       <div style={styles.topOfferIcon}>
-                        <Flame size={18} color="#f59e0b" />
+                        <Flame size={18} color="#C77700" />
                       </div>
                       <div style={{ flex: 1 }}>
                         <div style={styles.topOfferTitle}>
@@ -1060,7 +1056,7 @@ export default function AllBrandsRevenue() {
         @keyframes spin { to { transform: rotate(360deg); } }
         .spinning { animation: spin 1s linear infinite; }
         .sortable { cursor: pointer; user-select: none; transition: background 0.2s; }
-        .sortable:hover { background: #f1f5f9; }
+        .sortable:hover { background: #F0ECE2; }
         @media (max-width: 768px) {
           .hide-mobile { display: none !important; }
         }
@@ -1079,14 +1075,14 @@ function SummaryCard({ icon, label, value, sub, color, bg, isMobile }) {
         background: "#fff",
         borderRadius: "16px",
         padding: isMobile ? "12px 14px" : "16px 20px",
-        border: "1px solid #f1f5f9",
-        boxShadow: "0 4px 16px rgba(0,0,0,0.03)",
+        border: "1px solid #F0ECE2",
+        boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
         display: "flex",
         flexDirection: "column",
         gap: "8px",
         minHeight: "110px",
       }}
-      whileHover={{ y: -3, boxShadow: "0 8px 24px rgba(0,0,0,0.06)" }}
+      whileHover={{ y: -3, boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)" }}
       transition={{ duration: 0.2 }}
     >
       <div style={{
@@ -1110,7 +1106,7 @@ function SummaryCard({ icon, label, value, sub, color, bg, isMobile }) {
       <div>
         <div style={{
           fontSize: isMobile ? "9px" : "11px",
-          color: "#64748b",
+          color: "#6B675E",
           fontWeight: 700,
           textTransform: "uppercase",
           letterSpacing: "0.4px",
@@ -1120,7 +1116,7 @@ function SummaryCard({ icon, label, value, sub, color, bg, isMobile }) {
         <div style={{
           fontSize: isMobile ? "16px" : "20px",
           fontWeight: 800,
-          color: "#0f172a",
+          color: "#111111",
           marginTop: "2px",
           lineHeight: 1.2,
           wordBreak: "break-word",
@@ -1130,7 +1126,7 @@ function SummaryCard({ icon, label, value, sub, color, bg, isMobile }) {
         {sub && (
           <div style={{
             fontSize: isMobile ? "9px" : "11px",
-            color: "#94a3b8",
+            color: "#9A958B",
             marginTop: "2px",
             fontWeight: 500,
           }}>
@@ -1170,7 +1166,7 @@ function MiniStat({ icon, label, value, bg, color }) {
       <div style={{
         fontSize: "16px",
         fontWeight: 800,
-        color: "#0f172a",
+        color: "#111111",
         wordBreak: "break-word",
       }}>
         {value}
@@ -1184,12 +1180,15 @@ function MiniStat({ icon, label, value, bg, color }) {
 // ==========================================================
 const styles = {
   pageWrapper: {
-    minHeight: "100vh",
-    background: "linear-gradient(135deg, #f8fafc 0%, #f1f5f9 100%)",
-    fontFamily: '"Inter", -apple-system, BlinkMacSystemFont, sans-serif',
+    minHeight: "auto",
+    background: "transparent",
     position: "relative",
     width: "100%",
-    padding: 0,
+    padding: "0",
+    boxShadow: "none",
+    border: "none",
+    margin: "0",
+    borderRadius: "0",
   },
   bgDeco1: {
     position: "absolute",
@@ -1197,7 +1196,7 @@ const styles = {
     right: "-60px",
     width: "340px",
     height: "340px",
-    background: "radial-gradient(circle, rgba(255,150,26,0.07) 0%, rgba(255,150,26,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none",
   },
@@ -1207,7 +1206,7 @@ const styles = {
     left: "-60px",
     width: "280px",
     height: "280px",
-    background: "radial-gradient(circle, rgba(139,92,246,0.05) 0%, rgba(139,92,246,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none",
   },
@@ -1218,7 +1217,7 @@ const styles = {
     transform: "translate(-50%, -50%)",
     width: "700px",
     height: "700px",
-    background: "radial-gradient(circle, rgba(16,185,129,0.02) 0%, rgba(16,185,129,0) 70%)",
+    background: "transparent",
     borderRadius: "50%",
     pointerEvents: "none",
   },
@@ -1227,7 +1226,7 @@ const styles = {
     backdropFilter: "blur(20px)",
     borderRadius: "20px",
     padding: "clamp(12px, 2vw, 24px)",
-    boxShadow: "0 8px 32px rgba(0,0,0,0.04)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     border: "1px solid rgba(255,255,255,0.5)",
     margin: "0 auto",
     position: "relative",
@@ -1247,23 +1246,23 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
-    background: "linear-gradient(135deg, #fff7ed, #fef3c7)",
+    background: "#FFF1CC",
     padding: "5px 14px",
     borderRadius: "40px",
     fontSize: "12px",
     fontWeight: 700,
-    color: "#ff961a",
+    color: "#C77700",
     marginBottom: "10px",
   },
   title: {
     margin: 0,
-    color: "#0f172a",
+    color: "#111111",
     fontWeight: 800,
     letterSpacing: "-0.02em",
   },
   subtitle: {
     margin: "6px 0 0 0",
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: 400,
   },
   headerActions: {
@@ -1275,9 +1274,9 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
-    background: "#f1f5f9",
-    color: "#475569",
-    border: "1px solid #e2e8f0",
+    background: "#F0ECE2",
+    color: "#6B675E",
+    border: "1px solid #ECE7DB",
     padding: "10px 18px",
     borderRadius: "12px",
     cursor: "pointer",
@@ -1288,7 +1287,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "6px",
-    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    background: "#111111",
     color: "#fff",
     border: "none",
     padding: "10px 20px",
@@ -1320,15 +1319,14 @@ const styles = {
     left: "12px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#94a3b8",
+    color: "#9A958B",
   },
   searchInput: {
     width: "100%",
     padding: "10px 36px 10px 36px",
     borderRadius: "12px",
-    border: "2px solid #e2e8f0",
+    border: "2px solid #ECE7DB",
     fontSize: "13px",
-    fontFamily: "inherit",
     outline: "none",
     background: "#fff",
     transition: "all 0.2s",
@@ -1338,7 +1336,7 @@ const styles = {
     right: "10px",
     top: "50%",
     transform: "translateY(-50%)",
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     border: "none",
     borderRadius: "50%",
     width: "22px",
@@ -1347,7 +1345,7 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     cursor: "pointer",
-    color: "#64748b",
+    color: "#6B675E",
   },
   filterGroupWrapper: {
     display: "flex",
@@ -1357,7 +1355,7 @@ const styles = {
   filterGroup: {
     display: "flex",
     gap: "3px",
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     padding: "4px",
     borderRadius: "26px",
     alignItems: "center",
@@ -1366,7 +1364,7 @@ const styles = {
   filterLabel: {
     fontSize: "10px",
     fontWeight: 700,
-    color: "#64748b",
+    color: "#6B675E",
     padding: "0 6px",
     textTransform: "uppercase",
     letterSpacing: "0.4px",
@@ -1379,19 +1377,19 @@ const styles = {
     cursor: "pointer",
     fontSize: "11px",
     fontWeight: 600,
-    color: "#64748b",
+    color: "#6B675E",
     transition: "all 0.2s",
   },
   filterBtnActive: {
     background: "#fff",
-    color: "#ff961a",
+    color: "#C77700",
     boxShadow: "0 2px 6px rgba(0,0,0,0.05)",
   },
   tableWrapper: {
     background: "#fff",
     borderRadius: "16px",
-    border: "1px solid #f1f5f9",
-    boxShadow: "0 4px 20px rgba(0,0,0,0.03)",
+    border: "1px solid #F0ECE2",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     overflow: "hidden",
   },
   tableScroll: {
@@ -1404,17 +1402,17 @@ const styles = {
     minWidth: "1000px",
   },
   theadRow: {
-    background: "#f8fafc",
+    background: "#FAF8F3",
   },
   th: {
     padding: "12px 14px",
     textAlign: "left",
     fontSize: "10px",
     fontWeight: 700,
-    color: "#64748b",
+    color: "#6B675E",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
-    borderBottom: "2px solid #e2e8f0",
+    borderBottom: "2px solid #ECE7DB",
     whiteSpace: "nowrap",
   },
   thContent: {
@@ -1423,17 +1421,17 @@ const styles = {
     gap: "4px",
   },
   tr: {
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom: "1px solid #F0ECE2",
     cursor: "pointer",
     transition: "background 0.15s ease",
   },
   topBrandRow: {
-    background: "linear-gradient(90deg, #fffbeb 0%, #ffffff 100%)",
+    background: "#FFF1CC",
   },
   td: {
     padding: "12px 14px",
     fontSize: "13px",
-    color: "#334155",
+    color: "#111111",
     verticalAlign: "middle",
   },
   rankBadge: {
@@ -1454,8 +1452,8 @@ const styles = {
     width: "38px",
     height: "38px",
     borderRadius: "10px",
-    background: "linear-gradient(135deg, #f9c34920 0%, #ff961a20 100%)",
-    color: "#ff961a",
+    background: "#111111",
+    color: "#C77700",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1471,7 +1469,7 @@ const styles = {
   },
   brandName: {
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#111111",
     fontSize: "13px",
     lineHeight: 1.2,
     whiteSpace: "nowrap",
@@ -1481,11 +1479,11 @@ const styles = {
   },
   brandMeta: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "2px",
   },
   pendingTag: {
-    color: "#f59e0b",
+    color: "#C77700",
     fontWeight: 600,
   },
   platformBadge: {
@@ -1500,52 +1498,52 @@ const styles = {
   },
   microBadgeBlue: {
     fontSize: "9px",
-    background: "#eff6ff",
-    color: "#1d4ed8",
+    background: "#E1F1FA",
+    color: "#2B7FC0",
     padding: "2px 6px",
     borderRadius: "6px",
     fontWeight: 600,
   },
   microBadgeOrange: {
     fontSize: "9px",
-    background: "#fff7ed",
-    color: "#ea580c",
+    background: "#FFF1CC",
+    color: "#8A5A00",
     padding: "2px 6px",
     borderRadius: "6px",
     fontWeight: 600,
   },
   revenueValue: {
     fontWeight: 800,
-    color: "#10b981",
+    color: "#1E6B3A",
     fontSize: "14px",
     whiteSpace: "nowrap",
   },
   revenueSub: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "2px",
     fontWeight: 500,
   },
   billValue: {
     fontWeight: 700,
-    color: "#1d4ed8",
+    color: "#2B7FC0",
     fontSize: "13px",
     whiteSpace: "nowrap",
   },
   savedValue: {
     fontWeight: 700,
-    color: "#d97706",
+    color: "#8A5A00",
     fontSize: "13px",
     whiteSpace: "nowrap",
   },
   redeemValue: {
     fontWeight: 700,
-    color: "#6d28d9",
+    color: "#8E44AD",
     fontSize: "13px",
   },
   studentValue: {
     fontWeight: 700,
-    color: "#db2777",
+    color: "#C2185B",
     fontSize: "13px",
   },
   breakdownRow: {
@@ -1553,7 +1551,7 @@ const styles = {
     alignItems: "center",
     gap: "5px",
     fontSize: "11px",
-    color: "#475569",
+    color: "#6B675E",
     fontWeight: 600,
   },
   viewBtn: {
@@ -1563,16 +1561,16 @@ const styles = {
     width: "30px",
     height: "30px",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     background: "#fff",
-    color: "#64748b",
+    color: "#6B675E",
     cursor: "pointer",
     transition: "all 0.2s",
   },
   emptyCell: {
     padding: "60px 20px",
     textAlign: "center",
-    color: "#94a3b8",
+    color: "#9A958B",
   },
   emptyIcon: {
     fontSize: "48px",
@@ -1582,12 +1580,12 @@ const styles = {
   emptyText: {
     fontSize: "15px",
     fontWeight: 700,
-    color: "#1e293b",
+    color: "#111111",
     margin: 0,
   },
   emptySubtext: {
     fontSize: "12px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "4px",
     display: "block",
   },
@@ -1596,14 +1594,14 @@ const styles = {
     justifyContent: "space-between",
     alignItems: "center",
     padding: "14px 18px",
-    borderTop: "1px solid #f1f5f9",
+    borderTop: "1px solid #F0ECE2",
     flexWrap: "wrap",
     gap: "10px",
     background: "rgba(255,255,255,0.5)",
   },
   paginationInfo: {
     fontSize: "12px",
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: 500,
   },
   paginationControls: {
@@ -1617,9 +1615,9 @@ const styles = {
     height: "32px",
     padding: "0 8px",
     borderRadius: "8px",
-    border: "1px solid #e2e8f0",
+    border: "1px solid #ECE7DB",
     background: "#fff",
-    color: "#475569",
+    color: "#6B675E",
     cursor: "pointer",
     fontSize: "12px",
     fontWeight: 600,
@@ -1629,9 +1627,9 @@ const styles = {
     transition: "all 0.2s",
   },
   paginationActive: {
-    background: "linear-gradient(135deg, #ff961a 0%, #f3b245 100%)",
+    background: "#111111",
     color: "#fff",
-    borderColor: "#ff961a",
+    borderColor: "#111111",
   },
   paginationDisabled: {
     opacity: 0.4,
@@ -1639,7 +1637,7 @@ const styles = {
   },
   paginationPageSize: {
     fontSize: "11px",
-    color: "#94a3b8",
+    color: "#9A958B",
     fontWeight: 600,
   },
   loadingContainer: {
@@ -1649,13 +1647,13 @@ const styles = {
     alignItems: "center",
     justifyContent: "center",
     gap: "14px",
-    color: "#64748b",
+    color: "#6B675E",
   },
   spinner: {
     width: "36px",
     height: "36px",
-    border: "3px solid #e2e8f0",
-    borderTopColor: "#ff961a",
+    border: "3px solid #ECE7DB",
+    borderTopColor: "#111111",
     borderRadius: "50%",
   },
   loadingText: {
@@ -1684,21 +1682,21 @@ const styles = {
     display: "flex",
     flexDirection: "column",
     overflow: "hidden",
-    boxShadow: "0 30px 60px -12px rgba(0,0,0,0.35)",
+    boxShadow: "0 24px 60px rgba(17, 17, 17, 0.16)",
   },
   modalHeader: {
     padding: "18px 22px",
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom: "1px solid #F0ECE2",
     display: "flex",
     justifyContent: "space-between",
     alignItems: "center",
-    background: "linear-gradient(135deg, #f8fafc 0%, #fff 100%)",
+    background: "#FAF8F3",
   },
   modalLogo: {
     width: "48px",
     height: "48px",
     borderRadius: "12px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     color: "#fff",
     display: "flex",
     alignItems: "center",
@@ -1717,12 +1715,12 @@ const styles = {
     margin: 0,
     fontSize: "17px",
     fontWeight: 800,
-    color: "#0f172a",
+    color: "#111111",
   },
   modalSubtitle: {
     margin: "2px 0 0 0",
     fontSize: "12px",
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: 500,
   },
   modalCloseBtn: {
@@ -1731,7 +1729,7 @@ const styles = {
     borderRadius: "50%",
     border: "none",
     background: "transparent",
-    color: "#64748b",
+    color: "#6B675E",
     cursor: "pointer",
     display: "flex",
     alignItems: "center",
@@ -1746,16 +1744,16 @@ const styles = {
     gap: "18px",
   },
   sectionBlock: {
-    background: "#f8fafc",
+    background: "#FAF8F3",
     borderRadius: "12px",
     padding: "14px 16px",
-    border: "1px solid #f1f5f9",
+    border: "1px solid #F0ECE2",
   },
   sectionTitle: {
     margin: "0 0 10px 0",
     fontSize: "12px",
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#111111",
     display: "flex",
     alignItems: "center",
     gap: "6px",
@@ -1764,7 +1762,7 @@ const styles = {
     background: "#fff",
     borderRadius: "10px",
     padding: "12px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
   },
   breakdownHeader: {
     display: "flex",
@@ -1783,11 +1781,11 @@ const styles = {
   breakdownTitle: {
     fontSize: "12px",
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#111111",
   },
   breakdownSub: {
     fontSize: "10px",
-    color: "#94a3b8",
+    color: "#9A958B",
     fontWeight: 500,
     marginTop: "1px",
   },
@@ -1796,17 +1794,17 @@ const styles = {
     flexDirection: "column",
     gap: "6px",
     paddingTop: "8px",
-    borderTop: "1px dashed #e2e8f0",
+    borderTop: "1px dashed #ECE7DB",
   },
   breakdownLabel: {
     fontSize: "11px",
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: 500,
   },
   breakdownValue: {
     fontSize: "12px",
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#111111",
     display: "block",
     marginTop: "2px",
   },
@@ -1817,13 +1815,13 @@ const styles = {
     background: "#fff",
     borderRadius: "10px",
     padding: "12px",
-    border: "1px solid #fde68a",
+    border: "1px solid #FFF1CC",
   },
   topOfferIcon: {
     width: "38px",
     height: "38px",
     borderRadius: "10px",
-    background: "#fef3c7",
+    background: "#FFF1CC",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -1831,11 +1829,11 @@ const styles = {
   topOfferTitle: {
     fontSize: "13px",
     fontWeight: 700,
-    color: "#0f172a",
+    color: "#111111",
   },
   topOfferSub: {
     fontSize: "11px",
-    color: "#94a3b8",
+    color: "#9A958B",
     marginTop: "2px",
     fontWeight: 500,
   },
@@ -1851,22 +1849,22 @@ const styles = {
     fontSize: "12px",
     gap: "10px",
     paddingBottom: "6px",
-    borderBottom: "1px dashed #f1f5f9",
+    borderBottom: "1px dashed #F0ECE2",
   },
   infoLabel: {
-    color: "#64748b",
+    color: "#6B675E",
     fontWeight: 500,
     whiteSpace: "nowrap",
   },
   infoValue: {
-    color: "#0f172a",
+    color: "#111111",
     fontWeight: 600,
     textAlign: "right",
     wordBreak: "break-word",
   },
   modalFooter: {
     padding: "14px 22px",
-    borderTop: "1px solid #f1f5f9",
+    borderTop: "1px solid #F0ECE2",
     display: "flex",
     justifyContent: "flex-end",
     gap: "8px",
@@ -1874,7 +1872,7 @@ const styles = {
   },
   modalCloseBtnBottom: {
     padding: "9px 22px",
-    background: "linear-gradient(135deg, #1e293b 0%, #0f172a 100%)",
+    background: "#111111",
     color: "#fff",
     border: "none",
     borderRadius: "10px",
