@@ -1,24 +1,12 @@
-// src/screens/PushCenter.jsx
-// Modern admin console for push notifications.
-// Shows mood icons (real PNG assets), rotating copy variants, and full delivery logs.
+// src/screens/TestPush.js (push center)
+// Admin console for push notifications: compose with a phone preview, feature usage, win-back,
+// streaks, one-click broadcasts and delivery logs. Mood icons are the real PNG assets.
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import api, { engagementApi } from '../services/api';
-
-// ─────────────────────────────────────────────
-// THEME
-// ─────────────────────────────────────────────
-const GOLD = '#f9c349';
-const GOLD_DARK = '#e0a82e';
-const GOLD_LIGHT = '#fffbee';
-const BLACK = '#111111';
-const MUTED = '#6B675E';
-const BORDER = '#F0ECE2';
-const DANGER = '#B42318';
-const SUCCESS = '#1E6B3A';
-const INFO = '#2B7FC0';
-const PURPLE = '#8E44AD';
-const ORANGE = '#C77700';
+import Ico from '../portal/Ico';
+import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, Dropdown, Tabs, Segmented, Card, Table, EmptyState, Pill, toast, confirmDialog } from '../portal/kit';
+import './styles/TestPush.css';
 
 // ─────────────────────────────────────────────
 // ASSET BASE
@@ -30,7 +18,7 @@ const ASSET_BASE =
   'https://the-deft-crew-production.up.railway.app/assets';
 
 // ─────────────────────────────────────────────
-// MOOD ICON MAP — each mood has emoji (fallback),
+// MOOD ICON MAP: each mood has emoji (fallback),
 // label, color, and a dedicated PNG image URL
 // ─────────────────────────────────────────────
 const moodImage = (mood) => `${ASSET_BASE}/dots/${mood}.png`;
@@ -51,7 +39,7 @@ const MOODS = {
   panic:    { emoji: '😰', label: 'panic',    color: '#B42318' },
   shock:    { emoji: '😳', label: 'shock',    color: '#C77700' },
   shook:    { emoji: '😮', label: 'shook',    color: '#8E44AD' },
-  urgent:   { emoji: '😨', label: 'urgent',   color: '#ff6b6b' },
+  urgent:   { emoji: '😨', label: 'urgent',   color: '#D9443F' },
 
   // 💤 Neutral / sleepy / money / ghost
   sleepy:   { emoji: '😴', label: 'sleepy',   color: '#8E44AD' },
@@ -121,12 +109,12 @@ const getCopyMeta = (id) => COPY_KEYS.find((k) => k.id === id) || COPY_KEYS[0];
 // TABS
 // ─────────────────────────────────────────────
 const TABS = [
-  { id: 'compose', label: 'compose', icon: '✍️', desc: 'send a push' },
-  { id: 'users', label: 'users', icon: '👥', desc: 'feature usage' },
-  { id: 'inactive', label: 'inactive', icon: '💤', desc: 'win-back' },
-  { id: 'streaks', label: 'streaks', icon: '🔥', desc: 'at risk' },
-  { id: 'broadcasts', label: 'broadcasts', icon: '📢', desc: 'one-click' },
-  { id: 'logs', label: 'activity', icon: '📜', desc: 'recent sends' },
+  { id: 'compose', label: 'compose', icon: 'edit' },
+  { id: 'users', label: 'users', icon: 'users' },
+  { id: 'inactive', label: 'inactive', icon: 'clock' },
+  { id: 'streaks', label: 'streaks', icon: 'flame' },
+  { id: 'broadcasts', label: 'broadcasts', icon: 'megaphone' },
+  { id: 'logs', label: 'activity', icon: 'file' },
 ];
 
 // ─────────────────────────────────────────────
@@ -154,94 +142,55 @@ function matchesQuery(user, query) {
 }
 
 // ─────────────────────────────────────────────
-// MOOD PILL — reusable icon component
-// Uses the REAL PNG asset. Falls back to emoji if the image fails.
+// MOOD PILL: the real PNG asset, the mood's emoji if the image fails
 // ─────────────────────────────────────────────
 function MoodPill({ mood, size = 'md' }) {
   const m = MOODS[mood] || MOODS.default;
   const [imgFailed, setImgFailed] = useState(false);
-
-  const dims =
-    size === 'sm' ? { w: 26, h: 26, fs: 13, r: 9 } :
-    size === 'lg' ? { w: 48, h: 48, fs: 22, r: 12 } :
-                    { w: 34, h: 34, fs: 16, r: 10 };
+  const px = size === 'sm' ? 28 : size === 'lg' ? 48 : 36;
 
   return (
-    <div
-      title={m.label}
-      style={{
-        width: dims.w,
-        height: dims.h,
-        borderRadius: dims.r,
-        background: m.color + '18',
-        border: `1.5px solid ${m.color}50`,
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        fontSize: dims.fs,
-        flexShrink: 0,
-        overflow: 'hidden',
-      }}
-    >
+    <span className={`tp-mood ${size}`} title={m.label} style={{ width: px, height: px, borderColor: m.color }}>
       {imgFailed ? (
         <span>{m.emoji}</span>
       ) : (
-        <img
-          src={moodImage(mood)}
-          alt={m.label}
-          width={dims.w - 4}
-          height={dims.h - 4}
-          onError={() => setImgFailed(true)}
-          style={{
-            objectFit: 'contain',
-            display: 'block',
-            pointerEvents: 'none',
-          }}
-        />
+        <img src={moodImage(mood)} alt={m.label} width={px - 6} height={px - 6} onError={() => setImgFailed(true)} />
       )}
-    </div>
+    </span>
   );
 }
 
 // ─────────────────────────────────────────────
-// MOOD BIG PREVIEW — shown in the phone preview
+// MOOD BIG PREVIEW: shown in the phone preview
 // ─────────────────────────────────────────────
 function MoodBigPreview({ mood }) {
   const m = MOODS[mood] || MOODS.default;
   const [imgFailed, setImgFailed] = useState(false);
 
   return (
-    <div
-      style={{
-        ...s.moodBanner,
-        background: `linear-gradient(135deg, ${m.color}30, ${m.color}10)`,
-        border: `2px dashed ${m.color}60`,
-      }}
-    >
-      <div style={s.moodBannerIconWrap}>
-        {imgFailed ? (
-          <div style={s.moodBannerEmoji}>{m.emoji}</div>
-        ) : (
-          <img
-            src={pushImage(mood)}
-            alt={m.label}
-            style={{
-              width: 72,
-              height: 72,
-              objectFit: 'contain',
-              display: 'block',
-            }}
-            onError={() => setImgFailed(true)}
-          />
-        )}
+    <div className="tp-banner">
+      <div className="tp-banner-ico">
+        {imgFailed ? <span className="tp-banner-emoji">{m.emoji}</span> : <img src={pushImage(mood)} alt={m.label} onError={() => setImgFailed(true)} />}
       </div>
-      <div style={s.moodBannerLabel}>
+      <div className="tp-banner-text">
         icon: <b>{mood}</b>
-        <div style={s.moodBannerSub}>attached as richContent.image</div>
+        <div className="k-hint">attached as richContent.image</div>
       </div>
     </div>
   );
 }
+
+const avatar = (name) => <span className="tp-avatar">{(name || '?').charAt(0).toUpperCase()}</span>;
+const userCell = (u, sub) => (
+  <div className="tp-user">
+    {avatar(u.name)}
+    <div style={{ minWidth: 0 }}>
+      <div className="tp-name">{u.name || 'unknown'}</div>
+      <div className="k-hint">{sub}</div>
+    </div>
+  </div>
+);
+const Banner = ({ ok, children }) => <div className={`k-note ${ok ? 'ok' : 'bad'}`} style={{ fontWeight: 700 }}>{children}</div>;
 
 // ─────────────────────────────────────────────
 // MAIN
@@ -358,44 +307,21 @@ export default function PushCenter() {
   }, [mergedUsers]);
 
   return (
-    <div style={s.page}>
-      <div style={s.header}>
-        <div>
-          <h2 style={s.title}>push center<span className="dot" aria-hidden="true">.</span></h2>
-          <p style={s.subtitle}>
-            compose, test and send notifications. keep them fun, never pushy.
-          </p>
-        </div>
-        <button style={s.refreshBtn} onClick={loadUsers} disabled={loadingUsers}>
-          {loadingUsers ? 'loading…' : 'refresh'}
-        </button>
-      </div>
+    <div className="tdcp k-page tp" data-screen="push">
+      <PageHeader
+        title="push center"
+        sub="compose, test and send notifications. keep them fun, never pushy."
+        actions={<Button variant="secondary" icon="refresh" onClick={loadUsers} loading={loadingUsers}>refresh</Button>}
+      />
 
       {loadError && (
-        <div style={s.warnBanner}>
-          ⚠ {loadError}: check your backend /admin/users/all endpoint
+        <div className="k-note warn tp-warn">
+          <Ico kind="alert" tone="plain" size={18} />
+          <span>{loadError}: check your backend /admin/users/all endpoint</span>
         </div>
       )}
 
-      {/* Tabs */}
-      <div style={s.tabsWrap}>
-        {TABS.map((t) => (
-          <button
-            key={t.id}
-            style={{
-              ...s.tabChip,
-              ...(tab === t.id ? s.tabChipActive : {}),
-            }}
-            onClick={() => setTab(t.id)}
-          >
-            <span style={s.tabIcon}>{t.icon}</span>
-            <div>
-              <div style={s.tabLabel}>{t.label}</div>
-              <div style={s.tabDesc}>{t.desc}</div>
-            </div>
-          </button>
-        ))}
-      </div>
+      <Tabs label="push center sections" value={tab} onChange={setTab} tabs={TABS} />
 
       {tab === 'compose' && <ComposeTab users={mergedUsers} onRefresh={loadUsers} />}
       {tab === 'users' && (
@@ -416,7 +342,7 @@ export default function PushCenter() {
 }
 
 // ═════════════════════════════════════════════
-// TAB 1 — COMPOSE
+// TAB 1: COMPOSE
 // ═════════════════════════════════════════════
 function ComposeTab({ users, onRefresh }) {
   const [audience, setAudience] = useState('single');
@@ -507,272 +433,197 @@ function ComposeTab({ users, onRefresh }) {
   const mood = copyMeta.mood;
 
   return (
-    <div style={s.grid2}>
-      <div style={s.card}>
-        <h3 style={s.cardTitle}>compose push</h3>
+    <div className="tp-grid">
+      <Card title="compose push" icon="send" tone="yellow">
+        <div className="tp-form">
+          <Field label="Audience">
+            <Segmented
+              label="audience"
+              value={audience}
+              onChange={setAudience}
+              options={[
+                { value: 'single', label: 'single user' },
+                { value: 'all', label: 'all users' },
+                { value: 'student', label: 'students' },
+                { value: 'brand', label: 'brands' },
+                { value: 'traveler', label: 'travelers' },
+              ]}
+            />
+          </Field>
 
-        <label style={s.label}>Audience</label>
-        <div style={s.audienceRow}>
-          {[
-            { id: 'single', label: 'single user' },
-            { id: 'all', label: 'all users' },
-            { id: 'student', label: 'students' },
-            { id: 'brand', label: 'brands' },
-            { id: 'traveler', label: 'travelers' },
-          ].map((a) => (
-            <button
-              key={a.id}
-              style={{
-                ...s.audienceChip,
-                ...(audience === a.id ? s.audienceChipActive : {}),
-              }}
-              onClick={() => setAudience(a.id)}
-            >
-              {a.label}
-            </button>
-          ))}
-        </div>
-
-        {audience === 'single' && (
-          <div style={{ marginTop: 14 }}>
-            {selectedUser ? (
-              <div style={s.selectedChip}>
-                <div style={s.avatar}>
-                  {(selectedUser.name || '?').charAt(0).toUpperCase()}
-                </div>
+          {audience === 'single' && (
+            selectedUser ? (
+              <div className="tp-picked">
+                {avatar(selectedUser.name)}
                 <div style={{ flex: 1, minWidth: 0 }}>
-                  <div style={s.selectedName}>{selectedUser.name || 'unknown'}</div>
-                  <div style={s.selectedMeta}>
-                    {selectedUser.email || selectedUser.rollNo || '–'}
-                  </div>
+                  <div className="tp-name">{selectedUser.name || 'unknown'}</div>
+                  <div className="k-hint">{selectedUser.email || selectedUser.rollNo || '–'}</div>
                 </div>
-                <button style={s.clearBtn} onClick={clearUser}>
-                  ×
+                <button type="button" className="k-icon-btn ghost sm" aria-label="clear user" title="clear user" onClick={clearUser}>
+                  <Ico kind="close" tone="plain" size={15} />
                 </button>
               </div>
             ) : (
-              <div style={{ position: 'relative' }}>
-                <input
-                  ref={inputRef}
-                  style={s.input}
-                  placeholder="search by name, email, or roll no…"
-                  value={search}
-                  onChange={(e) => {
-                    setSearch(e.target.value);
-                    setShowDropdown(true);
-                  }}
-                  onFocus={() => setShowDropdown(true)}
-                  onBlur={() => {
-                    setTimeout(() => setShowDropdown(false), 200);
-                  }}
-                  onKeyDown={handleKeyDown}
-                  autoComplete="off"
-                />
-
-                {!search && !selectedUser && (
-                  <div style={s.searchHint}>
-                    {users.length > 0
-                      ? `showing ${filtered.length} of ${users.length} users`
-                      : 'no users loaded: click refresh'}
+              <Field label="User" hint={!search ? (users.length > 0 ? `showing ${filtered.length} of ${users.length} users` : 'no users loaded: click refresh') : undefined}>
+                <div className="k-dd" data-kit="dropdown">
+                  <div className="k-search">
+                    <span className="k-search-ico"><Ico kind="search" tone="plain" size={17} /></span>
+                    <Input
+                      ref={inputRef}
+                      placeholder="search by name, email, or roll no…"
+                      aria-label="search users"
+                      value={search}
+                      onChange={(e) => {
+                        setSearch(e.target.value);
+                        setShowDropdown(true);
+                      }}
+                      onFocus={() => setShowDropdown(true)}
+                      onBlur={() => {
+                        setTimeout(() => setShowDropdown(false), 200);
+                      }}
+                      onKeyDown={handleKeyDown}
+                      autoComplete="off"
+                    />
                   </div>
-                )}
 
-                {showDropdown && filtered.length > 0 && (
-                  <div style={s.dropdown}>
-                    {filtered.map((u, i) => (
-                      <button
-                        key={u._id}
-                        type="button"
-                        style={{
-                          ...s.dropdownRow,
-                          ...(i === highlightIdx ? s.dropdownRowHighlight : {}),
-                        }}
-                        onMouseDown={(e) => e.preventDefault()}
-                        onClick={() => pickUser(u)}
-                        onMouseEnter={() => setHighlightIdx(i)}
-                      >
-                        <div style={s.avatarSm}>
-                          {(u.name || '?').charAt(0).toUpperCase()}
-                        </div>
-                        <div style={{ flex: 1, minWidth: 0 }}>
-                          <div style={s.dropdownName}>{u.name || 'unknown'}</div>
-                          <div style={s.dropdownMeta}>
-                            {u.email || '–'}
-                            {u.rollNo ? ` · ${u.rollNo}` : ''}
-                            {u.role ? ` · ${u.role}` : ''}
-                          </div>
-                        </div>
-                        {u.profile?.streakCount > 0 && (
-                          <span style={s.streakPip}>
-                            🔥 {u.profile.streakCount}
-                          </span>
-                        )}
-                      </button>
-                    ))}
-                  </div>
-                )}
-
-                {showDropdown && search.trim() && filtered.length === 0 && (
-                  <div style={s.dropdown}>
-                    <div style={s.dropdownEmpty}>
-                      no users match "{search}"
+                  {showDropdown && filtered.length > 0 && (
+                    <div className="k-dd-pop">
+                      <div className="k-dd-list" role="listbox" aria-label="users">
+                        {filtered.map((u, i) => (
+                          <button
+                            key={u._id}
+                            type="button"
+                            role="option"
+                            aria-selected={i === highlightIdx}
+                            className={`k-dd-opt tp-opt${i === highlightIdx ? ' active' : ''}`}
+                            onMouseDown={(e) => e.preventDefault()}
+                            onClick={() => pickUser(u)}
+                            onMouseEnter={() => setHighlightIdx(i)}
+                          >
+                            {avatar(u.name)}
+                            <span style={{ flex: 1, minWidth: 0, textAlign: 'left' }}>
+                              <span className="tp-name">{u.name || 'unknown'}</span>
+                              <span className="k-hint" style={{ display: 'block' }}>
+                                {u.email || '–'}
+                                {u.rollNo ? ` · ${u.rollNo}` : ''}
+                                {u.role ? ` · ${u.role}` : ''}
+                              </span>
+                            </span>
+                            {u.profile?.streakCount > 0 && (
+                              <Pill tone="orange"><Ico kind="flame" tone="plain" size={12} />{u.profile.streakCount}</Pill>
+                            )}
+                          </button>
+                        ))}
+                      </div>
                     </div>
-                  </div>
-                )}
-              </div>
-            )}
-          </div>
-        )}
+                  )}
 
-        <label style={{ ...s.label, marginTop: 16 }}>Copy key</label>
-        <div style={s.copyKeyRow}>
-          <select
-            style={{ ...s.input, flex: 1 }}
-            value={copyKey}
-            onChange={(e) => {
-              setCopyKey(e.target.value);
-              setPreviewTick((t) => t + 1);
-            }}
-          >
-            {COPY_KEYS.map((k) => (
-              <option key={k.id} value={k.id}>
-                {k.label}
-              </option>
-            ))}
-          </select>
-          <MoodPill mood={mood} size="md" />
-        </div>
-        <div style={s.copyKeyHint}>
-          {copyMeta.hint} · icon: <b>{mood}</b>
-        </div>
-
-        <label style={{ ...s.label, marginTop: 16 }}>Title (optional)</label>
-        <input
-          style={s.input}
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-          placeholder="leave blank for copy bank"
-        />
-
-        <label style={{ ...s.label, marginTop: 16 }}>Body (optional)</label>
-        <textarea
-          style={{ ...s.input, minHeight: 80 }}
-          value={body}
-          onChange={(e) => setBody(e.target.value)}
-          placeholder="leave blank for copy bank"
-        />
-
-        <button
-          style={{ ...s.btnPrimary, marginTop: 20, opacity: sending ? 0.6 : 1 }}
-          onClick={send}
-          disabled={sending}
-        >
-          {sending
-            ? 'sending…'
-            : audience === 'single'
-            ? `send to ${selectedUser?.name || 'user'}`
-            : `send to ${audience}`}
-        </button>
-
-        {result && (
-          <div style={resultBanner(result.ok)}>
-            {result.ok
-              ? `✓ sent: ${result.data?.sent || 0} / ${result.data?.total || 0}` +
-                (result.data?.skipped ? ` · skipped: ${result.data.skipped}` : '') +
-                (result.data?.failed ? ` · failed: ${result.data.failed}` : '')+
-                (result.data?.note ? ` · ⚠ ${result.data.note}` : '')
-              : `✗ ${result.error || 'not sent'}` +
-                (result.data ? ` (sent ${result.data.sent || 0} / ${result.data.total || 0})` : '')}
-          </div>
-        )}
-      </div>
-
-      {/* Preview panel */}
-      <div>
-        <div style={s.card}>
-          <div style={s.previewHead}>
-            <h3 style={s.cardTitle}>preview</h3>
-            <button
-              style={s.refreshBtnSm}
-              onClick={() => setPreviewTick((t) => t + 1)}
-              title="cycle through copy variants"
-            >
-              ↻ rotate
-            </button>
-          </div>
-
-          <div style={s.phone}>
-            <div style={s.phoneHeader}>
-              <span style={s.phoneTime}>now</span>
-              <span style={s.phoneBattery}>🔋</span>
-            </div>
-
-            {/* Big mood banner — shows the real PNG that lands on the device */}
-            <MoodBigPreview mood={mood} />
-
-            <div style={s.notifCard}>
-              <MoodPill mood={mood} size="md" />
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={s.notifTitle}>
-                  {phoneTitle(title || copyMeta.pushTitle || copyMeta.label, mood)}
-                </div>
-                <div style={s.notifBody}>
-                  {body || (
-                    <>
-                      <PreviewVariant copyKey={copyKey} tick={previewTick} />
-                    </>
+                  {showDropdown && search.trim() && filtered.length === 0 && (
+                    <div className="k-dd-pop">
+                      <div className="k-dd-empty">no users match "{search}"</div>
+                    </div>
                   )}
                 </div>
-              </div>
+              </Field>
+            )
+          )}
+
+          <Field label="Copy key" hint={<>{copyMeta.hint} · icon: <b>{mood}</b></>}>
+            <div className="tp-copykey">
+              <Dropdown
+                style={{ flex: 1 }}
+                options={COPY_KEYS.map((k) => ({ value: k.id, label: k.label, hint: k.hint }))}
+                value={copyKey}
+                onChange={(v) => {
+                  setCopyKey(v);
+                  setPreviewTick((t) => t + 1);
+                }}
+              />
+              <MoodPill mood={mood} size="md" />
             </div>
+          </Field>
+
+          <Field label="Title (optional)">
+            <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="leave blank for copy bank" />
+          </Field>
+
+          <Field label="Body (optional)">
+            <Textarea value={body} onChange={(e) => setBody(e.target.value)} placeholder="leave blank for copy bank" rows={3} />
+          </Field>
+
+          <Button block size="lg" icon="send" onClick={send} loading={sending}>
+            {sending
+              ? 'sending…'
+              : audience === 'single'
+              ? `send to ${selectedUser?.name || 'user'}`
+              : `send to ${audience}`}
+          </Button>
+
+          {result && (
+            <Banner ok={result.ok}>
+              {result.ok
+                ? `✓ sent: ${result.data?.sent || 0} / ${result.data?.total || 0}` +
+                  (result.data?.skipped ? ` · skipped: ${result.data.skipped}` : '') +
+                  (result.data?.failed ? ` · failed: ${result.data.failed}` : '')+
+                  (result.data?.note ? ` · ⚠ ${result.data.note}` : '')
+                : `✗ ${result.error || 'not sent'}` +
+                  (result.data ? ` (sent ${result.data.sent || 0} / ${result.data.total || 0})` : '')}
+            </Banner>
+          )}
+        </div>
+      </Card>
+
+      {/* preview */}
+      <Card
+        title="preview"
+        icon="eye"
+        tone="purple"
+        action={<Button size="sm" variant="secondary" icon="refresh" onClick={() => setPreviewTick((t) => t + 1)} title="cycle through copy variants">rotate</Button>}
+      >
+        <div className="tp-phone" data-preview="phone">
+          <div className="tp-phone-bar">
+            <span>now</span>
+            <Ico kind="bell" tone="plain" size={14} />
           </div>
 
-          {/* Copy bank details */}
-          <div style={s.bankInfo}>
-            <div style={s.bankInfoRow}>
-              <span style={s.bankInfoLabel}>type</span>
-              <span style={s.bankInfoValue}>{copyKey}</span>
-            </div>
-            <div style={s.bankInfoRow}>
-              <span style={s.bankInfoLabel}>mood</span>
-              <span style={s.bankInfoValue}>{mood}</span>
-            </div>
-            <div style={s.bankInfoRow}>
-              <span style={s.bankInfoLabel}>icon url</span>
-              <span style={s.bankInfoValueMono}>
-                /assets/dots/push/{mood}.png
-              </span>
-            </div>
-            <div style={s.bankInfoRow}>
-              <span style={s.bankInfoLabel}>sound</span>
-              <span style={s.bankInfoValueMono}>
-                {soundFor(copyKey, mood)}.wav
-              </span>
-            </div>
-            <div style={s.bankInfoRow}>
-              <span style={s.bankInfoLabel}>variants</span>
-              <span style={s.bankInfoValue}>
-                rotates per user · no repeats in a row
-              </span>
-            </div>
-          </div>
+          {/* the mood picture that lands on the device */}
+          <MoodBigPreview mood={mood} />
 
-          {/* Mood reference strip — all 14 icons */}
-          <div style={s.moodStrip}>
-            <div style={s.moodStripLabel}>all icons</div>
-            <div style={s.moodStripRow}>
-              {MOOD_KEYS.map((m) => (
-                <MoodPill key={m} mood={m} size="sm" />
-              ))}
+          <div className="tp-notif">
+            <MoodPill mood={mood} size="md" />
+            <div style={{ flex: 1, minWidth: 0 }}>
+              <div className="tp-notif-title">{phoneTitle(title || copyMeta.pushTitle || copyMeta.label, mood)}</div>
+              <div className="tp-notif-body">{body || <PreviewVariant copyKey={copyKey} tick={previewTick} />}</div>
             </div>
           </div>
         </div>
-      </div>
+
+        <div className="tp-bank">
+          {[
+            ['type', copyKey],
+            ['mood', mood],
+            ['icon url', <code key="u">/assets/dots/push/{mood}.png</code>],
+            ['sound', <code key="s">{soundFor(copyKey, mood)}.wav</code>],
+            ['variants', 'rotates per user · no repeats in a row'],
+          ].map(([k, v]) => (
+            <div className="k-fact" key={k}><span>{k}</span><span>{v}</span></div>
+          ))}
+        </div>
+
+        <div className="tp-strip">
+          <div className="k-label">all icons</div>
+          <div className="tp-strip-row">
+            {MOOD_KEYS.map((m) => (
+              <MoodPill key={m} mood={m} size="sm" />
+            ))}
+          </div>
+        </div>
+      </Card>
     </div>
   );
 }
 
-// Preview variant — rotates through a small client-side pool
+// Preview variant: rotates through a small client-side pool
 function PreviewVariant({ copyKey, tick }) {
   const VARIANTS = PREVIEW_VARIANTS[copyKey] || PREVIEW_VARIANTS.default;
   const idx = tick % VARIANTS.length;
@@ -855,7 +706,7 @@ const PREVIEW_VARIANTS = {
 };
 
 // ═════════════════════════════════════════════
-// TAB 2 — USERS
+// TAB 2: USERS
 // ═════════════════════════════════════════════
 function UsersTab({ users, totalCount, search, setSearch, loading }) {
   const [nudging, setNudging] = useState(null);
@@ -864,131 +715,76 @@ function UsersTab({ users, totalCount, search, setSearch, loading }) {
     setNudging(u._id);
     try {
       const res = await engagementApi.nudgeFeature(u._id);
-      alert(res?.sent ? `✓ sent: ${res.copyKey}` : `skipped: ${res.reason}`);
+      toast(res?.sent ? `✓ sent: ${res.copyKey}` : `skipped: ${res.reason}`);
     } catch (e) {
-      alert(`error: ${e.message}`);
+      toast(`error: ${e.message}`);
     } finally {
       setNudging(null);
     }
   };
 
-  if (loading) return <div style={s.empty}>loading users…</div>;
+  if (loading) return <Card><PageLoading label="loading users…" minHeight={220} /></Card>;
 
   return (
-    <div style={s.card}>
-      <div style={s.cardHeader}>
-        <div>
-          <h3 style={s.cardTitle}>feature usage</h3>
-          <p style={s.cardSub}>
-            who sorted what · who still has unused features
-            {search && ` · showing ${users.length}/${totalCount}`}
-          </p>
-        </div>
-        <input
-          style={{ ...s.input, maxWidth: 260 }}
-          placeholder="search by name / email / roll"
-          value={search}
-          onChange={(e) => setSearch(e.target.value)}
-        />
-      </div>
-
-      <table style={s.table}>
-        <thead>
-          <tr style={s.thead}>
-            <th style={s.th}>user</th>
-            <th style={s.th}>sorted</th>
-            <th style={s.th}>unused</th>
-            <th style={s.th}>streak</th>
-            <th style={s.th}>last active</th>
-            <th style={s.th}></th>
-          </tr>
-        </thead>
-        <tbody>
-          {users.slice(0, 50).map((u) => (
-            <tr key={u._id} style={s.tr}>
-              <td style={s.td}>
-                <div style={s.userCell}>
-                  <div style={s.avatarSm}>
-                    {(u.name || '?').charAt(0).toUpperCase()}
-                  </div>
-                  <div style={{ minWidth: 0 }}>
-                    <div style={s.userName}>{u.name || 'unknown'}</div>
-                    <div style={s.userEmail}>{u.email || u.rollNo || '–'}</div>
-                  </div>
-                </div>
-              </td>
-              <td style={s.td}>
-                <div style={s.featureTags}>
-                  {u.profile.sortedFeatures.length > 0 ? (
-                    u.profile.sortedFeatures.slice(0, 4).map((f) => (
-                      <span key={f} style={s.featureTagUsed}>
-                        {f}
-                      </span>
-                    ))
-                  ) : (
-                    <span style={s.mutedTag}>none yet</span>
-                  )}
-                  {u.profile.sortedFeatures.length > 4 && (
-                    <span style={s.featureTagMore}>
-                      +{u.profile.sortedFeatures.length - 4}
-                    </span>
-                  )}
-                </div>
-              </td>
-              <td style={s.td}>
-                <div style={s.featureTags}>
-                  {u.profile.unusedFeatures.slice(0, 3).map((f) => (
-                    <span key={f} style={s.featureTagUnused}>
-                      {f}
-                    </span>
-                  ))}
-                  {u.profile.unusedFeatures.length > 3 && (
-                    <span style={s.featureTagMore}>
-                      +{u.profile.unusedFeatures.length - 3}
-                    </span>
-                  )}
-                </div>
-              </td>
-              <td style={s.td}>
-                <span style={u.profile.streakCount > 0 ? s.streakBadge : s.mutedTag}>
-                  🔥 {u.profile.streakCount}
-                </span>
-              </td>
-              <td style={s.td}>
-                <span style={s.mutedText}>
-                  {u.profile.lastActiveAt
-                    ? new Date(u.profile.lastActiveAt).toLocaleDateString()
-                    : 'never'}
-                </span>
-              </td>
-              <td style={s.td}>
-                <button
-                  style={s.actionBtn}
-                  onClick={() => sendNudge(u)}
-                  disabled={nudging === u._id || u.profile.unusedFeatures.length === 0}
-                >
-                  {nudging === u._id
-                    ? '…'
-                    : u.profile.unusedFeatures.length === 0
-                    ? 'fully sorted'
-                    : `nudge ${u.profile.unusedFeatures[0]}`}
-                </button>
-              </td>
-            </tr>
-          ))}
-        </tbody>
-      </table>
-      {users.length === 0 && (
-        <div style={s.emptyTable}>
-          {search ? `no users match "${search}"` : 'no users found'}
-        </div>
-      )}
-    </div>
+    <Card
+      title="feature usage"
+      icon="users"
+      tone="blue"
+      action={<Input style={{ maxWidth: 260 }} aria-label="search users" placeholder="search by name / email / roll" value={search} onChange={(e) => setSearch(e.target.value)} />}
+    >
+      <p className="tp-sub">
+        who sorted what · who still has unused features
+        {search && ` · showing ${users.length}/${totalCount}`}
+      </p>
+      <Table
+        minWidth={860}
+        rows={users.slice(0, 50)}
+        empty={<EmptyState icon="users" title={search ? `no users match "${search}"` : 'no users found'} />}
+        columns={[
+          { key: 'user', label: 'user', render: (u) => userCell(u, u.email || u.rollNo || '–') },
+          {
+            key: 'sorted',
+            label: 'sorted',
+            render: (u) => (
+              <div className="tp-tags">
+                {u.profile.sortedFeatures.length > 0 ? (
+                  u.profile.sortedFeatures.slice(0, 4).map((f) => <Pill key={f} tone="green">{f}</Pill>)
+                ) : (
+                  <Pill tone="sand">none yet</Pill>
+                )}
+                {u.profile.sortedFeatures.length > 4 && <Pill tone="sand">+{u.profile.sortedFeatures.length - 4}</Pill>}
+              </div>
+            ),
+          },
+          {
+            key: 'unused',
+            label: 'unused',
+            render: (u) => (
+              <div className="tp-tags">
+                {u.profile.unusedFeatures.slice(0, 3).map((f) => <Pill key={f} tone="orange">{f}</Pill>)}
+                {u.profile.unusedFeatures.length > 3 && <Pill tone="sand">+{u.profile.unusedFeatures.length - 3}</Pill>}
+              </div>
+            ),
+          },
+          { key: 'streak', label: 'streak', render: (u) => <Pill tone={u.profile.streakCount > 0 ? 'orange' : 'sand'}><Ico kind="flame" tone="plain" size={12} />{u.profile.streakCount}</Pill> },
+          { key: 'last', label: 'last active', render: (u) => <span className="k-muted">{u.profile.lastActiveAt ? new Date(u.profile.lastActiveAt).toLocaleDateString() : 'never'}</span> },
+          {
+            key: 'act',
+            label: '',
+            render: (u) => (
+              <Button size="sm" variant="secondary" onClick={() => sendNudge(u)} loading={nudging === u._id} disabled={nudging === u._id || u.profile.unusedFeatures.length === 0}>
+                {u.profile.unusedFeatures.length === 0 ? 'fully sorted' : `nudge ${u.profile.unusedFeatures[0]}`}
+              </Button>
+            ),
+          },
+        ]}
+      />
+    </Card>
   );
 }
 
 // ═════════════════════════════════════════════
-// TAB 3 — INACTIVE
+// TAB 3: INACTIVE
 // ═════════════════════════════════════════════
 function InactiveTab({ users, onRefresh }) {
   const [busy, setBusy] = useState(null);
@@ -1000,21 +796,21 @@ function InactiveTab({ users, onRefresh }) {
       await engagementApi.nudgeWinBack(u._id, u.daysSinceActive);
       onRefresh?.();
     } catch (e) {
-      alert(e.message);
+      toast(e.message);
     } finally {
       setBusy(null);
     }
   };
 
   const sendBulk = async () => {
-    if (!window.confirm(`Send win-back to all ${users.length} inactive users?`)) return;
+    if (!(await confirmDialog(`Send win-back to all ${users.length} inactive users?`))) return;
     setBulk(true);
     try {
       for (const u of users.slice(0, 100)) {
         await engagementApi.nudgeWinBack(u._id, u.daysSinceActive).catch(() => {});
       }
       onRefresh?.();
-      alert(`sent win-back to ${Math.min(users.length, 100)} users`);
+      toast(`sent win-back to ${Math.min(users.length, 100)} users`);
     } finally {
       setBulk(false);
     }
@@ -1024,206 +820,102 @@ function InactiveTab({ users, onRefresh }) {
     d >= 30 ? 'ghost' : d >= 14 ? 'excited' : d >= 7 ? 'excited' : 'sleepy';
 
   return (
-    <div style={s.card}>
-      <div style={s.cardHeader}>
-        <div>
-          <h3 style={s.cardTitle}>inactive users</h3>
-          <p style={s.cardSub}>
-            haven't opened the app in 3+ days · {users.length} total
-          </p>
-        </div>
-        {users.length > 0 && (
-          <button
-            style={{ ...s.btnPrimary, padding: '10px 20px', width: 'auto' }}
-            onClick={sendBulk}
-            disabled={bulk}
-          >
-            {bulk ? 'sending…' : `send to all (${users.length})`}
-          </button>
-        )}
-      </div>
-
-      {users.length === 0 ? (
-        <div style={s.emptyTable}>everyone is active 💪</div>
-      ) : (
-        <table style={s.table}>
-          <thead>
-            <tr style={s.thead}>
-              <th style={s.th}>user</th>
-              <th style={s.th}>icon</th>
-              <th style={s.th}>days inactive</th>
-              <th style={s.th}>last active</th>
-              <th style={s.th}>points</th>
-              <th style={s.th}></th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.slice(0, 50).map((u) => (
-              <tr key={u._id} style={s.tr}>
-                <td style={s.td}>
-                  <div style={s.userCell}>
-                    <div style={s.avatarSm}>
-                      {(u.name || '?').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div style={s.userName}>{u.name}</div>
-                      <div style={s.userEmail}>{u.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={s.td}>
-                  <MoodPill mood={moodForDays(u.daysSinceActive)} size="sm" />
-                </td>
-                <td style={s.td}>
-                  <span
-                    style={{
-                      ...s.streakBadge,
-                      background:
-                        u.daysSinceActive > 14
-                          ? DANGER + '15'
-                          : u.daysSinceActive > 7
-                          ? ORANGE + '15'
-                          : GOLD + '15',
-                      color:
-                        u.daysSinceActive > 14
-                          ? DANGER
-                          : u.daysSinceActive > 7
-                          ? ORANGE
-                          : GOLD_DARK,
-                    }}
-                  >
-                    {u.daysSinceActive === 999 ? 'never' : `${u.daysSinceActive}d`}
-                  </span>
-                </td>
-                <td style={s.td}>
-                  {u.profile.lastActiveAt
-                    ? new Date(u.profile.lastActiveAt).toLocaleDateString()
-                    : '–'}
-                </td>
-                <td style={s.td}>{u.profile.points}</td>
-                <td style={s.td}>
-                  <button
-                    style={s.actionBtn}
-                    onClick={() => sendTo(u)}
-                    disabled={busy === u._id}
-                  >
-                    {busy === u._id ? '…' : 'send win-back'}
-                  </button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <Card
+      title="inactive users"
+      icon="clock"
+      tone="orange"
+      action={users.length > 0 && (
+        <Button size="sm" icon="send" onClick={sendBulk} loading={bulk}>{bulk ? 'sending…' : `send to all (${users.length})`}</Button>
       )}
-    </div>
+    >
+      <p className="tp-sub">haven't opened the app in 3+ days · {users.length} total</p>
+      {users.length === 0 ? (
+        <EmptyState icon="checkCircle" tone="green" title="everyone is active" />
+      ) : (
+        <Table
+          minWidth={760}
+          rows={users.slice(0, 50)}
+          columns={[
+            { key: 'user', label: 'user', render: (u) => userCell(u, u.email) },
+            { key: 'icon', label: 'icon', render: (u) => <MoodPill mood={moodForDays(u.daysSinceActive)} size="sm" /> },
+            {
+              key: 'days',
+              label: 'days inactive',
+              render: (u) => (
+                <Pill tone={u.daysSinceActive > 14 ? 'red' : u.daysSinceActive > 7 ? 'orange' : 'yellow'}>
+                  {u.daysSinceActive === 999 ? 'never' : `${u.daysSinceActive}d`}
+                </Pill>
+              ),
+            },
+            { key: 'last', label: 'last active', render: (u) => (u.profile.lastActiveAt ? new Date(u.profile.lastActiveAt).toLocaleDateString() : '–') },
+            { key: 'points', label: 'points', render: (u) => u.profile.points },
+            { key: 'act', label: '', render: (u) => <Button size="sm" variant="secondary" onClick={() => sendTo(u)} loading={busy === u._id}>send win-back</Button> },
+          ]}
+        />
+      )}
+    </Card>
   );
 }
 
 // ═════════════════════════════════════════════
-// TAB 4 — STREAKS
+// TAB 4: STREAKS
 // ═════════════════════════════════════════════
 function StreaksTab({ users, onRefresh }) {
   const [sending, setSending] = useState(false);
 
   const sendAll = async () => {
-    if (!window.confirm(`Send streak warning to ${users.length} users?`)) return;
+    if (!(await confirmDialog(`Send streak warning to ${users.length} users?`))) return;
     setSending(true);
     try {
       for (const u of users.slice(0, 100)) {
         await engagementApi.nudgeStreak(u._id).catch(() => {});
       }
       onRefresh?.();
-      alert(`sent to ${Math.min(users.length, 100)} users`);
+      toast(`sent to ${Math.min(users.length, 100)} users`);
     } finally {
       setSending(false);
     }
   };
 
   return (
-    <div style={s.card}>
-      <div style={s.cardHeader}>
-        <div>
-          <h3 style={s.cardTitle}>at-risk streaks</h3>
-          <p style={s.cardSub}>
-            streak ≥ 2 & no action today · {users.length} users
-          </p>
-        </div>
-        {users.length > 0 && (
-          <button
-            style={{ ...s.btnPrimary, padding: '10px 20px', width: 'auto' }}
-            onClick={sendAll}
-            disabled={sending}
-          >
-            {sending ? 'sending…' : `warn all (${users.length})`}
-          </button>
-        )}
-      </div>
-
-      {users.length === 0 ? (
-        <div style={s.emptyTable}>no at-risk streaks</div>
-      ) : (
-        <table style={s.table}>
-          <thead>
-            <tr style={s.thead}>
-              <th style={s.th}>user</th>
-              <th style={s.th}>icon</th>
-              <th style={s.th}>streak</th>
-              <th style={s.th}>best</th>
-              <th style={s.th}>freezes left</th>
-              <th style={s.th}>last action</th>
-            </tr>
-          </thead>
-          <tbody>
-            {users.slice(0, 50).map((u) => (
-              <tr key={u._id} style={s.tr}>
-                <td style={s.td}>
-                  <div style={s.userCell}>
-                    <div style={s.avatarSm}>
-                      {(u.name || '?').charAt(0).toUpperCase()}
-                    </div>
-                    <div>
-                      <div style={s.userName}>{u.name}</div>
-                      <div style={s.userEmail}>{u.email}</div>
-                    </div>
-                  </div>
-                </td>
-                <td style={s.td}>
-                  <MoodPill mood="panic" size="sm" />
-                </td>
-                <td style={s.td}>
-                  <span style={s.streakBadge}>🔥 {u.profile.streakCount}</span>
-                </td>
-                <td style={s.td}>{u.profile.streakBest}</td>
-                <td style={s.td}>
-                  {u.profile.freezesLeft === 0 ? (
-                    <span style={s.mutedTag}>0</span>
-                  ) : (
-                    <span style={s.freezeBadge}>🧊 {u.profile.freezesLeft}</span>
-                  )}
-                </td>
-                <td style={s.td}>
-                  <span style={s.mutedText}>
-                    {u.profile.streakLastAction || '–'}
-                  </span>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+    <Card
+      title="at-risk streaks"
+      icon="flame"
+      tone="red"
+      action={users.length > 0 && (
+        <Button size="sm" icon="send" onClick={sendAll} loading={sending}>{sending ? 'sending…' : `warn all (${users.length})`}</Button>
       )}
-    </div>
+    >
+      <p className="tp-sub">streak ≥ 2 & no action today · {users.length} users</p>
+      {users.length === 0 ? (
+        <EmptyState icon="flame" tone="sand" title="no at-risk streaks" />
+      ) : (
+        <Table
+          minWidth={720}
+          rows={users.slice(0, 50)}
+          columns={[
+            { key: 'user', label: 'user', render: (u) => userCell(u, u.email) },
+            { key: 'icon', label: 'icon', render: () => <MoodPill mood="panic" size="sm" /> },
+            { key: 'streak', label: 'streak', render: (u) => <Pill tone="orange"><Ico kind="flame" tone="plain" size={12} />{u.profile.streakCount}</Pill> },
+            { key: 'best', label: 'best', render: (u) => u.profile.streakBest },
+            { key: 'freeze', label: 'freezes left', render: (u) => (u.profile.freezesLeft === 0 ? <Pill tone="sand">0</Pill> : <Pill tone="sky"><Ico kind="shield" tone="plain" size={12} />{u.profile.freezesLeft}</Pill>) },
+            { key: 'last', label: 'last action', render: (u) => <span className="k-muted">{u.profile.streakLastAction || '–'}</span> },
+          ]}
+        />
+      )}
+    </Card>
   );
 }
 
 // ═════════════════════════════════════════════
-// TAB 5 — BROADCASTS
+// TAB 5: BROADCASTS
 // ═════════════════════════════════════════════
 function BroadcastsTab({ onRefresh }) {
   const [busy, setBusy] = useState(null);
   const [result, setResult] = useState(null);
 
   const run = async (id, fn, label) => {
-    if (!window.confirm(`Send "${label}" to all users?`)) return;
+    if (!(await confirmDialog(`Send "${label}" to all users?`))) return;
     setBusy(id);
     setResult(null);
     try {
@@ -1318,48 +1010,43 @@ function BroadcastsTab({ onRefresh }) {
   ];
 
   return (
-    <div>
-      <div style={s.card}>
-        <h3 style={s.cardTitle}>one-click broadcasts</h3>
-        <p style={s.cardSub}>pre-built campaigns for common events</p>
+    <Card title="one-click broadcasts" icon="megaphone" tone="purple">
+      <p className="tp-sub">pre-built campaigns for common events</p>
+      <div className="tp-casts">
+        {actions.map((a) => (
+          <button
+            key={a.id}
+            type="button"
+            className="tp-cast"
+            onClick={() => run(a.id, a.fn, a.label)}
+            disabled={busy === a.id}
+            aria-busy={busy === a.id || undefined}
+          >
+            <MoodPill mood={a.mood} size="lg" />
+            <span className="tp-cast-text">
+              <b>{a.label}</b>
+              <span className="k-hint">{a.desc}</span>
+            </span>
+            <Ico kind="chevronRight" tone="plain" size={18} />
+          </button>
+        ))}
+      </div>
 
-        <div style={s.broadcastGrid}>
-          {actions.map((a) => (
-            <button
-              key={a.id}
-              style={{
-                ...s.broadcastCard,
-                opacity: busy === a.id ? 0.5 : 1,
-              }}
-              onClick={() => run(a.id, a.fn, a.label)}
-              disabled={busy === a.id}
-            >
-              <div style={s.broadcastIconWrap}>
-                <MoodPill mood={a.mood} size="lg" />
-              </div>
-              <div style={s.broadcastText}>
-                <div style={s.broadcastLabel}>{a.label}</div>
-                <div style={s.broadcastDesc}>{a.desc}</div>
-              </div>
-              <div style={s.broadcastArrow}>→</div>
-            </button>
-          ))}
-        </div>
-
-        {result && (
-          <div style={resultBanner(result.ok)}>
+      {result && (
+        <div style={{ marginTop: 14 }}>
+          <Banner ok={result.ok}>
             {result.ok
               ? `✓ ${result.label}: sent ${result.data?.sent || 0} / ${result.data?.total || 0}`
               : `✗ ${result.label}: ${result.error}`}
-          </div>
-        )}
-      </div>
-    </div>
+          </Banner>
+        </div>
+      )}
+    </Card>
   );
 }
 
 // ═════════════════════════════════════════════
-// TAB 6 — LOGS
+// TAB 6: LOGS
 // ═════════════════════════════════════════════
 function LogsTab() {
   const [logs, setLogs] = useState([]);
@@ -1385,752 +1072,43 @@ function LogsTab() {
   }, [load]);
 
   return (
-    <div style={s.card}>
-      <div style={s.cardHeader}>
-        <div>
-          <h3 style={s.cardTitle}>push activity</h3>
-          <p style={s.cardSub}>last 50 sends · click refresh anytime</p>
-        </div>
-        <div style={{ display: 'flex', gap: 10 }}>
-          <select
-            style={{ ...s.input, maxWidth: 140 }}
-            value={filter}
-            onChange={(e) => setFilter(e.target.value)}
-          >
+    <Card
+      title="push activity"
+      icon="file"
+      tone="sand"
+      action={
+        <div className="k-row">
+          <Select size="sm" aria-label="status" style={{ width: 'auto', minWidth: 120 }} value={filter} onChange={(e) => setFilter(e.target.value)}>
             <option value="all">all</option>
             <option value="sent">sent</option>
             <option value="failed">failed</option>
-          </select>
-          <button style={s.btnGhost} onClick={load} disabled={loading}>
-            {loading ? '…' : 'refresh'}
-          </button>
+          </Select>
+          <Button size="sm" variant="secondary" icon="refresh" onClick={load} loading={loading}>refresh</Button>
         </div>
-      </div>
-
+      }
+    >
+      <p className="tp-sub">last 50 sends · click refresh anytime</p>
       {logs.length === 0 ? (
-        <div style={s.emptyTable}>no activity yet</div>
+        loading ? <PageLoading label="loading activity…" minHeight={180} /> : <EmptyState icon="bell" title="no activity yet" />
       ) : (
-        <table style={s.table}>
-          <thead>
-            <tr style={s.thead}>
-              <th style={s.th}>user</th>
-              <th style={s.th}>icon</th>
-              <th style={s.th}>type</th>
-              <th style={s.th}>body</th>
-              <th style={s.th}>status</th>
-              <th style={s.th}>sent</th>
-              <th style={s.th}>opened</th>
-            </tr>
-          </thead>
-          <tbody>
-            {logs.map((l) => (
-              <tr key={l._id} style={s.tr}>
-                <td style={s.td}>
-                  <span style={s.userName}>{l.user?.name || l.userName || '–'}</span>
-                </td>
-                <td style={s.td}>
-                  <MoodPill mood={l.mood || 'sorted'} size="sm" />
-                </td>
-                <td style={s.td}>
-                  <span style={s.typeTag}>{l.type}</span>
-                </td>
-                <td style={s.td}>
-                  <span style={s.bodyText} title={l.body}>
-                    {(l.body || '').slice(0, 60)}
-                  </span>
-                </td>
-                <td style={s.td}>
-                  {l.status === 'failed' ? (
-                    <span style={s.tagDanger}>failed</span>
-                  ) : l.openedAt ? (
-                    <span style={s.tagSuccess}>opened</span>
-                  ) : (
-                    <span style={s.tagInfo}>sent</span>
-                  )}
-                </td>
-                <td style={s.td}>
-                  {l.sentAt ? new Date(l.sentAt).toLocaleTimeString() : '–'}
-                </td>
-                <td style={s.td}>
-                  {l.openedAt ? new Date(l.openedAt).toLocaleTimeString() : '–'}
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
+        <Table
+          minWidth={860}
+          rows={logs}
+          columns={[
+            { key: 'user', label: 'user', render: (l) => <span className="tp-name">{l.user?.name || l.userName || '–'}</span> },
+            { key: 'icon', label: 'icon', render: (l) => <MoodPill mood={l.mood || 'sorted'} size="sm" /> },
+            { key: 'type', label: 'type', render: (l) => <Pill tone="sand">{l.type}</Pill> },
+            { key: 'body', label: 'body', render: (l) => <span className="tp-body" title={l.body}>{(l.body || '').slice(0, 60)}</span> },
+            {
+              key: 'status',
+              label: 'status',
+              render: (l) => (l.status === 'failed' ? <Pill tone="red">failed</Pill> : l.openedAt ? <Pill tone="green">opened</Pill> : <Pill tone="blue">sent</Pill>),
+            },
+            { key: 'sent', label: 'sent', render: (l) => (l.sentAt ? new Date(l.sentAt).toLocaleTimeString() : '–') },
+            { key: 'opened', label: 'opened', render: (l) => (l.openedAt ? new Date(l.openedAt).toLocaleTimeString() : '–') },
+          ]}
+        />
       )}
-    </div>
+    </Card>
   );
 }
-
-// ─────────────────────────────────────────────
-// HELPERS
-// ─────────────────────────────────────────────
-const resultBanner = (ok) => ({
-  marginTop: 16,
-  padding: 14,
-  borderRadius: 12,
-  background: ok ? SUCCESS + '12' : DANGER + '12',
-  color: ok ? '#1E6B3A' : '#B42318',
-  fontWeight: 700,
-  fontSize: 13,
-  border: `1.5px solid ${ok ? SUCCESS + '30' : DANGER + '30'}`,
-});
-
-// ─────────────────────────────────────────────
-// STYLES
-// ─────────────────────────────────────────────
-const s = {
-  page: { padding: 0 },
-
-  header: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-    gap: 16,
-    flexWrap: 'wrap',
-  },
-  title: {
-    fontSize: 32,
-    fontWeight: 800,
-    letterSpacing: '-0.8px',
-    lineHeight: 1.1,
-    color: BLACK,
-    margin: 0,
-    textTransform: 'lowercase',
-  },
-  subtitle: {
-    fontSize: 13,
-    color: MUTED,
-    margin: '4px 0 0 0',
-    fontWeight: 500,
-  },
-  refreshBtn: {
-    padding: '9px 18px',
-    background: '#F0ECE2',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 10,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 12,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  refreshBtnSm: {
-    padding: '5px 12px',
-    background: '#F0ECE2',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 11,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  btnGhost: {
-    padding: '9px 18px',
-    background: '#F0ECE2',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 10,
-    cursor: 'pointer',
-    fontWeight: 700,
-    fontSize: 12,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-
-  warnBanner: {
-    padding: '12px 16px',
-    background: GOLD_LIGHT,
-    border: `1.5px solid ${GOLD}50`,
-    borderRadius: 12,
-    color: GOLD_DARK,
-    fontWeight: 700,
-    fontSize: 12.5,
-    marginBottom: 16,
-    textTransform: 'lowercase',
-  },
-
-  tabsWrap: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-    gap: 10,
-    marginBottom: 20,
-  },
-  tabChip: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '12px 14px',
-    background: '#fff',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 14,
-    cursor: 'pointer',
-    textAlign: 'left',
-    transition: 'all 0.15s',
-  },
-  tabChipActive: {
-    background: GOLD,
-    borderColor: BLACK,
-    boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)',
-  },
-  tabIcon: { fontSize: 20, flexShrink: 0 },
-  tabLabel: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  tabDesc: {
-    fontSize: 10.5,
-    color: MUTED,
-    marginTop: 1,
-    textTransform: 'lowercase',
-  },
-
-  grid2: {
-    display: 'grid',
-    gridTemplateColumns: 'minmax(0, 1.3fr) minmax(0, 1fr)',
-    gap: 20,
-    alignItems: 'start',
-  },
-
-  card: {
-    background: '#fff',
-    borderRadius: 16,
-    padding: 24,
-    border: `1.5px solid ${BORDER}`,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.03)',
-  },
-  cardHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    marginBottom: 20,
-    gap: 12,
-    flexWrap: 'wrap',
-  },
-  cardTitle: {
-    fontSize: 16,
-    fontWeight: 800,
-    color: BLACK,
-    margin: 0,
-    textTransform: 'lowercase',
-    letterSpacing: -0.2,
-  },
-  cardSub: {
-    fontSize: 12,
-    color: MUTED,
-    margin: '4px 0 0 0',
-    fontWeight: 500,
-  },
-  previewHead: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: 16,
-  },
-
-  label: {
-    display: 'block',
-    fontSize: 11,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 8,
-  },
-  input: {
-    width: '100%',
-    padding: '11px 14px',
-    border: `2px solid ${BORDER}`,
-    borderRadius: 12,
-    fontSize: 13,
-    outline: 'none',
-    background: '#fafbfc',
-    color: BLACK,
-    boxSizing: 'border-box',
-  },
-
-  copyKeyRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-  },
-  copyKeyHint: {
-    fontSize: 11.5,
-    color: MUTED,
-    marginTop: 6,
-    textTransform: 'lowercase',
-  },
-
-  audienceRow: {
-    display: 'flex',
-    gap: 8,
-    flexWrap: 'wrap',
-    marginBottom: 8,
-  },
-  audienceChip: {
-    padding: '8px 14px',
-    background: '#FAF8F3',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 10,
-    cursor: 'pointer',
-    fontSize: 12,
-    fontWeight: 700,
-    color: MUTED,
-    textTransform: 'lowercase',
-  },
-  audienceChipActive: {
-    background: GOLD,
-    borderColor: BLACK,
-    color: BLACK,
-  },
-
-  selectedChip: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 12,
-    padding: '12px 14px',
-    background: GOLD_LIGHT,
-    border: `1.5px solid ${GOLD}50`,
-    borderRadius: 12,
-  },
-  selectedName: { fontSize: 13.5, fontWeight: 800, color: BLACK },
-  selectedMeta: { fontSize: 11.5, color: MUTED, marginTop: 1 },
-  clearBtn: {
-    width: 28,
-    height: 28,
-    borderRadius: 14,
-    background: '#fff',
-    border: `1px solid ${BORDER}`,
-    cursor: 'pointer',
-    fontSize: 16,
-    color: MUTED,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-
-  searchHint: {
-    fontSize: 11,
-    color: MUTED,
-    marginTop: 6,
-    textTransform: 'lowercase',
-  },
-
-  dropdown: {
-    position: 'absolute',
-    top: '100%',
-    left: 0,
-    right: 0,
-    marginTop: 4,
-    background: '#fff',
-    border: `1.5px solid ${BORDER}`,
-    borderRadius: 12,
-    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
-    maxHeight: 320,
-    overflowY: 'auto',
-    zIndex: 10,
-  },
-  dropdownRow: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 10,
-    width: '100%',
-    padding: '10px 14px',
-    background: 'transparent',
-    border: 'none',
-    borderBottom: `1px solid ${BORDER}`,
-    cursor: 'pointer',
-    textAlign: 'left',
-  },
-  dropdownRowHighlight: {
-    background: GOLD_LIGHT,
-  },
-  dropdownName: { fontSize: 13, fontWeight: 700, color: BLACK },
-  dropdownMeta: { fontSize: 11, color: MUTED, marginTop: 1 },
-  dropdownEmpty: {
-    padding: 16,
-    textAlign: 'center',
-    color: MUTED,
-    fontSize: 12,
-    textTransform: 'lowercase',
-  },
-
-  avatar: {
-    width: 40,
-    height: 40,
-    borderRadius: 12,
-    background: BLACK,
-    color: GOLD,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 16,
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-  avatarSm: {
-    width: 32,
-    height: 32,
-    borderRadius: 10,
-    background: BLACK,
-    color: GOLD,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    fontSize: 13,
-    fontWeight: 900,
-    flexShrink: 0,
-  },
-
-  streakPip: {
-    fontSize: 11,
-    fontWeight: 900,
-    color: ORANGE,
-    background: ORANGE + '12',
-    padding: '2px 8px',
-    borderRadius: 6,
-    marginLeft: 6,
-    flexShrink: 0,
-  },
-
-  btnPrimary: {
-    width: '100%',
-    padding: '13px 24px',
-    background: GOLD,
-    border: `1.5px solid ${BLACK}`,
-    borderRadius: 12,
-    fontWeight: 900,
-    fontSize: 13,
-    cursor: 'pointer',
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  actionBtn: {
-    padding: '6px 12px',
-    background: GOLD_LIGHT,
-    border: `1px solid ${GOLD}50`,
-    borderRadius: 8,
-    cursor: 'pointer',
-    fontSize: 11,
-    fontWeight: 700,
-    color: GOLD_DARK,
-    textTransform: 'lowercase',
-    whiteSpace: 'nowrap',
-  },
-
-  phone: {
-    background: '#1a1a1a',
-    borderRadius: 20,
-    padding: 14,
-    border: `6px solid #111111`,
-  },
-  phoneHeader: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    marginBottom: 12,
-    paddingHorizontal: 6,
-  },
-  phoneTime: { fontSize: 12, fontWeight: 700, color: '#fff' },
-  phoneBattery: { fontSize: 12, color: '#fff', opacity: 0.7 },
-
-  moodBanner: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    padding: 14,
-    borderRadius: 14,
-    marginBottom: 12,
-  },
-  moodBannerIconWrap: {
-    width: 84,
-    height: 84,
-    borderRadius: 16,
-    background: 'rgba(255,255,255,0.75)',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  moodBannerEmoji: {
-    fontSize: 38,
-    lineHeight: 1,
-  },
-  moodBannerLabel: {
-    fontSize: 13,
-    fontWeight: 800,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  moodBannerSub: {
-    fontSize: 10.5,
-    color: MUTED,
-    marginTop: 2,
-    fontWeight: 500,
-  },
-
-  notifCard: {
-    display: 'flex',
-    gap: 10,
-    padding: 12,
-    background: 'rgba(255,255,255,0.92)',
-    borderRadius: 16,
-  },
-  notifTitle: { fontSize: 13, fontWeight: 800, color: BLACK, marginBottom: 2 },
-  notifBody: { fontSize: 12, color: '#111111', lineHeight: 1.4 },
-
-  bankInfo: {
-    marginTop: 16,
-    padding: 14,
-    background: '#FAF8F3',
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-  },
-  bankInfoRow: {
-    display: 'flex',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    padding: '6px 0',
-    gap: 8,
-  },
-  bankInfoLabel: {
-    fontSize: 11,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-  },
-  bankInfoValue: {
-    fontSize: 12,
-    fontWeight: 700,
-    color: BLACK,
-    textTransform: 'lowercase',
-  },
-  bankInfoValueMono: {
-    fontSize: 11,
-    fontWeight: 700,
-    color: BLACK,
-    fontFamily: 'ui-monospace, Menlo, monospace',
-    background: '#fff',
-    padding: '2px 8px',
-    borderRadius: 6,
-    border: `1px solid ${BORDER}`,
-  },
-
-  // mood reference strip
-  moodStrip: {
-    marginTop: 16,
-    padding: 12,
-    background: '#FAF8F3',
-    borderRadius: 12,
-    border: `1px solid ${BORDER}`,
-  },
-  moodStripLabel: {
-    fontSize: 10,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.4,
-    marginBottom: 8,
-  },
-  moodStripRow: {
-    display: 'flex',
-    flexWrap: 'wrap',
-    gap: 6,
-  },
-
-  table: { width: '100%', borderCollapse: 'collapse' },
-  thead: { background: '#fafbfc' },
-  th: {
-    textAlign: 'left',
-    padding: '12px 16px',
-    fontSize: 11,
-    fontWeight: 800,
-    color: MUTED,
-    textTransform: 'uppercase',
-    letterSpacing: 0.5,
-    borderBottom: `1.5px solid ${BORDER}`,
-  },
-  tr: { borderBottom: `1px solid ${BORDER}` },
-  td: {
-    padding: '12px 16px',
-    fontSize: 13,
-    color: BLACK,
-    fontWeight: 600,
-  },
-
-  userCell: { display: 'flex', alignItems: 'center', gap: 10 },
-  userName: { fontSize: 13, fontWeight: 700, color: BLACK },
-  userEmail: { fontSize: 11, color: MUTED, marginTop: 1 },
-
-  featureTags: { display: 'flex', gap: 4, flexWrap: 'wrap' },
-  featureTagUsed: {
-    padding: '2px 8px',
-    background: SUCCESS + '15',
-    color: '#1E6B3A',
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-    border: `1px solid ${SUCCESS}30`,
-  },
-  featureTagUnused: {
-    padding: '2px 8px',
-    background: GOLD_LIGHT,
-    color: GOLD_DARK,
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-    border: `1px solid ${GOLD}40`,
-  },
-  featureTagMore: {
-    padding: '2px 8px',
-    background: '#F0ECE2',
-    color: MUTED,
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-  },
-  mutedTag: {
-    padding: '2px 8px',
-    background: '#F0ECE2',
-    color: MUTED,
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 700,
-    textTransform: 'lowercase',
-  },
-  streakBadge: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    background: ORANGE + '15',
-    color: ORANGE,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 900,
-  },
-  freezeBadge: {
-    display: 'inline-block',
-    padding: '3px 10px',
-    background: INFO + '15',
-    color: INFO,
-    borderRadius: 8,
-    fontSize: 12,
-    fontWeight: 900,
-  },
-  mutedText: { color: MUTED, fontWeight: 500, fontSize: 12 },
-
-  typeTag: {
-    padding: '3px 8px',
-    background: PURPLE + '15',
-    color: PURPLE,
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-  },
-  tagSuccess: {
-    padding: '3px 8px',
-    background: SUCCESS + '15',
-    color: '#1E6B3A',
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-  },
-  tagInfo: {
-    padding: '3px 8px',
-    background: INFO + '15',
-    color: '#2B7FC0',
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-  },
-  tagDanger: {
-    padding: '3px 8px',
-    background: DANGER + '15',
-    color: DANGER,
-    borderRadius: 6,
-    fontSize: 10,
-    fontWeight: 800,
-    textTransform: 'lowercase',
-  },
-  bodyText: {
-    fontSize: 12,
-    color: MUTED,
-    overflow: 'hidden',
-    textOverflow: 'ellipsis',
-    whiteSpace: 'nowrap',
-    maxWidth: 260,
-    display: 'inline-block',
-  },
-
-  broadcastGrid: {
-    display: 'grid',
-    gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))',
-    gap: 12,
-  },
-  broadcastCard: {
-    display: 'flex',
-    alignItems: 'center',
-    gap: 14,
-    padding: '16px 18px',
-    background: GOLD_LIGHT,
-    border: `1.5px solid ${GOLD}50`,
-    borderRadius: 14,
-    cursor: 'pointer',
-    textAlign: 'left',
-    transition: 'all 0.15s',
-  },
-  broadcastIconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 14,
-    background: '#fff',
-    border: `1.5px solid ${GOLD}40`,
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
-    flexShrink: 0,
-  },
-  broadcastText: { flex: 1, minWidth: 0 },
-  broadcastLabel: {
-    fontSize: 14,
-    fontWeight: 800,
-    color: BLACK,
-    textTransform: 'lowercase',
-    letterSpacing: -0.2,
-  },
-  broadcastDesc: {
-    fontSize: 11.5,
-    color: MUTED,
-    marginTop: 2,
-    textTransform: 'lowercase',
-  },
-  broadcastArrow: {
-    fontSize: 20,
-    color: GOLD_DARK,
-    fontWeight: 900,
-  },
-
-  empty: {
-    padding: 60,
-    textAlign: 'center',
-    color: MUTED,
-    fontSize: 13,
-    textTransform: 'lowercase',
-  },
-  emptyTable: {
-    padding: '60px 20px',
-    textAlign: 'center',
-    color: MUTED,
-    fontSize: 13,
-    fontWeight: 500,
-    textTransform: 'lowercase',
-  },
-};
