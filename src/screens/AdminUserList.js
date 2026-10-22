@@ -32,7 +32,6 @@ export default function AdminUserList({ role, title }) {
   const [sortField, setSortField] = useState("name");
   const [sortDirection, setSortDirection] = useState("asc");
   const [refreshing, setRefreshing] = useState(false);
-  const [showPassword, setShowPassword] = useState({});
   const [userDetails, setUserDetails] = useState({
     offers: [],
     jobs: [],
@@ -43,7 +42,6 @@ export default function AdminUserList({ role, title }) {
     stats: {}
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [loadingPassword, setLoadingPassword] = useState({});
   const [activeStatFilter, setActiveStatFilter] = useState(null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
@@ -314,87 +312,6 @@ export default function AdminUserList({ role, title }) {
     } finally {
       setLoadingDetails(false);
     }
-  };
-
-  const togglePasswordVisibility = async (userId, e) => {
-    e.stopPropagation();
-
-    if (showPassword[userId]) {
-      setShowPassword(prev => ({
-        ...prev,
-        [userId]: false
-      }));
-      return;
-    }
-
-    const user = users.find(u => u._id === userId);
-    if (user && user.password) {
-      setShowPassword(prev => ({
-        ...prev,
-        [userId]: user.password
-      }));
-      return;
-    }
-
-    setLoadingPassword(prev => ({ ...prev, [userId]: true }));
-    try {
-      const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/users/password/${userId}`,
-        { headers: getAuthHeaders() }
-      );
-
-      if (!res.ok) {
-        throw new Error(`HTTP error! status: ${res.status}`);
-      }
-
-      const data = await res.json();
-
-      if (data.success && data.password) {
-        setShowPassword(prev => ({
-          ...prev,
-          [userId]: data.password
-        }));
-      } else {
-        const userData = users.find(u => u._id === userId);
-        if (userData && userData.password) {
-          setShowPassword(prev => ({
-            ...prev,
-            [userId]: userData.password
-          }));
-        } else {
-          setShowPassword(prev => ({
-            ...prev,
-            [userId]: 'No password found'
-          }));
-        }
-      }
-    } catch (err) {
-      console.error("Error fetching password:", err);
-      const userData = users.find(u => u._id === userId);
-      if (userData && userData.password) {
-        setShowPassword(prev => ({
-          ...prev,
-          [userId]: userData.password
-        }));
-      } else {
-        setShowPassword(prev => ({
-          ...prev,
-          [userId]: 'Error loading password'
-        }));
-      }
-    } finally {
-      setLoadingPassword(prev => ({ ...prev, [userId]: false }));
-    }
-  };
-
-  const copyToClipboard = (text, e) => {
-    e.stopPropagation();
-    if (!text || text === 'No password found' || text === 'Error loading password') return;
-    navigator.clipboard.writeText(text).then(() => {
-      alert('Password copied to clipboard!');
-    }).catch(err => {
-      console.error('Failed to copy:', err);
-    });
   };
 
   // QR Code Functions
@@ -1762,48 +1679,6 @@ export default function AdminUserList({ role, title }) {
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Email</span>
                             <span style={styles.modalDetailValue}>{selectedUser.email}</span>
-                          </div>
-                          <div style={styles.modalDetailRow}>
-                            <span style={styles.modalDetailLabel}>Password</span>
-                            <span style={styles.modalDetailValue}>
-                              <span style={styles.passwordDisplay}>
-                                {showPassword[selectedUser._id] ? (
-                                  <span
-                                    style={{
-                                      fontFamily: 'monospace',
-                                      fontSize: isMobile ? "10px" : "12px",
-                                      background: '#f1f5f9',
-                                      padding: '2px 8px',
-                                      borderRadius: '4px',
-                                      wordBreak: 'break-all',
-                                      maxWidth: '150px',
-                                      display: 'inline-block',
-                                      cursor: 'pointer',
-                                    }}
-                                    onClick={(e) => copyToClipboard(showPassword[selectedUser._id], e)}
-                                    title="Click to copy password"
-                                  >
-                                    {showPassword[selectedUser._id]}
-                                  </span>
-                                ) : (
-                                  '********'
-                                )}
-                                <motion.button
-                                  onClick={(e) => togglePasswordVisibility(selectedUser._id, e)}
-                                  style={styles.passwordToggleBtn}
-                                  whileHover={{ scale: 1.1 }}
-                                  whileTap={{ scale: 0.9 }}
-                                  title={showPassword[selectedUser._id] ? "Hide Password" : "Show Password"}
-                                  disabled={loadingPassword[selectedUser._id]}
-                                >
-                                  {loadingPassword[selectedUser._id] ? (
-                                    <div style={styles.spinnerSmall}></div>
-                                  ) : (
-                                    <Eye size={isMobile ? 12 : 14} />
-                                  )}
-                                </motion.button>
-                              </span>
-                            </span>
                           </div>
                           <div style={styles.modalDetailRow}>
                             <span style={styles.modalDetailLabel}>Phone</span>
@@ -4347,22 +4222,6 @@ const styles = {
     fontSize: '12px',
     color: '#94a3b8',
     fontWeight: '500',
-  },
-  passwordDisplay: {
-    display: 'inline-flex',
-    alignItems: 'center',
-    gap: '6px',
-  },
-  passwordToggleBtn: {
-    background: 'none',
-    border: 'none',
-    color: '#94a3b8',
-    cursor: 'pointer',
-    padding: '2px',
-    borderRadius: '50%',
-    display: 'flex',
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   // ========== BRAND REDEMPTIONS DRILL-DOWN ==========
   redemptionsOverlay: {
