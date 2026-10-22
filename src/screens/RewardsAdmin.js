@@ -11,7 +11,7 @@ const BLACK = '#0f0f0f';
 const WHITE = '#ffffff';
 const BORDER = 'rgba(15,15,15,0.10)';
 const MUTED = 'rgba(15,15,15,0.55)';
-const DANGER = '#ef4444';
+const DANGER = '#B42318';
 
 const KINDS = ['promo_code', 'brand_perk', 'tdc_card_discount'];
 
@@ -209,9 +209,9 @@ export default function RewardsAdmin() {
       {/* Header */}
       <div style={s.header}>
         <div>
-          <h2 style={s.title}>rewards</h2>
+          <h2 style={s.title}>rewards<span className="dot" aria-hidden="true">.</span></h2>
           <p style={s.subtitle}>
-            create perks students can spend their points on
+            brand perks students unlock with crew points.
           </p>
         </div>
         <button style={s.btnPrimary} onClick={openCreate}>
@@ -679,7 +679,7 @@ const statusPill = (status) => {
     return { ...base, background: 'rgba(15,15,15,0.08)', color: MUTED };
   if (status === 'cancelled')
     return { ...base, background: 'rgba(239,68,68,0.12)', color: DANGER };
-  return { ...base, background: '#eee', color: BLACK };
+  return { ...base, background: '#F0ECE2', color: BLACK };
 };
 
 // ─── Styles ───────────────────────────────────────────────────────────
@@ -693,11 +693,12 @@ const s = {
     flexWrap: 'wrap',
   },
   title: {
-    fontSize: 28,
-    fontWeight: 900,
+    fontSize: 32,
+    fontWeight: 800,
+    letterSpacing: '-0.8px',
+    lineHeight: 1.1,
     color: BLACK,
     margin: 0,
-    letterSpacing: -0.6,
   },
   subtitle: {
     fontSize: 13,
@@ -964,7 +965,7 @@ const s = {
     maxHeight: '90vh',
     overflowY: 'auto',
     border: `1.5px solid ${BORDER}`,
-    boxShadow: '0 24px 60px rgba(0,0,0,0.25)',
+    boxShadow: '0 24px 60px rgba(17, 17, 17, 0.16)',
   },
   modalTitle: {
     fontSize: 20,
@@ -991,7 +992,6 @@ const s = {
     borderRadius: 10,
     fontSize: 13.5,
     outline: 'none',
-    fontFamily: 'inherit',
     background: WHITE,
     color: BLACK,
     boxSizing: 'border-box',
