@@ -14,7 +14,6 @@ import {
 import { motion, AnimatePresence } from 'framer-motion';
 
 const API_URL = 'https://the-deft-crew-production.up.railway.app/api/admin';
-// const API_URL = 'http://localhost:5000/api/admin';
 
 const AdminPackage = () => {
     const { token } = useContext(AuthContext);
@@ -337,7 +336,7 @@ const AdminPackage = () => {
                                                 </span>
                                             </td>
                                             <td style={styles.td}>
-                                                <span style={styles.amount}>${item.totalAmount}</span>
+                                                <span style={styles.amount}>rs {item.totalAmount}</span>
                                             </td>
                                             <td style={{...styles.td, textAlign: 'right'}}>
                                                 <div style={styles.actionGroup}>
@@ -457,7 +456,7 @@ const AdminPackage = () => {
                                     
                                     <div style={styles.infoRow}>
                                         <label style={styles.infoLabel}>Amount:</label>
-                                        <span style={styles.infoValue}>${selectedBooking.totalAmount}</span>
+                                        <span style={styles.infoValue}>rs {selectedBooking.totalAmount}</span>
                                     </div>
                                     
                                     <div style={styles.inputGroup}>

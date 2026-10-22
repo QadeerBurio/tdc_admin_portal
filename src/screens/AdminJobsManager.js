@@ -1726,7 +1726,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             {csvResult && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Upload successful — {csvResult.created} jobs created, {csvResult.updated} updated
+                  Upload successful: {csvResult.created} jobs created, {csvResult.updated} updated
                 </Typography>
                 {csvResult.skipped > 0 && (
                   <Typography variant="body2">

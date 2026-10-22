@@ -1,13 +1,14 @@
 // AdminDashboard.js: the admin portal shell (sidebar from design/portal/PortalNav) and the dashboard
 // (design/portal/AdDashboard). Pages still switch inside /admin; the data calls are the same as before.
 import React, { useContext, useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { engagementApi } from "../services/api";
 import "./styles/AdminDashboard.css";
 import "../portal/portal.css";
 import Ico from "../portal/Ico";
 import PortalNav, { pageLabel } from "../portal/PortalNav";
+import AdminUserProfile from "../portal/AdminUserProfile";
 import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
 
@@ -41,12 +42,16 @@ import TestPush from "./TestPush";
 const karachiDayKey = (d) =>
   new Intl.DateTimeFormat("en-CA", { timeZone: "Asia/Karachi", year: "numeric", month: "2-digit", day: "2-digit" }).format(d);
 const fmt = (n) => Number(n || 0).toLocaleString("en-US");
+// user list page for each role in a profile URL (/admin/users/:role/:id)
+const ROLE_PAGE = { student: "students", brand: "brands", employee: "employees", traveler: "travelers" };
 
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
   const navigate = useNavigate();
 
-  const [activePage, setActivePage] = useState("dashboard");
+  const { role: profileRole, id: profileId } = useParams();
+  const location = useLocation();
+  const [activePage, setActivePage] = useState(location.state?.page || ROLE_PAGE[profileRole] || "dashboard");
   const [isFetching, setIsFetching] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -236,10 +241,19 @@ export default function AdminDashboard() {
     }
   }, [token, fetchPendingApprovals, fetchTodayDrop]);
 
+  // keep the menu in step with the URL: a profile highlights its user list; coming back opens that list
+  useEffect(() => {
+    if (profileId && ROLE_PAGE[profileRole]) setActivePage(ROLE_PAGE[profileRole]);
+  }, [profileId, profileRole]);
+  useEffect(() => {
+    if (!profileId && location.state?.page) setActivePage(location.state.page);
+  }, [profileId, location.state]);
+
   const go = (id) => {
-    setActivePage(id);
     setIsMobileMenuOpen(false);
     window.scrollTo(0, 0);
+    if (profileId) { navigate("/admin", { state: { page: id } }); return; }
+    setActivePage(id);
   };
 
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
@@ -340,7 +354,7 @@ export default function AdminDashboard() {
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;
       case "all offer": return <AdminOffers />;
-      case "manage_jobs": return <AdminJobManager />;
+      case "manage_jobs": return <AdminJobManager userRole="admin" />;
       case "exchange_program": return <ManageExchange />;
       case "traveling": return <AdminPackageScreen />;
       case "students": return <AdminUserList role="student" title="Student Directory" />;
@@ -394,7 +408,11 @@ export default function AdminDashboard() {
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>
-        <main className="tdcp-main">{renderContent()}</main>
+        <main className="tdcp-main">
+          {profileId
+            ? <AdminUserProfile role={profileRole} id={profileId} onBack={() => navigate("/admin", { state: { page: ROLE_PAGE[profileRole] || "dashboard" } })} />
+            : renderContent()}
+        </main>
       </div>
     </div>
   );

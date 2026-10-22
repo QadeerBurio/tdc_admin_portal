@@ -373,7 +373,7 @@ export default function PushCenter() {
 
       {loadError && (
         <div style={s.warnBanner}>
-          ⚠ {loadError} — check your backend /admin/users/all endpoint
+          ⚠ {loadError}: check your backend /admin/users/all endpoint
         </div>
       )}
 
@@ -543,7 +543,7 @@ function ComposeTab({ users, onRefresh }) {
                 <div style={{ flex: 1, minWidth: 0 }}>
                   <div style={s.selectedName}>{selectedUser.name || 'unknown'}</div>
                   <div style={s.selectedMeta}>
-                    {selectedUser.email || selectedUser.rollNo || '—'}
+                    {selectedUser.email || selectedUser.rollNo || '–'}
                   </div>
                 </div>
                 <button style={s.clearBtn} onClick={clearUser}>
@@ -573,7 +573,7 @@ function ComposeTab({ users, onRefresh }) {
                   <div style={s.searchHint}>
                     {users.length > 0
                       ? `showing ${filtered.length} of ${users.length} users`
-                      : 'no users loaded — click refresh'}
+                      : 'no users loaded: click refresh'}
                   </div>
                 )}
 
@@ -597,7 +597,7 @@ function ComposeTab({ users, onRefresh }) {
                         <div style={{ flex: 1, minWidth: 0 }}>
                           <div style={s.dropdownName}>{u.name || 'unknown'}</div>
                           <div style={s.dropdownMeta}>
-                            {u.email || '—'}
+                            {u.email || '–'}
                             {u.rollNo ? ` · ${u.rollNo}` : ''}
                             {u.role ? ` · ${u.role}` : ''}
                           </div>
@@ -811,7 +811,7 @@ const PREVIEW_VARIANTS = {
   tier_unlocked: [
     "LEVEL UP. you're {tier} now. card's ready, discount's live.",
     'welcome to {tier}. this is not a drill, your perks just got real.',
-    '{tier} unlocked. {discount}% off just kicked in — go use it before you forget.',
+    '{tier} unlocked. {discount}% off just kicked in: go use it before you forget.',
     "you're {tier} now. this is the part where you tell everyone, subtly.",
   ],
   referral_joined: [
@@ -913,7 +913,7 @@ function UsersTab({ users, totalCount, search, setSearch, loading }) {
                   </div>
                   <div style={{ minWidth: 0 }}>
                     <div style={s.userName}>{u.name || 'unknown'}</div>
-                    <div style={s.userEmail}>{u.email || u.rollNo || '—'}</div>
+                    <div style={s.userEmail}>{u.email || u.rollNo || '–'}</div>
                   </div>
                 </div>
               </td>
@@ -1098,7 +1098,7 @@ function InactiveTab({ users, onRefresh }) {
                 <td style={s.td}>
                   {u.profile.lastActiveAt
                     ? new Date(u.profile.lastActiveAt).toLocaleDateString()
-                    : '—'}
+                    : '–'}
                 </td>
                 <td style={s.td}>{u.profile.points}</td>
                 <td style={s.td}>
@@ -1203,7 +1203,7 @@ function StreaksTab({ users, onRefresh }) {
                 </td>
                 <td style={s.td}>
                   <span style={s.mutedText}>
-                    {u.profile.streakLastAction || '—'}
+                    {u.profile.streakLastAction || '–'}
                   </span>
                 </td>
               </tr>
@@ -1426,7 +1426,7 @@ function LogsTab() {
             {logs.map((l) => (
               <tr key={l._id} style={s.tr}>
                 <td style={s.td}>
-                  <span style={s.userName}>{l.user?.name || l.userName || '—'}</span>
+                  <span style={s.userName}>{l.user?.name || l.userName || '–'}</span>
                 </td>
                 <td style={s.td}>
                   <MoodPill mood={l.mood || 'sorted'} size="sm" />
@@ -1449,10 +1449,10 @@ function LogsTab() {
                   )}
                 </td>
                 <td style={s.td}>
-                  {l.sentAt ? new Date(l.sentAt).toLocaleTimeString() : '—'}
+                  {l.sentAt ? new Date(l.sentAt).toLocaleTimeString() : '–'}
                 </td>
                 <td style={s.td}>
-                  {l.openedAt ? new Date(l.openedAt).toLocaleTimeString() : '—'}
+                  {l.openedAt ? new Date(l.openedAt).toLocaleTimeString() : '–'}
                 </td>
               </tr>
             ))}

@@ -2,7 +2,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { 
   Send, Image as ImageIcon, MapPin, Plus, Trash2, 
   Edit3, X, Search, Briefcase,  
-  Sparkles, DollarSign,  
+  Sparkles,  
   TrendingUp,  
   Grid, List, SlidersHorizontal,
   ChevronDown, ChevronUp
@@ -224,7 +224,7 @@ const AdminPackageScreen = () => {
           onError={(e) => e.target.src = 'https://via.placeholder.com/400x200?text=No+Image'} 
         />
         <div style={styles.mobileCardCategory}>{pkg.category}</div>
-        <div style={styles.mobileCardPrice}>${parseInt(pkg.price).toLocaleString()}</div>
+        <div style={styles.mobileCardPrice}>rs {parseInt(pkg.price).toLocaleString()}</div>
       </div>
       <div style={styles.mobileCardBody}>
         <h3 style={styles.mobileCardTitle}>{pkg.name}</h3>
@@ -560,7 +560,7 @@ const AdminPackageScreen = () => {
                     }}>
                       <img src={pkg.image} alt={pkg.name} style={styles.gridImage} onError={(e) => e.target.src = 'https://via.placeholder.com/400x250?text=No+Image'} />
                       <div style={{...styles.gridCategory, fontSize: isMobile ? '10px' : '11px'}}>{pkg.category}</div>
-                      <div style={{...styles.gridPrice, fontSize: isMobile ? '12px' : '14px'}}>${parseInt(pkg.price).toLocaleString()}</div>
+                      <div style={{...styles.gridPrice, fontSize: isMobile ? '12px' : '14px'}}>rs {parseInt(pkg.price).toLocaleString()}</div>
                     </div>
                     <div style={{
                       ...styles.gridBody,
@@ -709,8 +709,7 @@ const AdminPackageScreen = () => {
                         <MapPin size={isTablet ? 12 : 14} style={{marginRight: 4}} /> {pkg.location || 'TBD'}
                       </div>
                       <div style={{...styles.cell, flex: 1, fontWeight: '700', color: '#C77700', fontSize: isTablet ? '13px' : '14px'}}>
-                        <DollarSign size={isTablet ? 12 : 14} style={{display: 'inline', marginRight: 2}} />
-                        {parseInt(pkg.price).toLocaleString()}
+                        rs {parseInt(pkg.price).toLocaleString()}
                       </div>
                       <div style={{...styles.cell, flex: 0.8, justifyContent: 'flex-end', gap: isTablet ? '4px' : '8px'}}>
                         <motion.button 
@@ -861,7 +860,7 @@ const AdminPackageScreen = () => {
                         </motion.select>
                       </div>
                       <div style={{flex: 1, width: isMobile ? '100%' : 'auto'}}>
-                        <label style={styles.label}>Price (USD) <span style={styles.required}>*</span></label>
+                        <label style={styles.label}>price (rs) <span style={styles.required}>*</span></label>
                         <motion.input 
                           style={styles.input} 
                           type="number" 

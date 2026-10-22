@@ -179,7 +179,7 @@ const EventManagement = () => {
       if (res.data && res.data.success) {
         const { added, skipped } = res.data;
         setCsvResult({ added, skipped });
-        showSnackbar(`Upload successful — ${added} events added${skipped > 0 ? `, ${skipped} duplicates skipped` : ''}`, "success");
+        showSnackbar(`Upload successful: ${added} events added${skipped > 0 ? `, ${skipped} duplicates skipped` : ''}`, "success");
         fetchDashboardData();
       } else {
         setCsvError(res.data?.message || "Upload failed.");
@@ -860,7 +860,7 @@ const EventManagement = () => {
             {csvResult && (
               <Alert severity="success" sx={{ mb: 2 }}>
                 <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Upload successful — {csvResult.added} events added
+                  Upload successful: {csvResult.added} events added
                 </Typography>
                 {csvResult.skipped > 0 && (
                   <Typography variant="body2">
