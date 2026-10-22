@@ -1,9 +1,9 @@
 // src/screens/events/FieldInput.js
-// One template field → the right MUI input. The asterisk comes from the label only
-// (MUI's `required` prop is not used, so there is never a second "*").
+// One template field → the right kit input. The asterisk comes from the label only
+// (the `required` attribute is not used, so there is never a second "*").
 import React, { useState } from "react";
-import { TextField, Select, MenuItem, FormControl, InputLabel, FormHelperText, Chip, IconButton, OutlinedInput } from "@mui/material";
-import { Add as AddIcon } from "@mui/icons-material";
+import Ico from "../../portal/Ico";
+import { Field, Input, Textarea, Select, Dropdown, IconButton } from "../../portal/kit";
 
 export const fieldLabel = (f) => `${f.label || f.key}${f.required ? " *" : ""}`;
 
@@ -18,38 +18,34 @@ function ListInput({ field, value, onChange, error }) {
     onChange([...items, ...parts.filter((p) => !items.includes(p))]);
     setDraft("");
   };
+  const id = `ev2-${field.key}`;
   return (
     <div className="ev2-list-field">
-      <TextField
-        fullWidth
-        size="small"
-        className="form-field"
-        label={fieldLabel(field)}
-        value={draft}
-        placeholder="Type and press Enter"
-        onChange={(e) => setDraft(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") {
-            e.preventDefault();
-            add();
-          }
-        }}
-        error={!!error}
-        helperText={error || field.helpText || " "}
-        slotProps={{
-          input: {
-            endAdornment: (
-              <IconButton size="small" onClick={add} aria-label={`add ${field.label}`} disabled={!draft.trim()}>
-                <AddIcon fontSize="small" />
-              </IconButton>
-            ),
-          },
-        }}
-      />
+      <Field label={fieldLabel(field)} htmlFor={id} error={error} hint={field.helpText}>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Input
+            id={id}
+            value={draft}
+            placeholder="Type and press Enter"
+            invalid={!!error}
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                add();
+              }
+            }}
+          />
+          <IconButton icon="plus" label={`add ${field.label}`} onClick={add} disabled={!draft.trim()} />
+        </div>
+      </Field>
       {items.length > 0 && (
         <div className="ev2-chips">
           {items.map((it, i) => (
-            <Chip key={`${it}-${i}`} label={it} size="small" onDelete={() => onChange(items.filter((_, j) => j !== i))} />
+            <span className="k-tag" key={`${it}-${i}`}>
+              {it}
+              <button type="button" aria-label={`remove ${it}`} onClick={() => onChange(items.filter((_, j) => j !== i))}><Ico kind="close" tone="plain" size={12} /></button>
+            </span>
           ))}
         </div>
       )}
@@ -59,62 +55,63 @@ function ListInput({ field, value, onChange, error }) {
 
 export default function FieldInput({ field, value, onChange, error, disabled }) {
   const label = fieldLabel(field);
-  const helper = error || field.helpText || " ";
+  const id = `ev2-${field.key}`;
 
   if (field.type === "list") return <ListInput field={field} value={value} onChange={onChange} error={error} />;
 
-  if (field.type === "select" || field.type === "multiselect") {
-    const multiple = field.type === "multiselect";
-    const id = `ev2-${field.key}`;
+  if (field.type === "multiselect") {
     return (
-      <FormControl fullWidth size="small" className="form-field" error={!!error} disabled={disabled}>
-        <InputLabel id={`${id}-label`}>{label}</InputLabel>
-        <Select
-          labelId={`${id}-label`}
-          multiple={multiple}
-          value={multiple ? (Array.isArray(value) ? value : []) : value || ""}
-          label={label}
-          input={<OutlinedInput label={label} />}
-          onChange={(e) => onChange(e.target.value)}
-          renderValue={multiple ? (sel) => sel.join(", ") : undefined}
-        >
-          {!multiple && !field.required && (
-            <MenuItem value="">
-              <em>None</em>
-            </MenuItem>
-          )}
+      <Field label={label} error={error} hint={field.helpText}>
+        <Dropdown
+          multiple
+          searchable={(field.options || []).length > 8}
+          options={(field.options || []).map((o) => ({ value: o, label: o }))}
+          value={Array.isArray(value) ? value : []}
+          onChange={onChange}
+          placeholder="choose…"
+          disabled={disabled}
+        />
+      </Field>
+    );
+  }
+
+  if (field.type === "select") {
+    return (
+      <Field label={label} htmlFor={id} error={error} hint={field.helpText}>
+        <Select id={id} value={value || ""} invalid={!!error} disabled={disabled} onChange={(e) => onChange(e.target.value)}>
+          {(!field.required || !value) && <option value="">{field.required ? "choose…" : "None"}</option>}
           {(field.options || []).map((o) => (
-            <MenuItem key={o} value={o}>
+            <option key={o} value={o}>
               {o}
-            </MenuItem>
+            </option>
           ))}
         </Select>
-        <FormHelperText>{helper}</FormHelperText>
-      </FormControl>
+      </Field>
     );
   }
 
   const type =
     field.type === "number" ? "text" : field.type === "date" ? "date" : field.type === "time" ? "time" : field.type === "email" ? "email" : field.type === "url" ? "url" : "text";
+  const common = {
+    id,
+    value: value ?? "",
+    disabled,
+    invalid: !!error,
+    placeholder: PLACEHOLDER[field.type],
+    onChange: (e) => onChange(field.type === "number" ? e.target.value.replace(/[^\d]/g, "") : e.target.value),
+  };
   return (
-    <TextField
-      fullWidth
-      size="small"
-      className="form-field"
-      label={label}
-      type={type}
-      value={value ?? ""}
-      disabled={disabled}
-      multiline={field.type === "textarea"}
-      minRows={field.type === "textarea" ? 3 : undefined}
-      placeholder={PLACEHOLDER[field.type]}
-      onChange={(e) => onChange(field.type === "number" ? e.target.value.replace(/[^\d]/g, "") : e.target.value)}
-      error={!!error}
-      helperText={helper}
-      slotProps={{
-        inputLabel: field.type === "date" || field.type === "time" ? { shrink: true } : undefined,
-        htmlInput: field.type === "number" ? { inputMode: "numeric", pattern: "[0-9]*" } : field.type === "phone" ? { inputMode: "tel" } : undefined,
-      }}
-    />
+    <Field label={label} htmlFor={id} error={error} hint={field.helpText}>
+      {field.type === "textarea" ? (
+        <Textarea rows={3} {...common} />
+      ) : (
+        <Input
+          type={type}
+          {...common}
+          inputMode={field.type === "number" ? "numeric" : field.type === "phone" ? "tel" : undefined}
+          pattern={field.type === "number" ? "[0-9]*" : undefined}
+        />
+      )}
+    </Field>
   );
 }
