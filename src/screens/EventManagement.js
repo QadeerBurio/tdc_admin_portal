@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useContext, useRef } from "react";
+import { withTdcTheme } from "../portal/muiTheme";
 import {
   Box,
   Container,
@@ -68,7 +69,7 @@ const DEFAULT_IMAGE = "https://images.unsplash.com/photo-1523240715632-d984bb4b9
 const LoadingSpinner = () => (
   <div className="loading-spinner">
     <div className="loading-spinner-wrapper">
-      <CircularProgress size={72} sx={{ color: "#000" }} />
+      <CircularProgress size={72} sx={{ color: "#111111" }} />
       <div className="loading-spinner-icon">
         <RocketIcon />
       </div>
@@ -416,14 +417,14 @@ const EventManagement = () => {
 
   const getCategoryColor = (category) => {
     const colors = {
-      Hackathons: "#2563eb",
-      Workshops: "#7c3aed",
-      Conferences: "#dc2626",
-      Competitions: "#d97706",
-      "Career Fairs": "#059669",
-      Concerts: "#db2777",
+      Hackathons: "#2B7FC0",
+      Workshops: "#8E44AD",
+      Conferences: "#D9443F",
+      Competitions: "#C77700",
+      "Career Fairs": "#2E8B3E",
+      Concerts: "#C2185B",
     };
-    return colors[category] || "#666";
+    return colors[category] || "#D9D2C2";
   };
 
   const getCategoryEmoji = (category) => {
@@ -454,16 +455,14 @@ const EventManagement = () => {
         <div className="event-header">
           <div className="event-header-left">
             <div className="event-title">
-              <EmojiEventsIcon className="event-title-icon" />
-              Events Dashboard
+              <span>events<span className="dot" aria-hidden="true">.</span></span>
             </div>
             <div className="event-subtitle">
-              <span className="event-subtitle-dot" />
-              Manage events and track registrations
+              campus events, competitions and partner tickets in the app.
             </div>
           </div>
           <div style={{ display: 'flex', gap: '12px' }}>
-            <button className="gradient-btn" onClick={handleOpenCsvDialog} style={{ background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)' }}>
+            <button className="gradient-btn" onClick={handleOpenCsvDialog} style={{ background: '#111111' }}>
               <CloudUploadIcon /> Upload Events CSV
             </button>
             <button className="gradient-btn" onClick={handleCreateEvent}>
@@ -474,65 +473,65 @@ const EventManagement = () => {
 
         {/* ─── Stats Cards ───────────────────────────────────────────── */}
         <div className="stats-grid">
-          <div className="stat-card" style={{ background: "linear-gradient(135deg, #ffffff 0%, #f0f0f0 100%)" }}>
+          <div className="stat-card" style={{ background: "#FFFFFF" }}>
             <div className="stat-card-content">
               <div>
                 <div className="stat-label">Total Events</div>
                 <div className="stat-value">{totalEvents}</div>
                 <div className="stat-footer">
-                  <TrendingUpIcon className="stat-footer-icon" style={{ color: "#10b981" }} />
-                  <span className="stat-footer-text" style={{ color: "#10b981" }}>Active</span>
+                  <TrendingUpIcon className="stat-footer-icon" style={{ color: "#1E6B3A" }} />
+                  <span className="stat-footer-text" style={{ color: "#1E6B3A" }}>Active</span>
                 </div>
               </div>
-              <div className="icon-wrapper" style={{ background: "rgba(0,0,0,0.05)", color: "#000" }}>
+              <div className="icon-wrapper" style={{ background: "rgba(0,0,0,0.05)", color: "#111111" }}>
                 <EventIcon />
               </div>
             </div>
           </div>
 
-          <div className="stat-card" style={{ background: "linear-gradient(135deg, #ffffff 0%, #e8f0fe 100%)" }}>
+          <div className="stat-card" style={{ background: "#FFFFFF" }}>
             <div className="stat-card-content">
               <div>
                 <div className="stat-label">Registrations</div>
                 <div className="stat-value">{totalRegistrations}</div>
                 <div className="stat-footer">
-                  <GroupsIcon className="stat-footer-icon" style={{ color: "#3b82f6" }} />
-                  <span className="stat-footer-text" style={{ color: "#3b82f6" }}>Total</span>
+                  <GroupsIcon className="stat-footer-icon" style={{ color: "#2B7FC0" }} />
+                  <span className="stat-footer-text" style={{ color: "#2B7FC0" }}>Total</span>
                 </div>
               </div>
-              <div className="icon-wrapper" style={{ background: "rgba(59,130,246,0.1)", color: "#3b82f6" }}>
+              <div className="icon-wrapper" style={{ background: "rgba(59,130,246,0.1)", color: "#2B7FC0" }}>
                 <PeopleIcon />
               </div>
             </div>
           </div>
 
-          <div className="stat-card" style={{ background: "linear-gradient(135deg, #ffffff 0%, #f0e8ff 100%)" }}>
+          <div className="stat-card" style={{ background: "#FFFFFF" }}>
             <div className="stat-card-content">
               <div>
                 <div className="stat-label">Ave Registrations</div>
                 <div className="stat-value">{averageRegistrations}</div>
                 <div className="stat-footer">
-                  <AutoAwesomeIcon className="stat-footer-icon" style={{ color: "#8b5cf6" }} />
-                  <span className="stat-footer-text" style={{ color: "#8b5cf6" }}>Per event</span>
+                  <AutoAwesomeIcon className="stat-footer-icon" style={{ color: "#8E44AD" }} />
+                  <span className="stat-footer-text" style={{ color: "#8E44AD" }}>Per event</span>
                 </div>
               </div>
-              <div className="icon-wrapper" style={{ background: "rgba(139,92,246,0.1)", color: "#8b5cf6" }}>
+              <div className="icon-wrapper" style={{ background: "rgba(139,92,246,0.1)", color: "#8E44AD" }}>
                 <TrendingUpIcon />
               </div>
             </div>
           </div>
 
-          <div className="stat-card" style={{ background: "linear-gradient(135deg, #ffffff 0%, #e8f5e9 100%)" }}>
+          <div className="stat-card" style={{ background: "#FFFFFF" }}>
             <div className="stat-card-content">
               <div>
                 <div className="stat-label">Active Events</div>
                 <div className="stat-value">{activeEvents}</div>
                 <div className="stat-footer">
-                  <TimerIcon className="stat-footer-icon" style={{ color: "#10b981" }} />
-                  <span className="stat-footer-text" style={{ color: "#10b981" }}>Running</span>
+                  <TimerIcon className="stat-footer-icon" style={{ color: "#1E6B3A" }} />
+                  <span className="stat-footer-text" style={{ color: "#1E6B3A" }}>Running</span>
                 </div>
               </div>
-              <div className="icon-wrapper" style={{ background: "rgba(16,185,129,0.1)", color: "#10b981" }}>
+              <div className="icon-wrapper" style={{ background: "rgba(16,185,129,0.1)", color: "#1E6B3A" }}>
                 <RocketIcon />
               </div>
             </div>
@@ -548,7 +547,7 @@ const EventManagement = () => {
               variant={isMobile ? "fullWidth" : "standard"}
               sx={{
                 "& .MuiTabs-indicator": {
-                  backgroundColor: "#000",
+                  backgroundColor: "#111111",
                   height: 3,
                   borderRadius: "3px 3px 0 0",
                 },
@@ -811,7 +810,7 @@ const EventManagement = () => {
         >
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CloudUploadIcon sx={{ color: '#10b981' }} /> Upload Events CSV / XLSX
+              <CloudUploadIcon sx={{ color: '#1E6B3A' }} /> Upload Events CSV / XLSX
             </Typography>
             <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
               <CloseIcon />
@@ -821,15 +820,15 @@ const EventManagement = () => {
           <form onSubmit={handleUploadCsvSubmit}>
             <Box
               sx={{
-                border: '2px dashed #cbd5e1',
+                border: '2px dashed #ECE7DB',
                 borderRadius: 2,
                 p: 4,
                 textAlign: 'center',
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#FAF8F3',
                 cursor: 'pointer',
                 mb: 3,
                 transition: 'all 0.2s',
-                '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#10b981' }
+                '&:hover': { backgroundColor: '#F0ECE2', borderColor: '#2E8B3E' }
               }}
               onClick={() => csvFileInputRef.current?.click()}
             >
@@ -840,8 +839,8 @@ const EventManagement = () => {
                 style={{ display: 'none' }}
                 onChange={handleCsvFileChange}
               />
-              <CloudUploadIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
-              <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+              <CloudUploadIcon sx={{ fontSize: 48, color: '#6B675E', mb: 1 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#111111' }}>
                 {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
               </Typography>
               <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -851,8 +850,8 @@ const EventManagement = () => {
 
             {csvUploading && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress size={36} sx={{ color: '#10b981' }} />
-                <Typography variant="body2" sx={{ mt: 1, color: '#64748b' }}>
+                <CircularProgress size={36} sx={{ color: '#1E6B3A' }} />
+                <Typography variant="body2" sx={{ mt: 1, color: '#6B675E' }}>
                   Processing & importing events...
                 </Typography>
               </Box>
@@ -886,10 +885,10 @@ const EventManagement = () => {
                 variant="contained"
                 disabled={!csvFile || csvUploading}
                 sx={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  background: '#111111',
                   color: '#fff',
                   fontWeight: 600,
-                  '&:hover': { background: '#059669' }
+                  '&:hover': { background: '#2E8B3E' }
                 }}
               >
                 {csvUploading ? "Uploading..." : "Upload & Import"}
@@ -988,16 +987,16 @@ const EventDetailsView = ({ event, getCategoryColor, getCategoryEmoji, isMobile 
         border: "1px solid rgba(0,0,0,0.04)", 
         overflowX: "auto", 
         mt: 2,
-        boxShadow: "0 2px 12px rgba(0,0,0,0.02)",
+        boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
       }}>
         <Table size="small">
           <TableHead sx={{ bgcolor: "rgba(0,0,0,0.02)" }}>
             <TableRow>
-              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>#</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Name</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Email</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>WhatsApp</TableCell>
-              <TableCell sx={{ fontWeight: 700, color: "#000", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Payment</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>#</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Name</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Email</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>WhatsApp</TableCell>
+              <TableCell sx={{ fontWeight: 700, color: "#111111", fontSize: isMobile ? "0.7rem" : "0.875rem" }}>Payment</TableCell>
             </TableRow>
           </TableHead>
           <TableBody>
@@ -1051,12 +1050,12 @@ const EventDialogBody = ({ templates, templatesState, onRetry, form, ...formProp
   if (templatesState !== "ready" || !form || !templates) {
     return (
       <Box sx={{ textAlign: "center", py: 6 }}>
-        <CircularProgress size={32} sx={{ color: "#000" }} />
-        <Typography sx={{ mt: 1.5, color: "#666", fontSize: "0.85rem" }}>Loading the form…</Typography>
+        <CircularProgress size={32} sx={{ color: "#111111" }} />
+        <Typography sx={{ mt: 1.5, color: "#6B675E", fontSize: "0.85rem" }}>Loading the form…</Typography>
       </Box>
     );
   }
   return <EventFormV2 templates={templates} form={form} {...formProps} />;
 };
 
-export default EventManagement;
+export default withTdcTheme(EventManagement);
