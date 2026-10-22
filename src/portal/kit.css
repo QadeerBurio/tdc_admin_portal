@@ -65,8 +65,8 @@
 .tdcp .k-dd-btn .k-dd-caret { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); line-height: 0; }
 .tdcp .k-dd-btn .k-dd-ph { color: #9A958B; }
 .tdcp .k-dd-pop { position: absolute; z-index: 70; left: 0; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.08); padding: 6px; max-height: 300px; display: flex; flex-direction: column; }
-.tdcp .k-dd-pop .k-input { height: 38px; margin-bottom: 4px; }
-.tdcp .k-dd-list { overflow-y: auto; }
+.tdcp .k-dd-pop .k-input { height: 38px; margin-bottom: 4px; flex: 0 0 auto; }
+.tdcp .k-dd-list { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
 .tdcp .k-dd-opt { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 9px 12px; border-radius: 12px; font-size: 14px; cursor: pointer; }
 .tdcp .k-dd-opt:hover, .tdcp .k-dd-opt.active { background: var(--sand); }
 .tdcp .k-dd-opt[aria-selected="true"] { background: var(--yellow-soft); font-weight: 600; }
