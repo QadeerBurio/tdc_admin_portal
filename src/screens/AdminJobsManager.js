@@ -1,85 +1,11 @@
+// src/screens/AdminJobsManager.js
+// Career portal (design/portal/AdCareer): jobs and internships in the career hub.
+// Also the employer portal's "My Job Postings" (CompanyDashboard passes userRole / userName).
 import React, { useState, useEffect, useRef } from "react";
-import { withTdcTheme } from "../portal/muiTheme";
 import axios from "axios";
-import {
-  Dialog,
-  DialogContent,
-  DialogActions,
-  Typography,
-  Box,
-  Button,
-  IconButton,
-  CircularProgress,
-  Alert,
-} from "@mui/material";
-import {
-  CloudUpload as CloudUploadIcon,
-  Close as CloseIcon,
-} from "@mui/icons-material";
-
-// Icons
-import {
-  FaBriefcase,
-  FaUsers,
-  FaEye,
-  FaCheckCircle,
-  FaClock,
-  FaSearch,
-  FaFilter,
-  FaPlus,
-  FaEdit,
-  FaTrash,
-  FaEye as FaView,
-  FaTimes,
-  FaArrowLeft,
-  FaArrowRight,
-  FaStar,
-  FaFire,
-  FaMapMarkerAlt,
-  FaBuilding,
-  FaGraduationCap,
-  FaDollarSign,
-  FaCalendarAlt,
-  FaEnvelope,
-  FaPhone,
-  FaLinkedin,
-  FaGithub,
-  FaGlobe,
-  FaFilePdf,
-  FaSort,
-  FaSpinner,
-  FaExclamationCircle,
-  FaCheck,
-  FaTag,
-  FaClock as FaClockIcon,
-  FaTrophy,
-  FaAward,
-  FaHeart,
-  FaShieldAlt,
-  FaRocket,
-  FaLightbulb,
-  FaUsersCog,
-  FaChartLine,
-  FaLayerGroup,
-  FaClipboardList,
-  FaWifi,
-  FaHome,
-  FaLaptop,
-  FaRegBuilding,
-  FaRegClock,
-  FaRegCalendar,
-  FaRegStar,
-  FaRegFileAlt,
-  FaRegFolderOpen,
-  FaExternalLinkAlt,
-  FaUpload,
-  FaFileUpload,
-  FaCheckDouble,
-  FaBars,
-  FaChevronDown,
-  FaChevronUp,
-} from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import Ico from "../portal/Ico";
+import { PageHeader, PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, FileUpload, toast, confirmDialog } from "../portal/kit";
+import "./styles/AdminJobsManager.css";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -95,7 +21,6 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const [itemsPerPage] = useState(10);
   const [activeSection, setActiveSection] = useState("basic");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [filters, setFilters] = useState({
     status: "",
@@ -230,7 +155,6 @@ const AdminJobsManager = ({ userRole, userName }) => {
   useEffect(() => {
     const handleResize = () => {
       setIsMobile(window.innerWidth <= 768);
-      setIsTablet(window.innerWidth <= 1024);
     };
     window.addEventListener('resize', handleResize);
     return () => window.removeEventListener('resize', handleResize);
@@ -284,13 +208,13 @@ const AdminJobsManager = ({ userRole, userName }) => {
     e.preventDefault();
     try {
       await axios.post(`${API_URL}/add`, formData, config);
-      alert("Job created successfully!");
+      toast("Job created successfully!");
       setShowJobModal(false);
       resetForm();
       fetchJobs();
       fetchStats();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to create job");
+      toast(err.response?.data?.error || "Failed to create job");
     }
   };
 
@@ -298,12 +222,12 @@ const AdminJobsManager = ({ userRole, userName }) => {
     e.preventDefault();
     try {
       await axios.put(`${API_URL}/update/${selectedJob._id}`, formData, config);
-      alert("Job updated successfully!");
+      toast("Job updated successfully!");
       setShowJobModal(false);
       resetForm();
       fetchJobs();
     } catch (err) {
-      alert(err.response?.data?.error || "Failed to update job");
+      toast(err.response?.data?.error || "Failed to update job");
     }
   };
 
@@ -312,18 +236,18 @@ const AdminJobsManager = ({ userRole, userName }) => {
       await axios.patch(`${API_URL}/toggle/${jobId}`, {}, config);
       fetchJobs();
     } catch (err) {
-      alert("Failed to toggle job status");
+      toast("Failed to toggle job status");
     }
   };
 
   const handleDeleteJob = async (jobId) => {
-    if (window.confirm("Are you sure you want to delete this job? This will also delete all applications.")) {
+    if (await confirmDialog("Are you sure you want to delete this job? This will also delete all applications.")) {
       try {
         await axios.delete(`${API_URL}/delete/${jobId}`, config);
         fetchJobs();
         fetchStats();
       } catch (err) {
-        alert("Failed to delete job");
+        toast("Failed to delete job");
       }
     }
   };
@@ -334,10 +258,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
         { status, interviewDate, interviewNotes },
         config
       );
-      alert(`Application status updated to ${status}`);
+      toast(`Application status updated to ${status}`);
       fetchJobApplications(selectedJob._id);
     } catch (err) {
-      alert("Failed to update application status");
+      toast("Failed to update application status");
     }
   };
 
@@ -443,17 +367,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
     setShowJobModal(true);
   };
 
-  const getStatusBadgeColor = (status) => {
-    switch (status) {
-      case "pending": return "#111111";
-      case "reviewed": return "#2B7FC0";
-      case "shortlisted": return "#2E8B3E";
-      case "interview": return "#8E44AD";
-      case "rejected": return "#D9443F";
-      case "hired": return "#2E8B3E";
-      default: return "#D9D2C2";
-    }
-  };
+  const STATUS_TONE = { pending: "ink", reviewed: "blue", shortlisted: "green", interview: "purple", rejected: "red", hired: "green" };
+  const STATUS_ICON = { pending: "clock", reviewed: "eye", shortlisted: "star", interview: "users", rejected: "xCircle", hired: "checkCircle" };
+  const LOCATION_ICON = { Remote: "globe", Hybrid: "store", "On-site": "home" };
 
   const getStatusLabel = (status) => {
     switch (status) {
@@ -467,34 +383,17 @@ const AdminJobsManager = ({ userRole, userName }) => {
     }
   };
 
-  const getStatusIcon = (status) => {
-    switch (status) {
-      case "pending": return <FaClock />;
-      case "reviewed": return <FaEye />;
-      case "shortlisted": return <FaStar />;
-      case "interview": return <FaUsers />;
-      case "rejected": return <FaTimes />;
-      case "hired": return <FaCheckCircle />;
-      default: return <FaBriefcase />;
-    }
-  };
-
-  const getLocationIcon = (type) => {
-    switch (type) {
-      case "Remote": return <FaGlobe />;
-      case "Hybrid": return <FaRegBuilding />;
-      case "On-site": return <FaHome />;
-      default: return <FaMapMarkerAlt />;
-    }
-  };
+  const statusPill = (status) => (
+    <Pill tone={STATUS_TONE[status] || "sand"}><Ico kind={STATUS_ICON[status] || "briefcase"} tone="plain" size={12} />{getStatusLabel(status)}</Pill>
+  );
 
   const sections = [
-    { id: "basic", label: "Basic Info", icon: <FaBriefcase /> },
-    { id: "details", label: "Job Details", icon: <FaClipboardList /> },
-    { id: "requirements", label: "Requirements", icon: <FaCheckDouble /> },
-    { id: "benefits", label: "Benefits & Perks", icon: <FaAward /> },
-    { id: "company", label: "Company Info", icon: <FaBuilding /> },
-    { id: "publish", label: "Publish", icon: <FaRocket /> },
+    { id: "basic", label: "Basic Info", icon: "briefcase" },
+    { id: "details", label: "Job Details", icon: "file" },
+    { id: "requirements", label: "Requirements", icon: "checkCircle" },
+    { id: "benefits", label: "Benefits & Perks", icon: "award" },
+    { id: "company", label: "Company Info", icon: "store" },
+    { id: "publish", label: "Publish", icon: "send" },
   ];
 
   const indexOfLastItem = currentPage * itemsPerPage;
@@ -502,2271 +401,443 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const currentItems = jobs.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(jobs.length / itemsPerPage);
 
-  // Mobile Job Card
-  const MobileJobCard = ({ job }) => (
-    <div style={styles.mobileJobCard}>
-      <div style={styles.mobileJobHeader}>
-        <div style={styles.mobileJobTitle}>
-          <strong>{job.title}</strong>
-          <div style={styles.mobileBadgeContainer}>
-            {job.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
-            {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
-          </div>
-        </div>
-        <button style={{ ...styles.statusBtn, background: job.active ? "#2E8B3E" : "#D9443F", padding: "4px 12px", fontSize: "11px" }} onClick={() => handleToggleStatus(job._id)}>
-          {job.active ? "Active" : "Inactive"}
-        </button>
-      </div>
-      
-      <div style={styles.mobileJobDetails}>
-        <div style={styles.mobileJobDetail}>
-          <FaBuilding size={12} /> {job.department}
-        </div>
-        <div style={styles.mobileJobDetail}>
-          {getLocationIcon(job.locationType)} {job.location}
-        </div>
-        <div style={styles.mobileJobDetail}>
-          <span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#E1F1FA" : "#F1E6F5", padding: "2px 10px", fontSize: "11px" }}>{job.type}</span>
-        </div>
-        <div style={styles.mobileJobDetail}>
-          <FaUsers size={12} /> {job.totalApplications || 0} applications
-        </div>
-        <div style={styles.mobileJobDetail}>
-          <FaEye size={12} /> {job.views || 0} views
-        </div>
-      </div>
-
-      <div style={styles.mobileJobActions}>
-        <button style={styles.mobileActionBtn} onClick={() => fetchJobApplications(job._id)}>
-          <FaUsers /> View Apps
-        </button>
-        <button style={{ ...styles.mobileActionBtn, background: "#2E8B3E" }} onClick={() => handleEditJob(job)}>
-          <FaEdit /> Edit
-        </button>
-        <button style={{ ...styles.mobileActionBtn, background: "#D9443F" }} onClick={() => handleDeleteJob(job._id)}>
-          <FaTrash /> Delete
-        </button>
-      </div>
+  const openNewJob = () => {
+    resetForm();
+    setShowJobModal(true);
+  };
+  const jobBadges = (job) => (
+    <>
+      {job.urgent && <Pill tone="red"><Ico kind="flame" tone="plain" size={11} />Urgent</Pill>}
+      {job.featured && <Pill tone="yellow"><Ico kind="star" tone="plain" size={11} />Featured</Pill>}
+    </>
+  );
+  const sectionHead = (icon, title, desc) => (
+    <div className="jm-sec-head">
+      <Ico kind={icon} tone="yellow" size={36} />
+      <div><h3>{title}</h3><p className="k-hint" style={{ margin: 0 }}>{desc}</p></div>
     </div>
   );
+  const set = (patch) => setFormData({ ...formData, ...patch });
 
-  if (loading) return (
-    <div style={styles.loadingContainer}>
-      <div style={styles.loadingSpinner}><FaSpinner /></div>
-      <p style={styles.loadingText}>Loading your dashboard...</p>
-    </div>
-  );
+  if (loading) return <div className="tdcp k-page"><PageLoading label="Loading your dashboard..." /></div>;
 
   return (
-    <div style={styles.container}>
-      {/* Header */}
-      <div style={styles.header} className="fade-in">
-        <div style={styles.headerLeft}>
-          <div style={styles.headerBadge}>
-            <span style={styles.headerBadgeIcon}><FaRocket /></span>
-            <span style={styles.headerBadgeText}>Hiring Dashboard</span>
-          </div>
-          <h1 style={isMobile ? styles.mobileTitle : styles.title}>
-            {userRole === "admin" ? <>career portal<span className="dot" aria-hidden="true">.</span></> : "My Job Postings"}
-          </h1>
-          <p style={isMobile ? styles.mobileSubtitle : styles.subtitle}>
-            {userRole === "admin"
-              ? "all jobs and internships students see in the career hub."
-              : `Welcome back, ${userName}! Manage your job postings`}
-          </p>
-        </div>
-        <div style={{ display: 'flex', gap: '10px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <button
-            style={{
-              ...(isMobile ? styles.mobileCreateBtn : styles.createBtn),
-              background: '#111111',
-              boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)'
-            }}
-            className="pulse-btn"
-            onClick={handleOpenCsvDialog}
-          >
-            <CloudUploadIcon style={{ marginRight: '6px', fontSize: '18px' }} /> {isMobile ? "CSV" : "Upload Jobs CSV"}
-          </button>
+    <div className="tdcp k-page jm" data-screen="career">
+      <PageHeader
+        title={userRole === "admin" ? "career portal" : "My Job Postings"}
+        sub={userRole === "admin"
+          ? "all jobs and internships students see in the career hub."
+          : `Welcome back, ${userName}! Manage your job postings`}
+        actions={<>
+          <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog}>{isMobile ? "CSV" : "Upload Jobs CSV"}</Button>
+          <Button icon="plus" onClick={openNewJob}>{isMobile ? "New" : "Post New Job"}</Button>
+        </>}
+      />
 
-          <button style={isMobile ? styles.mobileCreateBtn : styles.createBtn} className="pulse-btn" onClick={() => {
-            resetForm();
-            setShowJobModal(true);
-          }}>
-            <FaPlus /> {isMobile ? "New" : "Post New Job"}
-          </button>
-        </div>
-      </div>
-
-      {/* Stats Grid - Responsive */}
       {stats && (
-        <div style={{
-          ...styles.statsGrid,
-          gridTemplateColumns: isMobile 
-            ? "repeat(2, 1fr)" 
-            : isTablet 
-              ? "repeat(2, 1fr)" 
-              : "repeat(4, 1fr)",
-          gap: isMobile ? "8px" : isTablet ? "10px" : "12px",
-        }}>
-          <div style={{
-            ...styles.statCard,
-            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-          }} className="stat-card">
-            <div style={{
-              ...styles.statIcon,
-              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#E1F1FA",
-              color: "#2B7FC0",
-            }}>
-              <FaBriefcase />
-            </div>
-            <div>
-              <h3 style={{
-                ...styles.statValue,
-                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
-              }}>{stats.totalJobs}</h3>
-              <p style={{
-                ...styles.statLabel,
-                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
-              }}>Total Jobs</p>
-              <span style={{
-                ...styles.statTrend,
-                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
-              }}>+{stats.activeJobs} active</span>
-            </div>
-          </div>
-          <div style={{
-            ...styles.statCard,
-            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-          }} className="stat-card">
-            <div style={{
-              ...styles.statIcon,
-              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#E3F3E8",
-              color: "#1E6B3A",
-            }}>
-              <FaCheckCircle />
-            </div>
-            <div>
-              <h3 style={{
-                ...styles.statValue,
-                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
-              }}>{stats.activeJobs}</h3>
-              <p style={{
-                ...styles.statLabel,
-                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
-              }}>Active Jobs</p>
-              <span style={{
-                ...styles.statTrend,
-                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
-              }}>Open positions</span>
-            </div>
-          </div>
-          <div style={{
-            ...styles.statCard,
-            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-          }} className="stat-card">
-            <div style={{
-              ...styles.statIcon,
-              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#FFF1CC",
-              color: "#C77700",
-            }}>
-              <FaUsers />
-            </div>
-            <div>
-              <h3 style={{
-                ...styles.statValue,
-                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
-              }}>{stats.totalApplications}</h3>
-              <p style={{
-                ...styles.statLabel,
-                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
-              }}>Applications</p>
-              <span style={{
-                ...styles.statTrend,
-                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
-              }}>{stats.pendingApplications} pending</span>
-            </div>
-          </div>
-          <div style={{
-            ...styles.statCard,
-            padding: isMobile ? "12px" : isTablet ? "14px" : "16px",
-          }} className="stat-card">
-            <div style={{
-              ...styles.statIcon,
-              width: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              height: isMobile ? "36px" : isTablet ? "40px" : "44px",
-              fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#F1E6F5",
-              color: "#8E44AD",
-            }}>
-              <FaStar />
-            </div>
-            <div>
-              <h3 style={{
-                ...styles.statValue,
-                fontSize: isMobile ? "18px" : isTablet ? "20px" : "22px",
-              }}>{stats.shortlistedApplications || 0}</h3>
-              <p style={{
-                ...styles.statLabel,
-                fontSize: isMobile ? "10px" : isTablet ? "11px" : "12px",
-              }}>Shortlisted</p>
-              <span style={{
-                ...styles.statTrend,
-                fontSize: isMobile ? "9px" : isTablet ? "10px" : "10px",
-              }}>Ready for interview</span>
-            </div>
-          </div>
+        <div className="k-stats">
+          <StatCard label="Total Jobs" value={stats.totalJobs} sub={`+${stats.activeJobs} active`} icon="briefcase" tone="blue" />
+          <StatCard label="Active Jobs" value={stats.activeJobs} sub="Open positions" icon="checkCircle" tone="green" />
+          <StatCard label="Applications" value={stats.totalApplications} sub={`${stats.pendingApplications} pending`} icon="users" tone="yellow" />
+          <StatCard label="Shortlisted" value={stats.shortlistedApplications || 0} sub="Ready for interview" icon="star" tone="purple" />
         </div>
       )}
 
-      {/* Advanced Filters - Toggle on Mobile */}
       {userRole === "admin" && (
-        <div style={styles.filterSection}>
-          <div style={styles.filterToggle} onClick={() => setIsFilterOpen(!isFilterOpen)}>
-            <FaFilter /> Filters
-            {isFilterOpen ? <FaChevronUp /> : <FaChevronDown />}
-            <span style={styles.filterCount}>
-              {Object.values(filters).filter(v => v && v !== "" && v !== "recent").length}
-            </span>
+        <>
+          {isMobile && (
+            <Button variant="secondary" icon="filter" aria-expanded={isFilterOpen} onClick={() => setIsFilterOpen(!isFilterOpen)} style={{ alignSelf: "flex-start" }}>
+              Filters <Pill tone="sand">{Object.values(filters).filter(v => v && v !== "" && v !== "recent").length}</Pill>
+            </Button>
+          )}
+          {(isFilterOpen || !isMobile) && (
+            <div className="k-toolbar">
+              <SearchInput
+                className="k-grow"
+                placeholder="Search jobs..."
+                aria-label="search jobs"
+                value={filters.search}
+                onChange={(e) => setFilters({ ...filters, search: e.target.value })}
+              />
+              <Select aria-label="status" style={{ width: "auto" }} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
+                <option value="">All Status</option>
+                <option value="active">Active</option>
+                <option value="inactive">Inactive</option>
+              </Select>
+              <Select aria-label="type" style={{ width: "auto" }} value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
+                <option value="">All Types</option>
+                <option value="Full-time">Full-time</option>
+                <option value="Part-time">Part-time</option>
+                <option value="Contract">Contract</option>
+                <option value="Internship">Internship</option>
+              </Select>
+              <Select aria-label="category" style={{ width: "auto" }} value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
+                <option value="">All Categories</option>
+                <option value="Technology">Technology</option>
+                <option value="Marketing">Marketing</option>
+                <option value="Sales">Sales</option>
+                <option value="Finance">Finance</option>
+                <option value="HR">HR</option>
+                <option value="Design">Design</option>
+              </Select>
+              <Button variant="ghost" icon="close" onClick={() => setFilters({ status: "", department: "", category: "", type: "", locationType: "", experienceLevel: "", search: "", sort: "recent" })}>Reset</Button>
+            </div>
+          )}
+        </>
+      )}
+
+      <div className="k-table-card">
+        <div className="k-table-scroll">
+          <table className="k-table" style={{ minWidth: 960 }}>
+            <thead>
+              <tr><th>job title</th><th>department</th><th>location</th><th>type</th><th>applications</th><th>views</th><th>status</th><th>actions</th></tr>
+            </thead>
+            {currentItems.length > 0 && (
+              <tbody>
+                {currentItems.map((job) => (
+                  <tr key={job._id}>
+                    <td>
+                      <b>{job.title}</b>
+                      {(job.urgent || job.featured) && <div className="k-row" style={{ gap: 4, marginTop: 4 }}>{jobBadges(job)}</div>}
+                    </td>
+                    <td>{job.department}</td>
+                    <td><span className="k-row" style={{ gap: 6 }}><Ico kind={LOCATION_ICON[job.locationType] || "pin"} tone="plain" size={13} />{job.location}</span></td>
+                    <td><Pill tone={job.type === "Full-time" ? "blue" : "purple"}>{job.type}</Pill></td>
+                    <td><Button size="sm" variant="secondary" icon="users" onClick={() => fetchJobApplications(job._id)}>{job.totalApplications || 0}</Button></td>
+                    <td><span className="k-row k-muted" style={{ gap: 6 }}><Ico kind="eye" tone="plain" size={13} />{job.views || 0}</span></td>
+                    <td>
+                      <button type="button" className={`jm-status${job.active ? " on" : ""}`} onClick={() => handleToggleStatus(job._id)}>
+                        {job.active ? "Active" : "Inactive"}
+                      </button>
+                    </td>
+                    <td>
+                      <span className="k-row" style={{ gap: 6, flexWrap: "nowrap" }}>
+                        <IconButton icon="edit" label="Edit job" size="sm" onClick={() => handleEditJob(job)} />
+                        <IconButton icon="trash" label="Delete job" variant="danger" size="sm" onClick={() => handleDeleteJob(job._id)} />
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
+          </table>
+        </div>
+        {jobs.length === 0 && (
+          <EmptyState icon="briefcase" title="No jobs found" action={<Button icon="plus" onClick={openNewJob}>Post Your First Job</Button>} />
+        )}
+        {jobs.length > itemsPerPage && (
+          <div className="k-pager">
+            <span>{currentPage} / {totalPages}</span>
+            <div className="k-pager-btns">
+              <button type="button" className="k-page-btn" aria-label="Previous Page" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}><Ico kind="chevronLeft" tone="plain" size={15} /></button>
+              <button type="button" className="k-page-btn" aria-label="Next Page" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}><Ico kind="chevronRight" tone="plain" size={15} /></button>
+            </div>
           </div>
-          
-          <AnimatePresence>
-            {(isFilterOpen || !isMobile) && (
-              <motion.div
-                initial={isMobile ? { height: 0, opacity: 0 } : { opacity: 1 }}
-                animate={isMobile ? { height: "auto", opacity: 1 } : { opacity: 1 }}
-                exit={isMobile ? { height: 0, opacity: 0 } : {}}
-                transition={{ duration: 0.3 }}
-                style={styles.advancedFilters}
-              >
-                <div style={isMobile ? styles.mobileFilterRow : styles.filterRow}>
-                  <div style={styles.searchWrapper}>
-                    <FaSearch style={styles.searchIcon} />
-                    <input
-                      type="text"
-                      placeholder="Search jobs..."
-                      style={styles.searchInput}
-                      value={filters.search}
-                      onChange={(e) => setFilters({ ...filters, search: e.target.value })}
-                    />
-                  </div>
-                  <select style={styles.filterSelect} value={filters.status} onChange={(e) => setFilters({ ...filters, status: e.target.value })}>
-                    <option value="">All Status</option>
-                    <option value="active">Active</option>
-                    <option value="inactive">Inactive</option>
-                  </select>
-                  <select style={styles.filterSelect} value={filters.type} onChange={(e) => setFilters({ ...filters, type: e.target.value })}>
-                    <option value="">All Types</option>
-                    <option value="Full-time">Full-time</option>
-                    <option value="Part-time">Part-time</option>
-                    <option value="Contract">Contract</option>
-                    <option value="Internship">Internship</option>
-                  </select>
-                  <select style={styles.filterSelect} value={filters.category} onChange={(e) => setFilters({ ...filters, category: e.target.value })}>
-                    <option value="">All Categories</option>
+        )}
+      </div>
+
+      {/* applications for a job */}
+      <Modal
+        open={showApplicationsModal}
+        onClose={() => setShowApplicationsModal(false)}
+        size="xl"
+        icon="users"
+        tone="blue"
+        title={`Applications for ${selectedJob?.title || ""}`}
+        sub={`${applications.length} candidates applied`}
+      >
+        {applications.length === 0 ? (
+          <EmptyState icon="users" title="No applications yet for this position." />
+        ) : (
+          <div className="k-table-card">
+            <div className="k-table-scroll">
+              <table className="k-table" style={{ minWidth: 760 }}>
+                <thead><tr><th>applicant</th><th>experience</th><th>applied date</th><th>status</th><th>actions</th></tr></thead>
+                <tbody>
+                  {applications.map((app) => (
+                    <tr key={app._id}>
+                      <td>
+                        <div className="k-row" style={{ flexWrap: "nowrap" }}>
+                          <span className="jm-avatar">{app.fullName?.charAt(0) || "A"}</span>
+                          <div style={{ minWidth: 0 }}>
+                            <b>{app.fullName}</b>
+                            <div className="k-hint k-row" style={{ gap: 4 }}><Ico kind="mail" tone="plain" size={12} />{app.email}</div>
+                          </div>
+                        </div>
+                      </td>
+                      <td>{app.yearsOfExperience} years</td>
+                      <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
+                      <td>{statusPill(app.status)}</td>
+                      <td>
+                        <span className="k-row" style={{ gap: 6, flexWrap: "nowrap" }}>
+                          <Select size="sm" aria-label="application status" style={{ width: "auto" }} value={app.status} onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}>
+                <option value="pending">Pending</option>
+                <option value="reviewed">Reviewed</option>
+                <option value="shortlisted">Shortlisted</option>
+                <option value="interview">Interview</option>
+                <option value="rejected">Rejected</option>
+                <option value="hired">Hired</option>
+                          </Select>
+                          <IconButton icon="eye" label="View application" size="sm" onClick={() => viewApplicationDetail(app)} />
+                        </span>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+      </Modal>
+
+      {/* one application */}
+      <Modal
+        open={showApplicationDetailModal && !!selectedApplication}
+        onClose={() => setShowApplicationDetailModal(false)}
+        icon="user"
+        tone="purple"
+        title="Application Details"
+      >
+        {selectedApplication && (
+          <>
+            <div className="k-row" style={{ flexWrap: "nowrap" }}>
+              <span className="jm-avatar lg">{selectedApplication.fullName?.charAt(0) || "A"}</span>
+              <div>
+                <h3 style={{ margin: "0 0 6px", fontSize: 18 }}>{selectedApplication.fullName}</h3>
+                {statusPill(selectedApplication.status)}
+              </div>
+            </div>
+            <div className="k-card" style={{ padding: "6px 18px" }}>
+              <Facts rows={[
+                ["Email", selectedApplication.email],
+                ["Phone", selectedApplication.phone],
+                ["Current position", selectedApplication.currentPosition || "N/A"],
+                ["Current company", selectedApplication.currentCompany || "N/A"],
+                ["Education", selectedApplication.education || "N/A"],
+                ["Expected salary", selectedApplication.expectedSalary || "N/A"],
+              ]} />
+            </div>
+            {selectedApplication.coverLetter && (
+              <Card title="Cover Letter" icon="file" tone="sand">
+                <div className="jm-letter">{selectedApplication.coverLetter}</div>
+              </Card>
+            )}
+            <div className="k-row">
+              {selectedApplication.portfolioUrl && (
+                <a className="k-btn secondary sm" href={selectedApplication.portfolioUrl} target="_blank" rel="noopener noreferrer"><Ico kind="globe" tone="plain" size={16} /> Portfolio</a>
+              )}
+              {selectedApplication.linkedInUrl && (
+                <a className="k-btn secondary sm" href={selectedApplication.linkedInUrl} target="_blank" rel="noopener noreferrer"><Ico kind="link" tone="plain" size={16} /> LinkedIn</a>
+              )}
+              {selectedApplication.githubUrl && (
+                <a className="k-btn secondary sm" href={selectedApplication.githubUrl} target="_blank" rel="noopener noreferrer"><Ico kind="link" tone="plain" size={16} /> GitHub</a>
+              )}
+              {selectedApplication.resumeUrl && (
+                <a className="k-btn secondary sm" href={selectedApplication.resumeUrl} target="_blank" rel="noopener noreferrer"><Ico kind="file" tone="plain" size={16} /> Resume</a>
+              )}
+            </div>
+          </>
+        )}
+      </Modal>
+
+      {/* create / edit job */}
+      <Modal
+        open={showJobModal}
+        onClose={() => setShowJobModal(false)}
+        size="xl"
+        icon={selectedJob ? "edit" : "plus"}
+        tone="yellow"
+        title={selectedJob ? "Edit Job Posting" : "Create New Job"}
+        sub={selectedJob ? "Update the job details below" : "Fill in the details to attract the best talent"}
+        footer={<>
+          <Button variant="secondary" onClick={() => setShowJobModal(false)}>Cancel</Button>
+          <Button type="submit" form="job-form" icon={selectedJob ? "edit" : "send"}>
+            {selectedJob ? "Update" : activeSection === "publish" ? "Publish" : "Continue"}
+          </Button>
+        </>}
+      >
+        <Tabs label="job form sections" value={activeSection} onChange={setActiveSection} tabs={sections.map((s) => ({ id: s.id, label: isMobile ? "" : s.label, icon: s.icon }))} />
+        <form id="job-form" onSubmit={selectedJob ? handleUpdateJob : handleCreateJob} className="jm-form">
+          {activeSection === "basic" && (
+            <>
+              {sectionHead("briefcase", "Basic Information", "Essential details about the position")}
+              <div className="jm-grid">
+                <Field label="Job Title *" htmlFor="jm-title"><Input id="jm-title" type="text" required value={formData.title} onChange={(e) => set({ title: e.target.value })} placeholder="e.g., Senior Software Engineer" /></Field>
+                <Field label="Department *" htmlFor="jm-dept"><Input id="jm-dept" type="text" required value={formData.department} onChange={(e) => set({ department: e.target.value })} placeholder="e.g., Engineering" /></Field>
+                <Field label="Category" htmlFor="jm-cat">
+                  <Select id="jm-cat" value={formData.category} onChange={(e) => set({ category: e.target.value })}>
                     <option value="Technology">Technology</option>
                     <option value="Marketing">Marketing</option>
                     <option value="Sales">Sales</option>
                     <option value="Finance">Finance</option>
                     <option value="HR">HR</option>
+                    <option value="Operations">Operations</option>
                     <option value="Design">Design</option>
-                  </select>
-                  <button style={styles.resetBtn} onClick={() => setFilters({ status: "", department: "", category: "", type: "", locationType: "", experienceLevel: "", search: "", sort: "recent" })}>
-                    <FaTimes /> Reset
-                  </button>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </div>
-      )}
-
-      {/* Jobs Table / Cards */}
-      <div style={styles.tableContainer} className="scale-in">
-        {!isMobile ? (
-          <div style={styles.tableWrapper}>
-            <table style={styles.table}>
-              <thead>
-                <tr style={styles.tableHeader}>
-                  <th style={styles.th}>Job Title</th>
-                  <th style={styles.th}>Department</th>
-                  <th style={styles.th}>Location</th>
-                  <th style={styles.th}>Type</th>
-                  <th style={styles.th}>Applications</th>
-                  <th style={styles.th}>Views</th>
-                  <th style={styles.th}>Status</th>
-                  <th style={styles.th}>Actions</th>
-                </tr>
-              </thead>
-              <tbody>
-                {currentItems.map((job, index) => (
-                  <tr key={job._id} style={{ ...styles.tableRow, animationDelay: `${index * 0.05}s` }} className="fade-in-row">
-                    <td style={styles.jobTitle}>
-                      <div style={styles.jobTitleContent}>
-                        <strong>{job.title}</strong>
-                        <div style={styles.badgeContainer}>
-                          {job.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
-                          {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
-                        </div>
-                      </div>
-                    </td>
-                    <td>{job.department}</td>
-                    <td>
-                      <div style={styles.locationCell}>
-                        {getLocationIcon(job.locationType)}
-                        {job.location}
-                      </div>
-                    </td>
-                    <td><span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#E1F1FA" : "#F1E6F5" }}>{job.type}</span></td>
-                    <td>
-                      <button style={styles.viewAppsBtn} onClick={() => fetchJobApplications(job._id)}>
-                        <FaUsers /> {job.totalApplications || 0}
-                      </button>
-                    </td>
-                    <td>
-                      <span style={styles.viewsCell}>
-                        <FaEye /> {job.views || 0}
-                      </span>
-                    </td>
-                    <td>
-                      <button style={{ ...styles.statusBtn, background: job.active ? "#2E8B3E" : "#D9443F" }} onClick={() => handleToggleStatus(job._id)}>
-                        {job.active ? "Active" : "Inactive"}
-                      </button>
-                    </td>
-                    <td>
-                      <div style={styles.actionButtons}>
-                        <button style={styles.editBtn} onClick={() => handleEditJob(job)}>
-                          <FaEdit />
-                        </button>
-                        <button style={styles.deleteBtn} onClick={() => handleDeleteJob(job._id)}>
-                          <FaTrash />
-                        </button>
-                      </div>
-                    </td>
-                  </tr>
-                ))}
-                {jobs.length === 0 && (
-                  <tr>
-                    <td colSpan="8" style={styles.emptyRow}>
-                      <FaBriefcase size={40} color="#9A958B" />
-                      <p>No jobs found</p>
-                      <button style={styles.emptyBtn} onClick={() => {
-                        resetForm();
-                        setShowJobModal(true);
-                      }}>Post Your First Job</button>
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div style={styles.mobileJobList}>
-            {currentItems.map((job) => (
-              <MobileJobCard key={job._id} job={job} />
-            ))}
-            {jobs.length === 0 && (
-              <div style={styles.emptyRow}>
-                <FaBriefcase size={40} color="#9A958B" />
-                <p>No jobs found</p>
-                <button style={styles.emptyBtn} onClick={() => {
-                  resetForm();
-                  setShowJobModal(true);
-                }}>Post Your First Job</button>
+                    <option value="Other">Other</option>
+                  </Select>
+                </Field>
+                <Field label="Location *" htmlFor="jm-loc"><Input id="jm-loc" type="text" required value={formData.location} onChange={(e) => set({ location: e.target.value })} placeholder="e.g., New York, NY" /></Field>
+                <Field label="Location Type" htmlFor="jm-loctype">
+                  <Select id="jm-loctype" value={formData.locationType} onChange={(e) => set({ locationType: e.target.value })}>
+                    <option value="On-site">On-site</option>
+                    <option value="Remote">Remote</option>
+                    <option value="Hybrid">Hybrid</option>
+                  </Select>
+                </Field>
+                <Field label="Job Type *" htmlFor="jm-type">
+                  <Select id="jm-type" value={formData.type} onChange={(e) => set({ type: e.target.value })}>
+                    <option value="Full-time">Full-time</option>
+                    <option value="Part-time">Part-time</option>
+                    <option value="Contract">Contract</option>
+                    <option value="Internship">Internship</option>
+                    <option value="Temporary">Temporary</option>
+                  </Select>
+                </Field>
+                <Field label="Experience Level" htmlFor="jm-level">
+                  <Select id="jm-level" value={formData.experienceLevel} onChange={(e) => set({ experienceLevel: e.target.value })}>
+                    <option value="Entry Level">Entry Level (0-2 years)</option>
+                    <option value="Mid Level">Mid Level (3-5 years)</option>
+                    <option value="Senior Level">Senior Level (6-10 years)</option>
+                    <option value="Lead">Lead (10+ years)</option>
+                    <option value="Manager">Manager</option>
+                    <option value="Executive">Executive</option>
+                  </Select>
+                </Field>
+                <Field label="Min Experience (years)" htmlFor="jm-minexp">
+                  <Input id="jm-minexp" type="number" value={formData.minExperience} onChange={(e) => set({ minExperience: parseInt(e.target.value) || 0 })} min="0" max="30" />
+                </Field>
               </div>
-            )}
-          </div>
-        )}
+            </>
+          )}
 
-        {/* Pagination */}
-        {jobs.length > itemsPerPage && (
-          <div style={styles.pagination}>
-            <button
-              style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
-              onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-              disabled={currentPage === 1}
-            >
-              <FaArrowLeft />
-            </button>
-            <span style={styles.pageInfo}>{currentPage} / {totalPages}</span>
-            <button
-              style={{ ...styles.pageBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
-              onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-              disabled={currentPage === totalPages}
-            >
-              <FaArrowRight />
-            </button>
-          </div>
-        )}
-      </div>
+          {activeSection === "details" && (
+            <>
+              {sectionHead("file", "Job Details", "Compensation, requirements, and responsibilities")}
+              <div className="jm-grid">
+                <Field label="Salary Range *" htmlFor="jm-salary"><Input id="jm-salary" type="text" required placeholder="e.g., 50,000 - 70,000" value={formData.salary} onChange={(e) => set({ salary: e.target.value })} /></Field>
+                <Field label="Education Level" htmlFor="jm-edu">
+                  <Select id="jm-edu" value={formData.education} onChange={(e) => set({ education: e.target.value })}>
+                    <option value="High School">High School</option>
+                    <option value="Associate Degree">Associate Degree</option>
+                    <option value="Bachelor's Degree">Bachelor's Degree</option>
+                    <option value="Master's Degree">Master's Degree</option>
+                    <option value="PhD">PhD</option>
+                    <option value="Not Specified">Not Specified</option>
+                  </Select>
+                </Field>
+                <Field label="Contact Email *" htmlFor="jm-email"><Input id="jm-email" type="email" required value={formData.email} onChange={(e) => set({ email: e.target.value })} placeholder="hr@company.com" /></Field>
+                <Field label="Work Schedule" htmlFor="jm-sched"><Input id="jm-sched" type="text" value={formData.workSchedule} onChange={(e) => set({ workSchedule: e.target.value })} placeholder="e.g., Monday - Friday, 9AM - 5PM" /></Field>
+              </div>
+              <Field label="Job Description *" htmlFor="jm-desc">
+                <Textarea id="jm-desc" rows={isMobile ? "4" : "6"} required value={formData.description} onChange={(e) => set({ description: e.target.value })} placeholder="Provide a detailed description of the job including responsibilities, team culture, and impact..." />
+              </Field>
+            </>
+          )}
 
-      {/* Applications Modal - Responsive */}
-      {showApplicationsModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowApplicationsModal(false)}>
-          <div style={isMobile ? styles.mobileModalLargeContent : styles.modalLargeContent} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
+          {activeSection === "requirements" && (
+            <>
+              {sectionHead("checkCircle", "Requirements & Responsibilities", "Define what candidates need and what they'll do")}
+              <div className="jm-grid">
+                <Field label="Required Skills" htmlFor="jm-skills">
+                  <Input id="jm-skills" type="text" placeholder="React, Node.js, Python, AWS" value={safeJoin(formData.skills, ', ')} onChange={(e) => set({ skills: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} />
+                </Field>
+                <Field label="Key Requirements" htmlFor="jm-reqs">
+                  <Textarea id="jm-reqs" rows={isMobile ? "3" : "4"} placeholder={"• Bachelor's degree in Computer Science\n• 5+ years of experience"} value={safeJoin(formData.requirements, '\n')} onChange={(e) => set({ requirements: e.target.value.split('\n').filter(r => r.trim()) })} />
+                </Field>
+                <Field label="Responsibilities" htmlFor="jm-resp">
+                  <Textarea id="jm-resp" rows={isMobile ? "3" : "4"} placeholder={"• Lead development of new features\n• Mentor junior developers"} value={safeJoin(formData.responsibilities, '\n')} onChange={(e) => set({ responsibilities: e.target.value.split('\n').filter(r => r.trim()) })} />
+                </Field>
+              </div>
+            </>
+          )}
+
+          {activeSection === "benefits" && (
+            <>
+              {sectionHead("award", "Benefits & Perks", "Attract top talent with great benefits")}
+              <div className="jm-grid">
+                <Field label="Benefits" htmlFor="jm-benefits">
+                  <Textarea id="jm-benefits" rows={isMobile ? "3" : "4"} placeholder={"• Health insurance\n• 401(k) matching"} value={safeJoin(formData.benefits, '\n')} onChange={(e) => set({ benefits: e.target.value.split('\n').filter(b => b.trim()) })} />
+                </Field>
+                <Field label="Perks" htmlFor="jm-perks">
+                  <Textarea id="jm-perks" rows={isMobile ? "3" : "4"} placeholder={"• Free lunch\n• Gym membership"} value={safeJoin(formData.perks, '\n')} onChange={(e) => set({ perks: e.target.value.split('\n').filter(p => p.trim()) })} />
+                </Field>
+              </div>
+            </>
+          )}
+
+          {activeSection === "company" && (
+            <>
+              {sectionHead("store", "Company Information", "Tell candidates about your company")}
+              <div className="jm-grid">
+                <Field label="Company Name" htmlFor="jm-company"><Input id="jm-company" type="text" value={formData.companyName} onChange={(e) => set({ companyName: e.target.value })} placeholder="Acme Inc." /></Field>
+                <Field label="Company Website" htmlFor="jm-site"><Input id="jm-site" type="url" value={formData.companyWebsite} onChange={(e) => set({ companyWebsite: e.target.value })} placeholder="https://company.com" /></Field>
+              </div>
+            </>
+          )}
+
+          {activeSection === "publish" && (
+            <>
+              {sectionHead("send", "Publish Job", "Review and publish your job posting")}
+              <div className="k-card pad">
+                <div className="k-row" style={{ justifyContent: "space-between" }}>
+                  <h4 style={{ margin: 0, fontSize: 17 }}>{formData.title || "Job Title"}</h4>
+                  <span className="k-row" style={{ gap: 4 }}>{jobBadges(formData)}</span>
+                </div>
+                <div className="k-row k-muted" style={{ marginTop: 10, gap: 16, fontSize: 14 }}>
+                  <span className="k-row" style={{ gap: 6 }}><Ico kind="store" tone="plain" size={14} />{formData.department || "Department"}</span>
+                  <span className="k-row" style={{ gap: 6 }}><Ico kind="pin" tone="plain" size={14} />{formData.location || "Location"}</span>
+                  <span className="k-row" style={{ gap: 6 }}><Ico kind="briefcase" tone="plain" size={14} />{formData.type || "Full-time"}</span>
+                  <span className="k-row" style={{ gap: 6 }}><Ico kind="wallet" tone="plain" size={14} />{formData.salary || "Salary range"}</span>
+                </div>
+              </div>
               <div>
-                <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>Applications for {selectedJob?.title}</h2>
-                <p style={styles.modalSubtitle}>{applications.length} candidates applied</p>
+                <h4 style={{ margin: "4px 0 8px", fontSize: 15 }}>Publishing Options</h4>
+                <div className="jm-grid">
+                  <Checkbox checked={formData.active} onChange={(e) => set({ active: e.target.checked })} label="Publish Immediately" />
+                  <Checkbox checked={formData.urgent} onChange={(e) => set({ urgent: e.target.checked })} label="Mark as Urgent" />
+                  {userRole === "admin" && (
+                    <Checkbox checked={formData.featured} onChange={(e) => set({ featured: e.target.checked })} label="Feature Job" />
+                  )}
+                </div>
               </div>
-              <button style={styles.closeBtn} onClick={() => setShowApplicationsModal(false)}>
-                <FaTimes />
-              </button>
+            </>
+          )}
+        </form>
+      </Modal>
+
+      {/* CSV / XLSX upload */}
+      <Modal
+        open={openCsvDialog}
+        onClose={handleCloseCsvDialog}
+        icon="upload"
+        tone="green"
+        title="Upload Jobs CSV / XLSX"
+        footer={<>
+          <Button variant="secondary" onClick={handleCloseCsvDialog} disabled={csvUploading}>Cancel</Button>
+          <Button type="submit" form="jobs-csv-form" disabled={!csvFile || csvUploading} loading={csvUploading}>{csvUploading ? "Uploading..." : "Upload & Import"}</Button>
+        </>}
+      >
+        <form id="jobs-csv-form" onSubmit={handleUploadCsvSubmit} style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+          <FileUpload
+            accept=".csv, .xlsx, .xls"
+            onChange={handleCsvFileChange}
+            inputRef={csvFileInputRef}
+            file={csvFile}
+            label="Click to select or drop .csv / .xlsx file"
+            hint="Expected columns: Company, Job Title, Department, Job Type, Target Audience, Application Link, Location"
+          />
+          {csvUploading && <PageLoading label="Processing & importing jobs..." minHeight={110} />}
+          {csvResult && (
+            <div className="k-note ok">
+              <b>Upload successful: {csvResult.created} jobs created, {csvResult.updated} updated</b>
+              {csvResult.skipped > 0 && <div>{csvResult.skipped} duplicates skipped</div>}
             </div>
-
-            <div style={styles.tableContainer}>
-              {!isMobile ? (
-                <div style={styles.tableWrapper}>
-                  <table style={styles.table}>
-                    <thead>
-                      <tr style={styles.tableHeader}>
-                        <th>Applicant</th>
-                        <th>Experience</th>
-                        <th>Applied Date</th>
-                        <th>Status</th>
-                        <th>Actions</th>
-                      </tr>
-                    </thead>
-                    <tbody>
-                      {applications.map((app) => (
-                        <tr key={app._id} style={styles.tableRow}>
-                          <td>
-                            <div style={styles.applicantCell}>
-                              <div style={styles.applicantAvatar}>
-                                {app.fullName?.charAt(0) || "A"}
-                              </div>
-                              <div>
-                                <strong>{app.fullName}</strong>
-                                <div style={styles.applicantContact}>
-                                  <FaEnvelope /> {app.email}
-                                </div>
-                              </div>
-                            </div>
-                          </td>
-                          <td>{app.yearsOfExperience} years</td>
-                          <td>{new Date(app.appliedAt).toLocaleDateString()}</td>
-                          <td>
-                            <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(app.status) }}>
-                              {getStatusIcon(app.status)} {getStatusLabel(app.status)}
-                            </span>
-                          </td>
-                          <td>
-                            <div style={styles.mobileAppActions}>
-                              <select
-                                style={styles.statusSelect}
-                                value={app.status}
-                                onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}
-                              >
-                                <option value="pending">Pending</option>
-                                <option value="reviewed">Reviewed</option>
-                                <option value="shortlisted">Shortlisted</option>
-                                <option value="interview">Interview</option>
-                                <option value="rejected">Rejected</option>
-                                <option value="hired">Hired</option>
-                              </select>
-                              <button style={styles.viewDetailsBtn} onClick={() => viewApplicationDetail(app)}>
-                                <FaEye />
-                              </button>
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                </div>
-              ) : (
-                <div style={styles.mobileAppList}>
-                  {applications.map((app) => (
-                    <div key={app._id} style={styles.mobileAppCard}>
-                      <div style={styles.mobileAppHeader}>
-                        <div style={styles.applicantCell}>
-                          <div style={styles.applicantAvatar}>
-                            {app.fullName?.charAt(0) || "A"}
-                          </div>
-                          <div>
-                            <strong>{app.fullName}</strong>
-                            <div style={styles.applicantContact}>
-                              <FaEnvelope /> {app.email}
-                            </div>
-                          </div>
-                        </div>
-                        <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(app.status), fontSize: "10px", padding: "2px 10px" }}>
-                          {getStatusLabel(app.status)}
-                        </span>
-                      </div>
-                      <div style={styles.mobileAppDetails}>
-                        <span>Experience: {app.yearsOfExperience} years</span>
-                        <span>Applied: {new Date(app.appliedAt).toLocaleDateString()}</span>
-                      </div>
-                      <div style={styles.mobileAppActions}>
-                        <select
-                          style={{ ...styles.statusSelect, flex: 1 }}
-                          value={app.status}
-                          onChange={(e) => handleUpdateApplicationStatus(app._id, e.target.value)}
-                        >
-                          <option value="pending">Pending</option>
-                          <option value="reviewed">Reviewed</option>
-                          <option value="shortlisted">Shortlisted</option>
-                          <option value="interview">Interview</option>
-                          <option value="rejected">Rejected</option>
-                          <option value="hired">Hired</option>
-                        </select>
-                        <button style={styles.viewDetailsBtn} onClick={() => viewApplicationDetail(app)}>
-                          <FaEye /> View
-                        </button>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-              {applications.length === 0 && (
-                <div style={styles.emptyRow}>
-                  <FaUsers size={40} color="#9A958B" />
-                  <p>No applications yet for this position.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Application Detail Modal - Responsive */}
-      {showApplicationDetailModal && selectedApplication && (
-        <div style={styles.modalOverlay} onClick={() => setShowApplicationDetailModal(false)}>
-          <div style={{ ...styles.modalContent, maxWidth: isMobile ? "95%" : "600px", padding: isMobile ? "16px" : "24px" }} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>Application Details</h2>
-              <button style={styles.closeBtn} onClick={() => setShowApplicationDetailModal(false)}>
-                <FaTimes />
-              </button>
-            </div>
-
-            <div style={styles.detailSection}>
-              <div style={styles.detailHeader}>
-                <div style={styles.detailAvatar}>
-                  {selectedApplication.fullName?.charAt(0) || "A"}
-                </div>
-                <div>
-                  <h3 style={styles.detailName}>{selectedApplication.fullName}</h3>
-                  <span style={{ ...styles.statusBadge, background: getStatusBadgeColor(selectedApplication.status) }}>
-                    {getStatusLabel(selectedApplication.status)}
-                  </span>
-                </div>
-              </div>
-
-              <div style={isMobile ? { ...styles.detailGrid, gridTemplateColumns: "1fr" } : styles.detailGrid}>
-                <div style={styles.detailItem}>
-                  <FaEnvelope /> <span>{selectedApplication.email}</span>
-                </div>
-                <div style={styles.detailItem}>
-                  <FaPhone /> <span>{selectedApplication.phone}</span>
-                </div>
-                <div style={styles.detailItem}>
-                  <FaBriefcase /> <span>{selectedApplication.currentPosition || "N/A"}</span>
-                </div>
-                <div style={styles.detailItem}>
-                  <FaBuilding /> <span>{selectedApplication.currentCompany || "N/A"}</span>
-                </div>
-                <div style={styles.detailItem}>
-                  <FaGraduationCap /> <span>{selectedApplication.education || "N/A"}</span>
-                </div>
-                <div style={styles.detailItem}>
-                  <FaDollarSign /> <span>{selectedApplication.expectedSalary || "N/A"}</span>
-                </div>
-              </div>
-
-              {selectedApplication.coverLetter && (
-                <>
-                  <h3 style={styles.detailSubtitle}>Cover Letter</h3>
-                  <div style={styles.coverLetter}>{selectedApplication.coverLetter}</div>
-                </>
-              )}
-
-              <div style={styles.detailLinks}>
-                {selectedApplication.portfolioUrl && (
-                  <a href={selectedApplication.portfolioUrl} target="_blank" style={styles.detailLink}>
-                    <FaGlobe /> Portfolio
-                  </a>
-                )}
-                {selectedApplication.linkedInUrl && (
-                  <a href={selectedApplication.linkedInUrl} target="_blank" style={styles.detailLink}>
-                    <FaLinkedin /> LinkedIn
-                  </a>
-                )}
-                {selectedApplication.githubUrl && (
-                  <a href={selectedApplication.githubUrl} target="_blank" style={styles.detailLink}>
-                    <FaGithub /> GitHub
-                  </a>
-                )}
-                {selectedApplication.resumeUrl && (
-                  <a href={selectedApplication.resumeUrl} target="_blank" style={styles.detailLink}>
-                    <FaFilePdf /> Resume
-                  </a>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Create/Edit Job Modal - Responsive */}
-      {showJobModal && (
-        <div style={styles.modalOverlay} onClick={() => setShowJobModal(false)}>
-          <div style={{ ...styles.modalLargeContent, maxWidth: isMobile ? "100%" : "1100px", padding: isMobile ? "16px" : "24px", borderRadius: isMobile ? "12px" : "20px" }} onClick={(e) => e.stopPropagation()}>
-            <div style={styles.modalHeader}>
-              <div>
-                <h2 style={isMobile ? { ...styles.mobileModalTitle } : styles.modalTitle}>
-                  {selectedJob ? <FaEdit style={{ color: '#C77700', marginRight: '12px' }} /> : <FaPlus style={{ color: '#C77700', marginRight: '12px' }} />}
-                  {selectedJob ? "Edit Job Posting" : "Create New Job"}
-                </h2>
-                <p style={styles.modalSubtitle}>
-                  {selectedJob ? "Update the job details below" : "Fill in the details to attract the best talent"}
-                </p>
-              </div>
-              <button style={styles.closeBtn} onClick={() => setShowJobModal(false)}>
-                <FaTimes />
-              </button>
-            </div>
-
-            <form onSubmit={selectedJob ? handleUpdateJob : handleCreateJob} style={styles.form}>
-              {/* Section Navigation - Responsive */}
-              <div style={isMobile ? styles.mobileSectionNav : styles.sectionNav}>
-                {sections.map((section) => (
-                  <button
-                    key={section.id}
-                    type="button"
-                    style={{
-                      ...(isMobile ? styles.mobileSectionNavBtn : styles.sectionNavBtn),
-                      background: activeSection === section.id ? "#F9C349" : "#FAF8F3",
-                      color: activeSection === section.id ? "#fff" : "#6B675E",
-                    }}
-                    onClick={() => setActiveSection(section.id)}
-                  >
-                    {section.icon}
-                    {!isMobile && <span style={styles.sectionNavLabel}>{section.label}</span>}
-                  </button>
-                ))}
-              </div>
-
-              <div style={styles.formBody}>
-                {/* Section 1: Basic Information */}
-                {activeSection === "basic" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaBriefcase style={{ color: '#C77700', marginRight: '10px' }} />
-                        Basic Information
-                      </h3>
-                      <p style={styles.formSectionDesc}>Essential details about the position</p>
-                    </div>
-                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Job Title *</label>
-                        <input 
-                          type="text" 
-                          required 
-                          value={formData.title} 
-                          onChange={(e) => setFormData({ ...formData, title: e.target.value })} 
-                          placeholder="e.g., Senior Software Engineer" 
-                          style={styles.formInput}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Department *</label>
-                        <input 
-                          type="text" 
-                          required 
-                          value={formData.department} 
-                          onChange={(e) => setFormData({ ...formData, department: e.target.value })} 
-                          placeholder="e.g., Engineering" 
-                          style={styles.formInput}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Category</label>
-                        <select value={formData.category} onChange={(e) => setFormData({ ...formData, category: e.target.value })} style={styles.formSelect}>
-                          <option value="Technology">Technology</option>
-                          <option value="Marketing">Marketing</option>
-                          <option value="Sales">Sales</option>
-                          <option value="Finance">Finance</option>
-                          <option value="HR">HR</option>
-                          <option value="Operations">Operations</option>
-                          <option value="Design">Design</option>
-                          <option value="Other">Other</option>
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Location *</label>
-                        <input 
-                          type="text" 
-                          required 
-                          value={formData.location} 
-                          onChange={(e) => setFormData({ ...formData, location: e.target.value })} 
-                          placeholder="e.g., New York, NY" 
-                          style={styles.formInput}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Location Type</label>
-                        <select value={formData.locationType} onChange={(e) => setFormData({ ...formData, locationType: e.target.value })} style={styles.formSelect}>
-                          <option value="On-site"><FaHome /> On-site</option>
-                          <option value="Remote"><FaGlobe /> Remote</option>
-                          <option value="Hybrid"><FaRegBuilding /> Hybrid</option>
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Job Type *</label>
-                        <select value={formData.type} onChange={(e) => setFormData({ ...formData, type: e.target.value })} style={styles.formSelect}>
-                          <option value="Full-time">Full-time</option>
-                          <option value="Part-time">Part-time</option>
-                          <option value="Contract">Contract</option>
-                          <option value="Internship">Internship</option>
-                          <option value="Temporary">Temporary</option>
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Experience Level</label>
-                        <select value={formData.experienceLevel} onChange={(e) => setFormData({ ...formData, experienceLevel: e.target.value })} style={styles.formSelect}>
-                          <option value="Entry Level">Entry Level (0-2 years)</option>
-                          <option value="Mid Level">Mid Level (3-5 years)</option>
-                          <option value="Senior Level">Senior Level (6-10 years)</option>
-                          <option value="Lead">Lead (10+ years)</option>
-                          <option value="Manager">Manager</option>
-                          <option value="Executive">Executive</option>
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Min Experience (years)</label>
-                        <input 
-                          type="number" 
-                          value={formData.minExperience} 
-                          onChange={(e) => setFormData({ ...formData, minExperience: parseInt(e.target.value) || 0 })} 
-                          style={styles.formInput}
-                          min="0"
-                          max="30"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Section 2: Job Details */}
-                {activeSection === "details" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaClipboardList style={{ color: '#C77700', marginRight: '10px' }} />
-                        Job Details
-                      </h3>
-                      <p style={styles.formSectionDesc}>Compensation, requirements, and responsibilities</p>
-                    </div>
-                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Salary Range *</label>
-                        <input 
-                          type="text" 
-                          required 
-                          placeholder="e.g., 50,000 - 70,000" 
-                          value={formData.salary} 
-                          onChange={(e) => setFormData({ ...formData, salary: e.target.value })} 
-                          style={styles.formInput}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Education Level</label>
-                        <select value={formData.education} onChange={(e) => setFormData({ ...formData, education: e.target.value })} style={styles.formSelect}>
-                          <option value="High School">High School</option>
-                          <option value="Associate Degree">Associate Degree</option>
-                          <option value="Bachelor's Degree">Bachelor's Degree</option>
-                          <option value="Master's Degree">Master's Degree</option>
-                          <option value="PhD">PhD</option>
-                          <option value="Not Specified">Not Specified</option>
-                        </select>
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Contact Email *</label>
-                        <input 
-                          type="email" 
-                          required 
-                          value={formData.email} 
-                          onChange={(e) => setFormData({ ...formData, email: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="hr@company.com"
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Work Schedule</label>
-                        <input 
-                          type="text" 
-                          value={formData.workSchedule} 
-                          onChange={(e) => setFormData({ ...formData, workSchedule: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="e.g., Monday - Friday, 9AM - 5PM"
-                        />
-                      </div>
-                    </div>
-                    <div style={styles.formGroup}>
-                      <label style={styles.formLabel}>Job Description *</label>
-                      <textarea 
-                        rows={isMobile ? "4" : "6"} 
-                        required 
-                        value={formData.description} 
-                        onChange={(e) => setFormData({ ...formData, description: e.target.value })} 
-                        placeholder="Provide a detailed description of the job including responsibilities, team culture, and impact..." 
-                        style={styles.formTextarea}
-                      />
-                    </div>
-                  </div>
-                )}
-
-                {/* Section 3: Requirements */}
-                {activeSection === "requirements" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaCheckDouble style={{ color: '#C77700', marginRight: '10px' }} />
-                        Requirements & Responsibilities
-                      </h3>
-                      <p style={styles.formSectionDesc}>Define what candidates need and what they'll do</p>
-                    </div>
-                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Required Skills</label>
-                        <input 
-                          type="text" 
-                          placeholder="React, Node.js, Python, AWS" 
-                          value={safeJoin(formData.skills, ', ')} 
-                          onChange={(e) => setFormData({ ...formData, skills: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} 
-                          style={styles.formInput}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Key Requirements</label>
-                        <textarea 
-                          rows={isMobile ? "3" : "4"} 
-                          placeholder="• Bachelor's degree in Computer Science&#10;• 5+ years of experience" 
-                          value={safeJoin(formData.requirements, '\n')} 
-                          onChange={(e) => setFormData({ ...formData, requirements: e.target.value.split('\n').filter(r => r.trim()) })} 
-                          style={styles.formTextarea}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Responsibilities</label>
-                        <textarea 
-                          rows={isMobile ? "3" : "4"} 
-                          placeholder="• Lead development of new features&#10;• Mentor junior developers" 
-                          value={safeJoin(formData.responsibilities, '\n')} 
-                          onChange={(e) => setFormData({ ...formData, responsibilities: e.target.value.split('\n').filter(r => r.trim()) })} 
-                          style={styles.formTextarea}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Section 4: Benefits & Perks */}
-                {activeSection === "benefits" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaAward style={{ color: '#C77700', marginRight: '10px' }} />
-                        Benefits & Perks
-                      </h3>
-                      <p style={styles.formSectionDesc}>Attract top talent with great benefits</p>
-                    </div>
-                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Benefits</label>
-                        <textarea 
-                          rows={isMobile ? "3" : "4"} 
-                          placeholder="• Health insurance&#10;• 401(k) matching" 
-                          value={safeJoin(formData.benefits, '\n')} 
-                          onChange={(e) => setFormData({ ...formData, benefits: e.target.value.split('\n').filter(b => b.trim()) })} 
-                          style={styles.formTextarea}
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Perks</label>
-                        <textarea 
-                          rows={isMobile ? "3" : "4"} 
-                          placeholder="• Free lunch&#10;• Gym membership" 
-                          value={safeJoin(formData.perks, '\n')} 
-                          onChange={(e) => setFormData({ ...formData, perks: e.target.value.split('\n').filter(p => p.trim()) })} 
-                          style={styles.formTextarea}
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Section 5: Company Info */}
-                {activeSection === "company" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaBuilding style={{ color: '#C77700', marginRight: '10px' }} />
-                        Company Information
-                      </h3>
-                      <p style={styles.formSectionDesc}>Tell candidates about your company</p>
-                    </div>
-                    <div style={isMobile ? styles.mobileFormGrid : styles.formGrid}>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Company Name</label>
-                        <input 
-                          type="text" 
-                          value={formData.companyName} 
-                          onChange={(e) => setFormData({ ...formData, companyName: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="Acme Inc."
-                        />
-                      </div>
-                      <div style={styles.formGroup}>
-                        <label style={styles.formLabel}>Company Website</label>
-                        <input 
-                          type="url" 
-                          value={formData.companyWebsite} 
-                          onChange={(e) => setFormData({ ...formData, companyWebsite: e.target.value })} 
-                          style={styles.formInput}
-                          placeholder="https://company.com"
-                        />
-                      </div>
-                    </div>
-                  </div>
-                )}
-
-                {/* Section 6: Publish */}
-                {activeSection === "publish" && (
-                  <div style={styles.formSection} className="slide-down">
-                    <div style={styles.formSectionHeader}>
-                      <h3 style={styles.formSectionTitle}>
-                        <FaRocket style={{ color: '#C77700', marginRight: '10px' }} />
-                        Publish Job
-                      </h3>
-                      <p style={styles.formSectionDesc}>Review and publish your job posting</p>
-                    </div>
-                    
-                    <div style={styles.publishPreview}>
-                      <div style={styles.previewCard}>
-                        <div style={styles.previewHeader}>
-                          <h4 style={styles.previewTitle}>{formData.title || "Job Title"}</h4>
-                          <div style={styles.previewBadges}>
-                            {formData.urgent && <span style={styles.urgentBadge}><FaFire /> Urgent</span>}
-                            {formData.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
-                          </div>
-                        </div>
-                        <div style={isMobile ? styles.mobilePreviewDetails : styles.previewDetails}>
-                          <span><FaBuilding /> {formData.department || "Department"}</span>
-                          <span><FaMapMarkerAlt /> {formData.location || "Location"}</span>
-                          <span><FaBriefcase /> {formData.type || "Full-time"}</span>
-                          <span><FaDollarSign /> {formData.salary || "Salary range"}</span>
-                        </div>
-                      </div>
-                    </div>
-
-                    <div style={styles.publishOptions}>
-                      <h4 style={styles.publishOptionsTitle}>Publishing Options</h4>
-                      <div style={isMobile ? styles.mobilePublishGrid : styles.publishGrid}>
-                        <label style={styles.checkbox}>
-                          <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} />
-                          <span><FaCheck style={{ color: '#1E6B3A' }} /> Publish Immediately</span>
-                        </label>
-                        <label style={styles.checkbox}>
-                          <input type="checkbox" checked={formData.urgent} onChange={(e) => setFormData({ ...formData, urgent: e.target.checked })} />
-                          <span><FaFire style={{ color: '#C77700' }} /> Mark as Urgent</span>
-                        </label>
-                        {userRole === "admin" && (
-                          <label style={styles.checkbox}>
-                            <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} />
-                            <span><FaStar style={{ color: '#C77700' }} /> Feature Job</span>
-                          </label>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )}
-              </div>
-
-              <div style={isMobile ? styles.mobileFormActions : styles.formActions}>
-                <button type="button" style={styles.cancelBtn} onClick={() => setShowJobModal(false)}>
-                  Cancel
-                </button>
-                <button type="submit" style={styles.submitBtn}>
-                  {selectedJob ? <><FaEdit /> Update</> : <><FaRocket /> {activeSection === "publish" ? "Publish" : "Continue"}</>}
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
-      )}
-
-      <style>
-        {`
-          @keyframes fadeIn {
-            from { opacity: 0; transform: translateY(20px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes slideDown {
-            from { opacity: 0; transform: translateY(-10px); }
-            to { opacity: 1; transform: translateY(0); }
-          }
-          @keyframes scaleIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-          }
-          @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
-          }
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-
-          .fade-in {
-            animation: fadeIn 0.6s ease forwards;
-          }
-          .slide-down {
-            animation: slideDown 0.5s ease forwards;
-          }
-          .scale-in {
-            animation: scaleIn 0.5s ease forwards;
-          }
-          .fade-in-row {
-            animation: fadeIn 0.4s ease forwards;
-            opacity: 0;
-          }
-          .stat-card {
-            animation: fadeIn 0.6s ease forwards;
-            opacity: 0;
-          }
-          .stat-card:nth-child(1) { animation-delay: 0.05s; }
-          .stat-card:nth-child(2) { animation-delay: 0.1s; }
-          .stat-card:nth-child(3) { animation-delay: 0.15s; }
-          .stat-card:nth-child(4) { animation-delay: 0.2s; }
-
-          .pulse-btn {
-            animation: pulse 2s infinite;
-          }
-
-          ::-webkit-scrollbar {
-            width: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #F0ECE2;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
-            border-radius: 10px;
-          }
-
-          input:focus, select:focus, textarea:focus {
-            border-color: #C77700 !important;
-            outline: none !important;
-          }
-
-          /* Mobile Responsive Styles */
-          @media (max-width: 768px) {
-            .stat-card {
-              animation: fadeIn 0.5s ease forwards !important;
-            }
-            .stat-card:nth-child(1) { animation-delay: 0.05s; }
-            .stat-card:nth-child(2) { animation-delay: 0.1s; }
-            .stat-card:nth-child(3) { animation-delay: 0.15s; }
-            .stat-card:nth-child(4) { animation-delay: 0.2s; }
-            
-            .filter-toggle {
-              display: flex !important;
-            }
-            .filter-row {
-              flex-direction: column !important;
-            }
-            .search-wrapper {
-              width: 100% !important;
-              min-width: unset !important;
-            }
-            .filter-select {
-              width: 100% !important;
-              min-width: unset !important;
-            }
-            .reset-btn {
-              width: 100% !important;
-              justify-content: center !important;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .stat-card {
-              padding: 10px !important;
-              gap: 8px !important;
-            }
-            .statValue {
-              font-size: 16px !important;
-            }
-            .statIcon {
-              width: 32px !important;
-              height: 32px !important;
-              font-size: 14px !important;
-            }
-            .statLabel {
-              font-size: 9px !important;
-            }
-            .header {
-              flex-direction: column !important;
-              align-items: stretch !important;
-            }
-            .create-btn {
-              width: 100% !important;
-              justify-content: center !important;
-            }
-            .title {
-              font-size: 20px !important;
-            }
-            .subtitle {
-              font-size: 13px !important;
-            }
-            .stats-grid {
-              grid-template-columns: 1fr 1fr !important;
-              gap: 6px !important;
-            }
-            .mobile-job-details {
-              grid-template-columns: 1fr !important;
-            }
-            .mobile-job-actions {
-              flex-direction: column !important;
-            }
-            .mobile-action-btn {
-              width: 100% !important;
-            }
-            .mobile-app-actions {
-              flex-direction: column !important;
-            }
-            .mobile-app-actions select,
-            .mobile-app-actions button {
-              width: 100% !important;
-            }
-            .form-actions {
-              flex-direction: column !important;
-            }
-            .form-actions button {
-              width: 100% !important;
-              justify-content: center !important;
-            }
-            .checkbox {
-              padding: 8px !important;
-              font-size: 12px !important;
-            }
-            .publish-grid {
-              grid-template-columns: 1fr !important;
-            }
-          }
-        `}
-      </style>
-      {/* ─── CSV Upload Dialog ────────────────────────────────────────── */}
-      <Dialog open={openCsvDialog} onClose={handleCloseCsvDialog} maxWidth="sm" fullWidth>
-        <DialogContent sx={{ p: 3 }}>
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-            <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CloudUploadIcon sx={{ color: '#1E6B3A' }} /> Upload Jobs CSV / XLSX
-            </Typography>
-            <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
-              <CloseIcon />
-            </IconButton>
-          </Box>
-
-          <form onSubmit={handleUploadCsvSubmit}>
-            <Box
-              sx={{
-                border: '2px dashed #ECE7DB',
-                borderRadius: 2,
-                p: 4,
-                textAlign: 'center',
-                backgroundColor: '#FAF8F3',
-                cursor: 'pointer',
-                mb: 3,
-                transition: 'all 0.2s',
-                '&:hover': { backgroundColor: '#F0ECE2', borderColor: '#2E8B3E' }
-              }}
-              onClick={() => csvFileInputRef.current?.click()}
-            >
-              <input
-                type="file"
-                ref={csvFileInputRef}
-                accept=".csv, .xlsx, .xls"
-                style={{ display: 'none' }}
-                onChange={handleCsvFileChange}
-              />
-              <CloudUploadIcon sx={{ fontSize: 48, color: '#6B675E', mb: 1 }} />
-              <Typography variant="body1" sx={{ fontWeight: 600, color: '#111111' }}>
-                {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
-              </Typography>
-              <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
-                Expected columns: Company, Job Title, Department, Job Type, Target Audience, Application Link, Location
-              </Typography>
-            </Box>
-
-            {csvUploading && (
-              <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress size={36} sx={{ color: '#1E6B3A' }} />
-                <Typography variant="body2" sx={{ mt: 1, color: '#6B675E' }}>
-                  Processing & importing jobs...
-                </Typography>
-              </Box>
-            )}
-
-            {csvResult && (
-              <Alert severity="success" sx={{ mb: 2 }}>
-                <Typography variant="subtitle2" sx={{ fontWeight: 700 }}>
-                  Upload successful: {csvResult.created} jobs created, {csvResult.updated} updated
-                </Typography>
-                {csvResult.skipped > 0 && (
-                  <Typography variant="body2">
-                    {csvResult.skipped} duplicates skipped
-                  </Typography>
-                )}
-              </Alert>
-            )}
-
-            {csvError && (
-              <Alert severity="error" sx={{ mb: 2 }}>
-                {csvError}
-              </Alert>
-            )}
-
-            <DialogActions sx={{ px: 0, pb: 0 }}>
-              <Button onClick={handleCloseCsvDialog} disabled={csvUploading} color="inherit">
-                Cancel
-              </Button>
-              <Button
-                type="submit"
-                variant="contained"
-                disabled={!csvFile || csvUploading}
-                sx={{
-                  background: '#111111',
-                  color: '#fff',
-                  fontWeight: 600,
-                  '&:hover': { background: '#2E8B3E' }
-                }}
-              >
-                {csvUploading ? "Uploading..." : "Upload & Import"}
-              </Button>
-            </DialogActions>
-          </form>
-        </DialogContent>
-      </Dialog>
+          )}
+          {csvError && <div className="k-note bad">{csvError}</div>}
+        </form>
+      </Modal>
     </div>
   );
 };
 
-const styles = {
-  container: {
-    width: "100%",
-    padding: "0",
-    margin: "0 auto",
-    background: "transparent",
-    minHeight: "auto",
-    boxSizing: "border-box",
-    maxWidth: "none",
-  },
-  loadingContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "400px",
-    gap: "20px",
-  },
-  loadingSpinner: {
-    fontSize: "48px",
-    color: "#C77700",
-    animation: "spin 1s linear infinite",
-  },
-  loadingText: {
-    color: "#6B675E",
-    fontSize: "16px",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "24px",
-    flexWrap: "wrap",
-    gap: "12px",
-  },
-  headerLeft: {
-    flex: 1,
-    minWidth: "200px",
-  },
-  headerBadge: {
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    background: "#F9C349",
-    padding: "4px 16px",
-    borderRadius: "20px",
-    color: "#fff",
-    fontSize: "12px",
-    fontWeight: "600",
-    marginBottom: "8px",
-  },
-  headerBadgeIcon: {
-    fontSize: "14px",
-  },
-  headerBadgeText: {
-    letterSpacing: "0.5px",
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#111111",
-    margin: 0,
-    letterSpacing: "-0.5px",
-  },
-  mobileTitle: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#111111",
-    margin: 0,
-    letterSpacing: "-0.5px",
-  },
-  subtitle: {
-    color: "#6B675E",
-    marginTop: "4px",
-    fontSize: "14px",
-    lineHeight: "1.5",
-  },
-  mobileSubtitle: {
-    color: "#6B675E",
-    marginTop: "4px",
-    fontSize: "13px",
-    lineHeight: "1.5",
-  },
-  createBtn: {
-    background: "#F9C349",
-    color: "#fff",
-    border: "none",
-    padding: "12px 20px",
-    borderRadius: "12px",
-    fontWeight: "600",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-    transition: "all 0.3s ease",
-    fontSize: "14px",
-    flexShrink: 0,
-  },
-  mobileCreateBtn: {
-    background: "#F9C349",
-    color: "#fff",
-    border: "none",
-    padding: "10px 16px",
-    borderRadius: "10px",
-    fontWeight: "600",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-    transition: "all 0.3s ease",
-    fontSize: "13px",
-    flexShrink: 0,
-    width: "100%",
-    justifyContent: "center",
-  },
-  statsGrid: {
-    display: "grid",
-    gap: "12px",
-    marginBottom: "24px",
-  },
-  statCard: {
-    background: "#fff",
-    borderRadius: "14px",
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    border: "1px solid #ECE7DB",
-    transition: "all 0.3s ease",
-    cursor: "pointer",
-  },
-  statIcon: {
-    borderRadius: "12px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    flexShrink: 0,
-  },
-  statValue: {
-    fontWeight: "700",
-    margin: 0,
-    color: "#111111",
-    letterSpacing: "-0.5px",
-  },
-  statLabel: {
-    color: "#6B675E",
-    margin: "2px 0 0 0",
-  },
-  statTrend: {
-    color: "#1E6B3A",
-  },
-  filterSection: {
-    marginBottom: "20px",
-  },
-  filterToggle: {
-    display: "none",
-    alignItems: "center",
-    gap: "8px",
-    padding: "10px 16px",
-    background: "#fff",
-    border: "1px solid #ECE7DB",
-    borderRadius: "12px",
-    cursor: "pointer",
-    fontSize: "14px",
-    fontWeight: "500",
-    color: "#111111",
-    transition: "all 0.3s ease",
-  },
-  filterCount: {
-    background: "#f9c349",
-    color: "#fff",
-    borderRadius: "50%",
-    padding: "2px 8px",
-    fontSize: "11px",
-    fontWeight: "700",
-    marginLeft: "auto",
-  },
-  advancedFilters: {
-    overflow: "hidden",
-  },
-  filterRow: {
-    display: "flex",
-    gap: "10px",
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-  mobileFilterRow: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-    width: "100%",
-  },
-  searchWrapper: {
-    flex: 1,
-    minWidth: "180px",
-    position: "relative",
-  },
-  searchIcon: {
-    position: "absolute",
-    left: "12px",
-    top: "50%",
-    transform: "translateY(-50%)",
-    color: "#9A958B",
-  },
-  searchInput: {
-    width: "100%",
-    padding: "10px 14px 10px 36px",
-    border: "2px solid #ECE7DB",
-    borderRadius: "10px",
-    fontSize: "14px",
-    background: "#fff",
-    transition: "all 0.3s ease",
-    outline: "none",
-    boxSizing: "border-box",
-  },
-  filterSelect: {
-    padding: "10px 14px",
-    border: "2px solid #ECE7DB",
-    borderRadius: "10px",
-    background: "#fff",
-    fontSize: "14px",
-    minWidth: "120px",
-    cursor: "pointer",
-    outline: "none",
-    transition: "all 0.3s ease",
-    boxSizing: "border-box",
-  },
-  resetBtn: {
-    padding: "10px 16px",
-    background: "#F0ECE2",
-    color: "#6B675E",
-    border: "2px solid #ECE7DB",
-    borderRadius: "10px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
-    transition: "all 0.3s ease",
-  },
-  tableContainer: {
-    overflow: "hidden",
-    background: "#fff",
-    borderRadius: "14px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    border: "1px solid #ECE7DB",
-    width: "100%",
-  },
-  tableWrapper: {
-    overflowX: "auto",
-    width: "100%",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: "800px",
-  },
-  tableHeader: {
-    borderBottom: "2px solid #ECE7DB",
-    background: "#FAF8F3",
-  },
-  th: {
-    padding: "14px 16px",
-    textAlign: "left",
-    fontWeight: "600",
-    color: "#6B675E",
-    fontSize: "11px",
-    textTransform: "uppercase",
-    letterSpacing: "0.5px",
-  },
-  tableRow: {
-    borderBottom: "1px solid #F0ECE2",
-    transition: "all 0.2s ease",
-  },
-  jobTitle: {
-    padding: "14px 16px",
-  },
-  jobTitleContent: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  badgeContainer: {
-    display: "flex",
-    gap: "4px",
-    flexWrap: "wrap",
-  },
-  urgentBadge: {
-    background: "#FFF1CC",
-    color: "#8A5A00",
-    padding: "2px 10px",
-    borderRadius: "10px",
-    fontSize: "9px",
-    fontWeight: "600",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  featuredBadge: {
-    background: "#F1E6F5",
-    color: "#8E44AD",
-    padding: "2px 10px",
-    borderRadius: "10px",
-    fontSize: "9px",
-    fontWeight: "600",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  typeBadge: {
-    padding: "4px 12px",
-    borderRadius: "6px",
-    fontSize: "11px",
-    fontWeight: "500",
-    display: "inline-block",
-  },
-  locationCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "12px",
-  },
-  viewAppsBtn: {
-    background: "#2B7FC0",
-    color: "#fff",
-    border: "none",
-    padding: "5px 12px",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "11px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    transition: "all 0.3s ease",
-  },
-  viewsCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#6B675E",
-  },
-  statusBtn: {
-    padding: "4px 14px",
-    borderRadius: "16px",
-    border: "none",
-    color: "#fff",
-    fontSize: "11px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    fontWeight: "500",
-  },
-  actionButtons: {
-    display: "flex",
-    gap: "6px",
-  },
-  editBtn: {
-    padding: "6px 10px",
-    background: "#2E8B3E",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-  },
-  deleteBtn: {
-    padding: "6px 10px",
-    background: "#D9443F",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-  },
-  statusBadge: {
-    padding: "4px 12px",
-    borderRadius: "16px",
-    color: "#fff",
-    fontSize: "11px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    fontWeight: "500",
-  },
-  statusSelect: {
-    padding: "5px 10px",
-    borderRadius: "8px",
-    border: "2px solid #ECE7DB",
-    marginRight: "6px",
-    fontSize: "11px",
-    background: "#fff",
-    cursor: "pointer",
-    outline: "none",
-    transition: "all 0.3s ease",
-  },
-  viewDetailsBtn: {
-    padding: "5px 12px",
-    background: "#8E44AD",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontSize: "11px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    transition: "all 0.3s ease",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "rgba(0,0,0,0.5)",
-    backdropFilter: "blur(8px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    animation: "fadeIn 0.3s ease",
-    padding: "16px",
-  },
-  modalContent: {
-    background: "#fff",
-    borderRadius: "20px",
-    padding: "24px",
-    maxWidth: "600px",
-    width: "100%",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    animation: "scaleIn 0.3s ease",
-    boxSizing: "border-box",
-  },
-  modalLargeContent: {
-    background: "#fff",
-    borderRadius: "20px",
-    padding: "24px",
-    maxWidth: "1100px",
-    width: "100%",
-    maxHeight: "90vh",
-    overflowY: "auto",
-    animation: "scaleIn 0.3s ease",
-    boxSizing: "border-box",
-  },
-  mobileModalLargeContent: {
-    background: "#fff",
-    borderRadius: "14px",
-    padding: "16px",
-    maxWidth: "100%",
-    width: "100%",
-    maxHeight: "95vh",
-    overflowY: "auto",
-    animation: "scaleIn 0.3s ease",
-    boxSizing: "border-box",
-  },
-  modalHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "20px",
-    gap: "12px",
-  },
-  modalTitle: {
-    fontSize: "20px",
-    fontWeight: "700",
-    color: "#111111",
-    margin: 0,
-    display: "flex",
-    alignItems: "center",
-  },
-  mobileModalTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#111111",
-    margin: 0,
-    display: "flex",
-    alignItems: "center",
-  },
-  modalSubtitle: {
-    fontSize: "13px",
-    color: "#6B675E",
-    marginTop: "2px",
-  },
-  closeBtn: {
-    background: "none",
-    border: "none",
-    fontSize: "18px",
-    cursor: "pointer",
-    color: "#9A958B",
-    padding: "6px",
-    borderRadius: "8px",
-    transition: "all 0.3s ease",
-  },
-  form: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "20px",
-  },
-  sectionNav: {
-    display: "flex",
-    gap: "6px",
-    flexWrap: "wrap",
-    padding: "6px",
-    background: "#FAF8F3",
-    borderRadius: "12px",
-    border: "1px solid #ECE7DB",
-  },
-  sectionNavBtn: {
-    padding: "8px 16px",
-    borderRadius: "10px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "12px",
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    transition: "all 0.3s ease",
-  },
-  mobileSectionNav: {
-    display: "flex",
-    gap: "4px",
-    flexWrap: "wrap",
-    padding: "4px",
-    background: "#FAF8F3",
-    borderRadius: "10px",
-    border: "1px solid #ECE7DB",
-  },
-  mobileSectionNavBtn: {
-    padding: "6px 12px",
-    borderRadius: "8px",
-    border: "none",
-    cursor: "pointer",
-    fontSize: "11px",
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    transition: "all 0.3s ease",
-    flex: "1 1 auto",
-    minWidth: "40px",
-    justifyContent: "center",
-  },
-  sectionNavLabel: {
-    display: "inline",
-  },
-  formBody: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "16px",
-  },
-  formSection: {
-    background: "#fff",
-    padding: "20px",
-    borderRadius: "14px",
-    border: "1px solid #ECE7DB",
-  },
-  formSectionHeader: {
-    marginBottom: "16px",
-  },
-  formSectionTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#111111",
-    marginBottom: "2px",
-    display: "flex",
-    alignItems: "center",
-  },
-  formSectionDesc: {
-    fontSize: "13px",
-    color: "#6B675E",
-  },
-  formGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-    gap: "16px",
-  },
-  mobileFormGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "14px",
-  },
-  formGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  formLabel: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#111111",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  formInput: {
-    padding: "8px 12px",
-    border: "2px solid #ECE7DB",
-    borderRadius: "8px",
-    fontSize: "13px",
-    transition: "all 0.3s ease",
-    outline: "none",
-    background: "#fff",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  formSelect: {
-    padding: "8px 12px",
-    border: "2px solid #ECE7DB",
-    borderRadius: "8px",
-    fontSize: "13px",
-    transition: "all 0.3s ease",
-    outline: "none",
-    background: "#fff",
-    cursor: "pointer",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  formTextarea: {
-    padding: "8px 12px",
-    border: "2px solid #ECE7DB",
-    borderRadius: "8px",
-    fontSize: "13px",
-    transition: "all 0.3s ease",
-    outline: "none",
-    background: "#fff",
-    resize: "vertical",
-    width: "100%",
-    boxSizing: "border-box",
-  },
-  formActions: {
-    display: "flex",
-    justifyContent: "flex-end",
-    gap: "10px",
-    paddingTop: "16px",
-    borderTop: "2px solid #ECE7DB",
-    flexWrap: "wrap",
-  },
-  mobileFormActions: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    paddingTop: "16px",
-    borderTop: "2px solid #ECE7DB",
-  },
-  cancelBtn: {
-    padding: "10px 24px",
-    background: "#F0ECE2",
-    border: "2px solid #ECE7DB",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#6B675E",
-    transition: "all 0.3s ease",
-  },
-  submitBtn: {
-    padding: "10px 28px",
-    background: "#F9C349",
-    color: "#fff",
-    border: "none",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "600",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    transition: "all 0.3s ease",
-    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
-  },
-  emptyRow: {
-    textAlign: "center",
-    padding: "40px 16px",
-    color: "#9A958B",
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    gap: "10px",
-  },
-  emptyBtn: {
-    background: "#F9C349",
-    color: "#fff",
-    border: "none",
-    padding: "10px 24px",
-    borderRadius: "10px",
-    cursor: "pointer",
-    fontWeight: "500",
-    transition: "all 0.3s ease",
-  },
-  pagination: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "12px",
-    padding: "14px",
-    borderTop: "1px solid #ECE7DB",
-  },
-  pageBtn: {
-    padding: "6px 14px",
-    background: "#F0ECE2",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    transition: "all 0.3s ease",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  pageInfo: {
-    fontSize: "13px",
-    color: "#6B675E",
-    fontWeight: "500",
-  },
-  applicantCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-  },
-  applicantAvatar: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    background: "#F9C349",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    fontSize: "14px",
-    color: "#fff",
-    flexShrink: 0,
-  },
-  applicantContact: {
-    fontSize: "11px",
-    color: "#6B675E",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  detailSection: {
-    padding: "4px 0",
-  },
-  detailHeader: {
-    display: "flex",
-    alignItems: "center",
-    gap: "14px",
-    marginBottom: "20px",
-  },
-  detailAvatar: {
-    width: "56px",
-    height: "56px",
-    borderRadius: "50%",
-    background: "#F9C349",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "700",
-    fontSize: "24px",
-    color: "#fff",
-    flexShrink: 0,
-  },
-  detailName: {
-    fontSize: "18px",
-    fontWeight: "600",
-    color: "#111111",
-    margin: 0,
-  },
-  detailGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "10px",
-    marginBottom: "16px",
-  },
-  detailItem: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    fontSize: "13px",
-    color: "#6B675E",
-    padding: "6px 10px",
-    background: "#FAF8F3",
-    borderRadius: "8px",
-  },
-  detailSubtitle: {
-    fontSize: "15px",
-    fontWeight: "600",
-    color: "#111111",
-    marginTop: "14px",
-    marginBottom: "6px",
-  },
-  coverLetter: {
-    background: "#FAF8F3",
-    padding: "14px",
-    borderRadius: "8px",
-    lineHeight: "1.6",
-    fontSize: "13px",
-    color: "#111111",
-    marginBottom: "14px",
-  },
-  detailLinks: {
-    display: "flex",
-    gap: "8px",
-    flexWrap: "wrap",
-    marginTop: "12px",
-  },
-  detailLink: {
-    padding: "6px 14px",
-    background: "#F0ECE2",
-    borderRadius: "8px",
-    textDecoration: "none",
-    color: "#6B675E",
-    fontSize: "12px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    transition: "all 0.3s ease",
-  },
-  publishPreview: {
-    marginBottom: "20px",
-  },
-  previewCard: {
-    background: "#FAF8F3",
-    padding: "16px",
-    borderRadius: "10px",
-    border: "2px solid #ECE7DB",
-  },
-  previewHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "10px",
-    flexWrap: "wrap",
-    gap: "6px",
-  },
-  previewTitle: {
-    fontSize: "16px",
-    fontWeight: "600",
-    color: "#111111",
-    margin: 0,
-  },
-  previewBadges: {
-    display: "flex",
-    gap: "6px",
-  },
-  previewDetails: {
-    display: "flex",
-    flexWrap: "wrap",
-    gap: "12px",
-    marginBottom: "10px",
-    padding: "10px 0",
-    borderTop: "1px solid #ECE7DB",
-    borderBottom: "1px solid #ECE7DB",
-    fontSize: "13px",
-  },
-  mobilePreviewDetails: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "8px",
-    padding: "10px 0",
-    borderTop: "1px solid #ECE7DB",
-    borderBottom: "1px solid #ECE7DB",
-    fontSize: "12px",
-  },
-  publishOptions: {
-    background: "#FAF8F3",
-    padding: "16px",
-    borderRadius: "10px",
-    border: "1px solid #ECE7DB",
-  },
-  publishOptionsTitle: {
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#111111",
-    marginBottom: "12px",
-  },
-  publishGrid: {
-    display: "grid",
-    gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
-    gap: "12px",
-  },
-  mobilePublishGrid: {
-    display: "grid",
-    gridTemplateColumns: "1fr",
-    gap: "10px",
-  },
-  checkbox: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "2px",
-    cursor: "pointer",
-    padding: "10px",
-    background: "#fff",
-    borderRadius: "8px",
-    border: "1px solid #ECE7DB",
-    transition: "all 0.3s ease",
-    fontSize: "13px",
-  },
-  // Mobile specific styles
-  mobileJobList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "12px",
-    padding: "12px",
-    width: "100%",
-  },
-  mobileJobCard: {
-    background: "#fff",
-    border: "1px solid #ECE7DB",
-    borderRadius: "12px",
-    padding: "14px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-    width: "100%",
-  },
-  mobileJobHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "10px",
-  },
-  mobileJobTitle: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-    flex: 1,
-  },
-  mobileBadgeContainer: {
-    display: "flex",
-    gap: "4px",
-    flexWrap: "wrap",
-  },
-  mobileJobDetails: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "6px",
-    marginBottom: "12px",
-    padding: "8px 0",
-    borderTop: "1px solid #F0ECE2",
-    borderBottom: "1px solid #F0ECE2",
-  },
-  mobileJobDetail: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#6B675E",
-  },
-  mobileJobActions: {
-    display: "flex",
-    gap: "6px",
-  },
-  mobileActionBtn: {
-    flex: 1,
-    padding: "6px 10px",
-    background: "#2B7FC0",
-    color: "#fff",
-    border: "none",
-    borderRadius: "8px",
-    fontSize: "11px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "4px",
-    transition: "all 0.3s ease",
-  },
-  mobileAppList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    padding: "12px",
-    width: "100%",
-  },
-  mobileAppCard: {
-    background: "#fff",
-    border: "1px solid #ECE7DB",
-    borderRadius: "12px",
-    padding: "12px",
-    width: "100%",
-  },
-  mobileAppHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "8px",
-  },
-  mobileAppDetails: {
-    display: "flex",
-    gap: "12px",
-    fontSize: "12px",
-    color: "#6B675E",
-    marginBottom: "10px",
-    flexWrap: "wrap",
-  },
-  mobileAppActions: {
-    display: "flex",
-    gap: "6px",
-  },
-};
-
-export default withTdcTheme(AdminJobsManager);
+export default AdminJobsManager;

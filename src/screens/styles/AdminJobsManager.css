@@ -1,0 +1,10 @@
+/* AdminJobsManager: jobs table, application modals and job form. Kit tokens only. */
+.tdcp .jm-status { min-width: 76px; height: 30px; padding: 0 12px; border-radius: 15px; border: 0; background: var(--danger-bg); color: var(--danger); font-family: var(--body); font-weight: 700; font-size: 12.5px; cursor: pointer; }
+.tdcp .jm-status.on { background: var(--success-bg); color: var(--success); }
+.tdcp .jm-avatar { width: 36px; height: 36px; flex: 0 0 36px; border-radius: 12px; background: var(--yellow); display: inline-flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; }
+.tdcp .jm-avatar.lg { width: 56px; height: 56px; flex-basis: 56px; border-radius: 18px; font-size: 22px; }
+.tdcp .jm-letter { white-space: pre-wrap; font-size: 14px; line-height: 1.55; overflow-wrap: anywhere; }
+.tdcp .jm-form { display: flex; flex-direction: column; gap: 16px; }
+.tdcp .jm-sec-head { display: flex; align-items: center; gap: 12px; }
+.tdcp .jm-sec-head h3 { margin: 0; font-size: 17px; font-weight: 700; }
+.tdcp .jm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 14px; }
