@@ -1,0 +1,22 @@
+/* Brand portal (design/portal/Br*): dashboard and shared brand bits. Kit tokens only. */
+.tdcp .br-hey { margin: 0; font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.tdcp .br-hey img { width: 28px; height: 28px; }
+.tdcp .br-dash .k-head h1 { margin-top: 2px; }
+.tdcp a.k-btn { text-decoration: none; }
+.tdcp .br-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; }
+.tdcp .br-claims { overflow: hidden; }
+.tdcp .br-claims-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; padding: 20px 22px 12px; }
+.tdcp .br-claims-head h2, .tdcp .br-h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; }
+.tdcp .br-claim { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-top: 1px solid var(--line-soft); font-size: 14.5px; }
+.tdcp .br-claim b { display: block; overflow-wrap: anywhere; }
+.tdcp .br-claim-i { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 20px; background: var(--sand); color: var(--faint); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+.tdcp .br-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tdcp .br-live { background: var(--yellow-soft); border-radius: 22px; padding: 22px; }
+.tdcp .br-live-lbl { font-size: 13px; font-weight: 700; }
+.tdcp .br-live-row { display: flex; align-items: center; gap: 14px; margin-top: 12px; }
+.tdcp .br-live-logo { width: 56px; height: 56px; flex: 0 0 56px; border-radius: 18px; background: var(--card); display: inline-flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 22px; }
+.tdcp .br-live-pct { font-family: var(--heading); font-weight: 800; font-size: 26px; }
+.tdcp .br-live-meta { font-size: 13.5px; color: var(--ink-soft); }
+.tdcp .br-unis { margin-top: 16px; display: flex; flex-direction: column; gap: 14px; }
+.tdcp .br-uni-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14px; margin-bottom: 6px; }
+.tdcp .br-uni-row b { font-weight: 600; overflow-wrap: anywhere; }

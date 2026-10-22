@@ -32,7 +32,6 @@ const ClaimedUsers = lazy(() => import("./screens/ClaimedUsers"));
 const VerifyClaim = lazy(() => import("./screens/VerifyClaim"));
 const SavingsHistory = lazy(() => import("./screens/SavingsHistory"));
 const CreateOffer = lazy(() => import("./screens/CreateOffer"));
-const Discount = lazy(() => import("./screens/Discount"));
 const BrandVerifyScreen = lazy(() => import("./screens/BrandVerifyScreen"));
 const Branches = lazy(() => import("./screens/Branches"));
 
@@ -71,6 +70,8 @@ const TestPush = lazy(() => import("./screens/TestPush"));
 // ── 🆕 Brand Campaigns ──────────────────────────────────────────────────
 const BrandCampaigns = lazy(() => import("./screens/BrandCampaigns"));
 const VerifyReward = lazy(() => import("./screens/VerifyReward"));
+const MyOffers = lazy(() => import("./screens/MyOffers"));
+const BrandDashboard = lazy(() => import("./screens/Home").then((m) => ({ default: m.BrandDashboard })));
 
 export default function AppNavigator() {
   const { user } = useContext(AuthContext);
@@ -181,18 +182,19 @@ export default function AppNavigator() {
   return (
     <PortalShell>
     <Routes>
-      <Route path="/home" element={<Home />} />
-      <Route path="/create-offer" element={<CreateOffer />} />
-      <Route path="/discount" element={<Discount />} />
-      <Route path="/claimedUsers" element={<ClaimedUsers />} />
-      <Route path="/verifyclaim" element={<VerifyClaim />} />
-      <Route path="/savinghistory" element={<SavingsHistory />} />
-      <Route path="/BrandVerifyScreen" element={<BrandVerifyScreen />} />
-      <Route path="/Branches" element={<Branches />} />
-
-      {/* 🆕 Brand Campaigns */}
-      <Route path="/brand-campaigns" element={<BrandCampaigns />} />
-      <Route path="/verifyrward" element={<VerifyReward />} />
+      {/* brand portal: the Home shell (sidebar) around every brand screen, each on its own path */}
+      <Route element={<Home />}>
+        <Route path="/home" element={<BrandDashboard />} />
+        <Route path="/discount" element={<MyOffers />} />
+        <Route path="/create-offer" element={<CreateOffer />} />
+        <Route path="/claimedUsers" element={<ClaimedUsers />} />
+        <Route path="/verifyclaim" element={<VerifyClaim />} />
+        <Route path="/savinghistory" element={<SavingsHistory />} />
+        <Route path="/BrandVerifyScreen" element={<BrandVerifyScreen />} />
+        <Route path="/Branches" element={<Branches />} />
+        <Route path="/brand-campaigns" element={<BrandCampaigns />} />
+        <Route path="/verifyrward" element={<VerifyReward />} />
+      </Route>
 
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
