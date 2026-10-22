@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from "react";
+import { withTdcTheme } from "../portal/muiTheme";
 import axios from "axios";
 import {
   Dialog,
@@ -444,13 +445,13 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   const getStatusBadgeColor = (status) => {
     switch (status) {
-      case "pending": return "#f59e0b";
-      case "reviewed": return "#3b82f6";
-      case "shortlisted": return "#10b981";
-      case "interview": return "#8b5cf6";
-      case "rejected": return "#ef4444";
-      case "hired": return "#059669";
-      default: return "#6b7280";
+      case "pending": return "#111111";
+      case "reviewed": return "#2B7FC0";
+      case "shortlisted": return "#2E8B3E";
+      case "interview": return "#8E44AD";
+      case "rejected": return "#D9443F";
+      case "hired": return "#2E8B3E";
+      default: return "#D9D2C2";
     }
   };
 
@@ -512,7 +513,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             {job.featured && <span style={styles.featuredBadge}><FaStar /> Featured</span>}
           </div>
         </div>
-        <button style={{ ...styles.statusBtn, background: job.active ? "#10b981" : "#ef4444", padding: "4px 12px", fontSize: "11px" }} onClick={() => handleToggleStatus(job._id)}>
+        <button style={{ ...styles.statusBtn, background: job.active ? "#2E8B3E" : "#D9443F", padding: "4px 12px", fontSize: "11px" }} onClick={() => handleToggleStatus(job._id)}>
           {job.active ? "Active" : "Inactive"}
         </button>
       </div>
@@ -525,7 +526,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
           {getLocationIcon(job.locationType)} {job.location}
         </div>
         <div style={styles.mobileJobDetail}>
-          <span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#dbeafe" : "#f3e8ff", padding: "2px 10px", fontSize: "11px" }}>{job.type}</span>
+          <span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#E1F1FA" : "#F1E6F5", padding: "2px 10px", fontSize: "11px" }}>{job.type}</span>
         </div>
         <div style={styles.mobileJobDetail}>
           <FaUsers size={12} /> {job.totalApplications || 0} applications
@@ -539,10 +540,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
         <button style={styles.mobileActionBtn} onClick={() => fetchJobApplications(job._id)}>
           <FaUsers /> View Apps
         </button>
-        <button style={{ ...styles.mobileActionBtn, background: "#10b981" }} onClick={() => handleEditJob(job)}>
+        <button style={{ ...styles.mobileActionBtn, background: "#2E8B3E" }} onClick={() => handleEditJob(job)}>
           <FaEdit /> Edit
         </button>
-        <button style={{ ...styles.mobileActionBtn, background: "#ef4444" }} onClick={() => handleDeleteJob(job._id)}>
+        <button style={{ ...styles.mobileActionBtn, background: "#D9443F" }} onClick={() => handleDeleteJob(job._id)}>
           <FaTrash /> Delete
         </button>
       </div>
@@ -566,11 +567,11 @@ const AdminJobsManager = ({ userRole, userName }) => {
             <span style={styles.headerBadgeText}>Hiring Dashboard</span>
           </div>
           <h1 style={isMobile ? styles.mobileTitle : styles.title}>
-            {userRole === "admin" ? "Job Portal Management" : "My Job Postings"}
+            {userRole === "admin" ? <>career portal<span className="dot" aria-hidden="true">.</span></> : "My Job Postings"}
           </h1>
           <p style={isMobile ? styles.mobileSubtitle : styles.subtitle}>
             {userRole === "admin"
-              ? "Manage jobs, review applications, and track hiring metrics"
+              ? "all jobs and internships students see in the career hub."
               : `Welcome back, ${userName}! Manage your job postings`}
           </p>
         </div>
@@ -578,8 +579,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
           <button
             style={{
               ...(isMobile ? styles.mobileCreateBtn : styles.createBtn),
-              background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
-              boxShadow: '0 4px 12px rgba(16, 185, 129, 0.3)'
+              background: '#111111',
+              boxShadow: '0 1px 2px rgba(17, 17, 17, 0.04)'
             }}
             className="pulse-btn"
             onClick={handleOpenCsvDialog}
@@ -616,8 +617,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
               width: isMobile ? "36px" : isTablet ? "40px" : "44px",
               height: isMobile ? "36px" : isTablet ? "40px" : "44px",
               fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#eff6ff",
-              color: "#3b82f6",
+              background: "#E1F1FA",
+              color: "#2B7FC0",
             }}>
               <FaBriefcase />
             </div>
@@ -645,8 +646,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
               width: isMobile ? "36px" : isTablet ? "40px" : "44px",
               height: isMobile ? "36px" : isTablet ? "40px" : "44px",
               fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#f0fdf4",
-              color: "#10b981",
+              background: "#E3F3E8",
+              color: "#1E6B3A",
             }}>
               <FaCheckCircle />
             </div>
@@ -674,8 +675,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
               width: isMobile ? "36px" : isTablet ? "40px" : "44px",
               height: isMobile ? "36px" : isTablet ? "40px" : "44px",
               fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#fef3c7",
-              color: "#f59e0b",
+              background: "#FFF1CC",
+              color: "#C77700",
             }}>
               <FaUsers />
             </div>
@@ -703,8 +704,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
               width: isMobile ? "36px" : isTablet ? "40px" : "44px",
               height: isMobile ? "36px" : isTablet ? "40px" : "44px",
               fontSize: isMobile ? "14px" : isTablet ? "16px" : "18px",
-              background: "#f3e8ff",
-              color: "#8b5cf6",
+              background: "#F1E6F5",
+              color: "#8E44AD",
             }}>
               <FaStar />
             </div>
@@ -824,7 +825,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                         {job.location}
                       </div>
                     </td>
-                    <td><span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#dbeafe" : "#f3e8ff" }}>{job.type}</span></td>
+                    <td><span style={{ ...styles.typeBadge, background: job.type === "Full-time" ? "#E1F1FA" : "#F1E6F5" }}>{job.type}</span></td>
                     <td>
                       <button style={styles.viewAppsBtn} onClick={() => fetchJobApplications(job._id)}>
                         <FaUsers /> {job.totalApplications || 0}
@@ -836,7 +837,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       </span>
                     </td>
                     <td>
-                      <button style={{ ...styles.statusBtn, background: job.active ? "#10b981" : "#ef4444" }} onClick={() => handleToggleStatus(job._id)}>
+                      <button style={{ ...styles.statusBtn, background: job.active ? "#2E8B3E" : "#D9443F" }} onClick={() => handleToggleStatus(job._id)}>
                         {job.active ? "Active" : "Inactive"}
                       </button>
                     </td>
@@ -855,7 +856,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                 {jobs.length === 0 && (
                   <tr>
                     <td colSpan="8" style={styles.emptyRow}>
-                      <FaBriefcase size={40} color="#cbd5e1" />
+                      <FaBriefcase size={40} color="#9A958B" />
                       <p>No jobs found</p>
                       <button style={styles.emptyBtn} onClick={() => {
                         resetForm();
@@ -874,7 +875,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             ))}
             {jobs.length === 0 && (
               <div style={styles.emptyRow}>
-                <FaBriefcase size={40} color="#cbd5e1" />
+                <FaBriefcase size={40} color="#9A958B" />
                 <p>No jobs found</p>
                 <button style={styles.emptyBtn} onClick={() => {
                   resetForm();
@@ -1028,7 +1029,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
               )}
               {applications.length === 0 && (
                 <div style={styles.emptyRow}>
-                  <FaUsers size={40} color="#cbd5e1" />
+                  <FaUsers size={40} color="#9A958B" />
                   <p>No applications yet for this position.</p>
                 </div>
               )}
@@ -1123,7 +1124,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             <div style={styles.modalHeader}>
               <div>
                 <h2 style={isMobile ? { ...styles.mobileModalTitle } : styles.modalTitle}>
-                  {selectedJob ? <FaEdit style={{ color: '#f9c349', marginRight: '12px' }} /> : <FaPlus style={{ color: '#f9c349', marginRight: '12px' }} />}
+                  {selectedJob ? <FaEdit style={{ color: '#C77700', marginRight: '12px' }} /> : <FaPlus style={{ color: '#C77700', marginRight: '12px' }} />}
                   {selectedJob ? "Edit Job Posting" : "Create New Job"}
                 </h2>
                 <p style={styles.modalSubtitle}>
@@ -1144,8 +1145,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
                     type="button"
                     style={{
                       ...(isMobile ? styles.mobileSectionNavBtn : styles.sectionNavBtn),
-                      background: activeSection === section.id ? "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)" : "#f8fafc",
-                      color: activeSection === section.id ? "#fff" : "#475569",
+                      background: activeSection === section.id ? "#F9C349" : "#FAF8F3",
+                      color: activeSection === section.id ? "#fff" : "#6B675E",
                     }}
                     onClick={() => setActiveSection(section.id)}
                   >
@@ -1161,7 +1162,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaBriefcase style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaBriefcase style={{ color: '#C77700', marginRight: '10px' }} />
                         Basic Information
                       </h3>
                       <p style={styles.formSectionDesc}>Essential details about the position</p>
@@ -1262,7 +1263,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaClipboardList style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaClipboardList style={{ color: '#C77700', marginRight: '10px' }} />
                         Job Details
                       </h3>
                       <p style={styles.formSectionDesc}>Compensation, requirements, and responsibilities</p>
@@ -1331,7 +1332,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaCheckDouble style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaCheckDouble style={{ color: '#C77700', marginRight: '10px' }} />
                         Requirements & Responsibilities
                       </h3>
                       <p style={styles.formSectionDesc}>Define what candidates need and what they'll do</p>
@@ -1376,7 +1377,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaAward style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaAward style={{ color: '#C77700', marginRight: '10px' }} />
                         Benefits & Perks
                       </h3>
                       <p style={styles.formSectionDesc}>Attract top talent with great benefits</p>
@@ -1411,7 +1412,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaBuilding style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaBuilding style={{ color: '#C77700', marginRight: '10px' }} />
                         Company Information
                       </h3>
                       <p style={styles.formSectionDesc}>Tell candidates about your company</p>
@@ -1446,7 +1447,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                   <div style={styles.formSection} className="slide-down">
                     <div style={styles.formSectionHeader}>
                       <h3 style={styles.formSectionTitle}>
-                        <FaRocket style={{ color: '#f9c349', marginRight: '10px' }} />
+                        <FaRocket style={{ color: '#C77700', marginRight: '10px' }} />
                         Publish Job
                       </h3>
                       <p style={styles.formSectionDesc}>Review and publish your job posting</p>
@@ -1475,16 +1476,16 @@ const AdminJobsManager = ({ userRole, userName }) => {
                       <div style={isMobile ? styles.mobilePublishGrid : styles.publishGrid}>
                         <label style={styles.checkbox}>
                           <input type="checkbox" checked={formData.active} onChange={(e) => setFormData({ ...formData, active: e.target.checked })} />
-                          <span><FaCheck style={{ color: '#10b981' }} /> Publish Immediately</span>
+                          <span><FaCheck style={{ color: '#1E6B3A' }} /> Publish Immediately</span>
                         </label>
                         <label style={styles.checkbox}>
                           <input type="checkbox" checked={formData.urgent} onChange={(e) => setFormData({ ...formData, urgent: e.target.checked })} />
-                          <span><FaFire style={{ color: '#f59e0b' }} /> Mark as Urgent</span>
+                          <span><FaFire style={{ color: '#C77700' }} /> Mark as Urgent</span>
                         </label>
                         {userRole === "admin" && (
                           <label style={styles.checkbox}>
                             <input type="checkbox" checked={formData.featured} onChange={(e) => setFormData({ ...formData, featured: e.target.checked })} />
-                            <span><FaStar style={{ color: '#f59e0b' }} /> Feature Job</span>
+                            <span><FaStar style={{ color: '#C77700' }} /> Feature Job</span>
                           </label>
                         )}
                       </div>
@@ -1560,16 +1561,16 @@ const AdminJobsManager = ({ userRole, userName }) => {
             width: 6px;
           }
           ::-webkit-scrollbar-track {
-            background: #f1f5f9;
+            background: #F0ECE2;
             border-radius: 10px;
           }
           ::-webkit-scrollbar-thumb {
-            background: linear-gradient(135deg, #f9c349 0%, #ff961a 100%);
+            background: linear-gradient(135deg, #f9c349 0%, #111111 100%);
             border-radius: 10px;
           }
 
           input:focus, select:focus, textarea:focus {
-            border-color: #f9c349 !important;
+            border-color: #C77700 !important;
             outline: none !important;
           }
 
@@ -1675,7 +1676,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
         <DialogContent sx={{ p: 3 }}>
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
             <Typography variant="h6" sx={{ fontWeight: 700, display: 'flex', alignItems: 'center', gap: 1 }}>
-              <CloudUploadIcon sx={{ color: '#10b981' }} /> Upload Jobs CSV / XLSX
+              <CloudUploadIcon sx={{ color: '#1E6B3A' }} /> Upload Jobs CSV / XLSX
             </Typography>
             <IconButton onClick={handleCloseCsvDialog} disabled={csvUploading}>
               <CloseIcon />
@@ -1685,15 +1686,15 @@ const AdminJobsManager = ({ userRole, userName }) => {
           <form onSubmit={handleUploadCsvSubmit}>
             <Box
               sx={{
-                border: '2px dashed #cbd5e1',
+                border: '2px dashed #ECE7DB',
                 borderRadius: 2,
                 p: 4,
                 textAlign: 'center',
-                backgroundColor: '#f8fafc',
+                backgroundColor: '#FAF8F3',
                 cursor: 'pointer',
                 mb: 3,
                 transition: 'all 0.2s',
-                '&:hover': { backgroundColor: '#f1f5f9', borderColor: '#10b981' }
+                '&:hover': { backgroundColor: '#F0ECE2', borderColor: '#2E8B3E' }
               }}
               onClick={() => csvFileInputRef.current?.click()}
             >
@@ -1704,8 +1705,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
                 style={{ display: 'none' }}
                 onChange={handleCsvFileChange}
               />
-              <CloudUploadIcon sx={{ fontSize: 48, color: '#64748b', mb: 1 }} />
-              <Typography variant="body1" sx={{ fontWeight: 600, color: '#334155' }}>
+              <CloudUploadIcon sx={{ fontSize: 48, color: '#6B675E', mb: 1 }} />
+              <Typography variant="body1" sx={{ fontWeight: 600, color: '#111111' }}>
                 {csvFile ? csvFile.name : "Click to select or drop .csv / .xlsx file"}
               </Typography>
               <Typography variant="caption" color="textSecondary" sx={{ display: 'block', mt: 0.5 }}>
@@ -1715,8 +1716,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
             {csvUploading && (
               <Box sx={{ textAlign: 'center', my: 2 }}>
-                <CircularProgress size={36} sx={{ color: '#10b981' }} />
-                <Typography variant="body2" sx={{ mt: 1, color: '#64748b' }}>
+                <CircularProgress size={36} sx={{ color: '#1E6B3A' }} />
+                <Typography variant="body2" sx={{ mt: 1, color: '#6B675E' }}>
                   Processing & importing jobs...
                 </Typography>
               </Box>
@@ -1750,10 +1751,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
                 variant="contained"
                 disabled={!csvFile || csvUploading}
                 sx={{
-                  background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+                  background: '#111111',
                   color: '#fff',
                   fontWeight: 600,
-                  '&:hover': { background: '#059669' }
+                  '&:hover': { background: '#2E8B3E' }
                 }}
               >
                 {csvUploading ? "Uploading..." : "Upload & Import"}
@@ -1769,13 +1770,12 @@ const AdminJobsManager = ({ userRole, userName }) => {
 const styles = {
   container: {
     width: "100%",
-    padding: "8px 10px",
+    padding: "0",
     margin: "0 auto",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    background: "#f8fafc",
-    minHeight: "100vh",
+    background: "transparent",
+    minHeight: "auto",
     boxSizing: "border-box",
-    maxWidth: "1400px",
+    maxWidth: "none",
   },
   loadingContainer: {
     display: "flex",
@@ -1787,11 +1787,11 @@ const styles = {
   },
   loadingSpinner: {
     fontSize: "48px",
-    color: "#f9c349",
+    color: "#C77700",
     animation: "spin 1s linear infinite",
   },
   loadingText: {
-    color: "#64748b",
+    color: "#6B675E",
     fontSize: "16px",
   },
   header: {
@@ -1810,7 +1810,7 @@ const styles = {
     display: "inline-flex",
     alignItems: "center",
     gap: "8px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     padding: "4px 16px",
     borderRadius: "20px",
     color: "#fff",
@@ -1827,31 +1827,31 @@ const styles = {
   title: {
     fontSize: "24px",
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
     letterSpacing: "-0.5px",
   },
   mobileTitle: {
     fontSize: "20px",
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
     letterSpacing: "-0.5px",
   },
   subtitle: {
-    color: "#64748b",
+    color: "#6B675E",
     marginTop: "4px",
     fontSize: "14px",
     lineHeight: "1.5",
   },
   mobileSubtitle: {
-    color: "#64748b",
+    color: "#6B675E",
     marginTop: "4px",
     fontSize: "13px",
     lineHeight: "1.5",
   },
   createBtn: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     color: "#fff",
     border: "none",
     padding: "12px 20px",
@@ -1861,13 +1861,13 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "8px",
-    boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     transition: "all 0.3s ease",
     fontSize: "14px",
     flexShrink: 0,
   },
   mobileCreateBtn: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     color: "#fff",
     border: "none",
     padding: "10px 16px",
@@ -1877,7 +1877,7 @@ const styles = {
     display: "flex",
     alignItems: "center",
     gap: "6px",
-    boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
     transition: "all 0.3s ease",
     fontSize: "13px",
     flexShrink: 0,
@@ -1896,7 +1896,7 @@ const styles = {
     alignItems: "center",
     gap: "14px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     transition: "all 0.3s ease",
     cursor: "pointer",
   },
@@ -1910,15 +1910,15 @@ const styles = {
   statValue: {
     fontWeight: "700",
     margin: 0,
-    color: "#0f172a",
+    color: "#111111",
     letterSpacing: "-0.5px",
   },
   statLabel: {
-    color: "#64748b",
+    color: "#6B675E",
     margin: "2px 0 0 0",
   },
   statTrend: {
-    color: "#10b981",
+    color: "#1E6B3A",
   },
   filterSection: {
     marginBottom: "20px",
@@ -1929,12 +1929,12 @@ const styles = {
     gap: "8px",
     padding: "10px 16px",
     background: "#fff",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     borderRadius: "12px",
     cursor: "pointer",
     fontSize: "14px",
     fontWeight: "500",
-    color: "#0f172a",
+    color: "#111111",
     transition: "all 0.3s ease",
   },
   filterCount: {
@@ -1971,12 +1971,12 @@ const styles = {
     left: "12px",
     top: "50%",
     transform: "translateY(-50%)",
-    color: "#94a3b8",
+    color: "#9A958B",
   },
   searchInput: {
     width: "100%",
     padding: "10px 14px 10px 36px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     borderRadius: "10px",
     fontSize: "14px",
     background: "#fff",
@@ -1986,7 +1986,7 @@ const styles = {
   },
   filterSelect: {
     padding: "10px 14px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     borderRadius: "10px",
     background: "#fff",
     fontSize: "14px",
@@ -1998,9 +1998,9 @@ const styles = {
   },
   resetBtn: {
     padding: "10px 16px",
-    background: "#f1f5f9",
-    color: "#475569",
-    border: "2px solid #e5e7eb",
+    background: "#F0ECE2",
+    color: "#6B675E",
+    border: "2px solid #ECE7DB",
     borderRadius: "10px",
     cursor: "pointer",
     display: "flex",
@@ -2014,7 +2014,7 @@ const styles = {
     background: "#fff",
     borderRadius: "14px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.06)",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     width: "100%",
   },
   tableWrapper: {
@@ -2027,20 +2027,20 @@ const styles = {
     minWidth: "800px",
   },
   tableHeader: {
-    borderBottom: "2px solid #e5e7eb",
-    background: "#f8fafc",
+    borderBottom: "2px solid #ECE7DB",
+    background: "#FAF8F3",
   },
   th: {
     padding: "14px 16px",
     textAlign: "left",
     fontWeight: "600",
-    color: "#475569",
+    color: "#6B675E",
     fontSize: "11px",
     textTransform: "uppercase",
     letterSpacing: "0.5px",
   },
   tableRow: {
-    borderBottom: "1px solid #f1f5f9",
+    borderBottom: "1px solid #F0ECE2",
     transition: "all 0.2s ease",
   },
   jobTitle: {
@@ -2057,8 +2057,8 @@ const styles = {
     flexWrap: "wrap",
   },
   urgentBadge: {
-    background: "#fef3c7",
-    color: "#d97706",
+    background: "#FFF1CC",
+    color: "#8A5A00",
     padding: "2px 10px",
     borderRadius: "10px",
     fontSize: "9px",
@@ -2068,8 +2068,8 @@ const styles = {
     gap: "4px",
   },
   featuredBadge: {
-    background: "#f3e8ff",
-    color: "#9333ea",
+    background: "#F1E6F5",
+    color: "#8E44AD",
     padding: "2px 10px",
     borderRadius: "10px",
     fontSize: "9px",
@@ -2092,7 +2092,7 @@ const styles = {
     fontSize: "12px",
   },
   viewAppsBtn: {
-    background: "#3b82f6",
+    background: "#2B7FC0",
     color: "#fff",
     border: "none",
     padding: "5px 12px",
@@ -2109,7 +2109,7 @@ const styles = {
     alignItems: "center",
     gap: "4px",
     fontSize: "12px",
-    color: "#64748b",
+    color: "#6B675E",
   },
   statusBtn: {
     padding: "4px 14px",
@@ -2127,7 +2127,7 @@ const styles = {
   },
   editBtn: {
     padding: "6px 10px",
-    background: "#10b981",
+    background: "#2E8B3E",
     color: "#fff",
     border: "none",
     borderRadius: "8px",
@@ -2136,7 +2136,7 @@ const styles = {
   },
   deleteBtn: {
     padding: "6px 10px",
-    background: "#ef4444",
+    background: "#D9443F",
     color: "#fff",
     border: "none",
     borderRadius: "8px",
@@ -2156,7 +2156,7 @@ const styles = {
   statusSelect: {
     padding: "5px 10px",
     borderRadius: "8px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     marginRight: "6px",
     fontSize: "11px",
     background: "#fff",
@@ -2166,7 +2166,7 @@ const styles = {
   },
   viewDetailsBtn: {
     padding: "5px 12px",
-    background: "#8b5cf6",
+    background: "#8E44AD",
     color: "#fff",
     border: "none",
     borderRadius: "8px",
@@ -2235,7 +2235,7 @@ const styles = {
   modalTitle: {
     fontSize: "20px",
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
     display: "flex",
     alignItems: "center",
@@ -2243,14 +2243,14 @@ const styles = {
   mobileModalTitle: {
     fontSize: "18px",
     fontWeight: "700",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
     display: "flex",
     alignItems: "center",
   },
   modalSubtitle: {
     fontSize: "13px",
-    color: "#64748b",
+    color: "#6B675E",
     marginTop: "2px",
   },
   closeBtn: {
@@ -2258,7 +2258,7 @@ const styles = {
     border: "none",
     fontSize: "18px",
     cursor: "pointer",
-    color: "#94a3b8",
+    color: "#9A958B",
     padding: "6px",
     borderRadius: "8px",
     transition: "all 0.3s ease",
@@ -2273,9 +2273,9 @@ const styles = {
     gap: "6px",
     flexWrap: "wrap",
     padding: "6px",
-    background: "#f8fafc",
+    background: "#FAF8F3",
     borderRadius: "12px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
   },
   sectionNavBtn: {
     padding: "8px 16px",
@@ -2294,9 +2294,9 @@ const styles = {
     gap: "4px",
     flexWrap: "wrap",
     padding: "4px",
-    background: "#f8fafc",
+    background: "#FAF8F3",
     borderRadius: "10px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
   },
   mobileSectionNavBtn: {
     padding: "6px 12px",
@@ -2325,7 +2325,7 @@ const styles = {
     background: "#fff",
     padding: "20px",
     borderRadius: "14px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
   },
   formSectionHeader: {
     marginBottom: "16px",
@@ -2333,14 +2333,14 @@ const styles = {
   formSectionTitle: {
     fontSize: "16px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     marginBottom: "2px",
     display: "flex",
     alignItems: "center",
   },
   formSectionDesc: {
     fontSize: "13px",
-    color: "#64748b",
+    color: "#6B675E",
   },
   formGrid: {
     display: "grid",
@@ -2360,14 +2360,14 @@ const styles = {
   formLabel: {
     fontSize: "12px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     display: "flex",
     alignItems: "center",
     gap: "4px",
   },
   formInput: {
     padding: "8px 12px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     borderRadius: "8px",
     fontSize: "13px",
     transition: "all 0.3s ease",
@@ -2378,7 +2378,7 @@ const styles = {
   },
   formSelect: {
     padding: "8px 12px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     borderRadius: "8px",
     fontSize: "13px",
     transition: "all 0.3s ease",
@@ -2390,14 +2390,13 @@ const styles = {
   },
   formTextarea: {
     padding: "8px 12px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
     borderRadius: "8px",
     fontSize: "13px",
     transition: "all 0.3s ease",
     outline: "none",
     background: "#fff",
     resize: "vertical",
-    fontFamily: "'Inter', sans-serif",
     width: "100%",
     boxSizing: "border-box",
   },
@@ -2406,7 +2405,7 @@ const styles = {
     justifyContent: "flex-end",
     gap: "10px",
     paddingTop: "16px",
-    borderTop: "2px solid #e5e7eb",
+    borderTop: "2px solid #ECE7DB",
     flexWrap: "wrap",
   },
   mobileFormActions: {
@@ -2414,22 +2413,22 @@ const styles = {
     flexDirection: "column",
     gap: "10px",
     paddingTop: "16px",
-    borderTop: "2px solid #e5e7eb",
+    borderTop: "2px solid #ECE7DB",
   },
   cancelBtn: {
     padding: "10px 24px",
-    background: "#f1f5f9",
-    border: "2px solid #e5e7eb",
+    background: "#F0ECE2",
+    border: "2px solid #ECE7DB",
     borderRadius: "10px",
     cursor: "pointer",
     fontSize: "13px",
     fontWeight: "500",
-    color: "#475569",
+    color: "#6B675E",
     transition: "all 0.3s ease",
   },
   submitBtn: {
     padding: "10px 28px",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     color: "#fff",
     border: "none",
     borderRadius: "10px",
@@ -2440,19 +2439,19 @@ const styles = {
     alignItems: "center",
     gap: "6px",
     transition: "all 0.3s ease",
-    boxShadow: "0 4px 20px rgba(255, 150, 26, 0.3)",
+    boxShadow: "0 1px 2px rgba(17, 17, 17, 0.04)",
   },
   emptyRow: {
     textAlign: "center",
     padding: "40px 16px",
-    color: "#94a3b8",
+    color: "#9A958B",
     display: "flex",
     flexDirection: "column",
     alignItems: "center",
     gap: "10px",
   },
   emptyBtn: {
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     color: "#fff",
     border: "none",
     padding: "10px 24px",
@@ -2467,11 +2466,11 @@ const styles = {
     alignItems: "center",
     gap: "12px",
     padding: "14px",
-    borderTop: "1px solid #e5e7eb",
+    borderTop: "1px solid #ECE7DB",
   },
   pageBtn: {
     padding: "6px 14px",
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     border: "none",
     borderRadius: "8px",
     cursor: "pointer",
@@ -2482,7 +2481,7 @@ const styles = {
   },
   pageInfo: {
     fontSize: "13px",
-    color: "#475569",
+    color: "#6B675E",
     fontWeight: "500",
   },
   applicantCell: {
@@ -2494,7 +2493,7 @@ const styles = {
     width: "36px",
     height: "36px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -2505,7 +2504,7 @@ const styles = {
   },
   applicantContact: {
     fontSize: "11px",
-    color: "#64748b",
+    color: "#6B675E",
     display: "flex",
     alignItems: "center",
     gap: "4px",
@@ -2523,7 +2522,7 @@ const styles = {
     width: "56px",
     height: "56px",
     borderRadius: "50%",
-    background: "linear-gradient(135deg, #f9c349 0%, #ff961a 100%)",
+    background: "#F9C349",
     display: "flex",
     alignItems: "center",
     justifyContent: "center",
@@ -2535,7 +2534,7 @@ const styles = {
   detailName: {
     fontSize: "18px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
   },
   detailGrid: {
@@ -2549,25 +2548,25 @@ const styles = {
     alignItems: "center",
     gap: "6px",
     fontSize: "13px",
-    color: "#475569",
+    color: "#6B675E",
     padding: "6px 10px",
-    background: "#f8fafc",
+    background: "#FAF8F3",
     borderRadius: "8px",
   },
   detailSubtitle: {
     fontSize: "15px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     marginTop: "14px",
     marginBottom: "6px",
   },
   coverLetter: {
-    background: "#f8fafc",
+    background: "#FAF8F3",
     padding: "14px",
     borderRadius: "8px",
     lineHeight: "1.6",
     fontSize: "13px",
-    color: "#334155",
+    color: "#111111",
     marginBottom: "14px",
   },
   detailLinks: {
@@ -2578,10 +2577,10 @@ const styles = {
   },
   detailLink: {
     padding: "6px 14px",
-    background: "#f1f5f9",
+    background: "#F0ECE2",
     borderRadius: "8px",
     textDecoration: "none",
-    color: "#475569",
+    color: "#6B675E",
     fontSize: "12px",
     display: "inline-flex",
     alignItems: "center",
@@ -2592,10 +2591,10 @@ const styles = {
     marginBottom: "20px",
   },
   previewCard: {
-    background: "#f8fafc",
+    background: "#FAF8F3",
     padding: "16px",
     borderRadius: "10px",
-    border: "2px solid #e5e7eb",
+    border: "2px solid #ECE7DB",
   },
   previewHeader: {
     display: "flex",
@@ -2608,7 +2607,7 @@ const styles = {
   previewTitle: {
     fontSize: "16px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     margin: 0,
   },
   previewBadges: {
@@ -2621,8 +2620,8 @@ const styles = {
     gap: "12px",
     marginBottom: "10px",
     padding: "10px 0",
-    borderTop: "1px solid #e5e7eb",
-    borderBottom: "1px solid #e5e7eb",
+    borderTop: "1px solid #ECE7DB",
+    borderBottom: "1px solid #ECE7DB",
     fontSize: "13px",
   },
   mobilePreviewDetails: {
@@ -2630,20 +2629,20 @@ const styles = {
     gridTemplateColumns: "1fr 1fr",
     gap: "8px",
     padding: "10px 0",
-    borderTop: "1px solid #e5e7eb",
-    borderBottom: "1px solid #e5e7eb",
+    borderTop: "1px solid #ECE7DB",
+    borderBottom: "1px solid #ECE7DB",
     fontSize: "12px",
   },
   publishOptions: {
-    background: "#f8fafc",
+    background: "#FAF8F3",
     padding: "16px",
     borderRadius: "10px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
   },
   publishOptionsTitle: {
     fontSize: "14px",
     fontWeight: "600",
-    color: "#0f172a",
+    color: "#111111",
     marginBottom: "12px",
   },
   publishGrid: {
@@ -2664,7 +2663,7 @@ const styles = {
     padding: "10px",
     background: "#fff",
     borderRadius: "8px",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     transition: "all 0.3s ease",
     fontSize: "13px",
   },
@@ -2678,7 +2677,7 @@ const styles = {
   },
   mobileJobCard: {
     background: "#fff",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     borderRadius: "12px",
     padding: "14px",
     boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
@@ -2707,15 +2706,15 @@ const styles = {
     gap: "6px",
     marginBottom: "12px",
     padding: "8px 0",
-    borderTop: "1px solid #f1f5f9",
-    borderBottom: "1px solid #f1f5f9",
+    borderTop: "1px solid #F0ECE2",
+    borderBottom: "1px solid #F0ECE2",
   },
   mobileJobDetail: {
     display: "flex",
     alignItems: "center",
     gap: "4px",
     fontSize: "12px",
-    color: "#475569",
+    color: "#6B675E",
   },
   mobileJobActions: {
     display: "flex",
@@ -2724,7 +2723,7 @@ const styles = {
   mobileActionBtn: {
     flex: 1,
     padding: "6px 10px",
-    background: "#3b82f6",
+    background: "#2B7FC0",
     color: "#fff",
     border: "none",
     borderRadius: "8px",
@@ -2745,7 +2744,7 @@ const styles = {
   },
   mobileAppCard: {
     background: "#fff",
-    border: "1px solid #e5e7eb",
+    border: "1px solid #ECE7DB",
     borderRadius: "12px",
     padding: "12px",
     width: "100%",
@@ -2760,7 +2759,7 @@ const styles = {
     display: "flex",
     gap: "12px",
     fontSize: "12px",
-    color: "#64748b",
+    color: "#6B675E",
     marginBottom: "10px",
     flexWrap: "wrap",
   },
@@ -2770,4 +2769,4 @@ const styles = {
   },
 };
 
-export default AdminJobsManager;
+export default withTdcTheme(AdminJobsManager);
