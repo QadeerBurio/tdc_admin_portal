@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import Ico from "../portal/Ico";
+import { TOKEN } from "../portal/tokens";
 import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, toast } from "../portal/kit";
 import "./styles/AdminUserList.css";
 
@@ -290,8 +291,8 @@ export default function AdminUserList({ role, title }) {
         width: 400,
         margin: 2,
         color: {
-          dark: '#111111',
-          light: '#FFFFFF'
+          dark: TOKEN.ink,
+          light: TOKEN.card
         },
         errorCorrectionLevel: 'H'
       });

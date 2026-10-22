@@ -33,7 +33,7 @@
   transition: all 0.5s cubic-bezier(0.34, 1.56, 0.64, 1);
   cursor: pointer;
   backdrop-filter: blur(10px);
-  background: #FFFFFF;
+  background: var(--card);
 }
 
 .stat-card:hover {
@@ -58,13 +58,13 @@
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: #6B675E;
+  color: var(--muted);
 }
 
 .stat-value {
   font-size: 2.2rem;
   font-weight: 800;
-  color: #111111;
+  color: var(--ink);
   margin-top: 4px;
 }
 
@@ -106,10 +106,10 @@
 }
 
 .student-avatar {
-  background: #111111;
+  background: var(--ink);
   width: 36px;
   height: 36px;
-  color: #FFFFFF;
+  color: var(--card);
   font-size: 13px;
   font-weight: 700;
   border-radius: 50%;
@@ -120,7 +120,7 @@
 
 .student-name {
   font-weight: 600;
-  color: #111111;
+  color: var(--ink);
 }
 
 /* ─── Empty State ────────────────────────────────────────────────── */

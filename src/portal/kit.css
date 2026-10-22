@@ -7,7 +7,7 @@
 .tdcp .k-spin.sm { width: 16px; height: 16px; border-width: 2px; }
 .tdcp .k-spin.md { width: 24px; height: 24px; }
 .tdcp .k-spin.lg { width: 40px; height: 40px; border-width: 3px; }
-.tdcp .k-spin.on-dark { border-color: rgba(255, 255, 255, 0.35); border-top-color: #FFFFFF; }
+.tdcp .k-spin.on-dark { border-color: rgba(255, 255, 255, 0.35); border-top-color: var(--card); }
 .tdcp .k-page-loading { min-height: 240px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 14px; color: var(--muted); font-size: 14.5px; padding: 32px 16px; text-align: center; }
 @keyframes tdcp-shimmer { 0% { opacity: .55; } 50% { opacity: 1; } 100% { opacity: .55; } }
 .tdcp .k-skel { display: block; border-radius: 10px; background: var(--line-soft); animation: tdcp-shimmer 1.4s ease-in-out infinite; }
@@ -18,7 +18,7 @@
 .tdcp .k-btn.sm { height: 36px; padding: 0 14px; border-radius: 18px; font-size: 13.5px; }
 .tdcp .k-btn.lg { height: 52px; padding: 0 24px; border-radius: 26px; font-size: 15.5px; }
 .tdcp .k-btn.block { width: 100%; }
-.tdcp .k-btn.primary { background: var(--ink); color: #FFFFFF; }
+.tdcp .k-btn.primary { background: var(--ink); color: var(--card); }
 .tdcp .k-btn.primary:hover:not(:disabled) { opacity: 0.88; }
 .tdcp .k-btn.secondary { background: var(--card); color: var(--ink); border-color: var(--line); }
 .tdcp .k-btn.secondary:hover:not(:disabled) { background: var(--sand); }
@@ -27,7 +27,7 @@
 .tdcp .k-btn.ghost { background: transparent; color: var(--ink); }
 .tdcp .k-btn.ghost:hover:not(:disabled) { background: var(--sand); }
 .tdcp .k-btn.danger { background: var(--danger-bg); color: var(--danger); }
-.tdcp .k-btn.danger:hover:not(:disabled) { background: #FDE3E1; }
+.tdcp .k-btn.danger:hover:not(:disabled) { background: var(--red-bg); }
 .tdcp .k-btn.success { background: var(--success-bg); color: var(--success); }
 .tdcp .k-btn:disabled { opacity: .5; cursor: not-allowed; }
 .tdcp .k-icon-btn { width: 36px; height: 36px; border-radius: 18px; border: 1px solid var(--line); background: var(--card); color: var(--ink); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; flex: none; padding: 0; }
@@ -45,7 +45,7 @@
 .tdcp .k-error { font-size: 12.5px; color: var(--danger); }
 .tdcp .k-input, .tdcp .k-select, .tdcp .k-textarea { width: 100%; min-width: 0; height: 44px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 0 14px; font-family: var(--body); font-size: 14.5px; box-sizing: border-box; transition: border-color .15s ease; }
 .tdcp .k-textarea { height: auto; min-height: 104px; padding: 12px 14px; line-height: 1.5; resize: vertical; }
-.tdcp .k-input::placeholder, .tdcp .k-textarea::placeholder { color: #9A958B; }
+.tdcp .k-input::placeholder, .tdcp .k-textarea::placeholder { color: var(--faint); }
 .tdcp .k-input:focus, .tdcp .k-select:focus, .tdcp .k-textarea:focus { outline: none; border-color: var(--ink); }
 .tdcp .k-input.invalid, .tdcp .k-select.invalid, .tdcp .k-textarea.invalid { border-color: var(--danger); }
 .tdcp .k-select { appearance: none; padding-right: 40px; cursor: pointer; background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23111111' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E"); background-repeat: no-repeat; background-position: right 14px center; }
@@ -63,7 +63,7 @@
 .tdcp .k-dd-btn { width: 100%; min-height: 44px; border-radius: 14px; border: 1px solid var(--line); background: var(--card); color: var(--ink); padding: 6px 40px 6px 14px; font-family: var(--body); font-size: 14.5px; text-align: left; cursor: pointer; display: flex; align-items: center; flex-wrap: wrap; gap: 6px; position: relative; }
 .tdcp .k-dd-btn:focus { outline: none; border-color: var(--ink); }
 .tdcp .k-dd-btn .k-dd-caret { position: absolute; right: 14px; top: 50%; transform: translateY(-50%); line-height: 0; }
-.tdcp .k-dd-btn .k-dd-ph { color: #9A958B; }
+.tdcp .k-dd-btn .k-dd-ph { color: var(--faint); }
 .tdcp .k-dd-pop { position: absolute; z-index: 70; left: 0; right: 0; top: calc(100% + 6px); background: var(--card); border: 1px solid var(--line); border-radius: 16px; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.08); padding: 6px; max-height: 300px; display: flex; flex-direction: column; }
 .tdcp .k-dd-pop .k-input { height: 38px; margin-bottom: 4px; flex: 0 0 auto; }
 .tdcp .k-dd-list { overflow-y: auto; flex: 1 1 auto; min-height: 0; }
@@ -88,7 +88,7 @@
 .tdcp .k-tab .k-count { height: 22px; min-width: 22px; padding: 0 7px; border-radius: 11px; background: var(--sand); font-size: 12px; font-weight: 700; display: inline-flex; align-items: center; justify-content: center; }
 .tdcp .k-seg { display: inline-flex; gap: 4px; padding: 4px; border-radius: 22px; background: var(--sand); flex-wrap: wrap; }
 .tdcp .k-seg button { height: 34px; padding: 0 14px; border-radius: 17px; border: 0; background: transparent; font-family: var(--body); font-weight: 600; font-size: 13.5px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
-.tdcp .k-seg button[aria-pressed="true"] { background: var(--ink); color: #FFFFFF; }
+.tdcp .k-seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
 
 /* ---------- modal, drawer ---------- */
 .tdcp.k-overlay { position: fixed; inset: 0; z-index: 1300; background: rgba(17, 17, 17, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
@@ -107,11 +107,11 @@
 
 /* ---------- toast ---------- */
 .tdcp.k-toasts { position: fixed; z-index: 1400; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: min(380px, calc(100vw - 32px)); background: transparent; pointer-events: none; }
-.tdcp .k-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 10px; padding: 12px 12px 12px 14px; border-radius: 16px; background: var(--ink); color: #FFFFFF; font-size: 14px; line-height: 1.45; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.2); white-space: pre-line; }
+.tdcp .k-toast { pointer-events: auto; display: flex; align-items: flex-start; gap: 10px; padding: 12px 12px 12px 14px; border-radius: 16px; background: var(--ink); color: var(--card); font-size: 14px; line-height: 1.45; box-shadow: 0 16px 40px rgba(17, 17, 17, 0.2); white-space: pre-line; }
 .tdcp .k-toast .k-toast-msg { flex: 1; overflow-wrap: anywhere; }
 .tdcp .k-toast button { border: 0; background: none; color: inherit; opacity: .7; cursor: pointer; padding: 2px; line-height: 0; }
-.tdcp .k-toast.ok .k-toast-dot { background: #2E8B3E; }
-.tdcp .k-toast.bad .k-toast-dot { background: #D9443F; }
+.tdcp .k-toast.ok .k-toast-dot { background: var(--green); }
+.tdcp .k-toast.bad .k-toast-dot { background: var(--red); }
 .tdcp .k-toast .k-toast-dot { width: 8px; height: 8px; border-radius: 4px; background: var(--yellow); margin-top: 6px; flex: none; }
 
 /* ---------- table, empty state ---------- */
@@ -136,13 +136,13 @@
 .tdcp .k-card-head h3 { margin: 0; font-size: 17px; font-weight: 700; flex: 1; }
 .tdcp .k-stat { background: var(--card); border: 1px solid var(--line); border-radius: 20px; padding: 16px; text-align: left; font-family: var(--body); color: var(--ink); display: flex; flex-direction: column; gap: 2px; min-width: 0; }
 .tdcp button.k-stat { cursor: pointer; }
-.tdcp button.k-stat:hover { border-color: #D9D2C2; }
+.tdcp button.k-stat:hover { border-color: var(--line); }
 .tdcp .k-stat[aria-pressed="true"] { border-color: var(--ink); box-shadow: inset 0 0 0 1px var(--ink); }
 .tdcp .k-stat .k-stat-ico { margin-bottom: 10px; line-height: 0; }
 .tdcp .k-stat .k-stat-lbl { font-size: 13.5px; color: var(--muted); }
 .tdcp .k-stat .k-stat-num { font-family: var(--heading); font-weight: 800; font-size: 26px; line-height: 1.2; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
 .tdcp .k-stat .k-stat-sub { font-size: 12px; color: var(--muted); }
-.tdcp .k-stat.dark { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
+.tdcp .k-stat.dark { background: var(--ink); border-color: var(--ink); color: var(--card); }
 .tdcp .k-stat.dark .k-stat-lbl, .tdcp .k-stat.dark .k-stat-sub { color: rgba(255, 255, 255, 0.75); }
 .tdcp .k-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
 .tdcp .k-page { display: flex; flex-direction: column; gap: 20px; width: 100%; min-width: 0; }
@@ -169,7 +169,7 @@
 .tdcp .k-pager { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; padding: 12px 16px; border-top: 1px solid var(--line-soft); font-size: 13.5px; color: var(--muted); }
 .tdcp .k-pager-btns { display: flex; gap: 6px; flex-wrap: wrap; }
 .tdcp .k-page-btn { min-width: 36px; height: 36px; padding: 0 8px; border-radius: 12px; border: 1px solid var(--line); background: var(--card); font-family: var(--body); font-weight: 600; font-size: 13.5px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; justify-content: center; gap: 0; }
-.tdcp .k-page-btn[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: #FFFFFF; }
+.tdcp .k-page-btn[aria-current="page"] { background: var(--ink); border-color: var(--ink); color: var(--card); }
 .tdcp .k-page-btn:disabled { opacity: 0.4; cursor: not-allowed; }
 /* a kit screen opened on its own route (no admin shell around it) */
 .tdcp.k-standalone { min-height: 100vh; background: var(--paper); padding: 28px 32px 48px; box-sizing: border-box; }

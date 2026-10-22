@@ -330,12 +330,12 @@ export default function AdminDashboard() {
           ) : todayDrop ? (
             <>
               <p style={{ margin: "10px 0 0", fontFamily: "var(--heading)", fontWeight: 700, fontSize: 18 }}>{todayDrop.title}</p>
-              {todayDrop.votes != null && <p style={{ margin: "6px 0 0", fontSize: 14, color: "#4A473F" }}>{fmt(todayDrop.votes)} {todayDrop.votes === 1 ? "vote" : "votes"} so far</p>}
+              {todayDrop.votes != null && <p style={{ margin: "6px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>{fmt(todayDrop.votes)} {todayDrop.votes === 1 ? "vote" : "votes"} so far</p>}
             </>
           ) : (
-            <p style={{ margin: "10px 0 0", fontSize: 14, color: "#4A473F" }}>no drop scheduled for today.</p>
+            <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>no drop scheduled for today.</p>
           )}
-          <button type="button" className="tdcp-btn tdcp-btn-secondary" style={{ marginTop: 14, borderColor: "#FFFFFF" }} onClick={() => go("engagement_drops")}>drops schedule</button>
+          <button type="button" className="tdcp-btn tdcp-btn-secondary" style={{ marginTop: 14, borderColor: "var(--card)" }} onClick={() => go("engagement_drops")}>drops schedule</button>
         </section>
       </div>
     </>
@@ -404,7 +404,7 @@ export default function AdminDashboard() {
         <header className="tdcp-topbar">
           <img src={logoInk} alt="tdc." />
           <span style={{ fontWeight: 700, fontSize: 14 }}>{pageLabel(activePage) || "admin"}</span>
-          <button type="button" className="tdcp-icon-btn" onClick={() => setIsMobileMenuOpen(true)} aria-label="open menu" aria-expanded={isMobileMenuOpen} style={{ width: 44, height: 44, borderRadius: 22, border: "1px solid #ECE7DB", background: "#FFFFFF" }}>
+          <button type="button" className="tdcp-icon-btn" onClick={() => setIsMobileMenuOpen(true)} aria-label="open menu" aria-expanded={isMobileMenuOpen} style={{ width: 44, height: 44, borderRadius: 22, border: "1px solid var(--line)", background: "var(--card)" }}>
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>

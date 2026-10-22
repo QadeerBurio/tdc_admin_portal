@@ -4,7 +4,7 @@
 
 import React, { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import api, { engagementApi } from '../services/api';
-import Ico from '../portal/Ico';
+import Ico, { TONES } from '../portal/Ico';
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, Dropdown, Tabs, Segmented, Card, Table, EmptyState, Pill, toast, confirmDialog } from '../portal/kit';
 import './styles/TestPush.css';
 
@@ -19,35 +19,35 @@ const ASSET_BASE =
 
 // ─────────────────────────────────────────────
 // MOOD ICON MAP: each mood has emoji (fallback),
-// label, color, and a dedicated PNG image URL
+// label, an Ico tone, and a dedicated PNG image URL
 // ─────────────────────────────────────────────
 const moodImage = (mood) => `${ASSET_BASE}/dots/${mood}.png`;
 
 const MOODS = {
   // 🙂 Happy / positive
-  sorted:   { emoji: '😊', label: 'sorted',   color: '#1E6B3A' },
-  excited:  { emoji: '🤩', label: 'excited',  color: '#C77700' },
-  hype:     { emoji: '😆', label: 'hype',     color: '#C77700' },
-  smug:     { emoji: '😏', label: 'smug',     color: '#2B7FC0' },
+  sorted:   { emoji: '😊', label: 'sorted',   tone: 'green' },
+  excited:  { emoji: '🤩', label: 'excited',  tone: 'orange' },
+  hype:     { emoji: '😆', label: 'hype',     tone: 'orange' },
+  smug:     { emoji: '😏', label: 'smug',     tone: 'blue' },
 
   // 😅 Wary / cheeky
-  cheeky:   { emoji: '😜', label: 'cheeky',   color: '#C2185B' },
-  sus:      { emoji: '😒', label: 'sus',      color: '#C77700' },
+  cheeky:   { emoji: '😜', label: 'cheeky',   tone: 'pink' },
+  sus:      { emoji: '😒', label: 'sus',      tone: 'orange' },
 
   // 😟 Negative / worried
-  broke:    { emoji: '😢', label: 'broke',    color: '#9A958B' },
-  panic:    { emoji: '😰', label: 'panic',    color: '#B42318' },
-  shock:    { emoji: '😳', label: 'shock',    color: '#C77700' },
-  shook:    { emoji: '😮', label: 'shook',    color: '#8E44AD' },
-  urgent:   { emoji: '😨', label: 'urgent',   color: '#D9443F' },
+  broke:    { emoji: '😢', label: 'broke',    tone: 'sand' },
+  panic:    { emoji: '😰', label: 'panic',    tone: 'red' },
+  shock:    { emoji: '😳', label: 'shock',    tone: 'orange' },
+  shook:    { emoji: '😮', label: 'shook',    tone: 'purple' },
+  urgent:   { emoji: '😨', label: 'urgent',   tone: 'coral' },
 
   // 💤 Neutral / sleepy / money / ghost
-  sleepy:   { emoji: '😴', label: 'sleepy',   color: '#8E44AD' },
-  ghost:    { emoji: '😑', label: 'ghost',    color: '#6B675E' },
-  money:    { emoji: '🤑', label: 'money',    color: '#1E6B3A' },
+  sleepy:   { emoji: '😴', label: 'sleepy',   tone: 'purple' },
+  ghost:    { emoji: '😑', label: 'ghost',    tone: 'sand' },
+  money:    { emoji: '🤑', label: 'money',    tone: 'green' },
 
   // Fallback
-  default:  { emoji: '✨', label: 'default',  color: '#C77700' },
+  default:  { emoji: '✨', label: 'default',  tone: 'orange' },
 };
 
 
@@ -150,7 +150,7 @@ function MoodPill({ mood, size = 'md' }) {
   const px = size === 'sm' ? 28 : size === 'lg' ? 48 : 36;
 
   return (
-    <span className={`tp-mood ${size}`} title={m.label} style={{ width: px, height: px, borderColor: m.color }}>
+    <span className={`tp-mood ${size}`} title={m.label} style={{ width: px, height: px, borderColor: TONES[m.tone][1] }}>
       {imgFailed ? (
         <span>{m.emoji}</span>
       ) : (

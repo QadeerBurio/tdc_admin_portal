@@ -6,6 +6,7 @@ import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import QRCode from 'qrcode';
 import Ico from '../portal/Ico';
+import { TOKEN } from '../portal/tokens';
 import { PageLoading, PageHeader, Button, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
 import './styles/Brands.css';
 
@@ -309,8 +310,8 @@ const BrandApprovalScreen = () => {
         width: 400,
         margin: 2,
         color: {
-          dark: '#111111',
-          light: '#FFFFFF'
+          dark: TOKEN.ink,
+          light: TOKEN.card
         },
         errorCorrectionLevel: 'H'
       });
