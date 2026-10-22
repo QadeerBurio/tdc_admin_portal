@@ -112,7 +112,7 @@ export function Dropdown({ options = [], value, onChange, placeholder = "selectâ
         {multiple
           ? (selected.length ? selected.map((o) => (
             <span className="k-tag" key={o.value}>{o.label}
-              <button type="button" aria-label={`remove ${o.label}`} onClick={(e) => { e.stopPropagation(); pick(o); }}><Ico kind="close" tone="plain" size={12} /></button>
+              <span role="button" tabIndex={-1} className="k-tag-x" aria-label={`remove ${o.label}`} onClick={(e) => { e.stopPropagation(); pick(o); }}><Ico kind="close" tone="plain" size={12} /></span>
             </span>)) : <span className="k-dd-ph">{placeholder}</span>)
           : selected ? <span>{selected.label}</span> : <span className="k-dd-ph">{placeholder}</span>}
         <span className="k-dd-caret"><Ico kind="chevronDown" tone="plain" size={16} /></span>
