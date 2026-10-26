@@ -26,8 +26,9 @@ const NAV_FOR_PATH = {
   "/verifyrward": "reward",
   "/savinghistory": "redemptions",
   "/claimedUsers": "redemptions",
+  "/settings": "settings",
 };
-const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", reward: "verify reward", redemptions: "redemptions" };
+const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
 
 export default function Home() {
   const { token, user, logout } = useContext(AuthContext);
@@ -219,6 +220,7 @@ export default function Home() {
         portalLabel="brand portal"
         onLogout={handleLogout}
         onClose={isMobileMenuOpen ? () => setIsMobileMenuOpen(false) : undefined}
+        settingsHref="/settings"
       />
       <div className="tdcp-scrim" onClick={() => setIsMobileMenuOpen(false)} aria-hidden="true" />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>

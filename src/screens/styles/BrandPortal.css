@@ -131,3 +131,12 @@
 .tdcp .cu-avatar { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; }
 .tdcp .cu-avatar.big { width: 56px; height: 56px; flex-basis: 56px; border-radius: 28px; font-size: 18px; }
 .tdcp .cu-filters { padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; align-items: end; }
+/* settings */
+.tdcp .bs-grid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .tdcp .bs-grid { grid-template-columns: minmax(0, 1fr); } }
+.tdcp .bs-card { padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.tdcp .bs-who { align-items: center; text-align: center; }
+.tdcp .bs-who .k-hint { margin: -8px 0 0; }
+.tdcp .bs-avatar { width: 96px; height: 96px; border-radius: 48px; background: var(--yellow); color: var(--ink); overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 40px; text-transform: lowercase; }
+.tdcp .bs-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .bs-card .k-note a { color: var(--ink); font-weight: 700; }

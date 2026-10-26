@@ -110,7 +110,7 @@ export default function PortalNav({ menu = ADMIN_MENU, active, onSelect, userNam
           <span>{userRole}</span>
         </div>
         {settingsHref && (
-          <Link to={settingsHref} className="tdcp-icon-btn" aria-label="settings" title="settings">
+          <Link to={settingsHref} className="tdcp-icon-btn" aria-label="settings" title="settings" onClick={onSelect}>
             <Ico kind="settings" tone="plain" size={18} />
           </Link>
         )}

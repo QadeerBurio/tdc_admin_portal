@@ -71,6 +71,7 @@ const TestPush = lazy(() => import("./screens/TestPush"));
 const BrandCampaigns = lazy(() => import("./screens/BrandCampaigns"));
 const VerifyReward = lazy(() => import("./screens/VerifyReward"));
 const MyOffers = lazy(() => import("./screens/MyOffers"));
+const BrandSettings = lazy(() => import("./screens/BrandSettings"));
 const BrandDashboard = lazy(() => import("./screens/Home").then((m) => ({ default: m.BrandDashboard })));
 
 export default function AppNavigator() {
@@ -194,6 +195,7 @@ export default function AppNavigator() {
         <Route path="/Branches" element={<Branches />} />
         <Route path="/brand-campaigns" element={<BrandCampaigns />} />
         <Route path="/verifyrward" element={<VerifyReward />} />
+        <Route path="/settings" element={<BrandSettings />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/home" replace />} />
