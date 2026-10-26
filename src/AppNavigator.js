@@ -49,6 +49,11 @@ const AdminPackage = lazy(() => import("./screens/AdminPackage"));
 const TravelDashboard = lazy(() => import("./screens/TravelDashboard"));
 const TravelerHome = lazy(() => import("./screens/TravelDashboard").then((m) => ({ default: m.TravelerHome })));
 const TravelPackages = lazy(() => import("./screens/travel/TravelPackages"));
+const PartnerBookings = lazy(() => import("./screens/travel/PartnerBookings"));
+const RedeemOffer = lazy(() => import("./screens/travel/RedeemOffer"));
+const TripHistory = lazy(() => import("./screens/travel/TripHistory"));
+const StudentSavings = lazy(() => import("./screens/travel/StudentSavings"));
+const TravelSettings = lazy(() => import("./screens/travel/TravelSettings"));
 const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
 const employerScreen = (name) => lazy(() => import("./screens/CompanyDashboard").then((m) => ({ default: m[name] })));
 const EmployerDashboard = employerScreen("EmployerDashboard");
@@ -161,6 +166,11 @@ export default function AppNavigator() {
         <Route element={<TravelDashboard />}>
           <Route path="/traveler-dashboard" element={<TravelerHome />} />
           <Route path="/traveler/packages" element={<TravelPackages />} />
+          <Route path="/traveler/bookings" element={<PartnerBookings />} />
+          <Route path="/traveler/redeem" element={<RedeemOffer />} />
+          <Route path="/traveler/history" element={<TripHistory />} />
+          <Route path="/traveler/savings" element={<StudentSavings />} />
+          <Route path="/settings" element={<TravelSettings />} />
         </Route>
         <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />

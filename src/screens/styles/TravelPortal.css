@@ -108,3 +108,21 @@
 .tdcp .tr-bar-fill { width: 100%; border-radius: 8px 8px 0 0; background: var(--ink); }
 .tdcp .tr-bar span { font-size: 12px; color: var(--muted); }
 .tdcp .tr-bars-note { margin: 10px 0 0; font-size: 13.5px; }
+/* settings */
+.tdcp .tr-set-grid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .tdcp .tr-set-grid { grid-template-columns: minmax(0, 1fr); } }
+.tdcp .tr-set-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tdcp .tr-set-card { padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.tdcp .tr-set-card .tr-h2 { margin: 0; }
+.tdcp .tr-set-who { align-items: center; text-align: center; }
+.tdcp .tr-set-who .k-hint { margin: -8px 0 0; }
+.tdcp .tr-set-avatar { width: 96px; height: 96px; border-radius: 48px; background: var(--yellow); color: var(--ink); overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 40px; text-transform: lowercase; }
+.tdcp .tr-set-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .tr-set-card .k-note a { color: var(--ink); font-weight: 700; }
+.tdcp .tr-set-form { display: flex; flex-direction: column; gap: 14px; }
+/* status chips scroll sideways on narrow screens instead of wrapping into a block */
+@media (max-width: 700px) {
+  .tdcp[data-screen^="travel-"] .k-seg { flex-wrap: nowrap; overflow-x: auto; max-width: 100%; scrollbar-width: none; }
+  .tdcp[data-screen^="travel-"] .k-seg::-webkit-scrollbar { display: none; }
+  .tdcp[data-screen^="travel-"] .k-seg button { flex: 0 0 auto; }
+}
