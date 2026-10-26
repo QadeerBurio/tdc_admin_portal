@@ -47,6 +47,8 @@ const AdminPackageScreen = lazy(() => import("./screens/Traveling"));
 const CardManager = lazy(() => import("./screens/CardManager"));
 const AdminPackage = lazy(() => import("./screens/AdminPackage"));
 const TravelDashboard = lazy(() => import("./screens/TravelDashboard"));
+const TravelerHome = lazy(() => import("./screens/TravelDashboard").then((m) => ({ default: m.TravelerHome })));
+const TravelPackages = lazy(() => import("./screens/travel/TravelPackages"));
 const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
 const employerScreen = (name) => lazy(() => import("./screens/CompanyDashboard").then((m) => ({ default: m[name] })));
 const EmployerDashboard = employerScreen("EmployerDashboard");
@@ -155,7 +157,11 @@ export default function AppNavigator() {
     return (
       <PortalShell>
       <Routes>
-        <Route path="/traveler-dashboard" element={<TravelDashboard />} />
+        {/* travel partner portal: the TravelDashboard shell (sidebar) around every travel screen, each on its own path */}
+        <Route element={<TravelDashboard />}>
+          <Route path="/traveler-dashboard" element={<TravelerHome />} />
+          <Route path="/traveler/packages" element={<TravelPackages />} />
+        </Route>
         <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>

@@ -1,0 +1,30 @@
+/* Travel partner portal (design/portal/Tr*): dashboard, packages and shared travel bits. Kit tokens only. */
+.tdcp a.k-btn { text-decoration: none; }
+.tdcp .tr-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.tdcp .tr-title > div { min-width: 0; }
+/* dashboard (TrDashboard) */
+.tdcp .tr-hero { border-radius: 28px; padding: 32px; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 24px; }
+.tdcp .tr-hero > div:first-child { min-width: 0; }
+.tdcp .tr-hey { margin: 0; font-size: 15px; color: var(--ink-soft); display: flex; align-items: center; gap: 8px; }
+.tdcp .tr-hey img { width: 28px; height: 28px; }
+.tdcp .tr-hero h1 { margin: 6px 0 0; font-family: var(--heading); font-weight: 800; font-size: 36px; letter-spacing: -1px; line-height: 1.1; }
+.tdcp .tr-hero-sub { margin: 8px 0 0; font-size: 15.5px; color: var(--ink-soft); }
+.tdcp .tr-hero .tr-hero-btn { border-color: var(--card); }
+@media (max-width: 600px) { .tdcp .tr-hero { padding: 22px; } .tdcp .tr-hero h1 { font-size: 28px; } }
+.tdcp .tr-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 400px), 1fr)); gap: 16px; align-items: start; }
+.tdcp .tr-list { overflow: hidden; }
+.tdcp .tr-list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 20px 22px 12px; }
+.tdcp .tr-list-head h2, .tdcp .tr-how h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; }
+.tdcp .tr-see { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.tdcp .tr-row { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid var(--line-soft); }
+.tdcp .tr-row-i { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 20px; background: var(--sand); display: inline-flex; align-items: center; justify-content: center; }
+.tdcp .tr-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; font-size: 13px; }
+.tdcp .tr-row-text b { font-size: 14.5px; overflow-wrap: anywhere; }
+.tdcp .tr-none { padding: 36px 24px; text-align: center; }
+.tdcp .tr-none img { width: 72px; height: 72px; }
+.tdcp .tr-none h2 { margin: 8px 0 0; font-family: var(--heading); font-weight: 700; font-size: 20px; }
+.tdcp .tr-none p { margin: 4px 0 14px; font-size: 14.5px; color: var(--muted); }
+.tdcp .tr-how { background: var(--yellow-soft); border-radius: 22px; padding: 22px; }
+.tdcp .tr-how ol { list-style: none; margin: 14px 0 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.tdcp .tr-how li { display: flex; gap: 12px; font-size: 14.5px; }
+.tdcp .tr-how li span { flex: 0 0 auto; width: 28px; height: 28px; border-radius: 14px; background: var(--ink); color: var(--card); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
