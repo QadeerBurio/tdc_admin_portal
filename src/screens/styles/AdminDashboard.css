@@ -7,7 +7,14 @@
   box-sizing: border-box;
 }
 
+/* public pages keep their original body (the portal tokens are not loaded there) */
 body {
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: rgb(248, 250, 252);
+}
+
+/* while a portal screen is on the page, the body uses the kit tokens */
+body:has(.tdcp-shell, .tdcp.k-page, .tdcp.k-standalone) {
   font-family: var(--body);
   background: var(--paper);
 }
