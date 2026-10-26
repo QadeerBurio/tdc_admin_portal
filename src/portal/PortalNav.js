@@ -1,6 +1,6 @@
-// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin and brand menus.
+// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin, brand and employer menus.
 // Admin items keep the admin dashboard's page ids, so selecting one switches the page inside /admin as before.
-// Items with a path (fifth field) are real links, so every brand screen has its own URL.
+// Items with a path (fifth field) are real links, so every brand and employer screen has its own URL.
 import React from "react";
 import { Link } from "react-router-dom";
 import Ico from "./Ico";
@@ -57,6 +57,20 @@ export const BRAND_MENU = [
     ],
   },
 ];
+// employer portal (design/portal/EmpDashboard ... EmpSettings), on today's paths; settings opens from the gear.
+export const EMPLOYER_MENU = [
+  {
+    title: "",
+    items: [
+      ["dashboard", "dashboard", "home", "orange", "/employee-dashboard"],
+      ["jobs", "jobs", "briefcase", "coral", "/employee-jobs"],
+      ["candidates", "candidates", "users", "blue", "/candidate"],
+      ["interviews", "interviews", "calendar", "purple", "/interviews"],
+      ["reports", "reports", "chart", "green", "/reports"],
+    ],
+  },
+];
+
 
 // label for a page id (used for the mobile top bar and page titles)
 export const pageLabel = (id) => {
