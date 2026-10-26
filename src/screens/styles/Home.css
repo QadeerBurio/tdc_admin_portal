@@ -10,8 +10,8 @@
 .dashboard-container {
   display: flex;
   height: 100vh;
-  background-color: #f8fafc;
-  font-family: 'Inter', system-ui, -apple-system, sans-serif;
+  background-color: var(--paper);
+  font-family: var(--body);
   overflow: hidden;
   position: relative;
 }
@@ -97,11 +97,11 @@
 /* ========== SIDEBAR STYLES ========== */
 .sidebar {
   width: 280px;
-  background: linear-gradient(135deg, #f3b245 0%, #ff961a 100%);
+  background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow) 100%);
   padding: 32px 20px;
   display: flex;
   flex-direction: column;
-  color: #fff;
+  color: var(--card);
   border-radius: 30px;
   margin: 20px 0 20px 20px;
   position: relative;
@@ -132,7 +132,7 @@
 }
 
 .logo-badge {
-  background-color: #1a1a1a;
+  background-color: var(--ink);
   width: 44px;
   height: 44px;
   border-radius: 16px;
@@ -163,7 +163,7 @@
 }
 
 .dot {
-  color: #ff961a;
+  color: var(--yellow);
 }
 
 .logo-text {
@@ -321,17 +321,17 @@
 }
 
 .content-wrapper::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: var(--sand);
   border-radius: 10px;
 }
 
 .content-wrapper::-webkit-scrollbar-thumb {
-  background: linear-gradient(135deg, #f3b245, #ff961a);
+  background: linear-gradient(135deg, var(--yellow), var(--yellow));
   border-radius: 10px;
 }
 
 .content-wrapper::-webkit-scrollbar-thumb:hover {
-  background: #ff961a;
+  background: var(--yellow);
 }
 
 /* ========== HOME SECTION ========== */
@@ -350,9 +350,9 @@
 
 .welcome-hero {
   padding: 48px;
-  background: linear-gradient(135deg, #ff961a 0%, #f3b245 100%);
+  background: linear-gradient(135deg, var(--yellow) 0%, var(--yellow) 100%);
   border-radius: 28px;
-  color: #fff;
+  color: var(--card);
   margin-bottom: 32px;
   position: relative;
   overflow: hidden;
@@ -443,10 +443,10 @@
 }
 
 .stat-card {
-  background: #fff;
+  background: var(--card);
   padding: 28px;
   border-radius: 24px;
-  border: 1px solid #f1f5f9;
+  border: 1px solid var(--sand);
   display: flex;
   align-items: center;
   gap: 20px;
@@ -474,7 +474,7 @@
 .stat-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 20px 30px -12px rgba(0, 0, 0, 0.12);
-  border-color: #ffe0b5;
+  border-color: var(--yellow-soft);
 }
 
 .card-icon-wrapper {
@@ -497,7 +497,7 @@
 
 .card-label {
   font-size: 12px;
-  color: #64748b;
+  color: var(--muted);
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 1px;
@@ -506,7 +506,7 @@
 .card-value {
   margin: 8px 0 6px 0;
   font-size: 32px;
-  color: #1e293b;
+  color: var(--ink);
   font-weight: 800;
 }
 
@@ -525,7 +525,7 @@
 .section-title {
   font-size: 20px;
   font-weight: 700;
-  color: #1e293b;
+  color: var(--ink);
   margin-bottom: 20px;
 }
 
@@ -540,7 +540,7 @@
   align-items: center;
   gap: 16px;
   padding: 16px;
-  background: #f8fafc;
+  background: var(--paper);
   border-radius: 20px;
   transition: all 0.3s ease;
   cursor: pointer;
@@ -548,7 +548,7 @@
 
 .activity-item:hover {
   transform: translateX(8px);
-  background: #fff;
+  background: var(--card);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -574,13 +574,13 @@
 
 .activity-text {
   font-weight: 600;
-  color: #1e293b;
+  color: var(--ink);
   margin-bottom: 4px;
 }
 
 .activity-time {
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--faint);
 }
 
 /* Responsive Design */
