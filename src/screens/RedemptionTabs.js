@@ -1,4 +1,5 @@
-// Tabs shared by redemptions and claimed students (design/portal/BrRedemptions): claimed students lives inside redemptions.
+// Tabs on claimed students (design/portal/BrRedemptions). Claimed students is hidden from the brand menu and from
+// redemptions; the /claimedUsers route and file are kept, and these tabs lead back to redemptions from there.
 import React from "react";
 import { Link, useLocation } from "react-router-dom";
 import Ico from "../portal/Ico";

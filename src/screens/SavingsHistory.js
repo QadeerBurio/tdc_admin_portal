@@ -4,7 +4,6 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, Select, DateInput, SearchInput, Segmented, StatCard, EmptyState, PageLoading, Pill } from "../portal/kit";
-import RedemptionTabs from "./RedemptionTabs";
 import "./styles/BrandPortal.css";
 
 const SavingsHistory = () => {
@@ -286,8 +285,6 @@ const SavingsHistory = () => {
           <Button icon="download" onClick={downloadCSV} disabled={filteredHistory.length === 0}>export report</Button>
         </div>
       </div>
-
-      <RedemptionTabs />
 
       <div className="k-stats">
         <StatCard label="redemptions" value={brandStats.totalTransactions} icon="receipt" tone="blue" />
