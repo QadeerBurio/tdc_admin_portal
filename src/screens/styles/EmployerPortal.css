@@ -69,3 +69,27 @@
 .tdcp .ei-none p { margin: 0 0 10px; font-size: 15px; color: var(--muted); max-width: 380px; }
 /* forms in employer modals and settings */
 .tdcp .emp-form { display: flex; flex-direction: column; gap: 14px; }
+/* reports (EmpReports) */
+.tdcp .er-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; }
+.tdcp .er-card { padding: 22px; min-width: 0; }
+.tdcp .er-card-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: baseline; gap: 6px 12px; }
+.tdcp .er-card-head h2, .tdcp .er-glance h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; }
+.tdcp .er-card-head span { font-size: 13px; color: var(--muted); }
+.tdcp .er-bars { height: 200px; margin-top: 18px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.tdcp .er-bar { display: flex; flex-direction: column; align-items: center; gap: 6px; min-width: 0; }
+.tdcp .er-bar b { font-size: 12.5px; }
+.tdcp .er-bar-track { flex: 1; width: 100%; display: flex; align-items: flex-end; }
+.tdcp .er-bar-fill { width: 100%; border-radius: 8px 8px 2px 2px; background: var(--ink); }
+.tdcp .er-bar span { font-size: 12px; color: var(--muted); }
+.tdcp .er-depts { margin-top: 18px; display: flex; flex-direction: column; gap: 16px; }
+.tdcp .er-dept-row { display: flex; justify-content: space-between; gap: 10px; font-size: 14.5px; }
+.tdcp .er-dept-row b { font-weight: 600; overflow-wrap: anywhere; }
+.tdcp .er-dept-row span { color: var(--muted); white-space: nowrap; }
+.tdcp .er-dept-track { height: 8px; border-radius: 4px; background: var(--sand); margin-top: 8px; overflow: hidden; }
+.tdcp .er-dept-track div { height: 8px; border-radius: 4px; background: var(--ink); }
+.tdcp .er-glance { background: var(--yellow-soft); border-radius: 22px; padding: 22px; }
+.tdcp .er-glance h2 span { color: var(--ink); }
+.tdcp .er-glance-grid { margin-top: 14px; display: grid; grid-template-columns: repeat(auto-fit, minmax(160px, 1fr)); gap: 12px; }
+.tdcp .er-glance-grid div { background: var(--card); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; }
+.tdcp .er-glance-grid b { font-family: var(--heading); font-weight: 800; font-size: 26px; }
+.tdcp .er-glance-grid span { font-size: 13.5px; color: var(--muted); }
