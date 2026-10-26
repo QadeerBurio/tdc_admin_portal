@@ -106,3 +106,17 @@
 .tdcp .bv-row.off { color: var(--success); }
 .tdcp .bv-row.total { border-top: 1px solid var(--line); padding-top: 10px; font-family: var(--heading); font-weight: 800; font-size: 18px; }
 .tdcp .bp-sub { margin: 4px 0 0; font-size: 13px; font-weight: 700; color: var(--muted); }
+/* verify reward */
+.tdcp .vr-input-row { display: flex; gap: 8px; }
+.tdcp .vr-input-row .vr-code { flex: 1; min-width: 0; font-family: var(--heading); font-weight: 700; letter-spacing: 1.5px; }
+.tdcp .vr-note { display: flex; align-items: flex-start; justify-content: space-between; gap: 10px; overflow-wrap: anywhere; }
+.tdcp .vr-result { border-radius: 18px; border: 1px solid var(--line); padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.tdcp .vr-result.ok { background: var(--success-bg); border-color: var(--success-bg); }
+.tdcp .vr-result.fail { background: var(--danger-bg); border-color: var(--danger-bg); }
+.tdcp .vr-result-head { display: flex; align-items: center; gap: 12px; font-size: 14px; }
+.tdcp .vr-result-head b { font-family: var(--heading); font-size: 17px; }
+.tdcp .vr-mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 700; letter-spacing: .5px; }
+.tdcp .vr-how { margin: 0; padding: 0; list-style: none; display: flex; flex-direction: column; gap: 12px; font-size: 14px; }
+.tdcp .vr-how li { display: flex; gap: 12px; align-items: flex-start; }
+.tdcp .vr-how li span { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 13px; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
+.tdcp .vr-cell { display: flex; flex-direction: column; gap: 2px; }
