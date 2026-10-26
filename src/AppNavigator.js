@@ -48,9 +48,12 @@ const CardManager = lazy(() => import("./screens/CardManager"));
 const AdminPackage = lazy(() => import("./screens/AdminPackage"));
 const TravelDashboard = lazy(() => import("./screens/TravelDashboard"));
 const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
-const CandidatesManager = lazy(() => import("./screens/CandidateManager"));
-const InterviewsManager = lazy(() => import("./screens/InterviewsManager"));
-const ReportsManager = lazy(() => import("./screens/ReportsManager"));
+const employerScreen = (name) => lazy(() => import("./screens/CompanyDashboard").then((m) => ({ default: m[name] })));
+const EmployerDashboard = employerScreen("EmployerDashboard");
+const EmployerJobs = employerScreen("EmployerJobs");
+const EmployerCandidates = employerScreen("EmployerCandidates");
+const EmployerInterviews = employerScreen("EmployerInterviews");
+const EmployerReports = employerScreen("EmployerReports");
 const EventManagement = lazy(() => import("./screens/EventManagement"));
 const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
 const AllBrandsRevenue = lazy(() => import("./screens/AllBrandsRevenue"));
@@ -166,10 +169,14 @@ export default function AppNavigator() {
     return (
       <PortalShell>
       <Routes>
-        <Route path="/employee-dashboard" element={<CompanyDashboard />} />
-        <Route path="/candidate" element={<CandidatesManager />} />
-        <Route path="/interviews" element={<InterviewsManager />} />
-        <Route path="/reports" element={<ReportsManager />} />
+        {/* employer portal: the CompanyDashboard shell (sidebar) around every employer screen, each on its own path */}
+        <Route element={<CompanyDashboard />}>
+          <Route path="/employee-dashboard" element={<EmployerDashboard />} />
+          <Route path="/employee-jobs" element={<EmployerJobs />} />
+          <Route path="/candidate" element={<EmployerCandidates />} />
+          <Route path="/interviews" element={<EmployerInterviews />} />
+          <Route path="/reports" element={<EmployerReports />} />
+        </Route>
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>

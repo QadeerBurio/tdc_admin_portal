@@ -1,0 +1,24 @@
+/* Employer portal (design/portal/Emp*): dashboard and shared employer bits. Kit tokens only. */
+.tdcp a.k-btn { text-decoration: none; }
+.tdcp .emp-hey { margin: 0; font-size: 15px; color: var(--muted); display: flex; align-items: center; gap: 8px; }
+.tdcp .emp-hey img { width: 28px; height: 28px; }
+.tdcp .emp-dash .k-head h1 { margin-top: 2px; }
+.tdcp .emp-error { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 10px; }
+.tdcp .emp-dash-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 380px), 1fr)); gap: 16px; align-items: start; }
+.tdcp .emp-list { overflow: hidden; }
+.tdcp .emp-list-head { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; padding: 20px 22px 12px; }
+.tdcp .emp-list-head h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; }
+.tdcp .emp-see { font-size: 13.5px; font-weight: 600; color: var(--muted); }
+.tdcp .emp-row { display: flex; align-items: center; gap: 14px; padding: 14px 22px; border-top: 1px solid var(--line-soft); font-size: 14.5px; }
+.tdcp .emp-row-text { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 1px; font-size: 13px; }
+.tdcp .emp-row-text b { font-size: 14.5px; overflow-wrap: anywhere; }
+.tdcp .emp-i { width: 40px; height: 40px; flex: 0 0 40px; border-radius: 20px; background: var(--sand); color: var(--faint); display: inline-flex; align-items: center; justify-content: center; font-weight: 700; }
+.tdcp .emp-date { width: 48px; flex: 0 0 48px; border-radius: 14px; background: var(--yellow-soft); padding: 6px 0; display: flex; flex-direction: column; align-items: center; line-height: 1.1; }
+.tdcp .emp-date b { font-family: var(--heading); font-size: 20px; }
+.tdcp .emp-date span { font-size: 12px; color: var(--ink-soft); }
+.tdcp .emp-list .k-empty { border-top: 1px solid var(--line-soft); }
+.tdcp .emp-none { padding: 28px 22px 32px; border-top: 1px solid var(--line-soft); text-align: center; }
+.tdcp .emp-none img { width: 56px; height: 56px; display: block; margin: 0 auto 10px; }
+.tdcp .emp-none p { margin: 0; font-size: 14px; }
+.tdcp .emp-none .emp-none-t { font-weight: 700; font-size: 15px; }
+.tdcp .emp-none .k-muted { margin: 4px 0 14px; }
