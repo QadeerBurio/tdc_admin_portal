@@ -58,3 +58,4 @@
 .tdcp .br-pop-dot { width: 24px; height: 24px; }
 .tdcp .br-up-ico { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; }
 .tdcp .k-drop.invalid { border-color: var(--danger); }
+.tdcp .bo-banner .bo-img { aspect-ratio: auto; height: 180px; }
