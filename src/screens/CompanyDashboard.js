@@ -24,8 +24,9 @@ const NAV_FOR_PATH = {
   "/candidate": "candidates",
   "/interviews": "interviews",
   "/reports": "reports",
+  "/settings": "settings",
 };
-const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports" };
+const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", settings: "settings" };
 
 const CompanyDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -229,6 +230,7 @@ const CompanyDashboard = () => {
         portalLabel="employer"
         onLogout={handleLogout}
         onClose={isMobileMenuOpen ? () => setIsMobileMenuOpen(false) : undefined}
+        settingsHref="/settings"
       />
       <div className="tdcp-scrim" onClick={() => setIsMobileMenuOpen(false)} aria-hidden="true" />
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>

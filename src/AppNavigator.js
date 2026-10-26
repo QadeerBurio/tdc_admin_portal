@@ -54,6 +54,7 @@ const EmployerJobs = employerScreen("EmployerJobs");
 const EmployerCandidates = employerScreen("EmployerCandidates");
 const EmployerInterviews = employerScreen("EmployerInterviews");
 const EmployerReports = employerScreen("EmployerReports");
+const EmployerSettings = lazy(() => import("./screens/EmployerSettings"));
 const EventManagement = lazy(() => import("./screens/EventManagement"));
 const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
 const AllBrandsRevenue = lazy(() => import("./screens/AllBrandsRevenue"));
@@ -176,6 +177,7 @@ export default function AppNavigator() {
           <Route path="/candidate" element={<EmployerCandidates />} />
           <Route path="/interviews" element={<EmployerInterviews />} />
           <Route path="/reports" element={<EmployerReports />} />
+          <Route path="/settings" element={<EmployerSettings />} />
         </Route>
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />

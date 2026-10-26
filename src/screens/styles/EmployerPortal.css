@@ -93,3 +93,14 @@
 .tdcp .er-glance-grid div { background: var(--card); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; }
 .tdcp .er-glance-grid b { font-family: var(--heading); font-weight: 800; font-size: 26px; }
 .tdcp .er-glance-grid span { font-size: 13.5px; color: var(--muted); }
+/* settings (EmpSettings) */
+.tdcp .es-grid { display: grid; grid-template-columns: minmax(0, 320px) minmax(0, 1fr); gap: 16px; align-items: start; }
+@media (max-width: 860px) { .tdcp .es-grid { grid-template-columns: minmax(0, 1fr); } }
+.tdcp .es-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.tdcp .es-card { padding: 22px; display: flex; flex-direction: column; gap: 14px; min-width: 0; }
+.tdcp .es-h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; overflow-wrap: anywhere; }
+.tdcp .es-who { align-items: center; text-align: center; }
+.tdcp .es-who .k-hint { margin: -8px 0 0; }
+.tdcp .es-avatar { width: 96px; height: 96px; border-radius: 48px; background: var(--yellow); color: var(--ink); overflow: hidden; display: flex; align-items: center; justify-content: center; font-family: var(--heading); font-weight: 800; font-size: 40px; text-transform: lowercase; }
+.tdcp .es-avatar img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.tdcp .es-card .k-note a, .tdcp .es-card .k-fact a { color: var(--ink); font-weight: 700; overflow-wrap: anywhere; }
