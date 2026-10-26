@@ -413,6 +413,23 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const currentItems = listJobs.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(listJobs.length / itemsPerPage);
 
+  // employer view: the form walks section by section; only the last step publishes
+  const sectionIndex = sections.findIndex((s) => s.id === activeSection);
+  const goNextSection = () => {
+    const form = document.getElementById("job-form");
+    if (form && !form.reportValidity()) return;
+    setActiveSection(sections[Math.min(sectionIndex + 1, sections.length - 1)].id);
+  };
+  const stepFooter = (
+    <>
+      <span className="jm-step">step {sectionIndex + 1} of {sections.length}</span>
+      {sectionIndex > 0 && <Button variant="secondary" icon="chevronLeft" onClick={() => setActiveSection(sections[sectionIndex - 1].id)}>back</Button>}
+      {activeSection === "publish"
+        ? <Button type="submit" form="job-form" icon="send">publish</Button>
+        : <Button iconRight="chevronRight" onClick={goNextSection}>continue</Button>}
+    </>
+  );
+
   const openNewJob = () => {
     resetForm();
     setShowJobModal(true);
@@ -749,14 +766,15 @@ const AdminJobsManager = ({ userRole, userName }) => {
         tone="yellow"
         title={selectedJob ? "Edit Job Posting" : "Create New Job"}
         sub={selectedJob ? "Update the job details below" : "Fill in the details to attract the best talent"}
-        footer={<>
+        bodyStyle={isAdmin ? undefined : { minHeight: "min(540px, 60vh)" }}
+        footer={isAdmin || selectedJob ? <>
           <Button variant="secondary" onClick={() => setShowJobModal(false)}>Cancel</Button>
           <Button type="submit" form="job-form" icon={selectedJob ? "edit" : "send"}>
             {selectedJob ? "Update" : activeSection === "publish" ? "Publish" : "Continue"}
           </Button>
-        </>}
+        </> : stepFooter}
       >
-        <Tabs label="job form sections" value={activeSection} onChange={setActiveSection} tabs={sections.map((s) => ({ id: s.id, label: isMobile ? "" : s.label, icon: s.icon }))} />
+        <Tabs label="job form sections" value={activeSection} onChange={setActiveSection} tabs={sections.map((s) => ({ id: s.id, label: isMobile && isAdmin ? "" : s.label, icon: s.icon }))} />
         <form id="job-form" onSubmit={selectedJob ? handleUpdateJob : handleCreateJob} className="jm-form">
           {activeSection === "basic" && (
             <>
