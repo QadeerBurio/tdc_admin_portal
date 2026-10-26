@@ -7,6 +7,12 @@ import { Button, Field, Select, SearchInput, StatCard, Modal, EmptyState, PageLo
 import RedemptionTabs from "./RedemptionTabs";
 import "./styles/BrandPortal.css";
 
+// wa.me wants the number with country code and digits only: 0300... -> 92300..., 92... stays as it is
+const waNumber = (phone) => {
+  const d = String(phone || "").replace(/\D/g, "");
+  return d.startsWith("92") ? d : `92${d.replace(/^0/, "")}`;
+};
+
 const ClaimedUsers = () => {
   const { token } = useContext(AuthContext);
   const [claimedUsers, setClaimedUsers] = useState([]);
@@ -231,7 +237,7 @@ const ClaimedUsers = () => {
         window.location.href = `mailto:${user.email}`;
         break;
       case 'whatsapp':
-        window.open(`https://wa.me/92${user.phone || ''}`, '_blank');
+        window.open(`https://wa.me/${waNumber(user.phone)}`, '_blank');
         break;
       case 'print':
         window.print();
