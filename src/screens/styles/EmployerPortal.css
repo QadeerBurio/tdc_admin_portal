@@ -22,3 +22,8 @@
 .tdcp .emp-none p { margin: 0; font-size: 14px; }
 .tdcp .emp-none .emp-none-t { font-weight: 700; font-size: 15px; }
 .tdcp .emp-none .k-muted { margin: 4px 0 14px; }
+/* page title with a tile (Emp* boards) */
+.tdcp .emp-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.tdcp .emp-title > div { min-width: 0; }
+/* jobs (EmpJobs): an inactive job reads as neutral, not as an error */
+.tdcp .jm-status.emp:not(.on) { background: var(--sand); color: var(--muted); }

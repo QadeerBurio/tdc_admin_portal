@@ -1,10 +1,11 @@
 // src/screens/AdminJobsManager.js
 // Career portal (design/portal/AdCareer): jobs and internships in the career hub.
-// Also the employer portal's "My Job Postings" (CompanyDashboard passes userRole / userName).
+// Also the employer portal's jobs (design/portal/EmpJobs) at /employee-jobs: same calls, its own header,
+// all/active/inactive filter and table. Anything not marked as employer-only renders exactly as for admin.
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Ico from "../portal/Ico";
-import { PageHeader, PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, FileUpload, toast, confirmDialog } from "../portal/kit";
+import { PageHeader, PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, Segmented, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, FileUpload, toast, confirmDialog } from "../portal/kit";
 import "./styles/AdminJobsManager.css";
 
 const AdminJobsManager = ({ userRole, userName }) => {
@@ -22,6 +23,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const [activeSection, setActiveSection] = useState("basic");
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  // employer view only: status filter and search over the employer's own jobs
+  const [empStatus, setEmpStatus] = useState("all");
+  const [empSearch, setEmpSearch] = useState("");
   const [filters, setFilters] = useState({
     status: "",
     department: "",
@@ -396,10 +400,18 @@ const AdminJobsManager = ({ userRole, userName }) => {
     { id: "publish", label: "Publish", icon: "send" },
   ];
 
+  const isAdmin = userRole === "admin";
+  const empTerm = empSearch.toLowerCase().trim();
+  const empJobs = jobs.filter((j) =>
+    (empStatus === "all" || (empStatus === "active" ? j.active : !j.active)) &&
+    (!empTerm || j.title?.toLowerCase().includes(empTerm) || j.department?.toLowerCase().includes(empTerm))
+  );
+  const listJobs = isAdmin ? jobs : empJobs;
+
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
-  const currentItems = jobs.slice(indexOfFirstItem, indexOfLastItem);
-  const totalPages = Math.ceil(jobs.length / itemsPerPage);
+  const currentItems = listJobs.slice(indexOfFirstItem, indexOfLastItem);
+  const totalPages = Math.ceil(listJobs.length / itemsPerPage);
 
   const openNewJob = () => {
     resetForm();
@@ -423,6 +435,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   return (
     <div className="tdcp k-page jm" data-screen="career">
+      {isAdmin ? (
       <PageHeader
         title={userRole === "admin" ? "career portal" : "My Job Postings"}
         sub={userRole === "admin"
@@ -433,6 +446,21 @@ const AdminJobsManager = ({ userRole, userName }) => {
           <Button icon="plus" onClick={openNewJob}>{isMobile ? "New" : "Post New Job"}</Button>
         </>}
       />
+      ) : (
+        <div className="k-head">
+          <div className="emp-title">
+            <Ico kind="briefcase" tone="coral" size={56} />
+            <div>
+              <h1>jobs<span className="dot" aria-hidden="true">.</span></h1>
+              <p>your postings in the tdc career hub.</p>
+            </div>
+          </div>
+          <div className="k-actions">
+            <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog}>{isMobile ? "CSV" : "Upload Jobs CSV"}</Button>
+            <Button icon="plus" onClick={openNewJob}>post a job</Button>
+          </div>
+        </div>
+      )}
 
       {stats && (
         <div className="k-stats">
@@ -486,6 +514,25 @@ const AdminJobsManager = ({ userRole, userName }) => {
         </>
       )}
 
+      {!isAdmin && (
+        <div className="k-toolbar">
+          <SearchInput
+            className="k-grow"
+            placeholder="search by title or department"
+            aria-label="search jobs"
+            value={empSearch}
+            onChange={(e) => { setEmpSearch(e.target.value); setCurrentPage(1); }}
+          />
+          <Segmented
+            label="filter by status"
+            value={empStatus}
+            onChange={(v) => { setEmpStatus(v); setCurrentPage(1); }}
+            options={[{ value: "all", label: "all" }, { value: "active", label: "active" }, { value: "inactive", label: "inactive" }]}
+          />
+        </div>
+      )}
+
+      {isAdmin ? (
       <div className="k-table-card">
         <div className="k-table-scroll">
           <table className="k-table" style={{ minWidth: 960 }}>
@@ -535,6 +582,59 @@ const AdminJobsManager = ({ userRole, userName }) => {
           </div>
         )}
       </div>
+      ) : (
+      <div className="k-table-card">
+        <div className="k-table-scroll">
+          <table className="k-table" style={{ minWidth: 760 }}>
+            <thead>
+              <tr><th>role</th><th>department</th><th>type</th><th>applications</th><th>status</th><th style={{ textAlign: "right" }}>actions</th></tr>
+            </thead>
+            {currentItems.length > 0 && (
+              <tbody>
+                {currentItems.map((job) => (
+                  <tr key={job._id}>
+                    <td>
+                      <b>{job.title}</b>
+                      <div className="k-hint">{[job.createdAt && `posted ${new Date(job.createdAt).toLocaleDateString()}`, job.experienceLevel].filter(Boolean).join(" · ")}</div>
+                      {(job.urgent || job.featured) && <div className="k-row" style={{ gap: 4, marginTop: 4 }}>{jobBadges(job)}</div>}
+                    </td>
+                    <td>{job.department}</td>
+                    <td>{job.type}</td>
+                    <td><b>{job.totalApplications || 0}</b></td>
+                    <td>
+                      <button type="button" className={`jm-status emp${job.active ? " on" : ""}`} onClick={() => handleToggleStatus(job._id)} title={job.active ? "Deactivate" : "Activate"}>
+                        {job.active ? "active" : "inactive"}
+                      </button>
+                    </td>
+                    <td>
+                      <span className="k-row" style={{ gap: 6, flexWrap: "nowrap", justifyContent: "flex-end" }}>
+                        <Button size="sm" variant="secondary" onClick={() => handleEditJob(job)}>edit</Button>
+                        <Button size="sm" onClick={() => fetchJobApplications(job._id)}>applicants</Button>
+                        <IconButton icon="trash" label="Delete job" variant="danger" size="sm" onClick={() => handleDeleteJob(job._id)} />
+                      </span>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            )}
+          </table>
+        </div>
+        {listJobs.length === 0 && (
+          jobs.length === 0
+            ? <EmptyState icon="briefcase" tone="coral" title="No jobs found" action={<Button icon="plus" onClick={openNewJob}>Post Your First Job</Button>} />
+            : <EmptyState icon="search" title="no jobs match" text="try another filter or search." />
+        )}
+        {listJobs.length > itemsPerPage && (
+          <div className="k-pager">
+            <span>{currentPage} / {totalPages}</span>
+            <div className="k-pager-btns">
+              <button type="button" className="k-page-btn" aria-label="Previous Page" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}><Ico kind="chevronLeft" tone="plain" size={15} /></button>
+              <button type="button" className="k-page-btn" aria-label="Next Page" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}><Ico kind="chevronRight" tone="plain" size={15} /></button>
+            </div>
+          </div>
+        )}
+      </div>
+      )}
 
       {/* applications for a job */}
       <Modal
