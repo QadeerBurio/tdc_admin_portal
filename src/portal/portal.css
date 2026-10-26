@@ -72,8 +72,9 @@
 .tdcp-scrim { display: none; }
 
 @media (max-width: 900px) {
-  .tdcp-nav { position: fixed; left: 0; top: 0; bottom: 0; z-index: 60; max-height: none; transform: translateX(-100%); transition: transform .2s ease; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); }
-  .tdcp-shell.nav-open .tdcp-nav { transform: none; }
+  .tdcp-nav { position: fixed; left: 0; top: 0; bottom: 0; z-index: 60; max-height: none; transform: translateX(-100%); transition: transform .2s ease; box-shadow: none; }
+  /* the shadow only while the menu is open, so the hidden menu does not darken the left edge */
+  .tdcp-shell.nav-open .tdcp-nav { transform: none; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); }
   .tdcp-shell.nav-open .tdcp-scrim { display: block; position: fixed; inset: 0; z-index: 55; background: rgba(17, 17, 17, 0.32); }
   .tdcp-topbar { display: flex; align-items: center; justify-content: space-between; position: sticky; top: 0; z-index: 40; height: 60px; padding: 0 16px; background: rgba(250, 248, 243, 0.94); backdrop-filter: blur(8px); border-bottom: 1px solid var(--line); }
   .tdcp-topbar img { height: 28px; }
