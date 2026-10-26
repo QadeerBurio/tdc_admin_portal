@@ -1,38 +1,19 @@
+// Interviews (design/portal/EmpInterviews, schedule form: EmpSchedule): schedule, track and manage interviews.
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import axios from "axios";
-import {
-  FaCalendarAlt,
-  FaClock,
-  FaVideo,
-  FaTrash,
-  FaEdit,
-  FaCheck,
-  FaPlus,
-  FaSpinner,
-  FaUsers,
-  FaBriefcase,
-  FaEnvelope,
-  FaPhone,
-  FaChevronDown,
-  FaMapMarkerAlt,
-  FaStar,
-  FaTimes,
-  FaArrowLeft,
-  FaArrowRight,
-  FaFilter,
-  FaSearch,
-  FaExternalLinkAlt,
-  FaCheckCircle,
-  FaClock as FaClockIcon,
-  FaCalendarCheck,
-  FaRocket,
-  FaUserCheck,
-  FaBuilding,
-  FaUserTie,
-  FaThumbsUp,
-  FaRegClock,
-} from "react-icons/fa";
-import { motion, AnimatePresence } from "framer-motion";
+import Ico from "../portal/Ico";
+import { Button, Field, Input, Textarea, Select, DateInput, SearchInput, Segmented, Modal, EmptyState, PageLoading, Pill, toast, confirmDialog } from "../portal/kit";
+import dotSorted from "./dots/sorted.png";
+import "./styles/EmployerPortal.css";
+
+// a date as the value of a datetime-local input (local time)
+const toLocalInput = (d) => {
+  const x = new Date(d);
+  if (isNaN(x.getTime())) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${x.getFullYear()}-${p(x.getMonth() + 1)}-${p(x.getDate())}T${p(x.getHours())}:${p(x.getMinutes())}`;
+};
 
 const InterviewsManager = ({ token }) => {
   const [interviews, setInterviews] = useState([]);
@@ -57,21 +38,9 @@ const InterviewsManager = ({ token }) => {
   });
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(8);
-  const [showToast, setShowToast] = useState(false);
-  const [toastMessage, setToastMessage] = useState("");
-  const [toastType, setToastType] = useState("success");
-  const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
-  const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
-
-  useEffect(() => {
-    const handleResize = () => {
-      setIsMobile(window.innerWidth <= 768);
-      setIsTablet(window.innerWidth <= 1024);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  // reschedule and complete open kit modals in place of window.prompt
+  const [rescheduleTarget, setRescheduleTarget] = useState(null); // { id, value }
+  const [completeTarget, setCompleteTarget] = useState(null); // { id, name, feedback }
 
   useEffect(() => {
     fetchInterviews();
@@ -79,10 +48,7 @@ const InterviewsManager = ({ token }) => {
   }, []);
 
   const showNotification = (message, type = "success") => {
-    setToastMessage(message);
-    setToastType(type);
-    setShowToast(true);
-    setTimeout(() => setShowToast(false), 3000);
+    toast(message, type === "error" ? "bad" : "ok");
   };
 
   const fetchInterviews = async () => {
@@ -180,10 +146,15 @@ const InterviewsManager = ({ token }) => {
     }
   };
 
-  const rescheduleInterview = async (interviewId, currentDate) => {
-    const newDate = prompt("Enter new interview date and time (YYYY-MM-DD HH:MM):\n\nExample: 2024-12-25 14:30", 
-      currentDate ? new Date(currentDate).toISOString().slice(0, 16).replace('T', ' ') : "");
-    
+  // opens the reschedule modal, prefilled with the current date and time
+  const rescheduleInterview = (interviewId, currentDate) => {
+    setRescheduleTarget({ id: interviewId, value: currentDate ? toLocalInput(currentDate) : "" });
+  };
+
+  const submitReschedule = async () => {
+    const interviewId = rescheduleTarget?.id;
+    const newDate = rescheduleTarget?.value;
+    setRescheduleTarget(null);
     if (newDate) {
       setActionInProgress(interviewId);
       try {
@@ -214,7 +185,7 @@ const InterviewsManager = ({ token }) => {
   };
 
   const cancelInterview = async (interviewId, candidateName) => {
-    if (window.confirm(`Are you sure you want to cancel the interview with ${candidateName}?`)) {
+    if (await confirmDialog(`Are you sure you want to cancel the interview with ${candidateName}?`)) {
       setActionInProgress(interviewId);
       try {
         await axios.delete(
@@ -232,8 +203,15 @@ const InterviewsManager = ({ token }) => {
     }
   };
 
-  const completeInterview = async (interviewId, candidateName) => {
-    const feedback = prompt(`Enter interview feedback for ${candidateName}:`);
+  // opens the feedback modal
+  const completeInterview = (interviewId, candidateName) => {
+    setCompleteTarget({ id: interviewId, name: candidateName, feedback: "" });
+  };
+
+  const submitComplete = async () => {
+    const interviewId = completeTarget?.id;
+    const feedback = completeTarget?.feedback ?? "";
+    setCompleteTarget(null);
     if (feedback !== null) {
       setActionInProgress(interviewId);
       try {
@@ -262,13 +240,13 @@ const InterviewsManager = ({ token }) => {
 
   const getStatusConfig = (status) => {
     const configs = {
-      pending: { bg: "#fef3c7", color: "#d97706", icon: "⏳", label: "Pending" },
-      reviewed: { bg: "#dbeafe", color: "#2563eb", icon: "👀", label: "Reviewed" },
-      shortlisted: { bg: "#d1fae5", color: "#059669", icon: "⭐", label: "Shortlisted" },
-      interview: { bg: "#ede9fe", color: "#7c3aed", icon: "🎯", label: "Scheduled" },
-      completed: { bg: "#d1fae5", color: "#059669", icon: "✅", label: "Completed" },
-      hired: { bg: "#d1fae5", color: "#059669", icon: "🎉", label: "Hired" },
-      rejected: { bg: "#fee2e2", color: "#dc2626", icon: "❌", label: "Rejected" }
+      pending: { tone: "sand", label: "Pending" },
+      reviewed: { tone: "sand", label: "Reviewed" },
+      shortlisted: { tone: "yellow", label: "Shortlisted" },
+      interview: { tone: "purple", label: "Scheduled" },
+      completed: { tone: "green", label: "Completed" },
+      hired: { tone: "green", label: "Hired" },
+      rejected: { tone: "red", label: "Rejected" }
     };
     return configs[status] || configs.pending;
   };
@@ -320,7 +298,10 @@ const InterviewsManager = ({ token }) => {
       i.jobId?.title?.toLowerCase().includes(searchTerm.toLowerCase()) ||
       i.jobId?.department?.toLowerCase().includes(searchTerm.toLowerCase())
     )
-    .filter(i => statusFilter ? i.status === statusFilter : true)
+    .filter(i => !statusFilter ||
+      (statusFilter === "upcoming" && isUpcoming(i.interviewDate)) ||
+      (statusFilter === "today" && isToday(i.interviewDate)) ||
+      (statusFilter === "past" && !isUpcoming(i.interviewDate)))
     .sort((a, b) => new Date(a.interviewDate) - new Date(b.interviewDate));
 
   // Pagination
@@ -329,1597 +310,203 @@ const InterviewsManager = ({ token }) => {
   const currentItems = filteredInterviews.slice(indexOfFirstItem, indexOfLastItem);
   const totalPages = Math.ceil(filteredInterviews.length / itemsPerPage);
 
-  // Mobile Interview Card Component
-  const MobileInterviewCard = ({ interview }) => {
-    const statusConfig = getStatusConfig(interview.status);
-    const upcoming = isUpcoming(interview.interviewDate);
-    const today = isToday(interview.interviewDate);
+  const openSchedule = () => setShowScheduleModal(true);
 
-    return (
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
-        style={styles.mobileCard}
-      >
-        <div style={styles.mobileCardHeader}>
-          <div style={styles.mobileCardUser}>
-            <div style={styles.mobileCardAvatar}>
-              {interview.fullName?.charAt(0) || "A"}
-              {today && upcoming && <span style={styles.mobileTodayBadge}>Today</span>}
-            </div>
-            <div style={styles.mobileCardUserInfo}>
-              <div style={styles.mobileCardName}>{interview.fullName}</div>
-              <div style={styles.mobileCardEmail}>
-                <FaEnvelope size={10} /> {interview.email}
-              </div>
-            </div>
-          </div>
-          <span style={{
-            ...styles.statusBadge,
-            background: statusConfig.bg,
-            color: statusConfig.color,
-            fontSize: isMobile ? "10px" : "12px",
-            padding: isMobile ? "2px 8px" : "4px 12px",
-          }}>
-            {statusConfig.icon} {statusConfig.label}
-          </span>
-        </div>
-
-        <div style={styles.mobileCardDetails}>
-          <div style={styles.mobileCardDetail}>
-            <FaBuilding size={12} /> {interview.jobId?.title || "N/A"}
-          </div>
-          <div style={styles.mobileCardDetail}>
-            <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
-          </div>
-          <div style={styles.mobileCardDetail}>
-            <FaClock size={12} /> {formatTime(interview.interviewDate)}
-          </div>
-          {upcoming && (
-            <div style={styles.mobileCardDetail}>
-              <span style={styles.mobileTimeRemaining}>
-                ⏱ {getTimeRemaining(interview.interviewDate)}
-              </span>
-            </div>
-          )}
-        </div>
-
-        <div style={styles.mobileCardActions}>
-          {interview.meetingLink && (
-            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.mobileMeetingLink}>
-              <FaVideo size={12} /> Join
-            </a>
-          )}
-          <div style={styles.mobileActionGroup}>
-            <button 
-              style={styles.mobileActionBtn} 
-              onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
-              disabled={actionInProgress === interview._id}
-            >
-              <FaEdit size={12} />
-            </button>
-            {interview.status !== "completed" && interview.status !== "hired" && (
-              <button 
-                style={{ ...styles.mobileActionBtn, background: "#10b981", color: "#fff" }}
-                onClick={() => completeInterview(interview._id, interview.fullName)}
-                disabled={actionInProgress === interview._id}
-              >
-                <FaCheck size={12} />
-              </button>
-            )}
-            <button 
-              style={{ ...styles.mobileActionBtn, background: "#ef4444", color: "#fff" }}
-              onClick={() => cancelInterview(interview._id, interview.fullName)}
-              disabled={actionInProgress === interview._id}
-            >
-              <FaTrash size={12} />
-            </button>
-          </div>
-        </div>
-      </motion.div>
-    );
-  };
-
-  if (loading) return (
-    <div style={styles.loadingContainer}>
-      <motion.div
-        animate={{ rotate: 360 }}
-        transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-      >
-        <FaSpinner size={50} color="#f9c349" />
-      </motion.div>
-      <p style={styles.loadingText}>Loading interviews...</p>
-      <div style={styles.loadingBar}>
-        <motion.div
-          initial={{ width: "0%" }}
-          animate={{ width: "100%" }}
-          transition={{ duration: 2, repeat: Infinity }}
-          style={styles.loadingProgress}
-        />
-      </div>
-    </div>
-  );
+  if (loading) return <div className="tdcp k-page"><PageLoading label="Loading interviews..." /></div>;
 
   return (
-    <motion.div
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.5 }}
-      style={styles.container}
-    >
-      {/* Toast Notification */}
-      <AnimatePresence>
-        {showToast && (
-          <motion.div
-            initial={{ opacity: 0, y: -50, x: "-50%" }}
-            animate={{ opacity: 1, y: 0, x: "-50%" }}
-            exit={{ opacity: 0, y: -50, x: "-50%" }}
-            style={{
-              ...styles.toast,
-              borderLeft: `4px solid ${toastType === "success" ? "#10b981" : "#ef4444"}`
-            }}
-          >
-            <span style={styles.toastIcon}>
-              {toastType === "success" ? "✅" : "❌"}
-            </span>
-            <span style={styles.toastMessage}>{toastMessage}</span>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Header */}
-      <motion.div
-        initial={{ opacity: 0, y: -20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        style={styles.header}
-      >
-        <div style={styles.headerLeft}>
-          <div style={styles.headerIconWrapper}>
-            <FaCalendarCheck size={24} />
-          </div>
+    <div className="tdcp k-page" data-screen="employer-interviews">
+      <div className="k-head">
+        <div className="emp-title">
+          <Ico kind="calendar" tone="purple" size={56} />
           <div>
-            <h1 style={isMobile ? styles.mobileTitle : styles.title}>Interview Management</h1>
-            <p style={isMobile ? styles.mobileSubtitle : styles.subtitle}>
-              {isMobile ? "Schedule & track interviews" : "Schedule, track, and manage candidate interviews"}
-            </p>
+            <h1>interviews<span className="dot" aria-hidden="true">.</span></h1>
+            <p>schedule, track and manage candidate interviews.</p>
           </div>
         </div>
-        <motion.button
-          whileHover={{ scale: 1.02 }}
-          whileTap={{ scale: 0.98 }}
-          style={isMobile ? styles.mobileScheduleBtn : styles.scheduleBtn}
-          onClick={() => setShowScheduleModal(true)}
-        >
-          <FaPlus size={14} /> {isMobile ? "New" : "Schedule Interview"}
-        </motion.button>
-      </motion.div>
-
-      {/* Stats Cards - Responsive */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.1 }}
-        style={{
-          ...styles.statsGrid,
-          gridTemplateColumns: isMobile ? "repeat(2, 1fr)" : isTablet ? "repeat(3, 1fr)" : "repeat(5, 1fr)",
-          gap: isMobile ? "8px" : isTablet ? "10px" : "12px",
-        }}
-      >
-        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
-          <div style={styles.statIconWrapper}>
-            <FaCalendarCheck size={isMobile ? 14 : 18} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
-              {stats.total}
-            </span>
-            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
-              Total
-            </span>
-          </div>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
-          <div style={styles.statIconWrapper}>
-            <FaRocket size={isMobile ? 14 : 18} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
-              {stats.upcoming}
-            </span>
-            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
-              Upcoming
-            </span>
-          </div>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
-          <div style={styles.statIconWrapper}>
-            <FaThumbsUp size={isMobile ? 14 : 18} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
-              {stats.today}
-            </span>
-            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
-              Today
-            </span>
-          </div>
-        </motion.div>
-
-        <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
-          <div style={styles.statIconWrapper}>
-            <FaRegClock size={isMobile ? 14 : 18} />
-          </div>
-          <div style={styles.statContent}>
-            <span style={{ ...styles.statValue, fontSize: isMobile ? "16px" : isTablet ? "18px" : "22px" }}>
-              {stats.pending}
-            </span>
-            <span style={{ ...styles.statLabel, fontSize: isMobile ? "9px" : isTablet ? "10px" : "12px" }}>
-              Pending
-            </span>
-          </div>
-        </motion.div>
-
-        {!isMobile && !isTablet && (
-          <motion.div whileHover={{ y: -2 }} style={styles.statCard}>
-            <div style={styles.statIconWrapper}>
-              <FaCheckCircle size={18} />
-            </div>
-            <div style={styles.statContent}>
-              <span style={styles.statValue}>{stats.completed}</span>
-              <span style={styles.statLabel}>Completed</span>
-            </div>
-          </motion.div>
-        )}
-      </motion.div>
-
-      {/* Filter Bar */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5, delay: 0.2 }}
-        style={styles.filterBar}
-      >
-        <div style={styles.searchBox}>
-          <FaSearch size={14} style={styles.searchIcon} />
-          <input
-            type="text"
-            placeholder={isMobile ? "Search..." : "Search by candidate, email, or position..."}
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            style={styles.searchInput}
-          />
-          {searchTerm && (
-            <button style={styles.clearSearch} onClick={() => setSearchTerm("")}>
-              <FaTimes size={12} />
-            </button>
-          )}
+        <div className="k-actions">
+          <Button icon="plus" onClick={openSchedule}>schedule interview</Button>
         </div>
+      </div>
 
-        {isMobile ? (
-          <button style={styles.mobileFilterToggle} onClick={() => setIsFilterOpen(!isFilterOpen)}>
-            <FaFilter size={14} /> Filters <FaChevronDown size={12} />
-          </button>
-        ) : (
-          <>
-            <div style={styles.filterGroup}>
-              <FaFilter size={14} style={styles.filterIcon} />
-              <select
-                style={styles.filterSelect}
-                value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value)}
-              >
-                <option value="">All Status</option>
-                <option value="pending">⏳ Pending</option>
-                <option value="reviewed">👀 Reviewed</option>
-                <option value="shortlisted">⭐ Shortlisted</option>
-                <option value="interview">🎯 Scheduled</option>
-                <option value="completed">✅ Completed</option>
-                <option value="hired">🎉 Hired</option>
-                <option value="rejected">❌ Rejected</option>
-              </select>
-            </div>
-            <motion.button
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              style={styles.clearBtn}
-              onClick={() => { setSearchTerm(""); setStatusFilter(""); }}
-            >
-              <FaTimes size={12} /> Clear
-            </motion.button>
-          </>
-        )}
-      </motion.div>
+      {error && <div className="k-note bad" role="alert">{error}</div>}
 
-      {/* Mobile Filters */}
-      {isMobile && isFilterOpen && (
-        <motion.div
-          initial={{ opacity: 0, height: 0 }}
-          animate={{ opacity: 1, height: "auto" }}
-          exit={{ opacity: 0, height: 0 }}
-          style={styles.mobileFilters}
-        >
-          <div style={styles.mobileFilterGroup}>
-            <label style={styles.mobileFilterLabel}>Status</label>
-            <select
-              style={styles.mobileFilterSelect}
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="pending">Pending</option>
-              <option value="reviewed">Reviewed</option>
-              <option value="shortlisted">Shortlisted</option>
-              <option value="interview">Scheduled</option>
-              <option value="completed">Completed</option>
-              <option value="hired">Hired</option>
-              <option value="rejected">Rejected</option>
-            </select>
+      <div className="ei-stats">
+        {[
+          [stats.total, "total", "calendar", "purple"],
+          [stats.upcoming, "upcoming", "send", "sky"],
+          [stats.today, "today", "spark", "orange"],
+          [stats.pending, "pending", "clock", "coral"],
+          [stats.completed, "completed", "check", "green"],
+        ].map(([n, label, icon, tone]) => (
+          <div className="k-card ei-stat" key={label}>
+            <Ico kind={icon} tone={tone} size={48} />
+            <div><b>{n}</b><span>{label}</span></div>
           </div>
-          <button style={styles.mobileClearBtn} onClick={() => { setSearchTerm(""); setStatusFilter(""); setIsFilterOpen(false); }}>
-            Clear All Filters
-          </button>
-        </motion.div>
-      )}
+        ))}
+      </div>
 
-      {/* Content */}
+      <div className="k-toolbar">
+        <SearchInput className="k-grow" aria-label="search interviews" placeholder="search by candidate, email or position" value={searchTerm} onChange={(e) => { setSearchTerm(e.target.value); setCurrentPage(1); }} />
+        <Segmented
+          label="filter by date"
+          value={statusFilter || "all"}
+          onChange={(v) => { setStatusFilter(v === "all" ? "" : v); setCurrentPage(1); }}
+          options={[{ value: "all", label: "all" }, { value: "upcoming", label: "upcoming" }, { value: "today", label: "today" }, { value: "past", label: "past" }]}
+        />
+      </div>
+
       {interviews.length === 0 ? (
-        <motion.div
-          initial={{ opacity: 0, scale: 0.95 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.5 }}
-          style={styles.emptyState}
-        >
-          <div style={styles.emptyIcon}>
-            <FaCalendarAlt size={48} />
+        <div className="k-card ei-none">
+          <img src={dotSorted} alt="" />
+          <h2>no interviews yet<span className="dot" aria-hidden="true">.</span></h2>
+          <p>shortlist a candidate, then schedule your first interview here.</p>
+          <div className="k-row" style={{ justifyContent: "center" }}>
+            <Button onClick={openSchedule}>schedule interview</Button>
+            <Link to="/candidate" className="k-btn secondary">review candidates</Link>
           </div>
-          <h3 style={styles.emptyTitle}>No Interviews Scheduled</h3>
-          <p style={styles.emptyText}>Get started by scheduling your first interview</p>
-          <motion.button
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-            style={styles.emptyBtn}
-            onClick={() => setShowScheduleModal(true)}
-          >
-            <FaPlus /> Schedule Interview
-          </motion.button>
-        </motion.div>
+        </div>
       ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5, delay: 0.3 }}
-          style={styles.tableContainer}
-        >
-          <div style={styles.tableHeader}>
-            <div style={styles.tableTitle}>
-              <FaUsers size={16} style={styles.tableTitleIcon} />
-              <span>All Interviews</span>
-              <span style={styles.tableCount}>{filteredInterviews.length}</span>
-            </div>
-          </div>
-
-          {!isMobile ? (
-            <div style={styles.tableWrapper}>
-              <table style={styles.table}>
-                <thead>
-                  <tr style={styles.tableHead}>
-                    <th style={{ minWidth: isTablet ? "180px" : "220px" }}>Candidate</th>
-                    <th style={{ minWidth: isTablet ? "130px" : "160px" }}>Position</th>
-                    <th style={{ minWidth: isTablet ? "150px" : "180px" }}>Interview Date</th>
-                    <th style={{ minWidth: "100px" }}>Meeting</th>
-                    <th style={{ minWidth: "100px" }}>Status</th>
-                    <th style={{ minWidth: isTablet ? "180px" : "240px" }}>Actions</th>
-                  </tr>
-                </thead>
+        <div className="k-table-card">
+          <div className="k-table-scroll">
+            <table className="k-table" style={{ minWidth: 900 }}>
+              <thead>
+                <tr><th>candidate</th><th>position</th><th>interview</th><th>meeting</th><th>status</th><th style={{ textAlign: "right" }}>actions</th></tr>
+              </thead>
+              {currentItems.length > 0 && (
                 <tbody>
-                  {currentItems.map((interview, index) => {
-                    const statusConfig = getStatusConfig(interview.status);
+                  {currentItems.map((interview) => {
                     const upcoming = isUpcoming(interview.interviewDate);
                     const today = isToday(interview.interviewDate);
-                    
+                    const busy = actionInProgress === interview._id;
+                    const cfg = getStatusConfig(interview.status);
                     return (
-                      <motion.tr
-                        key={interview._id}
-                        initial={{ opacity: 0, y: 10 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ duration: 0.3, delay: index * 0.03 }}
-                        whileHover={{ backgroundColor: "#fafafa" }}
-                        style={styles.tableRow}
-                      >
+                      <tr key={interview._id}>
                         <td>
-                          <div style={styles.candidateCell}>
-                            <div style={styles.candidateAvatar}>
-                              {interview.fullName?.charAt(0) || "A"}
-                              {today && upcoming && <span style={styles.todayBadge}>Today</span>}
-                            </div>
-                            <div>
-                              <div style={styles.candidateName}>{interview.fullName}</div>
-                              <div style={styles.candidateEmail}>
-                                <FaEnvelope size={10} /> {interview.email}
-                              </div>
-                            </div>
-                          </div>
+                          <b>{interview.fullName}</b>
+                          <div className="k-hint">{interview.email}</div>
                         </td>
                         <td>
-                          <div style={styles.jobTitle}>{interview.jobId?.title || "N/A"}</div>
-                          <div style={styles.jobDept}>
-                            <FaBuilding size={10} /> {interview.jobId?.department || ""}
-                          </div>
+                          {interview.jobId?.title || "Position"}
+                          {interview.jobId?.department && <div className="k-hint">{interview.jobId.department}</div>}
                         </td>
-                        <td>
-                          {interview.interviewDate ? (
-                            <div>
-                              <div style={styles.interviewDate}>
-                                <FaCalendarAlt size={12} /> {formatDate(interview.interviewDate)}
-                              </div>
-                              <div style={styles.interviewTime}>
-                                <FaClock size={12} /> {formatTime(interview.interviewDate)}
-                              </div>
-                              {upcoming && (
-                                <div style={styles.timeRemaining}>
-                                  <span style={styles.timeDot} /> {getTimeRemaining(interview.interviewDate)}
-                                </div>
-                              )}
-                            </div>
-                          ) : (
-                            <span style={{ color: "#94a3b8" }}>Not scheduled</span>
-                          )}
+                        <td className="ei-when">
+                          <b>{formatDate(interview.interviewDate)}</b>
+                          <div className="k-hint">{formatTime(interview.interviewDate)}{upcoming ? ` · in ${getTimeRemaining(interview.interviewDate)}` : " · past"}</div>
+                          {today && upcoming && <Pill tone="orange">today</Pill>}
                         </td>
                         <td>
                           {interview.meetingLink ? (
-                            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" style={styles.meetingLink}>
-                              <FaVideo size={12} /> Join
-                            </a>
+                            <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="k-btn secondary sm"><Ico kind="external" tone="plain" size={15} />join</a>
                           ) : (
-                            <span style={{ color: "#94a3b8", fontSize: "12px" }}>No link</span>
+                            <span className="k-hint">No link</span>
                           )}
                         </td>
+                        <td><Pill tone={cfg.tone} dot>{cfg.label}</Pill></td>
                         <td>
-                          <span style={{
-                            ...styles.statusBadge,
-                            background: statusConfig.bg,
-                            color: statusConfig.color,
-                          }}>
-                            {statusConfig.icon} {statusConfig.label}
+                          <span className="k-row" style={{ gap: 6, flexWrap: "nowrap", justifyContent: "flex-end" }}>
+                            <Button size="sm" variant="secondary" icon="calendar" disabled={busy} onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}>reschedule</Button>
+                            {interview.status !== "completed" && interview.status !== "hired" && (
+                              <Button size="sm" icon="check" disabled={busy} onClick={() => completeInterview(interview._id, interview.fullName)}>complete</Button>
+                            )}
+                            <Button size="sm" variant="danger" icon="close" loading={busy} disabled={busy} onClick={() => cancelInterview(interview._id, interview.fullName)}>cancel</Button>
                           </span>
                         </td>
-                        <td>
-                          <div style={styles.actionButtons}>
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              style={styles.actionBtn}
-                              onClick={() => rescheduleInterview(interview._id, interview.interviewDate)}
-                              disabled={actionInProgress === interview._id}
-                            >
-                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaEdit size={12} />}
-                              {!isTablet && "Reschedule"}
-                            </motion.button>
-                            {interview.status !== "completed" && interview.status !== "hired" && (
-                              <motion.button
-                                whileHover={{ scale: 1.02 }}
-                                whileTap={{ scale: 0.98 }}
-                                style={{ ...styles.actionBtn, background: "#10b981", color: "#fff" }}
-                                onClick={() => completeInterview(interview._id, interview.fullName)}
-                                disabled={actionInProgress === interview._id}
-                              >
-                                {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaCheck size={12} />}
-                                {!isTablet && "Complete"}
-                              </motion.button>
-                            )}
-                            <motion.button
-                              whileHover={{ scale: 1.02 }}
-                              whileTap={{ scale: 0.98 }}
-                              style={{ ...styles.actionBtn, background: "#ef4444", color: "#fff" }}
-                              onClick={() => cancelInterview(interview._id, interview.fullName)}
-                              disabled={actionInProgress === interview._id}
-                            >
-                              {actionInProgress === interview._id ? <FaSpinner className="spinner" size={12} /> : <FaTrash size={12} />}
-                              {!isTablet && "Cancel"}
-                            </motion.button>
-                          </div>
-                        </td>
-                      </motion.tr>
+                      </tr>
                     );
                   })}
                 </tbody>
-              </table>
-            </div>
-          ) : (
-            <div style={styles.mobileCardList}>
-              {currentItems.map((interview) => (
-                <MobileInterviewCard key={interview._id} interview={interview} />
-              ))}
-            </div>
+              )}
+            </table>
+          </div>
+          {filteredInterviews.length === 0 && (
+            <EmptyState icon="calendar" tone="purple" title="no interviews match" text="try another filter or search." />
           )}
-
-          {/* Pagination */}
           {filteredInterviews.length > itemsPerPage && (
-            <div style={styles.pagination}>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{ ...styles.pageBtn, opacity: currentPage === 1 ? 0.5 : 1 }}
-                onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))}
-                disabled={currentPage === 1}
-              >
-                <FaArrowLeft size={12} /> {!isMobile && "Previous"}
-              </motion.button>
-              <div style={styles.pageInfo}>
-                <span style={styles.pageCurrent}>{currentPage}</span>
-                <span style={styles.pageSeparator}>/</span>
-                <span style={styles.pageTotal}>{totalPages}</span>
+            <div className="k-pager">
+              <span>{currentPage} / {totalPages}</span>
+              <div className="k-pager-btns">
+                <button type="button" className="k-page-btn" aria-label="Previous Page" onClick={() => setCurrentPage(prev => Math.max(prev - 1, 1))} disabled={currentPage === 1}><Ico kind="chevronLeft" tone="plain" size={15} /></button>
+                <button type="button" className="k-page-btn" aria-label="Next Page" onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))} disabled={currentPage === totalPages}><Ico kind="chevronRight" tone="plain" size={15} /></button>
               </div>
-              <motion.button
-                whileHover={{ scale: 1.02 }}
-                whileTap={{ scale: 0.98 }}
-                style={{ ...styles.pageBtn, opacity: currentPage === totalPages ? 0.5 : 1 }}
-                onClick={() => setCurrentPage(prev => Math.min(prev + 1, totalPages))}
-                disabled={currentPage === totalPages}
-              >
-                {!isMobile && "Next"} <FaArrowRight size={12} />
-              </motion.button>
             </div>
           )}
-        </motion.div>
+        </div>
       )}
 
-      {/* Schedule Interview Modal - Responsive */}
-      <AnimatePresence>
-        {showScheduleModal && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            style={styles.modalOverlay}
-            onClick={() => setShowScheduleModal(false)}
-          >
-            <motion.div
-              initial={{ scale: 0.9, opacity: 0, y: 20 }}
-              animate={{ scale: 1, opacity: 1, y: 0 }}
-              exit={{ scale: 0.9, opacity: 0, y: 20 }}
-              transition={{ type: "spring", damping: 25 }}
-              style={isMobile ? styles.mobileModalContent : styles.modalContent}
-              onClick={(e) => e.stopPropagation()}
-            >
-              <div style={styles.modalHeader}>
-                <div>
-                  <h2 style={isMobile ? styles.mobileModalTitle : styles.modalTitle}>
-                    Schedule Interview
-                  </h2>
-                  <p style={styles.modalSubtitle}>
-                    {isMobile ? "Set up interview details" : "Select a candidate and set up interview details"}
-                  </p>
-                </div>
-                <motion.button
-                  whileHover={{ scale: 1.1 }}
-                  whileTap={{ scale: 0.9 }}
-                  style={styles.modalCloseBtn}
-                  onClick={() => setShowScheduleModal(false)}
-                >
-                  <FaTimes size={18} />
-                </motion.button>
-              </div>
+      {/* schedule interview (EmpSchedule) */}
+      <Modal
+        open={showScheduleModal}
+        onClose={() => setShowScheduleModal(false)}
+        icon="calendar"
+        tone="purple"
+        title="schedule interview"
+        sub="pick a shortlisted candidate and set the details."
+        footer={<>
+          <Button variant="secondary" onClick={() => setShowScheduleModal(false)}>cancel</Button>
+          <Button icon="check" onClick={scheduleInterview} loading={submitting} disabled={submitting || applications.length === 0}>schedule</Button>
+        </>}
+      >
+        <div className="emp-form">
+          <Field label="candidate *" htmlFor="ei-cand" error={applications.length === 0 ? "no shortlisted candidates yet. shortlist someone in candidates first." : null}>
+            <Select id="ei-cand" invalid={applications.length === 0} value={selectedApplication || ""} onChange={(e) => setSelectedApplication(e.target.value)}>
+              <option value="">choose a shortlisted candidate</option>
+              {applications.map(app => (
+                <option key={app._id} value={app._id}>
+                  {app.fullName} · {app.jobId?.title}
+                </option>
+              ))}
+            </Select>
+          </Field>
+          <Field label="date and time *" htmlFor="ei-date">
+            <DateInput id="ei-date" withTime value={interviewDate} onChange={(e) => setInterviewDate(e.target.value)} min={new Date().toISOString().slice(0, 16)} />
+          </Field>
+          <Field label="meeting link (optional)" htmlFor="ei-link">
+            <Input id="ei-link" type="url" placeholder="https://meet.google.com/… or https://zoom.us/j/…" value={meetingLink} onChange={(e) => setMeetingLink(e.target.value)} />
+          </Field>
+          <Field label="notes for the candidate (optional)" htmlFor="ei-notes">
+            <Textarea id="ei-notes" rows={3} placeholder="what to prepare, who they'll meet…" value={interviewNotes} onChange={(e) => setInterviewNotes(e.target.value)} />
+          </Field>
+        </div>
+      </Modal>
 
-              <div style={styles.modalBody}>
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Select Candidate *</label>
-                  <select
-                    value={selectedApplication || ""}
-                    onChange={(e) => setSelectedApplication(e.target.value)}
-                    style={styles.formSelect}
-                  >
-                    <option value="">Choose a shortlisted candidate...</option>
-                    {applications.map(app => (
-                      <option key={app._id} value={app._id}>
-                        {app.fullName} - {app.jobId?.title}
-                      </option>
-                    ))}
-                  </select>
-                  {applications.length === 0 && (
-                    <p style={styles.formHint}>No shortlisted candidates available.</p>
-                  )}
-                </div>
+      {/* reschedule (was a prompt) */}
+      <Modal
+        open={!!rescheduleTarget}
+        onClose={() => setRescheduleTarget(null)}
+        icon="calendar"
+        tone="sky"
+        title="reschedule interview"
+        sub="pick the new date and time."
+        footer={<>
+          <Button variant="secondary" onClick={() => setRescheduleTarget(null)}>cancel</Button>
+          <Button icon="check" disabled={!rescheduleTarget?.value} onClick={submitReschedule}>reschedule</Button>
+        </>}
+      >
+        <Field label="new date and time" htmlFor="ei-new-date">
+          <DateInput id="ei-new-date" withTime value={rescheduleTarget?.value || ""} onChange={(e) => setRescheduleTarget({ ...rescheduleTarget, value: e.target.value })} />
+        </Field>
+      </Modal>
 
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Interview Date & Time *</label>
-                  <input
-                    type="datetime-local"
-                    value={interviewDate}
-                    onChange={(e) => setInterviewDate(e.target.value)}
-                    style={styles.formInput}
-                    min={new Date().toISOString().slice(0, 16)}
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Meeting Link</label>
-                  <input
-                    type="url"
-                    placeholder={isMobile ? "Meeting URL..." : "https://meet.google.com/... or https://zoom.us/j/..."}
-                    value={meetingLink}
-                    onChange={(e) => setMeetingLink(e.target.value)}
-                    style={styles.formInput}
-                  />
-                </div>
-
-                <div style={styles.formGroup}>
-                  <label style={styles.formLabel}>Interview Notes</label>
-                  <textarea
-                    rows={isMobile ? "2" : "3"}
-                    placeholder="Add any notes or instructions..."
-                    value={interviewNotes}
-                    onChange={(e) => setInterviewNotes(e.target.value)}
-                    style={styles.formTextarea}
-                  />
-                </div>
-              </div>
-
-              <div style={isMobile ? styles.mobileModalFooter : styles.modalFooter}>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={styles.cancelModalBtn}
-                  onClick={() => setShowScheduleModal(false)}
-                >
-                  Cancel
-                </motion.button>
-                <motion.button
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                  style={styles.submitModalBtn}
-                  onClick={scheduleInterview}
-                  disabled={submitting || applications.length === 0}
-                >
-                  {submitting ? (
-                    <>
-                      <FaSpinner className="spinner" size={14} /> Scheduling...
-                    </>
-                  ) : (
-                    <>
-                      <FaCalendarCheck size={14} /> Schedule
-                    </>
-                  )}
-                </motion.button>
-              </div>
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      <style>
-        {`
-          @keyframes spin {
-            from { transform: rotate(0deg); }
-            to { transform: rotate(360deg); }
-          }
-
-          .spinner {
-            animation: spin 1s linear infinite;
-          }
-
-          ::-webkit-scrollbar {
-            width: 6px;
-            height: 6px;
-          }
-          ::-webkit-scrollbar-track {
-            background: #f1f5f9;
-            border-radius: 10px;
-          }
-          ::-webkit-scrollbar-thumb {
-            background: #f9c349;
-            border-radius: 10px;
-          }
-
-          input:focus, select:focus, textarea:focus {
-            border-color: #f9c349 !important;
-            outline: none !important;
-          }
-
-          @media (max-width: 768px) {
-            .stat-card {
-              padding: 10px 12px !important;
-            }
-            .stat-value {
-              font-size: 16px !important;
-            }
-            .stat-icon-wrapper {
-              width: 32px !important;
-              height: 32px !important;
-            }
-            .stat-label {
-              font-size: 9px !important;
-            }
-            .action-btn {
-              padding: 4px 8px !important;
-              font-size: 11px !important;
-            }
-          }
-
-          @media (max-width: 480px) {
-            .stat-card {
-              padding: 8px 10px !important;
-              gap: 8px !important;
-            }
-            .stat-value {
-              font-size: 14px !important;
-            }
-            .stat-icon-wrapper {
-              width: 28px !important;
-              height: 28px !important;
-            }
-            .stat-icon-wrapper svg {
-              font-size: 12px !important;
-            }
-            .stat-label {
-              font-size: 8px !important;
-            }
-          }
-        `}
-      </style>
-    </motion.div>
+      {/* complete with feedback (was a prompt) */}
+      <Modal
+        open={!!completeTarget}
+        onClose={() => setCompleteTarget(null)}
+        icon="check"
+        tone="green"
+        title="complete interview"
+        sub={completeTarget ? `Enter interview feedback for ${completeTarget.name}:` : ""}
+        footer={<>
+          <Button variant="secondary" onClick={() => setCompleteTarget(null)}>cancel</Button>
+          <Button icon="check" onClick={submitComplete}>mark completed</Button>
+        </>}
+      >
+        <Field label="feedback" htmlFor="ei-feedback">
+          <Textarea id="ei-feedback" rows={4} value={completeTarget?.feedback || ""} onChange={(e) => setCompleteTarget({ ...completeTarget, feedback: e.target.value })} placeholder="how did it go?" />
+        </Field>
+      </Modal>
+    </div>
   );
-};
-
-const styles = {
-  container: {
-    padding: "16px 20px",
-    width: "100%",
-    minHeight: "100vh",
-    background: "#f8fafc",
-    fontFamily: "'Inter', -apple-system, BlinkMacSystemFont, sans-serif",
-    maxWidth: "1400px",
-    margin: "0 auto",
-  },
-  toast: {
-    position: "fixed",
-    top: "20px",
-    left: "50%",
-    transform: "translateX(-50%)",
-    padding: "10px 20px",
-    background: "#fff",
-    borderRadius: "12px",
-    boxShadow: "0 8px 30px rgba(0,0,0,0.12)",
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    zIndex: 9999,
-    border: "1px solid #e5e7eb",
-  },
-  toastIcon: {
-    fontSize: "16px",
-  },
-  toastMessage: {
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#0f172a",
-  },
-  loadingContainer: {
-    display: "flex",
-    flexDirection: "column",
-    alignItems: "center",
-    justifyContent: "center",
-    height: "400px",
-    gap: "16px",
-  },
-  loadingText: {
-    fontSize: "14px",
-    color: "#64748b",
-    margin: 0,
-    fontWeight: "500",
-  },
-  loadingBar: {
-    width: "180px",
-    height: "4px",
-    background: "#e5e7eb",
-    borderRadius: "4px",
-    overflow: "hidden",
-  },
-  loadingProgress: {
-    height: "100%",
-    background: "#f9c349",
-    borderRadius: "4px",
-  },
-  header: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginBottom: "20px",
-    flexWrap: "wrap",
-    gap: "10px",
-  },
-  headerLeft: {
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-  },
-  headerIconWrapper: {
-    width: "44px",
-    height: "44px",
-    borderRadius: "12px",
-    background: "#f9c349",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#fff",
-    flexShrink: 0,
-  },
-  title: {
-    fontSize: "24px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-    letterSpacing: "-0.3px",
-  },
-  mobileTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-    letterSpacing: "-0.3px",
-  },
-  subtitle: {
-    fontSize: "13px",
-    color: "#64748b",
-    marginTop: "2px",
-  },
-  mobileSubtitle: {
-    fontSize: "11px",
-    color: "#64748b",
-    marginTop: "2px",
-  },
-  scheduleBtn: {
-    background: "#f9c349",
-    color: "#0f172a",
-    border: "none",
-    padding: "10px 20px",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-    transition: "all 0.2s ease",
-  },
-  mobileScheduleBtn: {
-    background: "#f9c349",
-    color: "#0f172a",
-    border: "none",
-    padding: "8px 14px",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "12px",
-    transition: "all 0.2s ease",
-  },
-  statsGrid: {
-    display: "grid",
-    gap: "10px",
-    marginBottom: "20px",
-  },
-  statCard: {
-    background: "#fff",
-    padding: "12px 16px",
-    borderRadius: "10px",
-    display: "flex",
-    alignItems: "center",
-    gap: "12px",
-    border: "1px solid #e5e7eb",
-    transition: "all 0.2s ease",
-    cursor: "default",
-  },
-  statIconWrapper: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "8px",
-    background: "#f8fafc",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    color: "#f9c349",
-    flexShrink: 0,
-  },
-  statContent: {
-    display: "flex",
-    flexDirection: "column",
-  },
-  statValue: {
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  statLabel: {
-    color: "#64748b",
-    fontWeight: "500",
-  },
-  filterBar: {
-    display: "flex",
-    gap: "8px",
-    marginBottom: "16px",
-    flexWrap: "wrap",
-    alignItems: "center",
-  },
-  searchBox: {
-    flex: 1,
-    minWidth: "150px",
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    padding: "6px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    background: "#fff",
-    transition: "all 0.2s ease",
-  },
-  searchIcon: {
-    color: "#94a3b8",
-  },
-  searchInput: {
-    flex: 1,
-    border: "none",
-    outline: "none",
-    fontSize: "13px",
-    background: "transparent",
-    color: "#0f172a",
-    padding: "4px 0",
-  },
-  clearSearch: {
-    background: "none",
-    border: "none",
-    color: "#94a3b8",
-    cursor: "pointer",
-    padding: "2px",
-  },
-  filterGroup: {
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    padding: "0 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    background: "#fff",
-    minWidth: "120px",
-  },
-  filterIcon: {
-    color: "#94a3b8",
-  },
-  filterSelect: {
-    padding: "8px 4px",
-    border: "none",
-    outline: "none",
-    fontSize: "13px",
-    background: "transparent",
-    color: "#0f172a",
-    cursor: "pointer",
-    minWidth: "110px",
-    fontFamily: "'Inter', sans-serif",
-  },
-  clearBtn: {
-    padding: "6px 14px",
-    background: "#f1f5f9",
-    color: "#475569",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "13px",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  mobileFilterToggle: {
-    padding: "6px 14px",
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#0f172a",
-    fontFamily: "'Inter', sans-serif",
-  },
-  mobileFilters: {
-    background: "#fff",
-    padding: "14px",
-    borderRadius: "10px",
-    marginBottom: "14px",
-    border: "1px solid #e5e7eb",
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-  },
-  mobileFilterGroup: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "4px",
-  },
-  mobileFilterLabel: {
-    fontSize: "12px",
-    fontWeight: "600",
-    color: "#475569",
-  },
-  mobileFilterSelect: {
-    padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    fontSize: "13px",
-    background: "#fff",
-    color: "#0f172a",
-    cursor: "pointer",
-    fontFamily: "'Inter', sans-serif",
-    width: "100%",
-  },
-  mobileClearBtn: {
-    padding: "8px",
-    background: "#f9c349",
-    border: "none",
-    borderRadius: "8px",
-    color: "#0f172a",
-    fontWeight: "600",
-    cursor: "pointer",
-    fontSize: "13px",
-    fontFamily: "'Inter', sans-serif",
-  },
-  tableContainer: {
-    background: "#fff",
-    borderRadius: "12px",
-    border: "1px solid #e5e7eb",
-    overflow: "hidden",
-  },
-  tableHeader: {
-    padding: "10px 16px",
-    borderBottom: "1px solid #e5e7eb",
-    background: "#f8fafc",
-  },
-  tableTitle: {
-    display: "flex",
-    alignItems: "center",
-    gap: "8px",
-    fontSize: "14px",
-    fontWeight: "600",
-    color: "#0f172a",
-  },
-  tableTitleIcon: {
-    color: "#f9c349",
-  },
-  tableCount: {
-    background: "#e5e7eb",
-    padding: "2px 10px",
-    borderRadius: "12px",
-    fontSize: "12px",
-    fontWeight: "500",
-    color: "#475569",
-  },
-  tableWrapper: {
-    overflowX: "auto",
-  },
-  table: {
-    width: "100%",
-    borderCollapse: "collapse",
-    minWidth: "750px",
-  },
-  tableHead: {
-    borderBottom: "1px solid #e5e7eb",
-    background: "#f8fafc",
-    textAlign: "left",
-  },
-  tableRow: {
-    borderBottom: "1px solid #f1f5f9",
-    transition: "all 0.2s ease",
-  },
-  candidateCell: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    padding: "8px 0",
-  },
-  candidateAvatar: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    background: "#f9c349",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "600",
-    color: "#fff",
-    fontSize: "14px",
-    flexShrink: 0,
-    position: "relative",
-  },
-  todayBadge: {
-    position: "absolute",
-    top: "-4px",
-    right: "-8px",
-    fontSize: "7px",
-    background: "#10b981",
-    color: "#fff",
-    padding: "1px 6px",
-    borderRadius: "8px",
-    fontWeight: "600",
-  },
-  candidateName: {
-    fontWeight: "600",
-    color: "#0f172a",
-    fontSize: "14px",
-  },
-  candidateEmail: {
-    fontSize: "12px",
-    color: "#64748b",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  jobTitle: {
-    fontWeight: "500",
-    color: "#0f172a",
-    fontSize: "13px",
-  },
-  jobDept: {
-    fontSize: "12px",
-    color: "#94a3b8",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  interviewDate: {
-    fontSize: "13px",
-    color: "#0f172a",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-  },
-  interviewTime: {
-    fontSize: "12px",
-    color: "#64748b",
-    display: "flex",
-    alignItems: "center",
-    gap: "6px",
-    marginTop: "2px",
-  },
-  timeRemaining: {
-    fontSize: "11px",
-    color: "#f59e0b",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    marginTop: "2px",
-  },
-  timeDot: {
-    width: "4px",
-    height: "4px",
-    borderRadius: "50%",
-    background: "#f59e0b",
-    display: "inline-block",
-  },
-  meetingLink: {
-    color: "#f9c349",
-    textDecoration: "none",
-    fontSize: "13px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "6px",
-    fontWeight: "500",
-    transition: "all 0.2s ease",
-  },
-  statusBadge: {
-    padding: "4px 12px",
-    borderRadius: "16px",
-    fontSize: "12px",
-    fontWeight: "600",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  actionButtons: {
-    display: "flex",
-    gap: "4px",
-    flexWrap: "wrap",
-  },
-  actionBtn: {
-    padding: "4px 10px",
-    background: "#f1f5f9",
-    border: "none",
-    borderRadius: "6px",
-    color: "#475569",
-    fontSize: "12px",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    fontWeight: "500",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  pagination: {
-    display: "flex",
-    justifyContent: "center",
-    alignItems: "center",
-    gap: "12px",
-    padding: "12px 16px",
-    borderTop: "1px solid #e5e7eb",
-  },
-  pageBtn: {
-    padding: "6px 12px",
-    background: "#f1f5f9",
-    border: "none",
-    borderRadius: "6px",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "13px",
-    fontWeight: "500",
-    color: "#475569",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  pageInfo: {
-    fontSize: "13px",
-    color: "#64748b",
-    fontWeight: "500",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  pageCurrent: {
-    fontWeight: "700",
-    color: "#0f172a",
-  },
-  pageSeparator: {
-    color: "#94a3b8",
-  },
-  pageTotal: {
-    color: "#94a3b8",
-  },
-  emptyState: {
-    textAlign: "center",
-    padding: "40px 20px",
-    background: "#fff",
-    borderRadius: "12px",
-    border: "1px solid #e5e7eb",
-  },
-  emptyIcon: {
-    width: "64px",
-    height: "64px",
-    borderRadius: "50%",
-    background: "#f1f5f9",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    margin: "0 auto 12px",
-    color: "#94a3b8",
-  },
-  emptyTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-    marginBottom: "4px",
-  },
-  emptyText: {
-    fontSize: "14px",
-    color: "#64748b",
-    marginBottom: "16px",
-  },
-  emptyBtn: {
-    padding: "8px 20px",
-    background: "#f9c349",
-    color: "#0f172a",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "14px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-  },
-  modalOverlay: {
-    position: "fixed",
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    background: "rgba(0,0,0,0.5)",
-    backdropFilter: "blur(4px)",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    zIndex: 1000,
-    padding: "16px",
-  },
-  modalContent: {
-    background: "#fff",
-    borderRadius: "16px",
-    maxWidth: "480px",
-    width: "95%",
-    maxHeight: "90vh",
-    overflow: "hidden",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
-  },
-  mobileModalContent: {
-    background: "#fff",
-    borderRadius: "14px",
-    maxWidth: "98%",
-    width: "100%",
-    maxHeight: "95vh",
-    overflow: "hidden",
-    boxShadow: "0 24px 80px rgba(0,0,0,0.2)",
-  },
-  modalHeader: {
-    padding: "16px 20px",
-    borderBottom: "1px solid #e5e7eb",
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-  },
-  modalTitle: {
-    fontSize: "18px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-  },
-  mobileModalTitle: {
-    fontSize: "16px",
-    fontWeight: "700",
-    color: "#0f172a",
-    margin: 0,
-  },
-  modalSubtitle: {
-    fontSize: "12px",
-    color: "#64748b",
-    marginTop: "2px",
-  },
-  modalCloseBtn: {
-    width: "32px",
-    height: "32px",
-    borderRadius: "50%",
-    border: "none",
-    background: "#f1f5f9",
-    color: "#64748b",
-    cursor: "pointer",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    transition: "all 0.2s ease",
-    flexShrink: 0,
-  },
-  modalBody: {
-    padding: "20px",
-    overflowY: "auto",
-  },
-  formGroup: {
-    marginBottom: "16px",
-  },
-  formLabel: {
-    display: "block",
-    fontSize: "13px",
-    fontWeight: "600",
-    color: "#0f172a",
-    marginBottom: "4px",
-  },
-  formSelect: {
-    width: "100%",
-    padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    fontSize: "13px",
-    backgroundColor: "#fff",
-    color: "#0f172a",
-    cursor: "pointer",
-    outline: "none",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  formInput: {
-    width: "100%",
-    padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    fontSize: "13px",
-    color: "#0f172a",
-    outline: "none",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  formTextarea: {
-    width: "100%",
-    padding: "8px 12px",
-    border: "1px solid #e5e7eb",
-    borderRadius: "8px",
-    fontSize: "13px",
-    minHeight: "60px",
-    resize: "vertical",
-    color: "#0f172a",
-    outline: "none",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  formHint: {
-    fontSize: "12px",
-    color: "#ef4444",
-    marginTop: "4px",
-  },
-  modalFooter: {
-    padding: "14px 20px",
-    borderTop: "1px solid #e5e7eb",
-    display: "flex",
-    gap: "10px",
-  },
-  mobileModalFooter: {
-    padding: "12px 16px",
-    borderTop: "1px solid #e5e7eb",
-    display: "flex",
-    flexDirection: "column",
-    gap: "8px",
-  },
-  cancelModalBtn: {
-    flex: 1,
-    padding: "8px",
-    background: "#f1f5f9",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
-    color: "#475569",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  submitModalBtn: {
-    flex: 1,
-    padding: "8px",
-    background: "#f9c349",
-    color: "#0f172a",
-    border: "none",
-    borderRadius: "8px",
-    cursor: "pointer",
-    fontWeight: "600",
-    fontSize: "13px",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: "8px",
-    transition: "all 0.2s ease",
-    fontFamily: "'Inter', sans-serif",
-  },
-  // Mobile Card Styles
-  mobileCardList: {
-    display: "flex",
-    flexDirection: "column",
-    gap: "10px",
-    padding: "12px",
-  },
-  mobileCard: {
-    background: "#fff",
-    border: "1px solid #e5e7eb",
-    borderRadius: "10px",
-    padding: "12px",
-    boxShadow: "0 1px 3px rgba(0,0,0,0.04)",
-  },
-  mobileCardHeader: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "flex-start",
-    marginBottom: "8px",
-  },
-  mobileCardUser: {
-    display: "flex",
-    alignItems: "center",
-    gap: "10px",
-    flex: 1,
-  },
-  mobileCardAvatar: {
-    width: "36px",
-    height: "36px",
-    borderRadius: "50%",
-    background: "#f9c349",
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontWeight: "600",
-    color: "#fff",
-    fontSize: "14px",
-    flexShrink: 0,
-    position: "relative",
-  },
-  mobileTodayBadge: {
-    position: "absolute",
-    top: "-4px",
-    right: "-8px",
-    fontSize: "7px",
-    background: "#10b981",
-    color: "#fff",
-    padding: "1px 6px",
-    borderRadius: "8px",
-    fontWeight: "600",
-  },
-  mobileCardUserInfo: {
-    flex: 1,
-  },
-  mobileCardName: {
-    fontWeight: "600",
-    color: "#0f172a",
-    fontSize: "14px",
-  },
-  mobileCardEmail: {
-    fontSize: "11px",
-    color: "#64748b",
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-  },
-  mobileCardDetails: {
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: "6px",
-    padding: "8px 0",
-    borderTop: "1px solid #f1f5f9",
-    borderBottom: "1px solid #f1f5f9",
-    marginBottom: "8px",
-  },
-  mobileCardDetail: {
-    display: "flex",
-    alignItems: "center",
-    gap: "4px",
-    fontSize: "12px",
-    color: "#475569",
-  },
-  mobileTimeRemaining: {
-    fontSize: "11px",
-    color: "#f59e0b",
-    fontWeight: "500",
-  },
-  mobileCardActions: {
-    display: "flex",
-    justifyContent: "space-between",
-    alignItems: "center",
-    gap: "8px",
-  },
-  mobileMeetingLink: {
-    color: "#f9c349",
-    textDecoration: "none",
-    fontSize: "12px",
-    display: "inline-flex",
-    alignItems: "center",
-    gap: "4px",
-    fontWeight: "500",
-    padding: "4px 10px",
-    background: "#fef3c7",
-    borderRadius: "6px",
-  },
-  mobileActionGroup: {
-    display: "flex",
-    gap: "4px",
-  },
-  mobileActionBtn: {
-    padding: "4px 8px",
-    background: "#f1f5f9",
-    border: "none",
-    borderRadius: "6px",
-    color: "#475569",
-    cursor: "pointer",
-    display: "inline-flex",
-    alignItems: "center",
-    justifyContent: "center",
-    fontSize: "12px",
-    transition: "all 0.2s ease",
-    width: "30px",
-    height: "30px",
-  },
 };
 
 export default InterviewsManager;

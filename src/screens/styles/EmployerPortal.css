@@ -57,3 +57,15 @@
 .tdcp .ec-chips button { height: 42px; padding: 0 16px; border-radius: 21px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-family: var(--body); font-weight: 700; font-size: 13.5px; cursor: pointer; }
 .tdcp .ec-chips button[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--card); }
 
+/* interviews (EmpInterviews, EmpSchedule) */
+.tdcp .ei-stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 12px; }
+.tdcp .ei-stat { padding: 18px; display: flex; align-items: center; gap: 14px; min-width: 0; }
+.tdcp .ei-stat b { display: block; font-family: var(--heading); font-weight: 800; font-size: 30px; line-height: 1.1; }
+.tdcp .ei-stat span { font-size: 13.5px; color: var(--muted); }
+.tdcp .ei-when .k-pill { margin-top: 4px; }
+.tdcp .ei-none { padding: 64px 24px; display: flex; flex-direction: column; align-items: center; text-align: center; gap: 10px; }
+.tdcp .ei-none img { width: 80px; height: 80px; }
+.tdcp .ei-none h2 { margin: 6px 0 0; font-family: var(--heading); font-weight: 700; font-size: 22px; }
+.tdcp .ei-none p { margin: 0 0 10px; font-size: 15px; color: var(--muted); max-width: 380px; }
+/* forms in employer modals and settings */
+.tdcp .emp-form { display: flex; flex-direction: column; gap: 14px; }
