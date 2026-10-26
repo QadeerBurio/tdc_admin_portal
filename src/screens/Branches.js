@@ -9,7 +9,13 @@ import "./styles/BrandPortal.css";
 
 const API_BASE = "https://the-deft-crew-production.up.railway.app/api/branches";
 
-const DISCOUNT_OPTIONS = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+const DISCOUNT_OPTIONS = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
+
+// new choices are 15-60%; a saved branch with another value keeps it as an option so it displays and saves unchanged
+const discountChoices = (current) => {
+  const v = Number(current);
+  return current !== "" && current != null && !DISCOUNT_OPTIONS.includes(v) ? [v, ...DISCOUNT_OPTIONS] : DISCOUNT_OPTIONS;
+};
 
 export default function Branches() {
   const { token } = useContext(AuthContext);
@@ -355,7 +361,7 @@ export default function Branches() {
               }}
             >
               <option value="">Select discount %</option>
-              {DISCOUNT_OPTIONS.map((v) => (
+              {discountChoices(form.discountPercentage).map((v) => (
                 <option key={v} value={v}>
                   {v}%
                 </option>
