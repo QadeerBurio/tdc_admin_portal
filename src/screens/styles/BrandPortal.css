@@ -59,3 +59,19 @@
 .tdcp .br-up-ico { width: 52px; height: 52px; flex: 0 0 52px; border-radius: 26px; background: var(--card); border: 1px solid var(--line); display: inline-flex; align-items: center; justify-content: center; }
 .tdcp .k-drop.invalid { border-color: var(--danger); }
 .tdcp .bo-banner .bo-img { aspect-ratio: auto; height: 180px; }
+/* shared page title with a tile (Br* boards) */
+.tdcp .br-title { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.tdcp .br-title > div { min-width: 0; }
+/* branches */
+.tdcp .bb-card { padding: 18px; display: flex; flex-direction: column; gap: 12px; }
+.tdcp .bb-card.off { opacity: .6; }
+.tdcp .bb-top { display: flex; align-items: center; gap: 12px; }
+.tdcp .bb-name { flex: 1; min-width: 0; }
+.tdcp .bb-name h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 18px; overflow-wrap: anywhere; }
+.tdcp .bb-name .k-hint { margin: 2px 0 0; }
+.tdcp .bb-chips { display: flex; flex-wrap: wrap; gap: 6px; }
+.tdcp .bb-chip { height: 26px; padding: 0 10px; border-radius: 13px; border: 1px solid var(--line); display: inline-flex; align-items: center; font-size: 12.5px; font-weight: 700; }
+.tdcp .bb-line { margin: 0; display: flex; gap: 8px; align-items: flex-start; font-size: 14px; color: var(--ink-soft); overflow-wrap: anywhere; }
+.tdcp .bb-line svg { flex: 0 0 auto; margin-top: 2px; }
+.tdcp .bb-actions { display: flex; flex-wrap: wrap; gap: 8px; margin-top: auto; padding-top: 4px; }
+.tdcp .bb-confirm { margin: 0; font-size: 15px; line-height: 1.5; }
