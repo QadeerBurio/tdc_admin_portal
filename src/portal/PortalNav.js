@@ -1,6 +1,6 @@
-// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin, brand and employer menus.
+// PortalNav.js: the portal sidebar from the design (design/portal/PortalNav), admin, brand, employer and travel partner menus.
 // Admin items keep the admin dashboard's page ids, so selecting one switches the page inside /admin as before.
-// Items with a path (fifth field) are real links, so every brand and employer screen has its own URL.
+// Items with a path (fifth field) are real links, so every brand, employer and travel screen has its own URL.
 import React from "react";
 import { Link } from "react-router-dom";
 import Ico from "./Ico";
@@ -67,6 +67,21 @@ export const EMPLOYER_MENU = [
       ["candidates", "candidates", "users", "blue", "/candidate"],
       ["interviews", "interviews", "calendar", "purple", "/interviews"],
       ["reports", "reports", "chart", "green", "/reports"],
+    ],
+  },
+];
+
+// travel partner portal (design/portal/TrDashboard ... TrSavings); settings opens from the gear.
+export const TRAVELER_MENU = [
+  {
+    title: "",
+    items: [
+      ["dashboard", "dashboard", "home", "orange", "/traveler-dashboard"],
+      ["packages", "packages", "plane", "sky", "/traveler/packages"],
+      ["bookings", "bookings", "calendar", "purple", "/traveler/bookings"],
+      ["redeem", "redeem offer", "qr", "green", "/traveler/redeem"],
+      ["history", "travel history", "compass", "blue", "/traveler/history"],
+      ["savings", "student savings", "wallet", "pink", "/traveler/savings"],
     ],
   },
 ];
