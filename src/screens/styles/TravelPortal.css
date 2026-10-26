@@ -82,3 +82,15 @@
 .tdcp .tr-recent { overflow: hidden; }
 .tdcp .tr-recent .tr-list-head { padding-bottom: 8px; align-items: center; }
 .tdcp .tr-table-empty { margin: 0; padding: 28px 22px 32px; text-align: center; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line-soft); }
+/* history (TrHistory) */
+.tdcp .tr-timeline { display: flex; flex-direction: column; }
+.tdcp .tr-tl { display: flex; gap: 14px; }
+.tdcp .tr-tl-rail { display: flex; flex-direction: column; align-items: center; }
+.tdcp .tr-tl-rail span { width: 14px; height: 14px; flex: 0 0 14px; border-radius: 7px; background: var(--card); border: 2px solid var(--ink); margin-top: 2px; }
+.tdcp .tr-tl-rail span.on { background: var(--yellow); }
+.tdcp .tr-tl-rail i { flex: 1; width: 2px; background: var(--line); min-height: 18px; }
+.tdcp .tr-tl:last-child .tr-tl-rail i { display: none; }
+.tdcp .tr-tl-body { padding-bottom: 18px; display: flex; flex-direction: column; gap: 1px; font-size: 13.5px; min-width: 0; }
+.tdcp .tr-tl-body b { font-size: 15px; overflow-wrap: anywhere; }
+.tdcp .tr-none-sky { border-radius: 22px; padding: 32px 24px; }
+.tdcp .tr-none-sky p { color: var(--ink-soft); }
