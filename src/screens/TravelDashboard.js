@@ -34,6 +34,8 @@ const TravelDashboard = () => {
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
   const [savings, setSavings] = useState([]);
+  // bumping this re-runs the fetch below (the bookings screen refresh button)
+  const [reloadKey, setReloadKey] = useState(0);
   const [stats, setStats] = useState({
     totalBookings: 0,
     activeOffers: 0,
@@ -66,7 +68,7 @@ const TravelDashboard = () => {
       }
     };
     if (token) fetchStats();
-  }, [token]);
+  }, [token, reloadKey]);
 
   // the mobile menu closes when the page changes
   useEffect(() => {
@@ -104,7 +106,7 @@ const TravelDashboard = () => {
           </button>
         </header>
         <main className="tdcp-main">
-          <Outlet context={{ token, user, displayName, stats, bookings, savings, loading }} />
+          <Outlet context={{ token, user, displayName, stats, bookings, savings, loading, reload: () => setReloadKey((k) => k + 1) }} />
         </main>
       </div>
     </div>

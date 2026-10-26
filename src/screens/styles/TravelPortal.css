@@ -54,3 +54,15 @@
 .tdcp .tr-lines-head > span { display: flex; align-items: center; gap: 10px; font-weight: 700; font-size: 14.5px; }
 .tdcp .tr-line { display: flex; gap: 6px; align-items: center; }
 .tdcp .tr-soon { margin-right: auto; display: flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); }
+/* shared screen bits */
+.tdcp .tr-pad { padding: 22px; min-width: 0; }
+.tdcp .tr-h2 { margin: 0 0 16px; font-family: var(--heading); font-weight: 700; font-size: 19px; overflow-wrap: anywhere; }
+.tdcp .tr-nowrap { white-space: nowrap; }
+.tdcp .tr-mono { font-family: ui-monospace, Menlo, Consolas, monospace; font-weight: 700; }
+.tdcp .tr-flush { padding: 0; }
+.tdcp .tr-stat-text { font-size: 18px; overflow-wrap: anywhere; }
+/* bookings (TrBookings) */
+.tdcp .tr-table-none { padding: 52px 24px 56px; text-align: center; border-top: 1px solid var(--line-soft); }
+.tdcp .tr-table-none img { width: 76px; height: 76px; }
+.tdcp .tr-table-none p { margin: 4px 0 0; font-size: 14px; }
+.tdcp .tr-table-none .tr-none-t { margin-top: 8px; font-family: var(--heading); font-weight: 700; font-size: 20px; }
