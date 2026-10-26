@@ -39,7 +39,20 @@
 .tdcp .bo-banner { position: relative; border-radius: 16px; overflow: hidden; }
 .tdcp .bo-change { position: absolute; right: 10px; bottom: 10px; cursor: pointer; }
 /* create discount (BrCreate): page and first-discount popup */
-.tdcp .br-create { max-width: 760px; overflow: hidden; }
+.tdcp .br-create { max-width: 600px; overflow: hidden; border-radius: 28px; }
+.tdcp .br-create-head { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; padding: 26px 28px 0; }
+.tdcp .br-create-head > div { min-width: 0; }
+.tdcp .br-create-head .k-pill { height: 32px; padding-left: 4px; margin-bottom: 12px; }
+.tdcp .br-create-head h1 { margin: 0; font-family: var(--heading); font-weight: 800; font-size: 28px; letter-spacing: -0.7px; line-height: 1.15; }
+.tdcp .br-create-head p { margin: 4px 0 0; font-size: 14.5px; color: var(--muted); }
+.tdcp .br-create-head .k-icon-btn { flex: 0 0 auto; }
+.tdcp .br-create .br-create-body { padding: 22px 28px; }
+.tdcp .br-create .br-create-foot { padding: 18px 28px 26px; }
+.tdcp .br-create .k-input, .tdcp .br-create .k-select { height: 52px; border-radius: 16px; font-size: 15px; }
+.tdcp .br-create .k-textarea { border-radius: 16px; font-size: 15px; }
+.tdcp .br-create .k-drop { background: var(--paper); }
+.tdcp .br-create .br-pcts button { min-width: 52px; }
+@media (max-width: 600px) { .tdcp .br-create-head { padding: 22px 18px 0; } .tdcp .br-create .br-create-body { padding: 18px; } .tdcp .br-create .br-create-foot { padding: 16px 18px 20px; } }
 .tdcp .br-create-body { padding: 22px 24px; display: flex; flex-direction: column; gap: 16px; }
 .tdcp .br-create-foot, .tdcp .br-pop-foot { padding: 18px 24px 22px; border-top: 1px solid var(--line-soft); display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; }
 .tdcp .br-two { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 14px; }

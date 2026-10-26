@@ -1,9 +1,11 @@
 // src/screens/CreateOffer.js
 // New discount (design/portal/BrCreate): one flat offer for tdc verified users.
 import React, { useState } from "react";
+import { Link, useOutletContext } from "react-router-dom";
 import axios from "axios";
 import Ico from "../portal/Ico";
-import { PageHeader, Button, Field, Input, Textarea, Select, DateInput, Progress, toast } from "../portal/kit";
+import { Button, Field, Input, Textarea, Select, DateInput, Pill, Progress, toast } from "../portal/kit";
+import dotSorted from "./dots/sorted.png";
 import "./styles/BrandPortal.css";
 
 const API_BASE_URL = "https://the-deft-crew-production.up.railway.app/api/offers";
@@ -42,6 +44,8 @@ const DEFAULT_REDEMPTION_INSTRUCTIONS = `1. Open the TDC App and navigate to the
 const PERCENTS = [15, 20, 25, 30, 35, 40, 45, 50, 60];
 
 export default function CreateOffer() {
+  // the brand shell passes its offers; the "no discount live yet" pill shows only when none is live
+  const outlet = useOutletContext();
   const [form, setForm] = useState({
     title: "",
     description: "",
@@ -189,11 +193,19 @@ export default function CreateOffer() {
     </label>
   );
 
+  const hasLive = (outlet?.offers || []).some((o) => o.status !== "expired");
+
   return (
     <div className="tdcp k-page" data-screen="brand-create">
-      <PageHeader title="create offer" sub="one flat offer for tdc verified users. you can edit it any time." />
-
       <div className="k-card br-create">
+        <div className="br-create-head">
+          <div>
+            {outlet && !hasLive && <Pill tone="yellow"><img src={dotSorted} alt="" className="br-pop-dot" />no discount live yet</Pill>}
+            <h1>create offer<span className="dot" aria-hidden="true">.</span></h1>
+            <p>one flat offer for tdc verified users. you can edit it any time.</p>
+          </div>
+          <Link to="/discount" className="k-icon-btn" aria-label="close" title="close"><Ico kind="close" tone="plain" size={16} /></Link>
+        </div>
         <div className="br-create-body">
           {showSuccess && (
             <div className="k-note ok k-row" role="status">
@@ -208,7 +220,7 @@ export default function CreateOffer() {
               {preview ? (
                 <img src={preview} alt="Offer preview" className="br-drop-preview" />
               ) : (
-                <Ico kind="upload" tone="sand" size={44} />
+                <span className="br-up-ico"><Ico kind="upload" tone="plain" size={22} /></span>
               )}
               <span>
                 <b>{preview ? "change image" : "upload a banner"}</b>
