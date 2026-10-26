@@ -120,3 +120,14 @@
 .tdcp .vr-how li { display: flex; gap: 12px; align-items: flex-start; }
 .tdcp .vr-how li span { width: 26px; height: 26px; flex: 0 0 26px; border-radius: 13px; background: var(--yellow); color: var(--ink); display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13px; }
 .tdcp .vr-cell { display: flex; flex-direction: column; gap: 2px; }
+/* redemptions + claimed students */
+.tdcp a.k-tab { text-decoration: none; display: inline-flex; align-items: center; gap: 8px; }
+.tdcp .br-nowrap { white-space: nowrap; }
+.tdcp .br-off { color: var(--success); }
+.tdcp .br-stat-text { font-size: 18px; overflow-wrap: anywhere; }
+.tdcp .br-foot { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: center; gap: 10px; font-size: 14px; color: var(--muted); }
+.tdcp .br-foot strong { color: var(--ink); }
+.tdcp .cu-student { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.tdcp .cu-avatar { width: 38px; height: 38px; flex: 0 0 38px; border-radius: 19px; display: flex; align-items: center; justify-content: center; font-weight: 800; font-size: 13.5px; }
+.tdcp .cu-avatar.big { width: 56px; height: 56px; flex-basis: 56px; border-radius: 28px; font-size: 18px; }
+.tdcp .cu-filters { padding: 16px; display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 220px), 1fr)); gap: 12px; align-items: end; }
