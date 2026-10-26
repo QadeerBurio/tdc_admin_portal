@@ -28,6 +28,8 @@ const NAV_FOR_PATH = {
   "/claimedUsers": "redemptions",
   "/settings": "settings",
 };
+// pages whose topbar name differs from their menu item
+const LABEL_FOR_PATH = { "/create-offer": "create offer" };
 const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
 
 export default function Home() {
@@ -226,7 +228,7 @@ export default function Home() {
       <div style={{ flex: 1, minWidth: 0, display: "flex", flexDirection: "column" }}>
         <header className="tdcp-topbar">
           <img src={logoInk} alt="tdc." />
-          <span style={{ fontWeight: 700, fontSize: 14 }}>{LABEL_FOR_NAV[active] || "brand portal"}</span>
+          <span style={{ fontWeight: 700, fontSize: 14 }}>{LABEL_FOR_PATH[location.pathname] || LABEL_FOR_NAV[active] || "brand portal"}</span>
           <button type="button" className="tdcp-icon-btn" onClick={() => setIsMobileMenuOpen(true)} aria-label="open menu" aria-expanded={isMobileMenuOpen} style={{ width: 44, height: 44, borderRadius: 22, border: "1px solid var(--line)", background: "var(--card)" }}>
             <Ico kind="menu" tone="plain" size={20} />
           </button>

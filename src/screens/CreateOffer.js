@@ -191,7 +191,7 @@ export default function CreateOffer() {
 
   return (
     <div className="tdcp k-page" data-screen="brand-create">
-      <PageHeader title="new discount" sub="one flat offer for tdc verified users. you can edit it any time." />
+      <PageHeader title="create offer" sub="one flat offer for tdc verified users. you can edit it any time." />
 
       <div className="k-card br-create">
         <div className="br-create-body">
