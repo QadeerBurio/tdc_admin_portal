@@ -66,3 +66,19 @@
 .tdcp .tr-table-none img { width: 76px; height: 76px; }
 .tdcp .tr-table-none p { margin: 4px 0 0; font-size: 14px; }
 .tdcp .tr-table-none .tr-none-t { margin-top: 8px; font-family: var(--heading); font-weight: 700; font-size: 20px; }
+/* redeem (TrRedeem) */
+.tdcp .tr-redeem-grid { display: flex; flex-wrap: wrap; gap: 16px; align-items: stretch; }
+.tdcp .tr-redeem { flex: 2 1 460px; min-width: 0; padding: 22px; display: flex; flex-direction: column; gap: 14px; }
+.tdcp .tr-redeem-grid .tr-how { flex: 1 1 300px; }
+.tdcp .tr-redeem h2, .tdcp .tr-recent h2 { margin: 0; font-family: var(--heading); font-weight: 700; font-size: 19px; }
+.tdcp .tr-redeem-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.tdcp .tr-redeem-row .tr-code { flex: 1 1 240px; height: 62px; border-radius: 18px; font-family: var(--heading); font-weight: 700; font-size: 20px; letter-spacing: 1.5px; }
+.tdcp .tr-redeem-row .k-btn { height: 62px; border-radius: 31px; }
+.tdcp .tr-soon { display: flex; align-items: center; gap: 6px; margin: 0; font-size: 13px; color: var(--muted); }
+.tdcp .tr-result { border-radius: 20px; padding: 18px; display: flex; flex-wrap: wrap; align-items: center; gap: 14px; font-size: 14px; }
+.tdcp .tr-result > div { flex: 1 1 220px; min-width: 0; }
+.tdcp .tr-result.ok { background: var(--success-bg); color: var(--success); }
+.tdcp .tr-result.bad { background: var(--danger-bg); color: var(--danger); }
+.tdcp .tr-recent { overflow: hidden; }
+.tdcp .tr-recent .tr-list-head { padding-bottom: 8px; align-items: center; }
+.tdcp .tr-table-empty { margin: 0; padding: 28px 22px 32px; text-align: center; font-size: 14px; color: var(--muted); border-top: 1px solid var(--line-soft); }
