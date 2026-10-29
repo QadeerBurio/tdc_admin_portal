@@ -201,12 +201,13 @@ export default function Landing() {
           </div>
           <div className="partners">
             {brands.map((b) => (
-              <span key={b.name}>
-                {b.image && <img src={b.image} alt="" width="24" height="24" loading="lazy" decoding="async" style={{ width: 24, height: 24, borderRadius: 12, objectFit: "cover", marginLeft: -8 }} />}
-                {b.name}
-                {b.category && <small>{b.category}</small>}
+              <span key={b.name} className={b.image ? "has-img" : undefined}>
+                {b.image && <img src={b.image} alt="" width="24" height="24" loading="lazy" decoding="async" />}
+                <span className="pc-text"><b>{b.name}</b>{b.category && <small>{b.category}</small>}</span>
               </span>
             ))}
+            {/* phones show 8 brands and this link */}
+            <a href={LINKS.getApp} className="partners-more">see all 100+ brands in the app <Arrow size={16} /></a>
           </div>
         </section>
 
