@@ -1,7 +1,8 @@
 // src/screens/CompanyDashboard.js
 // Employer portal: the shell (PortalNav employer menu on real URLs, design/portal/PortalNav) and the dashboard
 // (design/portal/EmpDashboard). The shell loads the same data the old dashboard did and hands it to each screen.
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect , useRef } from "react";
+import { useRouteFade } from "../portal/motion";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useLocation, Link, Outlet, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -32,6 +33,8 @@ const CompanyDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const mainRef = useRef(null);
+  useRouteFade(mainRef, location.pathname);
   const [stats, setStats] = useState({
     totalJobs: 0,
     activeJobs: 0,
@@ -241,7 +244,7 @@ const CompanyDashboard = () => {
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>
-        <main className="tdcp-main">
+        <main className="tdcp-main" ref={mainRef}>
           <Outlet context={{ token, user, stats, recentApplications, upcomingInterviewsList, loading, refreshing, fetchError, fetchAllData, employeeData, companyName, displayName, logoUrl }} />
         </main>
       </div>

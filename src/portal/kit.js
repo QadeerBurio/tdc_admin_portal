@@ -6,6 +6,8 @@ import { createRoot } from "react-dom/client";
 import Ico, { TONES } from "./Ico";
 import "./portal.css";
 import "./kit.css";
+import "./motion.css";
+import CountUp from "./motion";
 
 const cx = (...a) => a.filter(Boolean).join(" ");
 
@@ -290,7 +292,7 @@ export function StatCard({ label, value, sub, icon, tone = "sand", dark, onClick
     <Tag type={onClick ? "button" : undefined} className={cx("k-stat", dark && "dark")} onClick={onClick} aria-pressed={onClick ? !!pressed : undefined}>
       {icon && <div className="k-stat-ico"><Ico kind={icon} tone={dark ? "yellow" : tone} size={40} /></div>}
       <div className="k-stat-lbl">{label}</div>
-      <div className="k-stat-num">{value}</div>
+      <div className="k-stat-num"><CountUp value={value} /></div>
       {sub != null && sub !== "" && <div className="k-stat-sub">{sub}</div>}
     </Tag>
   );

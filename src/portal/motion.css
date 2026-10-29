@@ -1,0 +1,52 @@
+/* motion.css: quiet motion for the portals. Only opacity and transform, each plays once when an
+   element appears (re-renders don't restart it), nothing waits for it, and all of it is off under
+   prefers-reduced-motion. Imported by kit.js after kit.css, so it ships with the portal chunks. */
+
+@keyframes tdcp-rise { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+@keyframes tdcp-fade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes tdcp-pop { from { opacity: 0; transform: translateY(10px) scale(0.98); } to { opacity: 1; transform: none; } }
+@keyframes tdcp-sheet { from { transform: translateY(32px); opacity: 0; } to { transform: none; opacity: 1; } }
+@keyframes tdcp-slide { from { transform: translateX(40px); opacity: 0; } to { transform: none; opacity: 1; } }
+
+@media (prefers-reduced-motion: no-preference) {
+  /* cards and numbers rise in; stat grids are staggered 40 ms per item */
+  .tdcp .k-card, .tdcp .k-stat, .tdcp .k-table-card, .tdcp .k-empty,
+  .tdcp-stat, .tdcp-card, .tdcp-soft, .tdcp-table-wrap,
+  .tdcp-motion :is(.stat-card, .brand-card, .empty-state) { animation: tdcp-rise .32s cubic-bezier(.2, .8, .2, 1) both; }
+  :is(.tdcp .k-stats, .tdcp-grid-big, .tdcp-grid-small, .tdcp-motion .stats-grid) > :nth-child(2) { animation-delay: 40ms; }
+  :is(.tdcp .k-stats, .tdcp-grid-big, .tdcp-grid-small, .tdcp-motion .stats-grid) > :nth-child(3) { animation-delay: 80ms; }
+  :is(.tdcp .k-stats, .tdcp-grid-big, .tdcp-grid-small, .tdcp-motion .stats-grid) > :nth-child(4) { animation-delay: 120ms; }
+  :is(.tdcp .k-stats, .tdcp-grid-big, .tdcp-grid-small, .tdcp-motion .stats-grid) > :nth-child(5) { animation-delay: 160ms; }
+  :is(.tdcp .k-stats, .tdcp-grid-big, .tdcp-grid-small, .tdcp-motion .stats-grid) > :nth-child(n+6) { animation-delay: 200ms; }
+
+  /* the first 8 table rows fade in, 30 ms apart; later rows just appear */
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(-n+8) { animation: tdcp-fade .28s ease both; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(2) { animation-delay: 30ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(3) { animation-delay: 60ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(4) { animation-delay: 90ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(5) { animation-delay: 120ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(6) { animation-delay: 150ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(7) { animation-delay: 180ms; }
+  :is(.tdcp .k-table, .tdcp-table) tbody tr:nth-child(8) { animation-delay: 210ms; }
+
+  /* modal: backdrop fades, the box rises (a sheet from the bottom on phones); drawer slides in */
+  .tdcp.k-overlay, .tdcp-panel-scrim { animation: tdcp-fade .2s ease both; }
+  .tdcp .k-modal, .tdcp-motion :is(.modal-content, .qr-modal-content) { animation: tdcp-pop .24s cubic-bezier(.2, .8, .2, 1) both; }
+  .tdcp .k-drawer, .tdcp-panel { animation: tdcp-slide .26s cubic-bezier(.2, .8, .2, 1) both; }
+  @media (max-width: 600px) { .tdcp .k-modal { animation-name: tdcp-sheet; } }
+
+  /* hover lift, only where something is clickable and a mouse is there */
+  @media (hover: hover) {
+    .tdcp .k-btn, .tdcp-btn { transition: background-color .15s ease, border-color .15s ease, opacity .15s ease, transform .15s ease; }
+    .tdcp .k-btn:hover:not(:disabled), .tdcp-btn:hover:not(:disabled) { transform: translateY(-1px); }
+    .tdcp .k-btn:active:not(:disabled), .tdcp-btn:active:not(:disabled) { transform: none; }
+    .tdcp button.k-stat, button.tdcp-stat, .tdcp-motion :is(.stat-card, .brand-card) { transition: transform .2s ease, box-shadow .2s ease, border-color .15s ease; }
+    .tdcp button.k-stat:hover, button.tdcp-stat:hover, .tdcp-motion :is(.stat-card, .brand-card):hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(17, 17, 17, 0.06); }
+  }
+}
+
+/* count-up: the final number sizes the box, so the card never changes width while it counts */
+.tdcp-count-up { display: inline-grid; }
+.tdcp-count-up > span { grid-area: 1 / 1; }
+.tdcp-count-up > .size { visibility: hidden; }
+.tdcp-sr { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }

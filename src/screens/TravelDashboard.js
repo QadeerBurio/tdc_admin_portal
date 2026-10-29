@@ -2,7 +2,8 @@
 // Travel partner portal: the shell (PortalNav traveler menu on real URLs, design/portal/PortalNav) and the
 // dashboard (design/portal/TrDashboard). The shell loads the same data the old dashboard did
 // (traveler/bookings, traveler/savings) and hands it to the screens.
-import React, { useState, useContext, useEffect } from "react";
+import React, { useState, useContext, useEffect , useRef } from "react";
+import { useRouteFade } from "../portal/motion";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useLocation, Link, Outlet, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -30,6 +31,8 @@ const TravelDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const mainRef = useRef(null);
+  useRouteFade(mainRef, location.pathname);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [loading, setLoading] = useState(true);
   const [bookings, setBookings] = useState([]);
@@ -105,7 +108,7 @@ const TravelDashboard = () => {
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>
-        <main className="tdcp-main">
+        <main className="tdcp-main" ref={mainRef}>
           <Outlet context={{ token, user, displayName, stats, bookings, savings, loading, reload: () => setReloadKey((k) => k + 1) }} />
         </main>
       </div>

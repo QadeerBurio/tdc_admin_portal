@@ -1,6 +1,6 @@
 // AdminDashboard.js: the admin portal shell (sidebar from design/portal/PortalNav) and the dashboard
 // (design/portal/AdDashboard). Pages still switch inside /admin; the data calls are the same as before.
-import React, { useContext, useState, useEffect, useCallback } from "react";
+import React, { useContext, useState, useEffect, useCallback, useRef } from "react";
 import { useNavigate, useParams, useLocation } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { engagementApi } from "../services/api";
@@ -8,6 +8,7 @@ import "./styles/AdminDashboard.css";
 import "../portal/portal.css";
 import Ico from "../portal/Ico";
 import PortalNav, { pageLabel } from "../portal/PortalNav";
+import { CountUp, useRouteFade } from "../portal/motion";
 import AdminUserProfile from "../portal/AdminUserProfile";
 import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
@@ -52,6 +53,8 @@ export default function AdminDashboard() {
   const { role: profileRole, id: profileId } = useParams();
   const location = useLocation();
   const [activePage, setActivePage] = useState(location.state?.page || ROLE_PAGE[profileRole] || "dashboard");
+  const mainRef = useRef(null);
+  useRouteFade(mainRef, activePage);
   const [isFetching, setIsFetching] = useState(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
 
@@ -296,7 +299,7 @@ export default function AdminDashboard() {
           <button type="button" key={s.id} className={`tdcp-stat${s.dark ? " dark" : ""}`} onClick={() => go(s.id)}>
             <div className="ico"><Ico kind={s.icon} tone={s.dark ? "yellow" : s.tone} size={52} /></div>
             <div className="lbl">{s.label}</div>
-            <div className="num">{s.value}</div>
+            <div className="num"><CountUp value={s.value} /></div>
             <div className="sub">{s.sub}</div>
           </button>
         ))}
@@ -307,7 +310,7 @@ export default function AdminDashboard() {
           <button type="button" key={s.id + s.label} className="tdcp-stat small" onClick={() => go(s.id)}>
             <div className="ico"><Ico kind={s.icon} tone={s.tone} size={40} /></div>
             <div className="lbl">{s.label}</div>
-            <div className="num">{s.value}</div>
+            <div className="num"><CountUp value={s.value} /></div>
             <div className="sub">{s.sub}</div>
           </button>
         ))}
@@ -408,7 +411,7 @@ export default function AdminDashboard() {
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>
-        <main className="tdcp-main">
+        <main className="tdcp-main" ref={mainRef}>
           {profileId
             ? <AdminUserProfile role={profileRole} id={profileId} onBack={() => navigate("/admin", { state: { page: ROLE_PAGE[profileRole] || "dashboard" } })} />
             : renderContent()}

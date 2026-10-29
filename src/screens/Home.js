@@ -2,7 +2,8 @@
 // Brand portal: the shell (PortalNav brand menu on real URLs, design/portal/PortalNav) and the dashboard
 // (design/portal/BrDashboard). The shell loads the same data the old Home did and opens the first-discount
 // popup when the brand has no offer yet.
-import React, { useState, useEffect, useContext } from "react";
+import React, { useState, useEffect, useContext , useRef } from "react";
+import { useRouteFade } from "../portal/motion";
 import { AuthContext } from "../context/AuthContext";
 import { useNavigate, useLocation, Link, Outlet, useOutletContext } from "react-router-dom";
 import axios from "axios";
@@ -36,6 +37,8 @@ export default function Home() {
   const { token, user, logout } = useContext(AuthContext);
   const navigate = useNavigate();
   const location = useLocation();
+  const mainRef = useRef(null);
+  useRouteFade(mainRef, location.pathname);
 
   const [stats, setStats] = useState({
     totalLeads: 0,
@@ -233,7 +236,7 @@ export default function Home() {
             <Ico kind="menu" tone="plain" size={20} />
           </button>
         </header>
-        <main className="tdcp-main">
+        <main className="tdcp-main" ref={mainRef}>
           <Outlet context={{ stats, leads, savings, offers, loading, brandName, displayName, logoUrl, brandData, refreshOffers }} />
         </main>
       </div>
