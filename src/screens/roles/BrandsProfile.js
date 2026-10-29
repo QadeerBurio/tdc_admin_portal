@@ -110,7 +110,7 @@ export default function BrandsProfile() {
           <section className="wrap section">
             <div className="section-head" style={{ marginBottom: 28 }}>
               <h2 className="h-md">in good company<span className="dot" aria-hidden="true">.</span></h2>
-              <Link to="/OfferImagesGallery" style={{ fontWeight: 700, fontSize: 15 }}>see all brands</Link>
+              <Link to="/OfferImagesGallery" className="tap-link" style={{ fontWeight: 700, fontSize: 15 }}>see all brands</Link>
             </div>
             <div className="logo-grid">
               {logos.map((b) => (

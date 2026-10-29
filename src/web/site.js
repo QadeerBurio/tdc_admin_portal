@@ -256,7 +256,7 @@ export function AuthShell({ children, headerAction }) {
           {headerAction}
         </header>
         <main>{children}</main>
-        <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted">
+        <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted help-foot">
           need help? <a href={`mailto:${LINKS.hello}`} style={{ color: "#6B675E" }}>{LINKS.hello}</a>
           {" · "}
           <a href={LINKS.whatsapp} target="_blank" rel="noopener noreferrer" style={{ color: "#6B675E" }}>WhatsApp</a>

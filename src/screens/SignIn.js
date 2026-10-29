@@ -144,12 +144,12 @@ export default function SignIn() {
             </p>
 
             <div className="alert alert-info">
-              student? tdc lives in the app. <a href={LINKS.getApp} style={{ fontWeight: 700 }}>get it here</a>
+              student? tdc lives in the app. <a href={LINKS.getApp} className="tap-link" style={{ fontWeight: 700 }}>get it here</a>
             </div>
           </form>
         </main>
 
-        <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted">
+        <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted help-foot">
           need help? <a href={`mailto:${LINKS.hello}`} style={{ color: "#6B675E" }}>{LINKS.hello}</a>
         </footer>
       </div>

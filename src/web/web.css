@@ -367,6 +367,23 @@
   .tdcw .nav-toggle { width: 48px; height: 48px; border-radius: 24px; }
 }
 
+/* touch screens: every tap target at least 48 px tall (mouse layouts stay as they are) */
+@media (pointer: coarse) {
+  .tdcw .logo { min-height: 48px; }
+  .tdcw .nav-login { display: inline-flex; align-items: center; min-height: 48px; }
+  .tdcw .nav-toggle { width: 48px; height: 48px; border-radius: 24px; }
+  .tdcw .btn-sm { height: 48px; border-radius: 24px; }
+  .tdcw .footer-col { gap: 0; }
+  .tdcw .footer-col b { margin-bottom: 4px; }
+  .tdcw .footer-col a, .tdcw .footer-base a { display: inline-flex; align-items: center; min-height: 48px; }
+  .tdcw .filters button { height: 48px; border-radius: 24px; }
+  .tdcw .pw-toggle { height: 48px; }
+  .tdcw .link-btn { min-height: 48px; }
+  .tdcw .check { min-height: 48px; }
+  /* links inside a line of text: taller hit area, same line height */
+  .tdcw .tap-link, .tdcw .help-foot a { display: inline-block; padding: 14px 2px; margin: -14px -2px; }
+}
+
 /* logo grid (partner brands, universities) */
 .tdcw .logo-grid { display: grid; gap: 12px; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); }
 .tdcw .logo-tile { background: var(--card); border: 1px solid var(--line); border-radius: 20px; aspect-ratio: 1 / 1; display: flex; align-items: center; justify-content: center; padding: 18px; overflow: hidden; }

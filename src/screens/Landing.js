@@ -197,7 +197,7 @@ export default function Landing() {
         <section className="wrap section">
           <div className="section-head" style={{ marginBottom: 28 }}>
             <h2 className="h-md">100+ brands already on tdc<span className="dot" aria-hidden="true">.</span></h2>
-            <a href={LINKS.getApp} style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
+            <a href={LINKS.getApp} className="tap-link" style={{ fontWeight: 700, fontSize: 15 }}>see them all in the app</a>
           </div>
           <div className="partners">
             {brands.map((b) => (
