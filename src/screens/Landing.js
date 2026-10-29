@@ -107,8 +107,8 @@ export default function Landing() {
                 </div>
                 <div className="ph-title"><b>deals near you<span className="dot" aria-hidden="true">.</span></b><span>see all</span></div>
                 <div className="ph-deals">
-                  <div className="ph-deal"><i /><b>Jenpharm</b><small>health and beauty</small></div>
-                  <div className="ph-deal"><i /><b>Dear Croissant</b><small>food and drinks</small></div>
+                  <div className="ph-deal"><i className="tint-rose">J<em>20% off</em></i><b>Jenpharm</b><small>health and beauty</small></div>
+                  <div className="ph-deal"><i className="tint-yellow">D<em>15% off</em></i><b>Dear Croissant</b><small>food and drinks</small></div>
                 </div>
               </div>
             </div>

@@ -157,7 +157,11 @@
 .tdcw .ph-card p { font-size: 13.5px; line-height: 1.4; margin-top: 6px; }
 .tdcw .ph-deals { display: flex; gap: 10px; padding: 10px 14px 0; }
 .tdcw .ph-deal { flex: 1; background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 10px; }
-.tdcw .ph-deal i { display: block; height: 58px; border-radius: 12px; background: var(--sand); }
+/* brand initial on a soft tint, with a discount tag (was an empty grey box) */
+.tdcw .ph-deal i { position: relative; display: flex; align-items: center; justify-content: center; height: 58px; border-radius: 12px; background: var(--sand); font-style: normal; font-family: var(--heading); font-weight: 800; font-size: 26px; color: var(--ink); }
+.tdcw .ph-deal i.tint-rose { background: #FDE3E1; }
+.tdcw .ph-deal i.tint-yellow { background: var(--yellow-soft); }
+.tdcw .ph-deal i em { position: absolute; left: 6px; bottom: 6px; height: 18px; padding: 0 7px; border-radius: 9px; background: var(--ink); color: #FFFFFF; font-family: var(--body); font-style: normal; font-weight: 700; font-size: 10px; line-height: 18px; }
 .tdcw .ph-deal b { display: block; font-size: 12.5px; margin-top: 8px; }
 .tdcw .ph-deal small { font-size: 11px; color: var(--muted); }
 
