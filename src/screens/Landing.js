@@ -121,7 +121,7 @@ export default function Landing() {
             <h2 className="h-lg">one app.<br />everything sorted<span className="dot" aria-hidden="true">.</span></h2>
             <p>the stuff students juggle across ten apps and fifty group chats, in one calm place.</p>
           </div>
-          <div className="grid">
+          <div className="grid grid-3">
             {TOOLS.map((t) => (
               <div className="card" key={t.title}>
                 <IconTile d={t.icon} />

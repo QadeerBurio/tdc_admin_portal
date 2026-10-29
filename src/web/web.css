@@ -99,6 +99,10 @@
 .tdcw .section-head { display: flex; flex-wrap: wrap; justify-content: space-between; align-items: flex-end; gap: 16px; margin-bottom: 40px; }
 .tdcw .section-head p { max-width: 420px; color: var(--muted); }
 .tdcw .grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); }
+/* six items: 3 + 3 on desktop, 2 + 2 + 2 on tablets, one column on phones (auto-fit gave 4 + 2) */
+.tdcw .grid-3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+@media (max-width: 900px) { .tdcw .grid-3 { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@media (max-width: 600px) { .tdcw .grid-3 { grid-template-columns: 1fr; } }
 .tdcw .grid-2 { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr)); }
 
 .tdcw .card { background: var(--card); border: 1px solid var(--line); border-radius: 22px; padding: 24px; }
