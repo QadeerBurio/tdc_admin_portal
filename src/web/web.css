@@ -163,6 +163,18 @@
 .tdcw .cta-dots img { display: block; width: 48px; height: 48px; }
 @media (max-width: 600px) { .tdcw .phone { zoom: 0.72; } }
 @media (max-width: 380px) { .tdcw .phone { zoom: 0.68; } }
+/* Desktop: the whole first screen (heading, buttons, stats, phone) fits. zoom scales the mockup
+   with its contents and shrinks its layout box: 682 px tall → about 532 px, about 505 px on
+   screens under 800 px tall. The copy column starts at the top instead of being centred against
+   the phone, with less padding above. */
+@media (min-width: 961px) {
+  .tdcw .hero { align-items: start; padding-top: 40px; }
+  .tdcw .phone { zoom: 0.78; }
+}
+@media (min-width: 961px) and (max-height: 800px) {
+  .tdcw .hero { padding-top: 28px; }
+  .tdcw .phone { zoom: 0.74; }
+}
 
 /* facts strip */
 .tdcw .facts { background: var(--card); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
