@@ -8,11 +8,12 @@ import dotSorted from "./dots/sorted.png";
 import dotExcited from "./dots/excited.png";
 import dotCheeky from "./dots/cheeky.png";
 
+// shown in the first screen, under the hero buttons (desktop) / the hero text (mobile)
 const FACTS = [
-  { icon: ICONS.store, n: "100+", label: "partner brands" },
-  { icon: ICONS.pin, n: "3", label: "cities: Karachi, Lahore, Islamabad" },
-  { icon: ICONS.cap, n: "12+", label: "partner universities" },
-  { icon: ICONS.percent, n: "15–60%", label: "flat student discounts" },
+  { n: "100+", label: "partner brands" },
+  { n: "3", label: "cities" },
+  { n: "12+", label: "universities" },
+  { n: "15–60%", label: "student discounts" },
 ];
 
 const TOOLS = [
@@ -64,7 +65,7 @@ export default function Landing() {
       <main>
         {/* hero */}
         <div className="wrap hero">
-          <div>
+          <div className="hero-copy">
             <span className="chip"><span className="chip-dot" />live in Karachi, Lahore and Islamabad</span>
             <h1 className="h-xl">student life,<br />sorted<span className="dot" aria-hidden="true">.</span></h1>
             <p className="lead">tdc is the free app for university, college and O/A level students. deals at 100+ brands, internships, a CV builder and your campus feed, in one place.</p>
@@ -73,6 +74,11 @@ export default function Landing() {
               <Link to="/signup" className="btn btn-secondary">partner with tdc</Link>
             </div>
             <p className="hero-note">free for students. forever. no catch.</p>
+            <ul className="hero-stats" aria-label="tdc in numbers">
+              {FACTS.map((f) => (
+                <li key={f.label}><b><CountUp value={f.n} /></b><span>{f.label}</span></li>
+              ))}
+            </ul>
           </div>
 
           <div className="phone-stage" aria-hidden="true">
@@ -108,15 +114,6 @@ export default function Landing() {
             </div>
           </div>
         </div>
-
-        {/* facts */}
-        <section className="facts" aria-label="tdc in numbers">
-          <div className="wrap">
-            {FACTS.map((f) => (
-              <div className="fact" key={f.label}><IconTile d={f.icon} /><b><CountUp value={f.n} /></b><span>{f.label}</span></div>
-            ))}
-          </div>
-        </section>
 
         {/* app */}
         <section id="app" className="wrap section">
