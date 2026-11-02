@@ -2,6 +2,17 @@
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
 
+## Which server it talks to
+
+`REACT_APP_API_URL` is the server's origin, without `/api`. For example:
+
+```
+REACT_APP_API_URL=https://tdc-server-staging.up.railway.app npm start
+```
+
+It is read in one place, `src/config/api.js`, and baked in at build time. When it is unset, the
+portal uses production. See `docs/STAGING.md` in the server repository for the staging setup.
+
 ## Available Scripts
 
 In the project directory, you can run:

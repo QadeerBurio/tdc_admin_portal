@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { Logo, LINKS, pageTitle } from "../web/site";
+import { API_ORIGIN } from "../config/api";
 
 export default function SignIn() {
   const { setUser, setToken } = useContext(AuthContext);
@@ -39,7 +40,7 @@ export default function SignIn() {
       setLoading(true);
 
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/login",
+        `${API_ORIGIN}/api/auth/login`,
         { email, password }
       );
 

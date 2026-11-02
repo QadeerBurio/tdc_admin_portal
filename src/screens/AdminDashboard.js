@@ -37,6 +37,7 @@ import DropsSchedule from "./DropsSchedule";
 import EngagementMetrics from "./EngagementMetrics";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
+import { API_ORIGIN } from "../config/api";
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -81,7 +82,7 @@ export default function AdminDashboard() {
   const [recentEvents, setRecentEvents] = useState([]);
 
   // API Base URL
-  const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
+  const API_BASE = `${API_ORIGIN}/api`;
 
   const fetchDashboardStats = useCallback(async () => {
     if (!token) return;

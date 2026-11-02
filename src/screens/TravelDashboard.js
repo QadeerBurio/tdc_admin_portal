@@ -14,6 +14,7 @@ import { PageLoading, StatCard, Button, Pill } from "../portal/kit";
 import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
 import "./styles/TravelPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 // path -> menu item
 const NAV_FOR_PATH = {
@@ -48,10 +49,10 @@ const TravelDashboard = () => {
   useEffect(() => {
     const fetchStats = async () => {
       try {
-        const bookingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/bookings",{
+        const bookingRes = await axios.get(`${API_ORIGIN}/api/traveler/bookings`,{
           headers: { Authorization: `Bearer ${token}` }
         });
-        const savingRes = await axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/savings",
+        const savingRes = await axios.get(`${API_ORIGIN}/api/traveler/savings`,
         {
           headers: { Authorization: `Bearer ${token}` }
         });
@@ -131,7 +132,7 @@ export function TravelerHome() {
 
   useEffect(() => {
     if (!token) return;
-    axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/packages", { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${API_ORIGIN}/api/traveler/packages`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setLivePackages(Array.isArray(res.data) ? res.data.length : 0))
       .catch((err) => { console.error("Error fetching packages", err); setLivePackages(0); });
   }, [token]);

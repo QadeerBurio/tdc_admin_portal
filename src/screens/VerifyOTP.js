@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { AuthShell, CardTitle, pageTitle } from "../web/site";
+import { API_ORIGIN } from "../config/api";
 
 export default function VerifyOTP() {
   const location = useLocation();
@@ -62,7 +63,7 @@ export default function VerifyOTP() {
 
     try {
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/verify-otp",
+        `${API_ORIGIN}/api/auth/verify-otp`,
         { userId, otp: otp.trim() }
       );
 
@@ -95,7 +96,7 @@ export default function VerifyOTP() {
 
     try {
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/resend-otp",
+        `${API_ORIGIN}/api/auth/resend-otp`,
         { emailOrPhone: emailOrPhone || undefined, userId }
       );
 

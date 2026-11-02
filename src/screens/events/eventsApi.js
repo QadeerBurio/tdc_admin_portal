@@ -1,10 +1,11 @@
 // src/screens/events/eventsApi.js
 // Events API for the admin web. Every call sends the admin token.
-// REACT_APP_EVENTS_API overrides the base (local mock tests); the default is production.
+// The server comes from REACT_APP_API_URL (src/config/api.js); the default is production.
 import axios from "axios";
+import { API_ORIGIN } from "../../config/api";
 
 export const API_BASE =
-  "https://the-deft-crew-production.up.railway.app/api/events";
+  `${API_ORIGIN}/api/events`;
 
 const auth = (token) => ({ headers: { Authorization: `Bearer ${token}` } });
 

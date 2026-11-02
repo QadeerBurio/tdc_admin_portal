@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import Ico from "../portal/Ico";
 import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, toast } from "../portal/kit";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
@@ -135,7 +136,7 @@ const VerifyClaim = () => {
   const loadScannedStudents = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/pending-scans",
+        `${API_ORIGIN}/api/offers/pending-scans`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -174,7 +175,7 @@ const VerifyClaim = () => {
   const loadPaymentHistory = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        `${API_ORIGIN}/api/offers/savings-report`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setPaymentHistory(res.data || []);
@@ -188,7 +189,7 @@ const VerifyClaim = () => {
     
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/pending-scans",
+        `${API_ORIGIN}/api/offers/pending-scans`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
@@ -240,7 +241,7 @@ const VerifyClaim = () => {
     setLoading(true);
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        `${API_ORIGIN}/api/offers/claimed-users`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
 
@@ -280,7 +281,7 @@ const VerifyClaim = () => {
   const loadBrandOffers = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        `${API_ORIGIN}/api/offers/my-offers`,
         { headers: { Authorization: `Bearer ${token}` } }
       );
       setBrandOffers(res.data || []);
@@ -428,7 +429,7 @@ const VerifyClaim = () => {
 
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        `${API_ORIGIN}/api/offers/claimed-users`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }
@@ -509,7 +510,7 @@ const VerifyClaim = () => {
     setProcessingPayment(true);
     try {
       await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/offers/redeem-payment",
+        `${API_ORIGIN}/api/offers/redeem-payment`,
         {
           offerId: offerId,
           userId: userId,
@@ -527,7 +528,7 @@ const VerifyClaim = () => {
         
         try {
           await axios.post(
-            "https://the-deft-crew-production.up.railway.app/api/offers/scan-processed",
+            `${API_ORIGIN}/api/offers/scan-processed`,
             { studentId: studentId },
             { headers: { Authorization: `Bearer ${token}` } }
           );

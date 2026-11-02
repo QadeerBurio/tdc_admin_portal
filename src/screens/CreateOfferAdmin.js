@@ -4,6 +4,7 @@ import React, { useState, useRef, useEffect } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, Button, Field, Input, Textarea, Segmented, Card, Progress, IconButton, toast } from "../portal/kit";
 import "./styles/CreateOfferAdmin.css";
+import { API_ORIGIN } from "../config/api";
 
 export default function CreateOfferAdmin() {
   const [view, setView] = useState("slider");
@@ -70,7 +71,7 @@ export default function CreateOfferAdmin() {
         });
       }, 200);
       
-      const response = await fetch("https://the-deft-crew-production.up.railway.app/api/admin/add",
+      const response = await fetch(`${API_ORIGIN}/api/admin/add`,
          {
         method: "POST",
         headers: {

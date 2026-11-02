@@ -4,6 +4,7 @@ import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { Logo, pageTitle, IconTile, ICONS } from "../web/site";
+import { API_ORIGIN } from "../config/api";
 
 const PAKISTAN_CITIES = [
   "Karachi", "Lahore", "Faisalabad", "Rawalpindi", "Gujranwala",
@@ -12,7 +13,7 @@ const PAKISTAN_CITIES = [
   "Chiniot", "Sheikhupura", "Rahim Yar Khan", "Jhang", "Dera Ghazi Khan",
 ];
 
-const API = "https://the-deft-crew-production.up.railway.app/api";
+const API = `${API_ORIGIN}/api`;
 
 export default function Signup() {
   const { setUser, setToken } = useContext(AuthContext);

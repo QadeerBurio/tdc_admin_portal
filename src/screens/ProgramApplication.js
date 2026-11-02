@@ -6,6 +6,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Ico from '../portal/Ico';
 import { PageHeader, PageLoading, IconButton, EmptyState, Pill } from '../portal/kit';
+import { API_ORIGIN } from "../config/api";
 
 const ProgramApplication = () => {
   const location = useLocation();
@@ -26,7 +27,7 @@ const ProgramApplication = () => {
 
     const fetchApplicants = async () => {
       try {
-        const res = await axios.get(`https://the-deft-crew-production.up.railway.app/api/admin/exchange/applications/${programId}`,
+        const res = await axios.get(`${API_ORIGIN}/api/admin/exchange/applications/${programId}`,
            {
           headers: { Authorization: `Bearer ${token}` }
         });

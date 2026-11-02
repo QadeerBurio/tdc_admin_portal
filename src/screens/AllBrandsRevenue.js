@@ -6,6 +6,7 @@ import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, IconButton, SearchInput, Segmented, StatCard, Modal, EmptyState, Pill, Card, Facts } from "../portal/kit";
 import "./styles/AllBrandsRevenue.css";
 import { storeBadge } from "../portal/storeBadge";
+import { API_ORIGIN } from "../config/api";
 
 // the server sends this placeholder when a brand has no top offer
 const NO_TOP_OFFER = "\u2014";
@@ -65,7 +66,7 @@ export default function AllBrandsRevenue() {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/offers/admin/brands-revenue`,
+        `${API_ORIGIN}/api/offers/admin/brands-revenue`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();

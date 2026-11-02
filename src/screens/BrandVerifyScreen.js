@@ -6,9 +6,10 @@ import { AuthContext } from '../context/AuthContext';
 import Ico from '../portal/Ico';
 import { Button, Field, Input, Select, StatCard, EmptyState, Pill, Facts, confirmDialog } from '../portal/kit';
 import './styles/BrandPortal.css';
+import { API_ORIGIN } from "../config/api";
 
 // API Base URL - Change this to your backend URL
-const API_BASE_URL = 'https://the-deft-crew-production.up.railway.app/api';
+const API_BASE_URL = `${API_ORIGIN}/api`;
 
 const BrandVerifyScreen = () => {
   const navigate = useNavigate();

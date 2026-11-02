@@ -9,8 +9,9 @@ import Ico from "../portal/Ico";
 import { Button, Field, Input, Textarea, Select, Pill, Progress, toast } from "../portal/kit";
 import dotSorted from "./dots/sorted.png";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const API_BASE_URL = "https://the-deft-crew-production.up.railway.app/api/offers";
+const API_BASE_URL = `${API_ORIGIN}/api/offers`;
 
 const CATEGORIES = [
   "Restaurant", "Cafe & Coffee", "Food & Drinks", "Salon", "Spa & Wellness",

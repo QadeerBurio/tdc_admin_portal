@@ -9,8 +9,9 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, IconButton, Input, SearchInput, Segmented, StatCard, Tabs, Table, EmptyState, Pill, Facts } from "../portal/kit";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const API_BASE = "https://the-deft-crew-production.up.railway.app/api";
+const API_BASE = `${API_ORIGIN}/api`;
 const STATUS_TONE = { active: "blue", used: "green", expired: "sand", cancelled: "red" };
 
 const VerifyReward = () => {

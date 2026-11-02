@@ -3,6 +3,7 @@ import React, { useState, useEffect } from "react";
 import axios from "axios";
 import { useLocation, useNavigate, Link } from "react-router-dom";
 import { AuthShell, CardTitle, pageTitle } from "../web/site";
+import { API_ORIGIN } from "../config/api";
 
 const STRENGTH = {
   Weak: { label: "weak", color: "#B42318", bars: 1 },
@@ -93,7 +94,7 @@ export default function ResetPassword() {
 
     try {
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/reset-password",
+        `${API_ORIGIN}/api/auth/reset-password`,
         { resetToken, newPassword: password, userId }
       );
 

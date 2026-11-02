@@ -4,6 +4,7 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, StatCard, EmptyState, PageLoading, toast } from "../portal/kit";
 import "./styles/EmployerPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 const pct = (part, whole) => (whole > 0 ? Math.round((part / whole) * 100) : 0);
 
@@ -23,7 +24,7 @@ const ReportsManager = ({ token, stats }) => {
   });
   const [recentApplications, setRecentApplications] = useState([]);
 
-  const API_URL = "https://the-deft-crew-production.up.railway.app/api";
+  const API_URL = `${API_ORIGIN}/api`;
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {

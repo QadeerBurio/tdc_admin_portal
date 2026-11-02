@@ -6,6 +6,7 @@ import Ico from "../portal/Ico";
 import { Button, Select, DateInput, SearchInput, Segmented, StatCard, EmptyState, PageLoading, Pill } from "../portal/kit";
 import "./styles/BrandPortal.css";
 import { redemptionPlace } from "../portal/storeBadge";
+import { API_ORIGIN } from "../config/api";
 
 const SavingsHistory = () => {
   const { token } = useContext(AuthContext);
@@ -92,7 +93,7 @@ const SavingsHistory = () => {
   const fetchHistory = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        `${API_ORIGIN}/api/offers/savings-report`,
         {
           headers: { Authorization: `Bearer ${token}` }
         }

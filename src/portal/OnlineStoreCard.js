@@ -6,8 +6,9 @@ import React, { useCallback, useContext, useEffect, useRef, useState } from "rea
 import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import { Button, Facts, Field, Input, Pill, Spinner, confirmDialog, toast } from "./kit";
+import { API_ORIGIN } from "../config/api";
 
-const API = "https://the-deft-crew-production.up.railway.app/api/brand/store";
+const API = `${API_ORIGIN}/api/brand/store`;
 const STATUS = {
   connected: ["green", "connected"],
   error: ["red", "needs attention"],

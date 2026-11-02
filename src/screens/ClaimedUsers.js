@@ -6,6 +6,7 @@ import Ico, { TONES } from "../portal/Ico";
 import { Button, Field, Select, SearchInput, StatCard, Modal, EmptyState, PageLoading, Pill, Facts } from "../portal/kit";
 import RedemptionTabs from "./RedemptionTabs";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 // wa.me wants the number with country code and digits only: 0300... -> 92300..., 92... stays as it is
 const waNumber = (phone) => {
@@ -106,7 +107,7 @@ const ClaimedUsers = () => {
   const fetchClaimedUsers = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",{ 
+      const res = await axios.get(`${API_ORIGIN}/api/offers/claimed-users`,{ 
         headers: { Authorization: `Bearer ${token}` }
       });
       

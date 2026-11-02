@@ -3,13 +3,14 @@
 // Every endpoint grouped by domain. Uses localStorage token `token`.
 
 import axios from 'axios';
+import { API_ORIGIN } from "../config/api";
 
 // ─────────────────────────────────────────────
 // Base configuration
 // ─────────────────────────────────────────────
 const API_BASE =
   
-  'https://the-deft-crew-production.up.railway.app/api';
+  `${API_ORIGIN}/api`;
 
 const api = axios.create({
   baseURL: API_BASE,

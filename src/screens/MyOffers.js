@@ -6,8 +6,9 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Spinner, Field, Input, Textarea, Select, Checkbox, SearchInput, Segmented, StatCard, Modal, EmptyState, Pill, toast } from "../portal/kit";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const BASE_URL = "https://the-deft-crew-production.up.railway.app";
+const BASE_URL = `${API_ORIGIN}`;
 const API_URL = `${BASE_URL}/api/offers`;
 const CLOUDINARY_NAME = "decaxpera";
 
