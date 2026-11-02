@@ -10,6 +10,7 @@ import { TOKEN } from '../portal/tokens';
 import { PageLoading, PageHeader, Button, IconButton, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
 import DeleteAccountDialog from '../portal/DeleteAccountDialog';
 import './styles/Brands.css';
+import { storeBadge } from '../portal/storeBadge';
 
 const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
 const STATUS = {
@@ -440,7 +441,10 @@ const BrandApprovalScreen = () => {
               <span className="ba-info">
                 <span className="ba-name">{brand.brandName || brand.name}</span>
                 <span className="ba-email">{brand.email}</span>
-                <Pill tone="sand">{brand.category || 'General'}</Pill>
+                <span className="ba-pills">
+                  <Pill tone="sand">{brand.category || 'General'}</Pill>
+                  {(() => { const s = storeBadge(brand.onlineStore); return <Pill tone={s.tone}>{s.label}</Pill>; })()}
+                </span>
               </span>
               <span className="ba-right">
                 {getStatusBadge(brand.brandApprovalStatus)}

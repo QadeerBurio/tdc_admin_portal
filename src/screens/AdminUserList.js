@@ -9,6 +9,7 @@ import { TOKEN } from "../portal/tokens";
 import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, toast } from "../portal/kit";
 import DeleteAccountDialog from "../portal/DeleteAccountDialog";
 import "./styles/AdminUserList.css";
+import { redemptionPlace } from "../portal/storeBadge";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
 const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
@@ -21,7 +22,6 @@ const BOARD = {
 const ROLE_ICON = { student: "grad", brand: "store", employee: "briefcase", traveler: "plane", admin: "shield" };
 const ROLE_TONE = { student: "blue", brand: "purple", employee: "green", traveler: "ink", admin: "red" };
 const APP_TONE = { pending: "orange", reviewed: "blue", shortlisted: "green", interview: "purple", rejected: "red", hired: "green" };
-const PLATFORM = { shopify: ["green", "Shopify"], woocommerce: ["blue", "WooCommerce"] };
 
 export default function AdminUserList({ role, title }) {
   const [users, setUsers] = useState([]);
@@ -1062,7 +1062,7 @@ export default function AdminUserList({ role, title }) {
                 </thead>
                 <tbody>
                   {filteredRedemptions.map((r, i) => {
-                    const [ptone, plabel] = PLATFORM[r.platform] || ["purple", "Online"];
+                    const { tone: ptone, label: plabel } = redemptionPlace(r.platform);
                     return (
                       <tr key={i}>
                         <td className="aul-sub">{i + 1}</td>

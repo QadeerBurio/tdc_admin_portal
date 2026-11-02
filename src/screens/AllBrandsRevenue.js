@@ -5,6 +5,7 @@ import * as XLSX from "xlsx";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, IconButton, SearchInput, Segmented, StatCard, Modal, EmptyState, Pill, Card, Facts } from "../portal/kit";
 import "./styles/AllBrandsRevenue.css";
+import { storeBadge } from "../portal/storeBadge";
 
 // the server sends this placeholder when a brand has no top offer
 const NO_TOP_OFFER = "\u2014";
@@ -123,6 +124,7 @@ export default function AllBrandsRevenue() {
         filterPlatform === "all" ||
         (filterPlatform === "shopify" && b.platform === "shopify") ||
         (filterPlatform === "woocommerce" && b.platform === "woocommerce") ||
+        (filterPlatform === "none" && (b.onlineStore?.platform || b.platform || "none") === "none") ||
         (filterPlatform === "both" && b.isOnline && b.isInStore) ||
         (filterPlatform === "onlineOnly" && b.isOnline && !b.isInStore) ||
         (filterPlatform === "storeOnly" && !b.isOnline && b.isInStore);
@@ -169,7 +171,7 @@ export default function AllBrandsRevenue() {
     const rows = filteredAndSorted.map(b => ({
       "Brand Name": b.name,
       "Category": b.category,
-      "Platform": b.platform,
+      "Platform": storeBadge(b.onlineStore || b.platform).label,
       "Approval": b.approvalStatus,
       "Total Revenue (PKR)": b.totalRevenue,
       "Total Bill (PKR)": b.totalBill,
@@ -196,11 +198,8 @@ export default function AllBrandsRevenue() {
     return { icon: null, tone: "sand", label: `#${index + 1}` };
   };
 
-  const getPlatformBadge = (brand) => {
-    if (brand.platform === "shopify") return { label: "Shopify", tone: "green" };
-    if (brand.platform === "woocommerce") return { label: "WooCommerce", tone: "blue" };
-    return { label: "Custom", tone: "purple" };
-  };
+  // the store the brand really has connected (server: onlineStore), not a default
+  const getPlatformBadge = (brand) => storeBadge(brand.onlineStore || brand.platform);
 
   const openDrilldown = (brand) => {
     setSelectedBrand(brand);
@@ -258,7 +257,7 @@ export default function AllBrandsRevenue() {
           label="platform"
           value={filterPlatform}
           onChange={setFilterPlatform}
-          options={[{ value: "all", label: "All" }, { value: "shopify", label: "Shopify" }, { value: "woocommerce", label: "WooCommerce" }, { value: "both", label: "Online+Store" }]}
+          options={[{ value: "all", label: "All" }, { value: "shopify", label: "Shopify" }, { value: "woocommerce", label: "WooCommerce" }, { value: "none", label: "No store" }, { value: "both", label: "Online+Store" }]}
         />
       </div>
 
@@ -394,7 +393,7 @@ export default function AllBrandsRevenue() {
         icon="store"
         tone="green"
         title={selectedBrand?.name}
-        sub={selectedBrand ? `${selectedBrand.category} • ${selectedBrand.platform}` : undefined}
+        sub={selectedBrand ? `${selectedBrand.category} • ${storeBadge(selectedBrand.onlineStore || selectedBrand.platform).label}` : undefined}
         footer={<Button onClick={closeDrilldown}>Close</Button>}
       >
         {selectedBrand && (
