@@ -7,6 +7,7 @@ import QRCode from "qrcode";
 import Ico from "../portal/Ico";
 import { TOKEN } from "../portal/tokens";
 import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, toast } from "../portal/kit";
+import DeleteAccountDialog from "../portal/DeleteAccountDialog";
 import "./styles/AdminUserList.css";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
@@ -29,6 +30,8 @@ export default function AdminUserList({ role, title }) {
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterReferral, setFilterReferral] = useState("all");
   const [togglingId, setTogglingId] = useState(null);
+  // permanent delete (students only here; brands are deleted from Brand Approvals)
+  const [deleteId, setDeleteId] = useState(null);
   const [selectedUser, setSelectedUser] = useState(null);
   const [showModal, setShowModal] = useState(false);
   const [sortField, setSortField] = useState("name");
@@ -749,6 +752,18 @@ export default function AdminUserList({ role, title }) {
                               openUserModal(u);
                             }}
                           />
+                          {u.role === "student" && (
+                            <IconButton
+                              icon="trash"
+                              label={`Delete ${u.name || "student"}`}
+                              size="sm"
+                              variant="danger"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setDeleteId(u._id);
+                              }}
+                            />
+                          )}
                         </div>
                       </td>
                     </tr>
@@ -1097,6 +1112,17 @@ export default function AdminUserList({ role, title }) {
           </div>
         )}
       </Modal>
+
+      {deleteId && (
+        <DeleteAccountDialog
+          userId={deleteId}
+          onClose={() => setDeleteId(null)}
+          onDeleted={() => {
+            setUsers((list) => list.filter((x) => x._id !== deleteId));
+            setDeleteId(null);
+          }}
+        />
+      )}
     </div>
   );
 }

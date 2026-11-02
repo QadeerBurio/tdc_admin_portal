@@ -4,6 +4,7 @@
 import React, { useEffect, useState } from "react";
 import api, { usersApi, offersApi, engagementApi } from "../services/api";
 import Ico from "./Ico";
+import DeleteAccountDialog from "./DeleteAccountDialog";
 
 const ROLE = {
   student: { list: "all students", icon: "grad", tone: "orange", label: "student" },
@@ -54,6 +55,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
   const [user, setUser] = useState(null);
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
+  const [deleting, setDeleting] = useState(false);
   const [extra, setExtra] = useState({});
 
   useEffect(() => {
@@ -244,7 +246,15 @@ export default function AdminUserProfile({ role, id, onBack }) {
             {chips.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>{chips.map(([t, c]) => <span key={t} className={`tdcp-chip ${c}`}>{t}</span>)}</div>}
           </div>
         </div>
+        {r === "student" && (
+          <div className="tdcp-actions">
+            <button type="button" className="tdcp-btn tdcp-btn-secondary" onClick={() => setDeleting(true)} style={{ color: "var(--danger)" }}>
+              <Ico kind="trash" tone="plain" size={16} /> delete account
+            </button>
+          </div>
+        )}
       </div>
+      {deleting && <DeleteAccountDialog userId={user._id || id} onClose={() => setDeleting(false)} onDeleted={() => { setDeleting(false); onBack?.(); }} />}
       <div className="tdcp-tabs" role="tablist" aria-label="profile sections">
         {tabs.map((t) => <button key={t} type="button" role="tab" aria-selected={tab === t} className="tdcp-tab" onClick={() => setTab(t)}>{t}</button>)}
       </div>
