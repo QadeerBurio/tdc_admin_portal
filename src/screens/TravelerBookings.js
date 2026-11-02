@@ -19,6 +19,7 @@ import {
   X
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { API_ORIGIN } from "../config/api";
 
 const TravelerBookings = () => {
   const { user, token } = useContext(AuthContext);
@@ -45,7 +46,7 @@ const TravelerBookings = () => {
   const fetchBookings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/bookings', 
+      const response = await axios.get(`${API_ORIGIN}/api/traveler/bookings`, 
          {
         headers: { Authorization: `Bearer ${token}` }
       });
@@ -62,7 +63,7 @@ const TravelerBookings = () => {
     
     setCancellingId(bookingId);
     try {
-      await axios.put(`https://the-deft-crew-production.up.railway.app/api/traveler/bookings/${bookingId}/cancel`, {},
+      await axios.put(`${API_ORIGIN}/api/traveler/bookings/${bookingId}/cancel`, {},
          {
         headers: { Authorization: `Bearer ${token}` }
       });

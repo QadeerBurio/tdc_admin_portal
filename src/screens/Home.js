@@ -15,6 +15,7 @@ import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
 import Discount from "./Discount";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 // path -> menu item (create offer sits under discounts, claimed users under redemptions)
 const NAV_FOR_PATH = {
@@ -74,7 +75,7 @@ export default function Home() {
   const fetchOffers = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/my-offers",
+        `${API_ORIGIN}/api/offers/my-offers`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -103,7 +104,7 @@ export default function Home() {
   const fetchBrandData = async () => {
     try {
       const res = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/auth/me",
+        `${API_ORIGIN}/api/auth/me`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
@@ -129,13 +130,13 @@ export default function Home() {
   const fetchStats = async () => {
     try {
       const leadRes = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/claimed-users",
+        `${API_ORIGIN}/api/offers/claimed-users`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }
       );
       const savingRes = await axios.get(
-        "https://the-deft-crew-production.up.railway.app/api/offers/savings-report",
+        `${API_ORIGIN}/api/offers/savings-report`,
         {
           headers: { Authorization: `Bearer ${token}` },
         }

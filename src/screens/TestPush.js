@@ -7,6 +7,7 @@ import api, { engagementApi } from '../services/api';
 import Ico, { TONES } from '../portal/Ico';
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, Dropdown, Tabs, Segmented, Card, Table, EmptyState, Pill, toast, confirmDialog } from '../portal/kit';
 import './styles/TestPush.css';
+import { API_ORIGIN } from "../config/api";
 
 // ─────────────────────────────────────────────
 // ASSET BASE
@@ -15,7 +16,7 @@ import './styles/TestPush.css';
 // ─────────────────────────────────────────────
 const ASSET_BASE =
  
-  'https://the-deft-crew-production.up.railway.app/assets';
+  `${API_ORIGIN}/assets`;
 
 // ─────────────────────────────────────────────
 // MOOD ICON MAP: each mood has emoji (fallback),

@@ -10,6 +10,7 @@ import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchI
 import DeleteAccountDialog from "../portal/DeleteAccountDialog";
 import "./styles/AdminUserList.css";
 import { redemptionPlace } from "../portal/storeBadge";
+import { API_ORIGIN } from "../config/api";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
 const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
@@ -126,7 +127,7 @@ export default function AdminUserList({ role, title }) {
     setLoading(true);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/users/${role}`,
+        `${API_ORIGIN}/api/admin/users/${role}`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();
@@ -176,7 +177,7 @@ export default function AdminUserList({ role, title }) {
     setTogglingId(id);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/admin/approve-user/${id}`,
+        `${API_ORIGIN}/api/admin/approve-user/${id}`,
         { method: "POST", headers: getAuthHeaders() }
       );
       if (res.ok) fetchUsers();
@@ -235,7 +236,7 @@ export default function AdminUserList({ role, title }) {
       if (user.role === 'brand') {
         try {
           const offersRes = await fetch(
-            `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}`,
+            `${API_ORIGIN}/api/offers/brand/${user._id}`,
             { headers: { Authorization: `Bearer ${token}` } }
           );
           const offersData = await offersRes.json();
@@ -244,7 +245,7 @@ export default function AdminUserList({ role, title }) {
           // Fetch revenue stats for this brand
           try {
             const statsRes = await fetch(
-              `https://the-deft-crew-production.up.railway.app/api/offers/brand/${user._id}/redemptions`,
+              `${API_ORIGIN}/api/offers/brand/${user._id}/redemptions`,
               { headers: { Authorization: `Bearer ${token}` } }
             );
             const statsData = await statsRes.json();
@@ -363,7 +364,7 @@ export default function AdminUserList({ role, title }) {
     setLoadingRedemptions(true);
     try {
       const res = await fetch(
-        `https://the-deft-crew-production.up.railway.app/api/offers/brand/${brandId}/redemptions`,
+        `${API_ORIGIN}/api/offers/brand/${brandId}/redemptions`,
         { headers: getAuthHeaders() }
       );
       const data = await res.json();

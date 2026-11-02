@@ -4,6 +4,7 @@ import React, { useState, useEffect } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Spinner, Field, Select, SearchInput, Segmented, StatCard, EmptyState, Pill, toast, confirmDialog } from "../portal/kit";
 import "./styles/AdminOffers.css";
+import { API_ORIGIN } from "../config/api";
 
 export default function AdminOffers() {
   const [items, setItems] = useState([]);
@@ -28,7 +29,7 @@ export default function AdminOffers() {
   const fetchItems = async () => {
     setLoading(true);
     try {
-      const response = await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/all?type=${filter}`);
+      const response = await fetch(`${API_ORIGIN}/api/admin/all?type=${filter}`);
       const data = await response.json();
       setItems(data);
     } catch (error) {
@@ -45,7 +46,7 @@ export default function AdminOffers() {
   const handleToggle = async (id) => {
     setTogglingId(id);
     try {
-      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/toggle/${id}`, { method: "PATCH" });
+      await fetch(`${API_ORIGIN}/api/admin/toggle/${id}`, { method: "PATCH" });
       await fetchItems();
     } catch (error) {
       toast("Failed to update status");
@@ -58,7 +59,7 @@ export default function AdminOffers() {
     if (!(await confirmDialog("⚠️ Permanent delete? This action cannot be undone."))) return;
     setDeletingId(id);
     try {
-      await fetch(`https://the-deft-crew-production.up.railway.app/api/admin/delete/${id}`, { 
+      await fetch(`${API_ORIGIN}/api/admin/delete/${id}`, { 
         method: "DELETE",
         headers: {
           'Authorization': `Bearer ${localStorage.getItem('token')}`

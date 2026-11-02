@@ -11,8 +11,9 @@ import { PageLoading, PageHeader, Button, IconButton, StatCard, Segmented, Modal
 import DeleteAccountDialog from '../portal/DeleteAccountDialog';
 import './styles/Brands.css';
 import { storeBadge } from '../portal/storeBadge';
+import { API_ORIGIN } from "../config/api";
 
-const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
+const API_BASE = `${API_ORIGIN}/api`;
 const STATUS = {
   pending: { tone: 'orange', label: 'Pending' },
   approved: { tone: 'green', label: 'Approved' },

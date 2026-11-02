@@ -5,6 +5,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import Ico from '../portal/Ico';
 import { PageHeader, Button, Spinner, Field, Input, Textarea, Select, SearchInput, StatCard, Modal, EmptyState, Pill, toast, confirmDialog } from '../portal/kit';
 import './styles/Traveling.css';
+import { API_ORIGIN } from "../config/api";
 
 const CATEGORIES = [
   'Ziyarat', 'International Tours', 'Pakistan Tours',
@@ -14,7 +15,7 @@ const CATEGORIES = [
   'Student Tours', 'Luxury Travel'
 ];
 
-const API_BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/packages';
+const API_BASE_URL = `${API_ORIGIN}/api/admin/packages`;
 
 const AdminPackageScreen = () => {
   const fileInputRef = useRef(null);

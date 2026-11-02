@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useNavigate, Link } from "react-router-dom";
 import { AuthShell, CardTitle, pageTitle } from "../web/site";
+import { API_ORIGIN } from "../config/api";
 
 export default function ForgotPassword() {
   const [emailOrPhone, setEmailOrPhone] = useState("");
@@ -39,7 +40,7 @@ export default function ForgotPassword() {
 
     try {
       const res = await axios.post(
-        "https://the-deft-crew-production.up.railway.app/api/auth/forgot-password",
+        `${API_ORIGIN}/api/auth/forgot-password`,
         { emailOrPhone: emailOrPhone.trim() }
       );
 

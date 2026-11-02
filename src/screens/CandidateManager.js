@@ -4,6 +4,7 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, IconButton, Select, SearchInput, Segmented, Modal, EmptyState, PageLoading, Pill, Checkbox, toast } from "../portal/kit";
 import "./styles/EmployerPortal.css";
+import { API_ORIGIN } from "../config/api";
 
 const STATUSES = ["pending", "reviewed", "shortlisted", "interview", "rejected", "hired"];
 
@@ -37,7 +38,7 @@ const CandidatesManager = ({ token }) => {
   const fetchCandidates = async () => {
     setLoading(true);
     try {
-      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/all",{
+      const res = await axios.get(`${API_ORIGIN}/api/jobs/candidates/all`,{
         headers: { Authorization: `Bearer ${token}` }
       });
       setCandidates(res.data);
@@ -50,7 +51,7 @@ const CandidatesManager = ({ token }) => {
 
   const updateStatus = async (id, status) => {
     try {
-      await axios.patch(`https://the-deft-crew-production.up.railway.app/api/jobs/application/${id}/status`,
+      await axios.patch(`${API_ORIGIN}/api/jobs/application/${id}/status`,
         { status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -67,7 +68,7 @@ const CandidatesManager = ({ token }) => {
       return;
     }
     try {
-      await axios.patch("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/bulk-status",
+      await axios.patch(`${API_ORIGIN}/api/jobs/candidates/bulk-status`,
         { candidateIds: selectedCandidates, status },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -83,7 +84,7 @@ const CandidatesManager = ({ token }) => {
 
   const exportCandidates = async () => {
     try {
-      const res = await axios.get("https://the-deft-crew-production.up.railway.app/api/jobs/candidates/export",{
+      const res = await axios.get(`${API_ORIGIN}/api/jobs/candidates/export`,{
         headers: { Authorization: `Bearer ${token}` }
       });
       const csvData = convertToCSV(res.data);
@@ -116,7 +117,7 @@ const CandidatesManager = ({ token }) => {
 
   const viewCandidateDetails = async (id) => {
     try {
-      const res = await axios.get(`https://the-deft-crew-production.up.railway.app/api/jobs/candidates/${id}`,{
+      const res = await axios.get(`${API_ORIGIN}/api/jobs/candidates/${id}`,{
         headers: { Authorization: `Bearer ${token}` }
       });
       setSelectedCandidate(res.data);

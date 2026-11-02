@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { Wallet, TrendingUp, PiggyBank } from 'lucide-react';
+import { API_ORIGIN } from "../config/api";
 
 const SavingsTracker = () => {
   const { user, token } = useContext(AuthContext);
@@ -15,7 +16,7 @@ const SavingsTracker = () => {
   const fetchSavings = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/savings', 
+      const response = await axios.get(`${API_ORIGIN}/api/traveler/savings`, 
         {
         headers: { Authorization: `Bearer ${token}` }
       });

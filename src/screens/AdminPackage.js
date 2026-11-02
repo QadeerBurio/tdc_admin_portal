@@ -5,8 +5,9 @@ import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import Ico from '../portal/Ico';
 import { PageHeader, PageLoading, Button, IconButton, Field, Textarea, Select, SearchInput, StatCard, Modal, Table, EmptyState, Pill, Facts, toast, confirmDialog } from '../portal/kit';
+import { API_ORIGIN } from "../config/api";
 
-const API_URL = 'https://the-deft-crew-production.up.railway.app/api/admin';
+const API_URL = `${API_ORIGIN}/api/admin`;
 
 const AdminPackage = () => {
     const { token } = useContext(AuthContext);

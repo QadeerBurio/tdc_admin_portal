@@ -8,6 +8,7 @@ import Ico, { TONES } from "../../portal/Ico";
 import { Select, StatCard, PageLoading } from "../../portal/kit";
 import dotSorted from "../dots/sorted.png";
 import "../styles/TravelPortal.css";
+import { API_ORIGIN } from "../../config/api";
 
 const rs = (n) => `rs ${Number(n || 0).toLocaleString()}`;
 const when = (b) => new Date(b.travelDate || b.updatedAt || b.createdAt || 0);
@@ -47,7 +48,7 @@ export default function TripHistory() {
 
   useEffect(() => {
     if (!token) return;
-    axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/history", { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${API_ORIGIN}/api/traveler/history`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setTrips(Array.isArray(res.data) ? res.data : []))
       .catch((err) => { console.error("Error fetching travel history", err); setTrips([]); })
       .finally(() => setLoading(false));

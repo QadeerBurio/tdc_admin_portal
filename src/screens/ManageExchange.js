@@ -8,6 +8,7 @@ import * as XLSX from 'xlsx';
 import Ico from '../portal/Ico';
 import { PageHeader, PageLoading, Button, Spinner, Field, Input, Textarea, Select, DateInput, Checkbox, SearchInput, StatCard, Tabs, Modal, EmptyState, Pill, Progress, toast, confirmDialog } from '../portal/kit';
 import './styles/ManageExchange.css';
+import { API_ORIGIN } from "../config/api";
 
 const ManageExchange = () => {
   const navigate = useNavigate();
@@ -75,11 +76,8 @@ const ManageExchange = () => {
 
   const [formData, setFormData] = useState(initialFormState);
 
-  // const BASE_URL = process.env.REACT_APP_API_URL
-  //   ? `${process.env.REACT_APP_API_URL}/api/admin/exchange`
-  //   : 'https://the-deft-crew-production.up.railway.app/api/events/admin/exchange';
   
-  const BASE_URL = 'https://the-deft-crew-production.up.railway.app/api/admin/exchange';
+  const BASE_URL = `${API_ORIGIN}/api/admin/exchange`;
 
   const api = axios.create({ 
     headers: { Authorization: `Bearer ${token}` } 

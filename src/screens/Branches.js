@@ -6,8 +6,9 @@ import { AuthContext } from "../context/AuthContext";
 import Ico from "../portal/Ico";
 import { PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, Segmented, Modal, EmptyState, Pill, toast } from "../portal/kit";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const API_BASE = "https://the-deft-crew-production.up.railway.app/api/branches";
+const API_BASE = `${API_ORIGIN}/api/branches`;
 
 const DISCOUNT_OPTIONS = [15, 20, 25, 30, 35, 40, 45, 50, 55, 60];
 

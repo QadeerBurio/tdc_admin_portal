@@ -9,6 +9,7 @@ import Ico, { TONES } from "../../portal/Ico";
 import { Button, SearchInput, Segmented, Select, EmptyState, PageLoading, Pill } from "../../portal/kit";
 import PackageForm from "./PackageForm";
 import "../styles/TravelPortal.css";
+import { API_ORIGIN } from "../../config/api";
 
 const TILE = [["compass", "sky"], ["globe", "orange"], ["pin", "purple"], ["plane", "blue"], ["star", "yellow"]];
 const rs = (n) => `rs ${Number(n || 0).toLocaleString()}`;
@@ -51,7 +52,7 @@ export default function TravelPackages() {
 
   useEffect(() => {
     if (!token) return;
-    axios.get("https://the-deft-crew-production.up.railway.app/api/traveler/packages", { headers: { Authorization: `Bearer ${token}` } })
+    axios.get(`${API_ORIGIN}/api/traveler/packages`, { headers: { Authorization: `Bearer ${token}` } })
       .then((res) => setPackages(Array.isArray(res.data) ? res.data : []))
       .catch((err) => { console.error("Error fetching packages", err); setPackages([]); })
       .finally(() => setLoading(false));

@@ -8,8 +8,9 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, Field, Input, Facts, Pill, toast } from "../portal/kit";
 import "./styles/EmployerPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const API = "https://the-deft-crew-production.up.railway.app/api";
+const API = `${API_ORIGIN}/api`;
 const MAX_SIDE = 512;
 
 // shrink the picked image to a small JPEG data URL so it fits the JSON body

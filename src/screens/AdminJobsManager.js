@@ -7,6 +7,7 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, Segmented, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, FileUpload, toast, confirmDialog } from "../portal/kit";
 import "./styles/AdminJobsManager.css";
+import { API_ORIGIN } from "../config/api";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -70,9 +71,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
   });
 
   const token = localStorage.getItem("token");
-  const API_URL = process.env.REACT_APP_API_URL
-    ? `${process.env.REACT_APP_API_URL}/api/jobs`
-    : "https://the-deft-crew-production.up.railway.app/api/jobs";
+  const API_URL = `${API_ORIGIN}/api/jobs`;
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   // CSV/XLSX Upload State

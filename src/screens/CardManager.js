@@ -7,6 +7,7 @@ import { AuthContext } from "../context/AuthContext";
 import Ico from '../portal/Ico';
 import { PageHeader, Button, IconButton, SearchInput, Segmented, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, Spinner, toast, confirmDialog } from '../portal/kit';
 import './styles/CardManager.css';
+import { API_ORIGIN } from "../config/api";
 
 const STATUS_TONE = { Printing: 'yellow', Shipped: 'blue', Delivered: 'green' };
 const statusPill = (s) => <Pill tone={STATUS_TONE[s] || 'sand'} dot>{s}</Pill>;
@@ -29,7 +30,7 @@ const CardManager = () => {
     approvedTotal: 0, totalRevenue: 0 
   });
 
-  const API_BASE = "https://the-deft-crew-production.up.railway.app/api/admin";
+  const API_BASE = `${API_ORIGIN}/api/admin`;
   const config = { headers: { Authorization: `Bearer ${token}` } };
 
   useEffect(() => {

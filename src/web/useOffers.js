@@ -1,8 +1,9 @@
 // Live list of partner brands with an offer, from the same public endpoint the old site used.
 import { useEffect, useState } from "react";
 import axios from "axios";
+import { API_ORIGIN } from "../config/api";
 
-const API = "https://the-deft-crew-production.up.railway.app/api";
+const API = `${API_ORIGIN}/api`;
 
 // Shown only if the live list can't be loaded.
 export const FALLBACK_BRANDS = [

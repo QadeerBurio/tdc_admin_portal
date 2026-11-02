@@ -8,8 +8,9 @@ import Ico from "../portal/Ico";
 import { Button, Facts, Pill, toast } from "../portal/kit";
 import OnlineStoreCard from "../portal/OnlineStoreCard";
 import "./styles/BrandPortal.css";
+import { API_ORIGIN } from "../config/api";
 
-const API_URL = "https://the-deft-crew-production.up.railway.app/api/profile/update-profile";
+const API_URL = `${API_ORIGIN}/api/profile/update-profile`;
 const MAX_SIDE = 512;
 
 const APPROVAL = {

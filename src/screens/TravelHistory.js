@@ -2,6 +2,7 @@ import React, { useState, useEffect, useContext } from 'react';
 import axios from 'axios';
 import { AuthContext } from '../context/AuthContext';
 import { History, MapPin, Calendar, Star } from 'lucide-react';
+import { API_ORIGIN } from "../config/api";
 
 const TravelHistory = () => {
   const { user, token } = useContext(AuthContext);
@@ -15,7 +16,7 @@ const TravelHistory = () => {
   const fetchHistory = async () => {
     try {
       setLoading(true);
-      const response = await axios.get('https://the-deft-crew-production.up.railway.app/api/traveler/history',
+      const response = await axios.get(`${API_ORIGIN}/api/traveler/history`,
         {
         headers: { Authorization: `Bearer ${token}` }
       });
