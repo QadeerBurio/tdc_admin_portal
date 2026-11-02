@@ -217,6 +217,12 @@ export const usersApi = {
   getPassword: (id) =>
     api.get(`/admin/users/password/${id}`).then((r) => r.data),
 
+  // Delete an account for good: preview (counts, the name to type, enabled) and the delete itself
+  deletePreview: (id) =>
+    api.get(`/admin/users/${id}/delete-preview`).then((r) => r.data),
+  deleteAccount: (id, confirmName) =>
+    api.delete(`/admin/users/${id}`, { data: { confirmName } }).then((r) => r.data),
+
   // Approve / toggle verification
   approveUser: (id) =>
     api.post(`/admin/approve-user/${id}`).then((r) => r.data),

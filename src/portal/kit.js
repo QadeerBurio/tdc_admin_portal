@@ -245,6 +245,37 @@ export function Drawer({ open = true, onClose, title, sub, footer, children }) {
     document.body
   );
 }
+// TypeToConfirm: a modal for things that can't be undone. The confirm button stays off until the exact
+// text (e.g. the account's name) is typed. children: what will happen; disabledReason: why it can't now.
+export function TypeToConfirm({ open = true, onClose, title, sub, expected, children, confirmLabel = "delete", loading, disabledReason, error, onConfirm }) {
+  const [typed, setTyped] = useState("");
+  useEffect(() => { if (!open) setTyped(""); }, [open]);
+  const matches = !!expected && typed.trim() === String(expected).trim();
+  const canConfirm = matches && !loading && !disabledReason;
+  return (
+    <Modal
+      open={open}
+      onClose={loading ? undefined : onClose}
+      size="sm"
+      icon="alert"
+      tone="red"
+      title={title}
+      sub={sub}
+      footer={<>
+        <Button variant="secondary" onClick={onClose} disabled={loading}>cancel</Button>
+        <Button variant="danger" icon="trash" loading={loading} disabled={!canConfirm} onClick={onConfirm}>{confirmLabel}</Button>
+      </>}
+    >
+      {children}
+      {disabledReason ? <p className="k-error" role="status" style={{ margin: 0 }}>{disabledReason}</p> : (
+        <Field label={<>type <b style={{ color: "var(--ink)" }}>{expected}</b> to confirm</>} htmlFor="k-type-confirm" error={error}>
+          <Input id="k-type-confirm" value={typed} onChange={(e) => setTyped(e.target.value)} autoComplete="off" spellCheck={false} disabled={loading}
+            onKeyDown={(e) => { if (e.key === "Enter" && canConfirm) onConfirm(); }} invalid={!!error} />
+        </Field>
+      )}
+    </Modal>
+  );
+}
 
 /* ---------------- table, empty ---------------- */
 export function EmptyState({ icon = "search", tone = "sand", title, text, action }) {
