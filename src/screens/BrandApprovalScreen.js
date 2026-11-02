@@ -7,7 +7,8 @@ import axios from 'axios';
 import QRCode from 'qrcode';
 import Ico from '../portal/Ico';
 import { TOKEN } from '../portal/tokens';
-import { PageLoading, PageHeader, Button, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
+import { PageLoading, PageHeader, Button, IconButton, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
+import DeleteAccountDialog from '../portal/DeleteAccountDialog';
 import './styles/Brands.css';
 
 const API_BASE = 'https://the-deft-crew-production.up.railway.app/api';
@@ -53,6 +54,8 @@ const BrandApprovalScreen = () => {
   const [qrData, setQrData] = useState(null);
   const [generatingQR, setGeneratingQR] = useState(false);
   const [copied, setCopied] = useState(false);
+  // permanent delete (DeleteAccountDialog): the brand id being deleted
+  const [deleteId, setDeleteId] = useState(null);
 
   const isAdmin = user?.role === 'admin';
 
@@ -431,7 +434,8 @@ const BrandApprovalScreen = () => {
       ) : (
         <div className="ba-list">
           {brands.map((brand) => (
-            <button type="button" key={brand._id} className="k-card ba-card" onClick={() => handleBrandClick(brand)}>
+            <div key={brand._id} className="ba-row">
+            <button type="button" className="k-card ba-card" onClick={() => handleBrandClick(brand)}>
               {logo(brand)}
               <span className="ba-info">
                 <span className="ba-name">{brand.brandName || brand.name}</span>
@@ -450,6 +454,8 @@ const BrandApprovalScreen = () => {
               </span>
               <Ico kind="chevronRight" tone="plain" size={18} />
             </button>
+            <IconButton icon="trash" label={`delete ${brand.brandName || brand.name}`} variant="danger" onClick={() => setDeleteId(brand._id)} />
+            </div>
           ))}
         </div>
       )}
@@ -462,6 +468,9 @@ const BrandApprovalScreen = () => {
         title={selectedBrand ? (selectedBrand.brandName || selectedBrand.name) : ''}
         sub={selectedBrand?.email}
         footer={selectedBrand ? <>
+          <Button variant="ghost" icon="trash" onClick={() => setDeleteId(selectedBrand._id)} style={{ color: 'var(--danger)', marginRight: selectedBrand.brandApprovalStatus === 'approved' ? 0 : 'auto' }}>
+            Delete Brand
+          </Button>
           {selectedBrand.brandApprovalStatus === 'approved' && (
             <Button
               variant="ghost"
@@ -610,6 +619,19 @@ const BrandApprovalScreen = () => {
           </>
         )}
       </Modal>
+
+      {deleteId && (
+        <DeleteAccountDialog
+          userId={deleteId}
+          onClose={() => setDeleteId(null)}
+          onDeleted={() => {
+            if (selectedBrand?._id === deleteId) closeModal();
+            setBrands((list) => list.filter((b) => b._id !== deleteId));
+            setDeleteId(null);
+            fetchBrands();
+          }}
+        />
+      )}
     </div>
   );
 };

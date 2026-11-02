@@ -513,6 +513,8 @@
 .tdcp .ba-list { display: flex; flex-direction: column; gap: 10px; }
 .tdcp .ba-card { display: flex; align-items: center; gap: 14px; width: 100%; padding: 14px 16px; text-align: left; font-family: var(--body); color: var(--ink); cursor: pointer; }
 .tdcp .ba-card:hover { border-color: var(--ink); }
+.tdcp .ba-row { display: flex; align-items: center; gap: 8px; }
+.tdcp .ba-row > .ba-card { flex: 1; min-width: 0; }
 .tdcp .ba-logo { width: 48px; height: 48px; flex: 0 0 48px; border-radius: 15px; object-fit: cover; border: 1px solid var(--line); background: var(--card); }
 .tdcp .ba-logo.ph { display: inline-flex; align-items: center; justify-content: center; background: var(--yellow); border-color: var(--yellow); font-family: var(--heading); font-weight: 800; font-size: 19px; }
 .tdcp .ba-logo.lg { width: 72px; height: 72px; flex-basis: 72px; border-radius: 22px; font-size: 28px; }
