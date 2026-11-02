@@ -16,6 +16,7 @@ import dotSorted from "./dots/sorted.png";
 // Sub-Components
 import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
+import LoyaltyExceptions from "./LoyaltyExceptions";
 import AdminUserList from "./AdminUserList";
 import AdminJobManager from "./AdminJobsManager";
 import ManageExchange from "./ManageExchange";
@@ -354,6 +355,7 @@ export default function AdminDashboard() {
       // Existing
       case "events": return <EventManagement />;
       case "all_brands_revenue": return <AllBrandsRevenue />;
+      case "loyalty_exceptions": return <LoyaltyExceptions />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;

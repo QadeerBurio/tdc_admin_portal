@@ -34,6 +34,7 @@ const SavingsHistory = lazy(() => import("./screens/SavingsHistory"));
 const CreateOffer = lazy(() => import("./screens/CreateOffer"));
 const BrandVerifyScreen = lazy(() => import("./screens/BrandVerifyScreen"));
 const Branches = lazy(() => import("./screens/Branches"));
+const BrandLoyalty = lazy(() => import("./screens/BrandLoyalty"));
 
 // ── Admin ───────────────────────────────────────────────────────────────
 const AdminDashboard = lazy(() => import("./screens/AdminDashboard"));
@@ -218,6 +219,7 @@ export default function AppNavigator() {
         <Route path="/savinghistory" element={<SavingsHistory />} />
         <Route path="/BrandVerifyScreen" element={<BrandVerifyScreen />} />
         <Route path="/Branches" element={<Branches />} />
+        <Route path="/loyalty" element={<BrandLoyalty />} />
         <Route path="/brand-campaigns" element={<BrandCampaigns />} />
         <Route path="/verifyrward" element={<VerifyReward />} />
         <Route path="/settings" element={<BrandSettings />} />
