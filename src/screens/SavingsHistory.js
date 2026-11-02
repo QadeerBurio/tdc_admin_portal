@@ -5,6 +5,7 @@ import axios from "axios";
 import Ico from "../portal/Ico";
 import { Button, Select, DateInput, SearchInput, Segmented, StatCard, EmptyState, PageLoading, Pill } from "../portal/kit";
 import "./styles/BrandPortal.css";
+import { redemptionPlace } from "../portal/storeBadge";
 
 const SavingsHistory = () => {
   const { token } = useContext(AuthContext);
@@ -246,23 +247,9 @@ const SavingsHistory = () => {
       return <Pill tone="orange">in-store</Pill>;
     }
 
-    const platformName =
-      item.platform === "shopify"
-        ? "Shopify"
-        : item.platform === "woocommerce"
-        ? "WooCommerce"
-        : item.platform === "custom"
-        ? "Online"
-        : "Online";
-
-    const tone =
-      item.platform === "shopify"
-        ? "green"
-        : item.platform === "woocommerce"
-        ? "blue"
-        : "purple";
-
-    return <Pill tone={tone}>{platformName}</Pill>;
+    // the store the code was used on, or "checked by brand" (promo code verify)
+    const { tone, label } = redemptionPlace(item.platform);
+    return <Pill tone={tone}>{label}</Pill>;
   };
 
   const sortTh = (field, label) => (
@@ -316,7 +303,7 @@ const SavingsHistory = () => {
           <option value="in-store">in-store</option>
           <option value="shopify">Shopify</option>
           <option value="woocommerce">WooCommerce</option>
-          <option value="custom">custom website</option>
+          <option value="none">checked by brand</option>
         </Select>
       </div>
 
