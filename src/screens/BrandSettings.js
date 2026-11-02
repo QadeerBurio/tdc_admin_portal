@@ -6,6 +6,7 @@ import axios from "axios";
 import { AuthContext } from "../context/AuthContext";
 import Ico from "../portal/Ico";
 import { Button, Facts, Pill, toast } from "../portal/kit";
+import OnlineStoreCard from "../portal/OnlineStoreCard";
 import "./styles/BrandPortal.css";
 
 const API_URL = "https://the-deft-crew-production.up.railway.app/api/profile/update-profile";
@@ -79,7 +80,7 @@ export default function BrandSettings() {
           <Ico kind="settings" tone="sand" size={56} />
           <div>
             <h1>settings<span className="dot" aria-hidden="true">.</span></h1>
-            <p>your brand profile and logo.</p>
+            <p>your brand profile, logo and online store.</p>
           </div>
         </div>
       </div>
@@ -115,6 +116,8 @@ export default function BrandSettings() {
           </div>
         </section>
       </div>
+
+      <OnlineStoreCard />
     </div>
   );
 }
