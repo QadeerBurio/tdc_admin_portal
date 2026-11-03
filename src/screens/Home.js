@@ -26,6 +26,7 @@ const NAV_FOR_PATH = {
   "/Branches": "branches",
   "/verifyclaim": "verify",
   "/loyalty": "loyalty",
+  "/surprise-boxes": "surprise",
   "/BrandVerifyScreen": "verify",
   "/verifyrward": "reward",
   "/savinghistory": "redemptions",
@@ -34,9 +35,9 @@ const NAV_FOR_PATH = {
 };
 // pages whose topbar name differs from their menu item
 const LABEL_FOR_PATH = { "/create-offer": "create offer" };
-const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", loyalty: "loyalty", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
-// the menu without "loyalty" for brands outside the loyalty pilot (FLAG_LOYALTY_V2)
-const MENU_WITHOUT_LOYALTY = BRAND_MENU.map((s) => ({ ...s, items: s.items.filter((i) => i[0] !== "loyalty") }));
+const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", loyalty: "loyalty", surprise: "surprise boxes", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
+// pilot items show only for brands in the pilot: "loyalty" (FLAG_LOYALTY_V2), "surprise boxes" (FLAG_SURPLUS_BOXES)
+const menuFor = (flags) => BRAND_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "loyalty" || flags.loyalty) && (i[0] !== "surprise" || flags.surprise)) }));
 
 export default function Home() {
   const { token, user, logout } = useContext(AuthContext);
@@ -57,8 +58,9 @@ export default function Home() {
   const [brandData, setBrandData] = useState(null);
   const [offers, setOffers] = useState([]);
   const [loyaltyOn, setLoyaltyOn] = useState(false);
+  const [surpriseOn, setSurpriseOn] = useState(false);
   useEffect(() => {
-    loyaltyApi.flagsMe().then((f) => setLoyaltyOn(!!f.loyaltyV2)).catch(() => setLoyaltyOn(false));
+    loyaltyApi.flagsMe().then((f) => { setLoyaltyOn(!!f.loyaltyV2); setSurpriseOn(!!f.surplusBoxes); }).catch(() => { setLoyaltyOn(false); setSurpriseOn(false); });
   }, []);
   const [loading, setLoading] = useState(true);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
@@ -226,7 +228,7 @@ export default function Home() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`} data-portal="brand">
       <PortalNav
-        menu={loyaltyOn ? BRAND_MENU : MENU_WITHOUT_LOYALTY}
+        menu={menuFor({ loyalty: loyaltyOn, surprise: surpriseOn })}
         active={active}
         onSelect={() => setIsMobileMenuOpen(false)}
         userName={brandName}

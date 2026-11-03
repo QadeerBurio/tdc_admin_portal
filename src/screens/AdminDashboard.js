@@ -7,7 +7,7 @@ import { engagementApi } from "../services/api";
 import "./styles/AdminDashboard.css";
 import "../portal/portal.css";
 import Ico from "../portal/Ico";
-import PortalNav, { pageLabel } from "../portal/PortalNav";
+import PortalNav, { pageLabel, ADMIN_MENU } from "../portal/PortalNav";
 import { CountUp, useRouteFade } from "../portal/motion";
 import AdminUserProfile from "../portal/AdminUserProfile";
 import logoInk from "../portal/assets/tdc-logo-ink.png";
@@ -18,6 +18,8 @@ import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
 import LoyaltyExceptions from "./LoyaltyExceptions";
 import HiringFunnel from "./HiringFunnel";
+import SurplusOps from "./SurplusOps";
+import surplusApi from "../services/surplusApi";
 import AdminUserList from "./AdminUserList";
 import AdminJobManager from "./AdminJobsManager";
 import ManageExchange from "./ManageExchange";
@@ -40,6 +42,7 @@ import EngagementMetrics from "./EngagementMetrics";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
+const ADMIN_MENU_WITHOUT_SURPLUS = ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => i[0] !== "surplus_ops") }));
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -224,6 +227,9 @@ export default function AdminDashboard() {
 
   // Today's drop and its votes (read only)
   const [todayDrop, setTodayDrop] = useState(undefined);
+  // "surprise boxes" shows only once the pilot is set up on the server (FLAG_SURPLUS_BOXES)
+  const [surplusMenu, setSurplusMenu] = useState(false);
+  useEffect(() => { surplusApi.adminAvailable().then(setSurplusMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -358,6 +364,7 @@ export default function AdminDashboard() {
       case "all_brands_revenue": return <AllBrandsRevenue />;
       case "loyalty_exceptions": return <LoyaltyExceptions />;
       case "hiring_funnel": return <HiringFunnel />;
+      case "surplus_ops": return <SurplusOps />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;
@@ -399,6 +406,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
+        menu={surplusMenu ? ADMIN_MENU : ADMIN_MENU_WITHOUT_SURPLUS}
         active={activePage}
         onSelect={go}
         userName={user?.name}

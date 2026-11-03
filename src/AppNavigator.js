@@ -35,6 +35,7 @@ const CreateOffer = lazy(() => import("./screens/CreateOffer"));
 const BrandVerifyScreen = lazy(() => import("./screens/BrandVerifyScreen"));
 const Branches = lazy(() => import("./screens/Branches"));
 const BrandLoyalty = lazy(() => import("./screens/BrandLoyalty"));
+const BrandSurpriseBoxes = lazy(() => import("./screens/BrandSurpriseBoxes")); // FLAG_SURPLUS_BOXES
 
 // ── Admin ───────────────────────────────────────────────────────────────
 const AdminDashboard = lazy(() => import("./screens/AdminDashboard"));
@@ -220,6 +221,7 @@ export default function AppNavigator() {
         <Route path="/BrandVerifyScreen" element={<BrandVerifyScreen />} />
         <Route path="/Branches" element={<Branches />} />
         <Route path="/loyalty" element={<BrandLoyalty />} />
+        <Route path="/surprise-boxes" element={<BrandSurpriseBoxes />} />
         <Route path="/brand-campaigns" element={<BrandCampaigns />} />
         <Route path="/verifyrward" element={<VerifyReward />} />
         <Route path="/settings" element={<BrandSettings />} />
