@@ -14,6 +14,8 @@ import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
 import AdminJobsManager from "./AdminJobsManager";
 import CandidatesManager from "./CandidateManager";
+import CandidatePipeline from "./CandidatePipeline";
+import careerApi from "../services/careerApi";
 import InterviewsManager from "./InterviewsManager";
 import ReportsManager from "./ReportsManager";
 import "./styles/EmployerPortal.css";
@@ -261,9 +263,23 @@ export function EmployerJobs() {
   const { user } = useOutletContext();
   return <AdminJobsManager userRole={user?.role} userName={user?.name} />;
 }
+// FLAG_CAREER_TIMELINE: pilot employers get the Kanban on the hiring timeline (the classic list stays one
+// click away); everyone else gets the classic list as before
 export function EmployerCandidates() {
   const { token } = useOutletContext();
-  return <CandidatesManager token={token} />;
+  const [pilot, setPilot] = useState(null);
+  const [classic, setClassic] = useState(false);
+  useEffect(() => {
+    careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false));
+  }, []);
+  if (pilot === null) return <PageLoading />;
+  if (pilot && !classic) return <CandidatePipeline onClassic={() => setClassic(true)} />;
+  return (
+    <>
+      {pilot && <div style={{ padding: "12px 0 0" }}><Button variant="secondary" onClick={() => setClassic(false)}>back to the pipeline</Button></div>}
+      <CandidatesManager token={token} />
+    </>
+  );
 }
 export function EmployerInterviews() {
   const { token } = useOutletContext();
