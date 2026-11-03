@@ -8,6 +8,7 @@ import Ico from "../portal/Ico";
 import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, toast } from "../portal/kit";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
+import loyaltyApi from "../services/loyaltyApi";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
@@ -158,6 +159,7 @@ const VerifyClaim = () => {
             universityName: scan.universityName || scan.university || 'University',
             offerTitle: scan.offerTitle || 'Offer',
             discountPercentage: scan.discountPercentage || 0,
+            loyalty: scan.loyalty || null, // the tier (pending-scans already uses its %)
             scannedAt: scan.scannedAt,
             status: scan.status,
             offerId: scan.offerId || '' // Make sure offerId is included
@@ -213,6 +215,7 @@ const VerifyClaim = () => {
             offerId: studentData.offerId || '', // Include offerId
             offerTitle: studentData.offerTitle || 'Offer',
             discountPercentage: studentData.discountPercentage || 0,
+            loyalty: studentData.loyalty || null,
             scannedAt: studentData.scannedAt || new Date().toISOString()
           };
           
@@ -252,10 +255,10 @@ const VerifyClaim = () => {
 
       if (found) {
         // Merge the found data with the scanned data to preserve offerId
-        const mergedResult = {
+        const mergedResult = await withLoyalty({
           ...found,
           offerId: studentData.offerId || found.offerId || '' // Preserve offerId from scan
-        };
+        });
         setResult(mergedResult);
         setBill("");
         setPaymentInfo(null);
@@ -435,11 +438,12 @@ const VerifyClaim = () => {
         }
       );
 
-      const found = res.data.find(u =>
+      const match = res.data.find(u =>
         u.name?.toLowerCase().trim() === inputs.name.toLowerCase().trim() &&
         u.rollNo?.toLowerCase().trim() === inputs.rollNo.toLowerCase().trim() &&
         u.universityName?.toLowerCase().trim() === inputs.university.toLowerCase().trim()
       );
+      const found = match ? await withLoyalty(match) : null;
 
       setTimeout(() => {
         setResult(found || "not_found");
@@ -550,6 +554,33 @@ const VerifyClaim = () => {
     } finally {
       setProcessingPayment(false);
     }
+  };
+
+  // Loyalty (FLAG_LOYALTY_V2): ask the server what this student's visit gets. When loyalty applies, its %
+  // replaces the offer's here and in redeem-payment; otherwise the student is returned unchanged.
+  const withLoyalty = async (s) => {
+    const studentId = s?._id || s?.studentId;
+    if (!studentId || !s?.offerId) return s;
+    try {
+      const q = await loyaltyApi.quote({ studentId, offerId: s.offerId });
+      return q?.applies ? { ...s, discountPercentage: q.discountPercentage, loyalty: q } : s;
+    } catch {
+      return s;
+    }
+  };
+
+  // the tier and progress, next to the % pill
+  const renderLoyalty = (s) => {
+    const l = s?.loyalty;
+    if (!l) return null;
+    return (
+      <>
+        <Pill tone="purple">{`loyalty: ${l.tierName} · visit ${l.nextVisitNumber}`}</Pill>
+        {l.countsAsVisit === false
+          ? <span className="bb-chip">today's visit already counted</span>
+          : l.nextTier && <span className="bb-chip">{`${l.visitsBeforeNextTier} more visit${l.visitsBeforeNextTier === 1 ? "" : "s"} to ${l.nextTier.discountPct}%`}</span>}
+      </>
+    );
   };
 
   const handleStudentSelect = (student) => {
@@ -706,6 +737,7 @@ const VerifyClaim = () => {
                   {renderStudentHead(student)}
                   <Pill tone="yellow">{String(student.discountPercentage || 0)}%</Pill>
                 </div>
+                {student.loyalty && <div className="bb-chips">{renderLoyalty(student)}</div>}
                 <div className="bb-chips">
                   <Pill tone="green" dot>Scanned</Pill>
                   <span className="bb-chip">{String(student.offerTitle || 'Offer')}</span>
@@ -963,6 +995,7 @@ const VerifyClaim = () => {
                 <div className="bb-chips">
                   <Pill tone="yellow">{String(result.discountPercentage || 0)}% off</Pill>
                   <span className="bb-chip">on {String(result.offerTitle || 'Offer')}</span>
+                  {renderLoyalty(result)}
                 </div>
                 {renderBill("bv-bill")}
                 {paymentInfo && renderBreakdown(result.discountPercentage, handleProcessPayment, "Complete Transaction")}
@@ -988,6 +1021,7 @@ const VerifyClaim = () => {
             <div className="bb-chips">
               <Pill tone="yellow">{String(selectedStudent.discountPercentage || 0)}% off</Pill>
               <span className="bb-chip">on {String(selectedStudent.offerTitle || 'Offer')}</span>
+              {renderLoyalty(selectedStudent)}
             </div>
             {renderBill("bv-modal-bill")}
             {paymentInfo && renderBreakdown(selectedStudent.discountPercentage, handleProcessPayment, "Complete Redemption")}

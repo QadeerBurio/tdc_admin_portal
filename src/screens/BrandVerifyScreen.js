@@ -295,6 +295,15 @@ const BrandVerifyScreen = () => {
             <Facts rows={[
               ['offer', verificationResult.offer.title],
               ['discount', `${verificationResult.offer.discountPercentage}% OFF`],
+              // Loyalty (FLAG_LOYALTY_V2): the student's tier; its % is the discount above
+              ...(verificationResult.loyalty ? [
+                ['loyalty tier', `${verificationResult.loyalty.tierName} · visit ${verificationResult.loyalty.nextVisitNumber}`],
+                ['next tier', verificationResult.loyalty.countsAsVisit === false
+                  ? "today's visit already counted"
+                  : verificationResult.loyalty.nextTier
+                    ? `${verificationResult.loyalty.visitsBeforeNextTier} more visit(s) to ${verificationResult.loyalty.nextTier.discountPct}%`
+                    : 'top tier'],
+              ] : []),
             ]} />
             <div className="bv-sum">
               <div className="bv-sum-head"><span>Transaction</span></div>

@@ -18,6 +18,7 @@ export const ADMIN_MENU = [
       ["traveling", "traveling", "plane", "sky"],
       ["events", "events", "calendar", "purple"],
       ["all_brands_revenue", "brands revenue", "coin", "green"],
+      ["loyalty_exceptions", "loyalty exceptions", "star", "yellow"],
       ["brand_approval", "brand approvals", "shield", "orange"],
       ["card_manager", "approved cards", "card", "pink"],
     ],
@@ -52,6 +53,7 @@ export const BRAND_MENU = [
       ["discounts", "discounts", "tag", "red", "/discount"],
       ["branches", "branches", "pin", "sky", "/Branches"],
       ["verify", "verify student", "qr", "green", "/verifyclaim"],
+      ["loyalty", "loyalty", "star", "yellow", "/loyalty"], // shown only when FLAG_LOYALTY_V2 is on for the brand (Home.js)
       ["reward", "verify reward", "gift", "purple", "/verifyrward"],
       ["redemptions", "redemptions", "receipt", "blue", "/savinghistory"],
     ],
