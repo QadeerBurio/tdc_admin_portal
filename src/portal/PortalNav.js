@@ -20,6 +20,7 @@ export const ADMIN_MENU = [
       ["all_brands_revenue", "brands revenue", "coin", "green"],
       ["loyalty_exceptions", "loyalty exceptions", "star", "yellow"],
       ["hiring_funnel", "hiring funnel", "chart", "green"],
+      ["surplus_ops", "surprise boxes", "gift", "orange"], // shown only when the pilot is set up (AdminDashboard.js)
       ["brand_approval", "brand approvals", "shield", "orange"],
       ["card_manager", "approved cards", "card", "pink"],
     ],
@@ -55,6 +56,7 @@ export const BRAND_MENU = [
       ["branches", "branches", "pin", "sky", "/Branches"],
       ["verify", "verify student", "qr", "green", "/verifyclaim"],
       ["loyalty", "loyalty", "star", "yellow", "/loyalty"], // shown only when FLAG_LOYALTY_V2 is on for the brand (Home.js)
+      ["surprise", "surprise boxes", "gift", "orange", "/surprise-boxes"], // shown only when FLAG_SURPLUS_BOXES is on for the brand (Home.js)
       ["reward", "verify reward", "gift", "purple", "/verifyrward"],
       ["redemptions", "redemptions", "receipt", "blue", "/savinghistory"],
     ],
