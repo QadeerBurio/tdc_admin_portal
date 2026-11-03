@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Drawer, Modal, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
+import resumeStudioApi from "../services/resumeStudioApi";
 
 const COLUMNS = [
   { stage: "applied", label: "Applied", tone: "sand" },
@@ -127,6 +128,9 @@ function CandidateDetail({ applicationId, onClose, onChanged }) {
     }
   }, [applicationId]);
   useEffect(() => { load(); }, [load]);
+  // the tailored resume the candidate sent with this application (Resume Studio), if any: exactly that snapshot
+  const [sentResume, setSentResume] = useState(null);
+  useEffect(() => { resumeStudioApi.attachedResume(applicationId).then(setSentResume).catch(() => setSentResume(null)); }, [applicationId]);
 
   // one action: on a version conflict, reload instead of overwriting someone else's change
   const act = async (fn, done) => {
@@ -176,6 +180,18 @@ function CandidateDetail({ applicationId, onClose, onChanged }) {
         {can("REJECTED") && <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { if (await confirmDialog("reject this candidate? they'll get a polite update.")) act(() => careerApi.event(applicationId, { type: "REJECTED", version: v }), "rejected"); }}>reject</Button>}
       </div>
 
+      {sentResume && (
+        <section className="k-card pad" style={{ marginBottom: 12 }}>
+          <div className="k-card-head"><Ico kind="file" tone="blue" size={30} /><h3>resume sent with this application</h3></div>
+          <Facts rows={[
+            ["version", sentResume.label || "tailored resume"],
+            ["sent", inKarachi(sentResume.attachedAt)],
+            ["snapshot", String(sentResume.contentHash || "").slice(0, 12)],
+          ]} />
+          <p className="k-hint">the candidate approved this exact version for your job; it can't change after it was sent.</p>
+          <Button size="sm" variant="secondary" icon="download" onClick={() => resumeStudioApi.downloadAttachedResume(applicationId, `${t.job.title || "candidate"} resume`).catch((e) => toast(e.message, "bad"))}>download pdf</Button>
+        </section>
+      )}
       {iv && (
         <section className="k-card pad" style={{ marginBottom: 12 }}>
           <div className="k-card-head"><Ico kind="calendar" tone="purple" size={30} /><h3>interview</h3></div>
