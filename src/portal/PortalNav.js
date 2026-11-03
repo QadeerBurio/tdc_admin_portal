@@ -19,6 +19,7 @@ export const ADMIN_MENU = [
       ["events", "events", "calendar", "purple"],
       ["all_brands_revenue", "brands revenue", "coin", "green"],
       ["loyalty_exceptions", "loyalty exceptions", "star", "yellow"],
+      ["hiring_funnel", "hiring funnel", "chart", "green"],
       ["brand_approval", "brand approvals", "shield", "orange"],
       ["card_manager", "approved cards", "card", "pink"],
     ],

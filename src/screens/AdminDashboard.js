@@ -17,6 +17,7 @@ import dotSorted from "./dots/sorted.png";
 import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
 import LoyaltyExceptions from "./LoyaltyExceptions";
+import HiringFunnel from "./HiringFunnel";
 import AdminUserList from "./AdminUserList";
 import AdminJobManager from "./AdminJobsManager";
 import ManageExchange from "./ManageExchange";
@@ -356,6 +357,7 @@ export default function AdminDashboard() {
       case "events": return <EventManagement />;
       case "all_brands_revenue": return <AllBrandsRevenue />;
       case "loyalty_exceptions": return <LoyaltyExceptions />;
+      case "hiring_funnel": return <HiringFunnel />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;
