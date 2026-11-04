@@ -27,6 +27,7 @@ const NAV_FOR_PATH = {
   "/verifyclaim": "verify",
   "/loyalty": "loyalty",
   "/surprise-boxes": "surprise",
+  "/insights": "insights",
   "/BrandVerifyScreen": "verify",
   "/verifyrward": "reward",
   "/savinghistory": "redemptions",
@@ -35,7 +36,7 @@ const NAV_FOR_PATH = {
 };
 // pages whose topbar name differs from their menu item
 const LABEL_FOR_PATH = { "/create-offer": "create offer" };
-const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", loyalty: "loyalty", surprise: "surprise boxes", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
+const LABEL_FOR_NAV = { dashboard: "dashboard", discounts: "discounts", branches: "branches", verify: "verify student", loyalty: "loyalty", surprise: "surprise boxes", insights: "insights", reward: "verify reward", redemptions: "redemptions", settings: "settings" };
 // pilot items show only for brands in the pilot: "loyalty" (FLAG_LOYALTY_V2), "surprise boxes" (FLAG_SURPLUS_BOXES)
 const menuFor = (flags) => BRAND_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "loyalty" || flags.loyalty) && (i[0] !== "surprise" || flags.surprise)) }));
 

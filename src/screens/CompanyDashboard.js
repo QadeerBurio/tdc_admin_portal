@@ -31,8 +31,9 @@ const NAV_FOR_PATH = {
   "/reports": "reports",
   "/settings": "settings",
   "/first-hire-free": "dashboard",
+  "/hiring-results": "results",
 };
-const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", settings: "settings" };
+const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", results: "hiring results", settings: "settings" };
 
 const CompanyDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
