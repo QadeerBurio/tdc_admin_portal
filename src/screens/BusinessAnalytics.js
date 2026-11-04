@@ -1,5 +1,5 @@
 // BusinessAnalytics.js: figures counted from authoritative records only (server services/analytics/).
-//   AdminOverview    admin: discounts, loyalty, Surprise Box, hiring, employers; date range; CSV export
+//   AdminOverview    admin: discounts, loyalty, Surprise Box, hiring, employers, Resume Studio; date range; CSV export
 //   BrandInsights    brand: its own redemptions, repeat customers, loyalty, Surprise Box
 //   HiringResults    employer: its own hiring funnel, plus the First Hire Free summary when piloted
 // Each figure shows what it counts (definitions from the server) and its denominator. Figures built from
@@ -66,6 +66,13 @@ const discountRows = (d) => [
 ];
 const loyaltyRows = (l) => [["visits counted", n(l.countedVisits)], ["credits that didn't count", n(l.creditsNotCounted)], ["reversals", n(l.reversals)], ["net visits", n(l.netVisits)], ["members", n(l.members)], ...Object.entries(l.membersByTier || {}).map(([t, c]) => [`members: ${t}`, n(c)])];
 const surplusRows = (s) => [["orders placed", n(s.ordersPlaced)], ["boxes ordered", n(s.boxesOrdered)], ["verified pickups", n(s.verifiedPickups)], ["pickup rate", pct(s.pickupRatePct, s.pickupRateDenominator)], ["collected at pickup (by brands)", pkr(s.collectedAtPickup)], ["no-shows", n(s.noShows)], ["cancelled by students / brands", `${n(s.cancelledByStudent)} / ${n(s.cancelledByBrand)}`], ["support cases open", n(s.disputes)]];
+const secs = (v) => (v == null ? "no data" : v < 90 ? `${Math.round(v)} s` : `${Math.round(v / 6) / 10} min`);
+const resumeStudioRows = (s) => [
+  ["tailoring started", n(s.tailoringStarted)], ["completed / failed / in progress", `${n(s.tailoringCompleted)} / ${n(s.tailoringFailed)} / ${n(s.inProgress)}`],
+  ["students tailoring", n(s.studentsTailoring)], ["approvals", n(s.approvals)], ["applications with a tailored version", n(s.applicationsWithTailoredVersion)],
+  ["blocked by the factual check", `${n(s.factualCheckRejections)} (${pct(s.factualCheckRejectionPct, s.suggestions)})`], ["needs the student's confirmation", n(s.needsConfirmation)],
+  ["time to draft: median / p95", `${secs(s.timeToDraftSeconds?.p50)} / ${secs(s.timeToDraftSeconds?.p95)}`],
+];
 const hiringRows = (c, conv) => [["applications", n(c.applications)], ["shortlisted", n(c.shortlisted)], ["interviews completed", n(c.interviewsCompleted)], ["offers accepted", n(c.offersAccepted)], ["verified hires", n(c.verifiedHires)], ["offer to verified hire", pct(conv?.acceptedToVerifiedHire, c.offersAccepted)]];
 
 export function AdminOverview() {
@@ -76,7 +83,7 @@ export function AdminOverview() {
     const rows = [["section", "metric", "value"], ["range", "from", d.range.from], ["range", "to", d.range.to]];
     const add = (section, list) => list.forEach(([k, v]) => rows.push([section, k, v]));
     add("discounts", discountRows(d.discounts)); add("loyalty", loyaltyRows(d.loyalty)); add("surprise box", surplusRows(d.surpriseBox));
-    add("hiring", hiringRows(d.hiring.counts, d.hiring.conversions)); add("employers", Object.entries(d.employers).filter(([k]) => k !== "definitions").map(([k, v]) => [k, v == null ? "" : v]));
+    add("hiring", hiringRows(d.hiring.counts, d.hiring.conversions)); if (d.resumeStudio) add("resume studio", resumeStudioRows(d.resumeStudio)); add("employers", Object.entries(d.employers).filter(([k]) => k !== "definitions").map(([k, v]) => [k, v == null ? "" : v]));
     downloadCsv(`tdc-overview-${f.range.from}-to-${f.range.to}.csv`, rows);
   };
   return (
@@ -90,6 +97,10 @@ export function AdminOverview() {
           <Figures title="surprise box" icon="gift" tone="orange" rows={surplusRows(d.surpriseBox)} definitions={d.surpriseBox.definitions} />
           <Figures title="hiring" icon="briefcase" tone="coral" rows={[...hiringRows(d.hiring.counts, d.hiring.conversions), ["median first employer response", d.hiring.medianHours?.firstEmployerResponse == null ? "no data" : `${d.hiring.medianHours.firstEmployerResponse} h`]]} note="from the hiring timeline: a hire counts only when the candidate accepted and the employer confirmed it, and it wasn't revoked." />
           <Figures title="employers" icon="hat" tone="sky" rows={[["companies verified", n(d.employers.companiesVerified)], ["verifications to check / suspected duplicates", `${n(d.employers.verificationsPending)} / ${n(d.employers.suspectedDuplicates)}`], ["free-hire trials issued", n(d.employers.trialsIssued)], ["trials active / used / under review", `${n(d.employers.trialsActive)} / ${n(d.employers.trialsUsed)} / ${n(d.employers.trialsUnderReview)}`], ["free hires used (net of restored)", n(d.employers.netFreeHires)], ["hires pending pricing", n(d.employers.hiresPendingPricing)], ["paying employers", n(d.employers.payingEmployers)], ["trial to paid", d.employers.trialToPaidPct == null ? "not measurable yet" : `${d.employers.trialToPaidPct}%`]]} definitions={d.employers.definitions} />
+          {d.resumeStudio && (
+            <Figures title="resume studio" icon="file" tone="purple" rows={resumeStudioRows(d.resumeStudio)} definitions={d.resumeStudio.definitions}
+              note={Object.keys(d.resumeStudio.failedByReason || {}).length ? `failed: ${Object.entries(d.resumeStudio.failedByReason).map(([k, v]) => `${k.toLowerCase().replace(/_/g, " ")} ${v}`).join(", ")}` : ""} />
+          )}
           {d.discounts.topBrands.length > 0 && (
             <section className="k-card pad" style={{ gridColumn: "1 / -1" }}>
               <div className="k-card-head"><Ico kind="store" tone="red" size={30} /><h3>brands by redemptions</h3></div>
