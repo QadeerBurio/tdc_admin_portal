@@ -18,6 +18,8 @@ import CreateOfferAdmin from "./CreateOfferAdmin";
 import AdminOffers from "./AdminOffers";
 import LoyaltyExceptions from "./LoyaltyExceptions";
 import HiringFunnel from "./HiringFunnel";
+import HireDisputes from "./HireDisputes";
+import { careerApi } from "../services/careerApi";
 import SurplusOps from "./SurplusOps";
 import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
 import { AdminOverview } from "./BusinessAnalytics";
@@ -45,9 +47,9 @@ import EngagementMetrics from "./EngagementMetrics";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
-// pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free
+// pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["company_verifications", "free_hire_trials"];
-const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf)) }));
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes)) }));
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -237,6 +239,9 @@ export default function AdminDashboard() {
   useEffect(() => { surplusApi.adminAvailable().then(setSurplusMenu); }, []);
   const [fhfMenu, setFhfMenu] = useState(false);
   useEffect(() => { trialApi.adminAvailable().then(setFhfMenu); }, []);
+  // "hire disputes" shows only when the hiring timeline is set up (FLAG_CAREER_TIMELINE)
+  const [disputesMenu, setDisputesMenu] = useState(false);
+  useEffect(() => { careerApi.adminDisputesAvailable().then(setDisputesMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -371,6 +376,7 @@ export default function AdminDashboard() {
       case "all_brands_revenue": return <AllBrandsRevenue />;
       case "loyalty_exceptions": return <LoyaltyExceptions />;
       case "hiring_funnel": return <HiringFunnel />;
+      case "hire_disputes": return <HireDisputes />;
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
       case "business_overview": return <AdminOverview />;
@@ -416,7 +422,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
-        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu })}
+        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu })}
         active={activePage}
         onSelect={go}
         userName={user?.name}

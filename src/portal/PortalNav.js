@@ -20,6 +20,7 @@ export const ADMIN_MENU = [
       ["all_brands_revenue", "brands revenue", "coin", "green"],
       ["loyalty_exceptions", "loyalty exceptions", "star", "yellow"],
       ["hiring_funnel", "hiring funnel", "chart", "green"],
+      ["hire_disputes", "hire disputes", "alert", "red"], // shown only when FLAG_CAREER_TIMELINE is set up (AdminDashboard.js)
       ["surplus_ops", "surprise boxes", "gift", "orange"], // shown only when the pilot is set up (AdminDashboard.js)
       ["company_verifications", "company verifications", "shield", "blue"], // First Hire Free: shown only when the pilot is set up
       ["free_hire_trials", "free-hire trials", "trophy", "green"], // First Hire Free: shown only when the pilot is set up

@@ -51,6 +51,9 @@ export const careerApi = {
   employerAnalytics: (params) => unwrap(api.get("/career/employers/me/analytics", { params })),
   // admin
   adminAnalytics: (params) => unwrap(api.get("/career/admin/analytics", { params })),
+  // open hire disputes (admin); 404 when the hiring timeline isn't set up on the server
+  adminDisputes: () => unwrap(api.get("/career/admin/disputes")),
+  adminDisputesAvailable: () => api.get("/career/admin/disputes").then(() => true).catch(() => false),
   // the calendar file, saved through the browser
   downloadIcs: async (interviewId) => {
     const res = await api.get(`/career/interviews/${interviewId}/ics`, { responseType: "blob" });

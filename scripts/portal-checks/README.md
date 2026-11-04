@@ -11,7 +11,7 @@ npm run check:portal
 ```
 
 This builds the portal into a temp folder (1 to 3 minutes), with `REACT_APP_API_URL=http://127.0.0.1:5197` (the
-mock API address), then runs all 11 checks one after another. It takes about 5 minutes in all, prints `PASS` or
+mock API address), then runs all 13 checks one after another. It takes about 5 minutes in all, prints `PASS` or
 `FAIL` for each check, and exits 1 if any check fails. A failed check prints its full output: missing text, page
 errors, or each accessibility violation with the element it was found on.
 
@@ -46,7 +46,8 @@ elsewhere.
 | `resume-studio` | `studio-ui-check.js` | employer view of the tailored resume sent with an application, admin page |
 | `career` | `career-ui-check.js` | employer candidate pipeline and drawer, admin hiring funnel |
 | `loyalty` | `loyalty-ui-check.js` | brand loyalty page, verify page loyalty line, admin loyalty exceptions |
-| `a11y-surplus`, `a11y-first-hire-free`, `a11y-analytics`, `a11y-career`, `a11y-loyalty` | `a11y-*.js` | axe-core WCAG 2 A / AA on the same pages and their open dialogs |
+| `hire-disputes` | `disputes-ui-check.js` | admin hire disputes: hidden until the server answers, the list (no contact details), the review dialog, reason required, restore sends the right event |
+| `a11y-surplus`, `a11y-first-hire-free`, `a11y-analytics`, `a11y-career`, `a11y-loyalty`, `a11y-hire-disputes` | `a11y-*.js` | axe-core WCAG 2 A / AA on the same pages and their open dialogs |
 
 ## How they work
 
