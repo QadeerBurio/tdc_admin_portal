@@ -7,7 +7,7 @@ import Ico from "./Ico";
 import logoInk from "./assets/tdc-logo-ink.png";
 
 export const ADMIN_MENU = [
-  { title: "", items: [["dashboard", "dashboard", "home", "orange"]] },
+  { title: "", items: [["dashboard", "dashboard", "home", "orange"], ["business_overview", "overview", "chart", "green"]] },
   {
     title: "content",
     items: [
@@ -61,6 +61,7 @@ export const BRAND_MENU = [
       ["surprise", "surprise boxes", "gift", "orange", "/surprise-boxes"], // shown only when FLAG_SURPLUS_BOXES is on for the brand (Home.js)
       ["reward", "verify reward", "gift", "purple", "/verifyrward"],
       ["redemptions", "redemptions", "receipt", "blue", "/savinghistory"],
+      ["insights", "insights", "chart", "green", "/insights"],
     ],
   },
 ];
@@ -74,6 +75,7 @@ export const EMPLOYER_MENU = [
       ["candidates", "candidates", "users", "blue", "/candidate"],
       ["interviews", "interviews", "calendar", "purple", "/interviews"],
       ["reports", "reports", "chart", "green", "/reports"],
+      ["results", "hiring results", "trophy", "green", "/hiring-results"],
     ],
   },
 ];

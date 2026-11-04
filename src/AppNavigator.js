@@ -59,6 +59,9 @@ const TravelSettings = lazy(() => import("./screens/travel/TravelSettings"));
 const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
 const employerScreen = (name) => lazy(() => import("./screens/CompanyDashboard").then((m) => ({ default: m[name] })));
 const FirstHireFreePage = lazy(() => import("./screens/FirstHireFree")); // FLAG_EMPLOYER_FIRST_HIRE_FREE
+const analyticsScreen = (name) => lazy(() => import("./screens/BusinessAnalytics").then((m) => ({ default: m[name] })));
+const BrandInsights = analyticsScreen("BrandInsights");
+const HiringResults = analyticsScreen("HiringResults");
 const EmployerDashboard = employerScreen("EmployerDashboard");
 const EmployerJobs = employerScreen("EmployerJobs");
 const EmployerCandidates = employerScreen("EmployerCandidates");
@@ -198,6 +201,7 @@ export default function AppNavigator() {
           <Route path="/reports" element={<EmployerReports />} />
           <Route path="/settings" element={<EmployerSettings />} />
           <Route path="/first-hire-free" element={<FirstHireFreePage />} />
+          <Route path="/hiring-results" element={<HiringResults />} />
         </Route>
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
@@ -224,6 +228,7 @@ export default function AppNavigator() {
         <Route path="/Branches" element={<Branches />} />
         <Route path="/loyalty" element={<BrandLoyalty />} />
         <Route path="/surprise-boxes" element={<BrandSurpriseBoxes />} />
+        <Route path="/insights" element={<BrandInsights />} />
         <Route path="/brand-campaigns" element={<BrandCampaigns />} />
         <Route path="/verifyrward" element={<VerifyReward />} />
         <Route path="/settings" element={<BrandSettings />} />

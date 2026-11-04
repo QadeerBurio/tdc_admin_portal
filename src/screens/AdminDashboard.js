@@ -20,6 +20,7 @@ import LoyaltyExceptions from "./LoyaltyExceptions";
 import HiringFunnel from "./HiringFunnel";
 import SurplusOps from "./SurplusOps";
 import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
+import { AdminOverview } from "./BusinessAnalytics";
 import trialApi from "../services/trialApi";
 import surplusApi from "../services/surplusApi";
 import AdminUserList from "./AdminUserList";
@@ -372,6 +373,7 @@ export default function AdminDashboard() {
       case "hiring_funnel": return <HiringFunnel />;
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
+      case "business_overview": return <AdminOverview />;
       case "free_hire_trials": return <FreeHireTrials />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
