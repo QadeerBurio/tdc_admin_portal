@@ -26,7 +26,7 @@ const EVENT_LABEL = {
   INTERVIEW_DECLINED: "interview declined", INTERVIEW_RESCHEDULE_REQUESTED: "asked for another time", INTERVIEW_COMPLETED: "interview completed",
   CANDIDATE_NO_SHOW_REPORTED: "candidate no-show reported", EMPLOYER_NO_SHOW_REPORTED: "employer no-show reported", INTERVIEW_DISPUTED: "interview disputed",
   OFFER_SENT: "offer sent", OFFER_WITHDRAWN: "offer withdrawn", OFFER_ACCEPTED: "offer accepted", OFFER_DECLINED: "offer declined", OFFER_EXPIRED: "offer expired",
-  HIRE_CONFIRMED: "hire confirmed (verified)", HIRE_DISPUTED: "hire disputed", HIRE_REVOKED: "hire revoked by tdc",
+  HIRE_CONFIRMED: "hire confirmed (verified)", HIRE_DISPUTED: "hire disputed", HIRE_REVOKED: "hire revoked by tdc", HIRE_RESTORED: "hire restored by tdc (dispute rejected)",
 };
 const subline = (a) => {
   if (a.stage === "withdrawn") return "withdrew";
