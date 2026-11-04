@@ -20,7 +20,7 @@ const COLUMNS = [
   { stage: "rejected", label: "Rejected", tone: "red" }, // also withdrawn (marked on the card)
 ];
 const columnOf = (stage) => (stage === "withdrawn" ? "rejected" : stage);
-const EVENT_LABEL = {
+export const EVENT_LABEL = {
   APPLIED: "applied", LEGACY_STATUS: "status before the timeline", REVIEWED: "reviewed", SHORTLISTED: "shortlisted", REJECTED: "rejected", WITHDRAWN: "withdrew",
   INTERVIEW_INVITED: "interview invited", INTERVIEW_RESCHEDULED: "interview moved", INTERVIEW_CANCELLED: "interview cancelled", INTERVIEW_ACCEPTED: "interview accepted",
   INTERVIEW_DECLINED: "interview declined", INTERVIEW_RESCHEDULE_REQUESTED: "asked for another time", INTERVIEW_COMPLETED: "interview completed",
