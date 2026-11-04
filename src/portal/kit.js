@@ -289,10 +289,11 @@ export function EmptyState({ icon = "search", tone = "sand", title, text, action
   );
 }
 // columns: [{ key, label, render(row), style }], rows, rowKey, onRowClick
-export function Table({ columns, rows, rowKey = (r, i) => r._id || i, onRowClick, empty, loading, minWidth = 720 }) {
+export function Table({ columns, rows, rowKey = (r, i) => r._id || i, onRowClick, empty, loading, minWidth = 720, label = "table" }) {
   return (
     <div className="k-table-card">
-      <div className="k-table-scroll">
+      {/* focusable so keyboard users can scroll a wide table sideways (WCAG scrollable-region-focusable) */}
+      <div className="k-table-scroll" tabIndex={0} role="region" aria-label={label}>
         <table className="k-table" style={{ minWidth }}>
           <thead><tr>{columns.map((c) => <th key={c.key} style={c.thStyle}>{c.label}</th>)}</tr></thead>
           {!loading && rows.length > 0 && (
@@ -313,9 +314,12 @@ export function Table({ columns, rows, rowKey = (r, i) => r._id || i, onRowClick
 
 /* ---------------- pill, stat, header, card ---------------- */
 // tone: an Ico tone (red, sky, green, purple, orange, coral, blue, pink, yellow, ink, sand, white)
+// pill text is small, so it needs 4.5:1 on its tint (icons only need 3:1): darker text for the tones whose icon
+// colour is lighter than that (WCAG 2 AA, checked with axe)
+const PILL_TEXT = { red: "#B63935", sky: "#196EA1", green: "#287A37", orange: "#9B5D00", coral: "#C03438", blue: "#256DA5" };
 export function Pill({ tone = "sand", dot, children, title }) {
   const [bg, fg] = TONES[tone] || TONES.sand;
-  return <span className="k-pill" title={title} style={{ background: bg, color: fg }}>{dot && <span className="k-pill-dot" />}{children}</span>;
+  return <span className="k-pill" title={title} style={{ background: bg, color: PILL_TEXT[tone] || fg }}>{dot && <span className="k-pill-dot" />}{children}</span>;
 }
 export function StatCard({ label, value, sub, icon, tone = "sand", dark, onClick, pressed }) {
   const Tag = onClick ? "button" : "div";
