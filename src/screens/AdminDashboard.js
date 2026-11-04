@@ -19,6 +19,8 @@ import AdminOffers from "./AdminOffers";
 import LoyaltyExceptions from "./LoyaltyExceptions";
 import HiringFunnel from "./HiringFunnel";
 import SurplusOps from "./SurplusOps";
+import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
+import trialApi from "../services/trialApi";
 import surplusApi from "../services/surplusApi";
 import AdminUserList from "./AdminUserList";
 import AdminJobManager from "./AdminJobsManager";
@@ -42,7 +44,9 @@ import EngagementMetrics from "./EngagementMetrics";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
-const ADMIN_MENU_WITHOUT_SURPLUS = ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => i[0] !== "surplus_ops") }));
+// pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free
+const FHF_PAGES = ["company_verifications", "free_hire_trials"];
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf)) }));
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -230,6 +234,8 @@ export default function AdminDashboard() {
   // "surprise boxes" shows only once the pilot is set up on the server (FLAG_SURPLUS_BOXES)
   const [surplusMenu, setSurplusMenu] = useState(false);
   useEffect(() => { surplusApi.adminAvailable().then(setSurplusMenu); }, []);
+  const [fhfMenu, setFhfMenu] = useState(false);
+  useEffect(() => { trialApi.adminAvailable().then(setFhfMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -365,6 +371,8 @@ export default function AdminDashboard() {
       case "loyalty_exceptions": return <LoyaltyExceptions />;
       case "hiring_funnel": return <HiringFunnel />;
       case "surplus_ops": return <SurplusOps />;
+      case "company_verifications": return <CompanyVerifications />;
+      case "free_hire_trials": return <FreeHireTrials />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
       case "offer": return <CreateOfferAdmin />;
@@ -406,7 +414,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
-        menu={surplusMenu ? ADMIN_MENU : ADMIN_MENU_WITHOUT_SURPLUS}
+        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu })}
         active={activePage}
         onSelect={go}
         userName={user?.name}
