@@ -20,6 +20,7 @@ import InterviewsManager from "./InterviewsManager";
 import ReportsManager from "./ReportsManager";
 import "./styles/EmployerPortal.css";
 import { API_ORIGIN } from "../config/api";
+import { FreeHireCard } from "./FirstHireFree";
 
 // path -> menu item
 const NAV_FOR_PATH = {
@@ -29,6 +30,7 @@ const NAV_FOR_PATH = {
   "/interviews": "interviews",
   "/reports": "reports",
   "/settings": "settings",
+  "/first-hire-free": "dashboard",
 };
 const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", settings: "settings" };
 
@@ -310,6 +312,9 @@ export function EmployerDashboard() {
           <Button icon="plus" onClick={() => navigate("/employee-jobs")}>post a job</Button>
         </div>
       </div>
+
+      {/* First Hire Free (FLAG_EMPLOYER_FIRST_HIRE_FREE): renders nothing outside the pilot */}
+      <FreeHireCard />
 
       {fetchError && (
         <div className="k-note bad emp-error" role="alert">

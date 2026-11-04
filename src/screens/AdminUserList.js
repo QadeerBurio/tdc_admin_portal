@@ -11,6 +11,7 @@ import DeleteAccountDialog from "../portal/DeleteAccountDialog";
 import "./styles/AdminUserList.css";
 import { redemptionPlace } from "../portal/storeBadge";
 import { API_ORIGIN } from "../config/api";
+import trialApi from "../services/trialApi";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
 const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
@@ -26,6 +27,9 @@ const APP_TONE = { pending: "orange", reviewed: "blue", shortlisted: "green", in
 
 export default function AdminUserList({ role, title }) {
   const [users, setUsers] = useState([]);
+  // employers: is their company verified for First Hire Free? (null when that pilot isn't set up)
+  const [companyStatus, setCompanyStatus] = useState(null);
+  useEffect(() => { if (role === "employee") trialApi.companyStatus().then(setCompanyStatus); }, [role]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
@@ -679,6 +683,11 @@ export default function AdminUserList({ role, title }) {
                           <div style={{ minWidth: 0 }}>
                             <div className="aul-name">{u.name}</div>
                             <div className="aul-sub">{u.role}{u.isAlumni ? ' • Alumni' : ''}</div>
+                            {role === "employee" && companyStatus && (
+                              <Pill tone={companyStatus[u._id]?.status === "approved" ? "green" : "sand"} title={companyStatus[u._id]?.companyName || ""}>
+                                {companyStatus[u._id]?.status === "approved" ? "company verified" : "company not verified"}
+                              </Pill>
+                            )}
                           </div>
                         </div>
                       </td>

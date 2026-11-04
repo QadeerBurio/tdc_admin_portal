@@ -21,6 +21,8 @@ export const ADMIN_MENU = [
       ["loyalty_exceptions", "loyalty exceptions", "star", "yellow"],
       ["hiring_funnel", "hiring funnel", "chart", "green"],
       ["surplus_ops", "surprise boxes", "gift", "orange"], // shown only when the pilot is set up (AdminDashboard.js)
+      ["company_verifications", "company verifications", "shield", "blue"], // First Hire Free: shown only when the pilot is set up
+      ["free_hire_trials", "free-hire trials", "trophy", "green"], // First Hire Free: shown only when the pilot is set up
       ["brand_approval", "brand approvals", "shield", "orange"],
       ["card_manager", "approved cards", "card", "pink"],
     ],
