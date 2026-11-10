@@ -11,6 +11,7 @@
 // A move the candidate can't make from where they are snaps back with the reason; the server decides either way,
 // and the board only changes after it has. The buttons stay for keyboard and screen-reader users.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Drawer, Modal, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
@@ -191,6 +192,7 @@ export default function CandidatePipeline({ onClassic }) {
 }
 
 function CandidateDetail({ applicationId, initialAction = null, onClose, onChanged }) {
+  const navigate = useNavigate();
   const [t, setT] = useState(null);
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState(null); // schedule | reschedule | complete | offer
@@ -269,6 +271,7 @@ function CandidateDetail({ applicationId, initialAction = null, onClose, onChang
         {can("OFFER_WITHDRAWN") && of && <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { if (await confirmDialog("withdraw this offer?")) act(() => careerApi.withdrawOffer(of.id, { version: v }), "offer withdrawn"); }}>withdraw offer</Button>}
         {can("HIRE_CONFIRMED") && of && <Button size="sm" icon="check" disabled={busy} onClick={async () => { if (await confirmDialog("confirm the hire? the candidate accepted your offer. this creates a verified 'Hired via TDC' record (private to them).")) act(() => careerApi.confirmHire(of.id, { version: v }), "hire confirmed"); }}>confirm hire</Button>}
         {can("REJECTED") && <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { if (await confirmDialog("reject this candidate? they'll get a polite update.")) act(() => careerApi.event(applicationId, { type: "REJECTED", version: v }), "rejected"); }}>reject</Button>}
+        <Button size="sm" variant="secondary" icon="users" onClick={() => navigate(`/candidate/${applicationId}`)}>full profile</Button>
       </div>
 
       <MatchEvidence applicationId={applicationId} />
