@@ -13,7 +13,7 @@ const E = "6ae9aaaaaaaaaaaaaaaaaaaa", A1 = "6ae9a1a1a1a1a1a1a1a1a1a1", A2 = "6ae
 const now = Date.now();
 const A4 = "6ae9a4a4a4a4a4a4a4a4a4a4";
 const apps = [
-  { applicationId: A4, jobId: "j1", jobTitle: "Backend dev", candidateName: "Zara Khan", appliedAt: new Date(now - 1 * 864e5).toISOString(), careerEnabled: true, stage: "applied", version: 1, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "REJECTED"] },
+  { applicationId: A4, jobId: "j1", jobTitle: "Backend dev", candidateName: "Zara Khan", appliedAt: new Date(now - 1 * 864e5).toISOString(), careerEnabled: true, stage: "applied", version: 1, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "INTERVIEW_INVITED", "REJECTED"] },
   { applicationId: A1, jobId: "j1", jobTitle: "Backend dev", candidateName: "Sana Khan", appliedAt: new Date(now - 5 * 864e5).toISOString(), careerEnabled: true, stage: "interview", version: 4, interview: { id: IV, status: "accepted", startsAt: new Date(now + 2 * 864e5).toISOString() }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REJECTED", "INTERVIEW_RESCHEDULED", "INTERVIEW_CANCELLED"] },
   { applicationId: A2, jobId: "j1", jobTitle: "Backend dev", candidateName: "Taha Ali", appliedAt: new Date(now - 2 * 864e5).toISOString(), careerEnabled: true, stage: "applied", version: 1, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "REJECTED"] },
   { applicationId: "6ae9a3a3a3a3a3a3a3a3a3a3", jobId: "j1", jobTitle: "Backend dev", candidateName: "Umar Old", appliedAt: new Date(now - 9 * 864e5).toISOString(), careerEnabled: false, stage: "reviewed", version: 0, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: [] },
@@ -27,15 +27,22 @@ const routes = {
   [`GET /api/career/applications/${A2}/timeline`]: ok(timelineA2),
   "GET /api/career/admin/analytics": ok({ range: {}, counts: { applications: 12, submitted: 10, joinedPilotLater: 2, reviewed: 9, shortlisted: 6, rejected: 3, withdrawn: 1, interviewsInvited: 5, interviewsAccepted: 4, interviewsCompleted: 3, noShowReports: 1, offersSent: 3, offersAccepted: 2, offersDeclined: 1, verifiedHires: 1, disputes: 2 }, conversions: { submittedToReviewed: 75, reviewedToShortlisted: 66.7, shortlistedToCompletedInterview: 50, completedInterviewToOffer: 100, offerToAccepted: 66.7, acceptedToVerifiedHire: 50 }, medianHours: { firstEmployerResponse: 20.5, toFirstInterviewInvite: 70, toVerifiedHire: 300 } }),
 };
+routes[`GET /api/career/applications/${A4}/timeline`] = ok({ ...timelineA2, applicationId: A4, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "INTERVIEW_INVITED", "REJECTED"] });
 const calls = [];
+const posted = [];
 http.createServer((q, s) => {
   const h = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type,accept,idempotency-key", "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS", "content-type": "application/json" };
   if (q.method === "OPTIONS") { s.writeHead(204, h); return s.end(); }
   const k = `${q.method} ${q.url.split("?")[0]}`;
   calls.push(k);
-  s.writeHead(200, h);
-  const b = routes[k];
-  s.end(JSON.stringify(b !== undefined ? b : q.method === "GET" ? [] : { success: true }));
+  let body = "";
+  q.on("data", (c) => (body += c));
+  q.on("end", () => {
+    if (q.method === "POST") posted.push({ url: k, body: JSON.parse(body || "{}") });
+    s.writeHead(200, h);
+    const b = routes[k];
+    s.end(JSON.stringify(b !== undefined ? b : q.method === "GET" ? [] : { success: true, data: {} }));
+  });
 }).listen(API);
 const types = { ".js": "text/javascript", ".css": "text/css", ".html": "text/html", ".png": "image/png", ".svg": "image/svg+xml", ".json": "application/json", ".ico": "image/x-icon", ".woff2": "font/woff2" };
 http.createServer((q, s) => {
@@ -64,6 +71,7 @@ http.createServer((q, s) => {
     return pg;
   };
   const text = (pg) => pg.evaluate(`document.body.innerText || ""`);
+  const check = (label, cond) => { if (!cond) bad = 1; console.log(`${label}: ${cond ? "yes" : "NO"}`); };
   const expect = (label, t, want) => {
     const miss = want.filter((w) => !t.toLowerCase().includes(w.toLowerCase()));
     if (miss.length) bad = 1;
@@ -94,6 +102,38 @@ http.createServer((q, s) => {
   if (!sortOk) bad = 1;
   console.log(`sort by relevance: ${sortOk ? "newest first by default, matching order for one job, both still listed" : `WRONG ORDER (${before} → ${after})`}`);
   if (pg2.errs.length) { bad = 1; pg2.errs.forEach((e) => console.log("    " + e)); }
+  // drag and drop: the same transitions as the buttons; invalid drops snap back with the reason
+  const pg3 = await open(emp, "/candidate");
+  const fire = (target, type) => pg3.evaluate(`(() => { window.__dt = window.__dt || new DataTransfer(); const el = ${target}; el.dispatchEvent(new DragEvent("${type}", { bubbles: true, cancelable: true, dataTransfer: window.__dt })); return !!el; })()`);
+  const card = (name) => `[...document.querySelectorAll("section[data-column] button")].find((b) => b.innerText.startsWith(${JSON.stringify(name)}))`;
+  const col = (stage) => `document.querySelector('section[data-column="${stage}"]')`;
+  const drag = async (name, stage) => {
+    await fire(card(name), "dragstart"); await sleep(150);
+    await fire(col(stage), "dragover"); await sleep(150);
+    await fire(col(stage), "drop"); await sleep(150);
+    await fire(card(name), "dragend"); await sleep(900);
+  };
+  const dragOk = await pg3.evaluate(`[...document.querySelectorAll("section[data-column] button")].filter((b) => b.draggable).length > 0`);
+  check("cards are draggable; the hint keeps the buttons as the other way", dragOk && /drag a card to another column, or open it to use the buttons/.test(await text(pg3)));
+  let n = posted.length;
+  await drag("Zara Khan", "shortlisted");
+  const sp = posted[n];
+  check("drop Zara on Shortlisted: the same event the button sends (SHORTLISTED with the version the board saw)", posted.length === n + 1 && sp.url === `POST /api/career/applications/${A4}/events` && sp.body.type === "SHORTLISTED" && sp.body.version === 1);
+  n = posted.length;
+  await drag("Zara Khan", "offer");
+  check("drop Zara on Offer (not allowed from Applied): snaps back with the reason, nothing sent", posted.length === n && /Zara Khan can't move from Applied to Offer/.test(await text(pg3)));
+  await drag("Zara Khan", "interview");
+  check("drop Zara on Interview: the candidate opens with the schedule-interview dialog (as the button)", /schedule an interview/i.test(await text(pg3)) && posted.length === n);
+  await pg3.evaluate(`document.querySelectorAll("[role=dialog]").forEach((d) => [...d.querySelectorAll("button")].find((b) => b.innerText.trim() === "cancel")?.click()); true`);
+  await sleep(500);
+  await pg3.evaluate(`document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", bubbles: true })); true`);
+  await sleep(600);
+  await drag("Zara Khan", "rejected");
+  const askedReject = /reject Zara Khan\?/.test(await text(pg3));
+  await pg3.evaluate(`[...document.querySelectorAll("[role=dialog] button, [role=alertdialog] button")].find((b) => /^cancel$/i.test(b.innerText.trim()))?.click(); true`);
+  await sleep(600);
+  check("drop on Rejected asks first (as the button); cancelling sends nothing", askedReject && posted.length === n);
+  if (pg3.errs.length) { bad = 1; pg3.errs.forEach((e) => console.log("    " + e)); }
   const adm = await open({ _id: "6ae9ffffffffffffffffffff", id: "6ae9ffffffffffffffffffff", role: "admin", name: "admin" }, "/admin");
   await adm.evaluate(`[...document.querySelectorAll("button, a")].find((e) => /hiring funnel/i.test(e.innerText))?.click(); true`);
   await sleep(2500);

@@ -6,6 +6,10 @@
 // this screen saw: if someone else changed the candidate meanwhile, it reloads instead of overwriting.
 // Candidate matching (FLAG_CAREER_MATCHING): a "match evidence" panel in the drawer and, for one job, an optional
 // "sort by relevance" (newest first stays the default; nobody is hidden).
+// Drag and drop (native HTML5, no library): dropping a card on a column asks for the same transition its button
+// would (reviewed, shortlisted, rejected directly; interview, offer and hired open the candidate with that dialog).
+// A move the candidate can't make from where they are snaps back with the reason; the server decides either way,
+// and the board only changes after it has. The buttons stay for keyboard and screen-reader users.
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Drawer, Modal, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
@@ -24,6 +28,10 @@ const COLUMNS = [
   { stage: "rejected", label: "Rejected", tone: "red" }, // also withdrawn (marked on the card)
 ];
 const columnOf = (stage) => (stage === "withdrawn" ? "rejected" : stage);
+// what dropping on a column asks for: the event its button sends (null: no button moves a candidate there)
+const DROP = { applied: null, reviewed: "REVIEWED", shortlisted: "SHORTLISTED", interview: "INTERVIEW_INVITED", offer: "OFFER_SENT", hired: "HIRE_CONFIRMED", rejected: "REJECTED" };
+const WITH_DIALOG = new Set(["INTERVIEW_INVITED", "OFFER_SENT", "HIRE_CONFIRMED"]);
+const labelOf = (stage) => (COLUMNS.find((c) => c.stage === columnOf(stage)) || {}).label || stage;
 export const EVENT_LABEL = {
   APPLIED: "applied", LEGACY_STATUS: "status before the timeline", REVIEWED: "reviewed", SHORTLISTED: "shortlisted", REJECTED: "rejected", WITHDRAWN: "withdrew",
   INTERVIEW_INVITED: "interview invited", INTERVIEW_RESCHEDULED: "interview moved", INTERVIEW_CANCELLED: "interview cancelled", INTERVIEW_ACCEPTED: "interview accepted",
@@ -46,6 +54,10 @@ export default function CandidatePipeline({ onClassic }) {
   const [data, setData] = useState({ jobs: [], applications: [] });
   const [jobId, setJobId] = useState("");
   const [openId, setOpenId] = useState(null);
+  const [openAction, setOpenAction] = useState(null); // a dialog to open with the candidate (from a drop)
+  const [dragging, setDragging] = useState(null);
+  const [over, setOver] = useState(null);
+  const [moving, setMoving] = useState(false);
   const [flags, setFlags] = useState({});
   useEffect(() => { careerApi.flagsMe().then(setFlags).catch(() => setFlags({})); }, []);
   // order within each column: newest (default) or relevance (one job at a time, from the matching estimates)
@@ -80,6 +92,30 @@ export default function CandidatePipeline({ onClassic }) {
     return m;
   }, [data, matches]);
 
+  // a card dropped on a column: the same transition as the button, checked against what the server allows now
+  const drop = async (a, stage) => {
+    setDragging(null); setOver(null);
+    if (!a || columnOf(a.stage) === stage) return;
+    const type = DROP[stage];
+    const name = a.candidateName || "this candidate";
+    if (!type || !a.nextAllowedActions.includes(type)) {
+      toast(`${name} can't move from ${labelOf(a.stage)} to ${labelOf(stage)}${!type ? "" : `: ${(a.nextAllowedActions.length ? "allowed now: " + a.nextAllowedActions.map((x) => x.toLowerCase().replace(/_/g, " ")).join(", ") : "no next step from here")}`}`, "bad");
+      return;
+    }
+    if (WITH_DIALOG.has(type)) { setOpenAction(type); setOpenId(a.applicationId); return; }
+    if (type === "REJECTED" && !(await confirmDialog(`reject ${name}? they'll get a polite update.`))) return;
+    setMoving(true);
+    try {
+      await careerApi.event(a.applicationId, { type, version: a.version });
+      toast(`${name}: ${labelOf(stage).toLowerCase()}`, "ok");
+    } catch (err) {
+      toast(err.code === "VERSION_CONFLICT" ? "someone changed this candidate meanwhile; reloaded" : err.message, "bad");
+    } finally {
+      setMoving(false);
+      load();
+    }
+  };
+
   if (loading && !data.applications.length) return <PageLoading />;
   return (
     <div className="tdcp k-page" data-screen="employer-pipeline">
@@ -106,9 +142,21 @@ export default function CandidatePipeline({ onClassic }) {
       {(data.applications || []).length === 0 ? (
         <EmptyState icon="users" tone="blue" title="no applicants yet" text="applications to your jobs appear here." />
       ) : (
-        <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "minmax(220px, 1fr)", gap: 12, overflowX: "auto", paddingBottom: 8 }} role="list" aria-label="candidates by stage">
+        <>
+        <p className="k-hint" style={{ margin: "0 0 8px" }}>drag a card to another column, or open it to use the buttons.</p>
+        <div style={{ display: "grid", gridAutoFlow: "column", gridAutoColumns: "minmax(220px, 1fr)", gap: 12, overflowX: "auto", paddingBottom: 8, opacity: moving ? 0.6 : 1 }} role="list" aria-label="candidates by stage" aria-busy={moving}>
           {COLUMNS.map((col) => (
-            <section key={col.stage} className="k-card pad" style={{ minHeight: 160, background: "var(--sand)" }} role="listitem" aria-label={`${col.label}: ${byColumn[col.stage].length}`}>
+            <section
+              key={col.stage}
+              className="k-card pad"
+              data-column={col.stage}
+              style={{ minHeight: 160, background: "var(--sand)", outline: over === col.stage ? "2px dashed var(--ink)" : "none", outlineOffset: -4 }}
+              role="listitem"
+              aria-label={`${col.label}: ${byColumn[col.stage].length}`}
+              onDragOver={(e) => { if (dragging) { e.preventDefault(); e.dataTransfer.dropEffect = "move"; if (over !== col.stage) setOver(col.stage); } }}
+              onDragLeave={(e) => { if (!e.currentTarget.contains(e.relatedTarget)) setOver((o) => (o === col.stage ? null : o)); }}
+              onDrop={(e) => { e.preventDefault(); drop(dragging, col.stage); }}
+            >
               <div className="k-row" style={{ justifyContent: "space-between", marginBottom: 8 }}>
                 <h3 style={{ margin: 0, fontSize: 15 }}>{col.label}</h3>
                 <Pill tone={col.tone}>{byColumn[col.stage].length}</Pill>
@@ -117,6 +165,9 @@ export default function CandidatePipeline({ onClassic }) {
                 <button
                   type="button"
                   key={a.applicationId}
+                  draggable={a.careerEnabled && !moving}
+                  onDragStart={(e) => { e.dataTransfer.effectAllowed = "move"; e.dataTransfer.setData("text/plain", a.applicationId); setDragging(a); }}
+                  onDragEnd={() => { setDragging(null); setOver(null); }}
                   onClick={() => (a.careerEnabled ? setOpenId(a.applicationId) : toast("this candidate isn't in the timeline pilot yet: use the classic list"))}
                   className="k-card"
                   style={{ display: "block", width: "100%", textAlign: "left", padding: 12, marginBottom: 8, background: "var(--card)", border: "1px solid var(--line)", cursor: "pointer" }}
@@ -132,13 +183,14 @@ export default function CandidatePipeline({ onClassic }) {
             </section>
           ))}
         </div>
+        </>
       )}
-      {openId && <CandidateDetail applicationId={openId} onClose={() => setOpenId(null)} onChanged={load} />}
+      {openId && <CandidateDetail applicationId={openId} initialAction={openAction} onClose={() => { setOpenId(null); setOpenAction(null); }} onChanged={load} />}
     </div>
   );
 }
 
-function CandidateDetail({ applicationId, onClose, onChanged }) {
+function CandidateDetail({ applicationId, initialAction = null, onClose, onChanged }) {
   const [t, setT] = useState(null);
   const [busy, setBusy] = useState(false);
   const [dialog, setDialog] = useState(null); // schedule | reschedule | complete | offer
@@ -174,6 +226,19 @@ function CandidateDetail({ applicationId, onClose, onChanged }) {
       setBusy(false);
     }
   };
+  // opened by a drop on the interview / offer / hired column: the same dialog the button opens
+  const [started, setStarted] = useState(false);
+  useEffect(() => {
+    if (!t || started || !initialAction) return;
+    setStarted(true);
+    if (!t.nextAllowedActions.includes(initialAction)) { toast("that step isn't possible any more; reloaded", "bad"); return; }
+    if (initialAction === "INTERVIEW_INVITED") { setSlot(blankSlot()); setDialog("schedule"); }
+    else if (initialAction === "OFFER_SENT") { setOffer({ title: t.job.title || "", terms: "", expiresOn: "" }); setDialog("offer"); }
+    else if (initialAction === "HIRE_CONFIRMED" && t.offerDetails) {
+      confirmDialog("confirm the hire? the candidate accepted your offer. this creates a verified 'Hired via TDC' record (private to them).")
+        .then((yes) => yes && act(() => careerApi.confirmHire(t.offerDetails.id, { version: t.version }), "hire confirmed"));
+    }
+  }, [t]); // eslint-disable-line react-hooks/exhaustive-deps
   if (!t) return <Drawer open onClose={onClose} title="candidate"><PageLoading /></Drawer>;
   const can = (a) => t.nextAllowedActions.includes(a);
   const v = t.version;
