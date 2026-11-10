@@ -8,6 +8,7 @@ import React, { useCallback, useEffect, useState } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, DateInput, EmptyState, Pill, Table, toast } from "../portal/kit";
 import analyticsApi, { defaultRange, downloadCsv } from "../services/analyticsApi";
+import { EmployerRatingCard } from "./CareerRatings";
 
 const n = (v) => (v == null ? "hidden" : typeof v === "number" ? v.toLocaleString("en-PK") : String(v));
 const pkr = (v) => (v == null ? "hidden" : `PKR ${Number(v).toLocaleString("en-PK")}`);
@@ -142,6 +143,7 @@ export function HiringResults() {
       {f.loading && !d ? <PageLoading /> : !d ? <EmptyState icon="alert" title="couldn't load" action={<Button onClick={f.load}>retry</Button>} /> : (
         <div style={grid}>
           <Figures title="your funnel" icon="briefcase" tone="coral" rows={[...hiringRows(d.hiring.counts, d.hiring.conversions), ["median time to first response", d.hiring.medianHours?.firstEmployerResponse == null ? "no data" : `${d.hiring.medianHours.firstEmployerResponse} h`]]} />
+          <EmployerRatingCard />
           {d.trial && (
             <Figures title="first hire free" icon="trophy" tone="green" rows={[["status", <Pill key="s" tone={{ active: "green", used: "blue", under_review: "orange" }[d.trial.status] || "sand"}>{d.trial.status.replace("_", " ")}</Pill>], ["free hires left", n(d.trial.remainingFreeHires)], ["applicants", n(d.trial.summary.applicants)], ["interviews completed", n(d.trial.summary.completedInterviews)], ["verified hires", n(d.trial.summary.verifiedHires)], ["free hire used", d.trial.summary.freeHireUsed ? "yes" : "no"]]} note={d.trial.furtherHires} />
           )}
