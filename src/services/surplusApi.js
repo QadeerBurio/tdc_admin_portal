@@ -22,6 +22,14 @@ export const surplusApi = {
   listings: () => unwrap(api.get("/surplus/merchant/listings")),
   createListing: (body) => unwrap(api.post("/surplus/merchant/listings", body)),
   updateListing: (id, body) => unwrap(api.patch(`/surplus/merchant/listings/${id}`, body)),
+  // the box's optional photo (images only, at most 5 MB; locked once a student has ordered)
+  uploadPhoto: (id, file, version) => {
+    const fd = new FormData();
+    fd.append("version", String(version));
+    fd.append("image", file);
+    return unwrap(api.post(`/surplus/merchant/listings/${id}/image`, fd, { headers: { "Content-Type": "multipart/form-data" } }));
+  },
+  removePhoto: (id, version) => unwrap(api.delete(`/surplus/merchant/listings/${id}/image`, { data: { version } })),
   orders: (scope = "live") => unwrap(api.get("/surplus/merchant/orders", { params: { scope } })),
   transition: (id, body) => unwrap(api.post(`/surplus/merchant/orders/${id}/transition`, body)),
   // { code | qr, branchId, markPaid }

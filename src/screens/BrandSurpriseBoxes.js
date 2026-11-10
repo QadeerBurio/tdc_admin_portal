@@ -214,6 +214,7 @@ function Listings({ branches }) {
         <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(280px, 1fr))", gap: 12 }}>
           {data.listings.map((l) => (
             <section key={l.id} className="k-card pad" data-listing={l.title}>
+              <BoxPhoto l={l} onChanged={load} />
               <div style={{ display: "flex", justifyContent: "space-between", gap: 8 }}><strong>{l.title}</strong><Pill tone={l.status === "published" ? "green" : l.status === "blocked" ? "red" : "sand"}>{l.status.replace("_", " ")}</Pill></div>
               <Facts rows={[
                 ["pickup", `${karachi(l.pickupStart)} – ${time(l.pickupEnd)}`],
@@ -307,6 +308,53 @@ function Listings({ branches }) {
         )}
       </Modal>
     </>
+  );
+}
+
+// ---------- a box's optional photo ----------
+// images only (jpg, png, webp, heic), at most 5 MB: checked here first, and again on the server. Once a student
+// has ordered, the photo is part of what they saw and can't change.
+const PHOTO_TYPES = ["image/jpeg", "image/png", "image/webp", "image/heic", "image/heif"];
+const PHOTO_MAX = 5 * 1024 * 1024;
+export function photoProblem(file) {
+  if (!file) return "choose a photo";
+  if (!PHOTO_TYPES.includes(String(file.type || "").toLowerCase()) && !/\.(jpe?g|png|webp|heic|heif)$/i.test(file.name || "")) return "only jpg, png, webp or heic photos";
+  if (file.size > PHOTO_MAX) return "the photo can be at most 5 MB";
+  return null;
+}
+function BoxPhoto({ l, onChanged }) {
+  const [busy, setBusy] = useState(false);
+  const input = useRef(null);
+  const locked = l.orders > 0 || ["closed", "blocked"].includes(l.status);
+  const pick = async (e) => {
+    const file = e.target.files?.[0];
+    e.target.value = "";
+    if (!file) return;
+    const problem = photoProblem(file);
+    if (problem) return toast(problem, "bad");
+    setBusy(true);
+    try { await surplusApi.uploadPhoto(l.id, file, l.version); toast("photo saved", "ok"); }
+    catch (err) { toast(err.code === "STALE_VERSION" ? "this box changed meanwhile; reloaded" : err.message, "bad"); }
+    finally { setBusy(false); onChanged(); }
+  };
+  const remove = async () => {
+    setBusy(true);
+    try { await surplusApi.removePhoto(l.id, l.version); toast("photo removed", "ok"); }
+    catch (err) { toast(err.message, "bad"); }
+    finally { setBusy(false); onChanged(); }
+  };
+  return (
+    <div style={{ marginBottom: 10 }}>
+      {l.image && <img src={l.image} alt={l.title} style={{ width: "100%", maxHeight: 160, objectFit: "cover", borderRadius: 12, display: "block" }} />}
+      {!locked && (
+        <div className="k-row" style={{ gap: 6, marginTop: l.image ? 6 : 0 }}>
+          <input ref={input} type="file" accept="image/jpeg,image/png,image/webp,image/heic,image/heif" onChange={pick} style={{ display: "none" }} aria-label={`photo for ${l.title}`} data-photo-input={l.id} />
+          <Button size="sm" variant="secondary" icon="image" loading={busy} onClick={() => input.current?.click()}>{l.image ? "change photo" : "add photo"}</Button>
+          {l.image && <Button size="sm" variant="secondary" disabled={busy} onClick={remove} aria-label={`remove the photo of ${l.title}`}>remove photo</Button>}
+        </div>
+      )}
+      {locked && l.orders > 0 && !l.image && <p className="k-hint" style={{ margin: 0 }}>no photo (students have ordered, so it can't be added now)</p>}
+    </div>
   );
 }
 
