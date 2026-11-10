@@ -35,6 +35,7 @@ export const ADMIN_MENU = [
     items: [
       ["admin_actions", "admin actions", "receipt", "ink"],
       ["loyalty_programs", "loyalty programs", "star", "yellow"],
+      ["hiring_overview", "hiring overview", "briefcase", "blue"],
     ],
   },
   {

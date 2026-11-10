@@ -57,6 +57,11 @@ export const careerApi = {
   // open hire disputes (admin); 404 when the hiring timeline isn't set up on the server
   adminDisputes: () => unwrap(api.get("/career/admin/disputes")),
   adminDisputesAvailable: () => api.get("/career/admin/disputes").then(() => true).catch(() => false),
+  // hiring across employers, read-only (audited on the server; 404 unless the hiring timeline is set up)
+  adminApplications: (params) => unwrap(api.get("/career/admin/applications", { params })),
+  adminInterviews: (params) => unwrap(api.get("/career/admin/interviews", { params })),
+  adminHires: (params) => unwrap(api.get("/career/admin/hires", { params })),
+  adminOverviewAvailable: () => api.get("/career/admin/hires", { params: { limit: 1 } }).then(() => true).catch(() => false),
   // the calendar file, saved through the browser
   downloadIcs: async (interviewId) => {
     const res = await api.get(`/career/interviews/${interviewId}/ics`, { responseType: "blob" });
