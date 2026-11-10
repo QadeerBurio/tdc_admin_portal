@@ -23,6 +23,8 @@ export const loyaltyApi = {
   myProgram: () => unwrap(api.get("/loyalty/programs/mine")),
   createProgram: (body) => unwrap(api.post("/loyalty/programs", body)),
   updateProgram: (id, body) => unwrap(api.patch(`/loyalty/programs/${id}`, body)),
+  // an ended program becomes a draft at a new version; visits from before never count again
+  restartProgram: (id, body) => unwrap(api.post(`/loyalty/programs/${id}/restart`, body)),
   analytics: (params) => unwrap(api.get("/loyalty/brands/me/analytics", { params })),
   // the tier and % for this student's visit, before confirming the bill
   quote: ({ studentId, offerId, branchId }) => unwrap(api.post("/loyalty/quotes", { studentId, offerId, branchId })),
