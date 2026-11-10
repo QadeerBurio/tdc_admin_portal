@@ -17,7 +17,7 @@ import CandidatesManager from "./CandidateManager";
 import CandidatePipeline from "./CandidatePipeline";
 import CareerInterviews from "./CareerInterviews";
 import JobFunnel from "./JobFunnel";
-import careerApi from "../services/careerApi";
+import useFlagsMe from "../portal/useFlagsMe";
 import InterviewsManager from "./InterviewsManager";
 import ReportsManager from "./ReportsManager";
 import "./styles/EmployerPortal.css";
@@ -272,11 +272,9 @@ export function EmployerJobs() {
 // click away); everyone else gets the classic list as before
 export function EmployerCandidates() {
   const { token } = useOutletContext();
-  const [pilot, setPilot] = useState(null);
+  const liveFlags = useFlagsMe(); // refreshed on focus: no reload after a flag change
+  const pilot = liveFlags ? !!liveFlags.careerTimeline : null;
   const [classic, setClassic] = useState(false);
-  useEffect(() => {
-    careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false));
-  }, []);
   if (pilot === null) return <PageLoading />;
   if (pilot && !classic) return <CandidatePipeline onClassic={() => setClassic(true)} />;
   return (
@@ -290,11 +288,9 @@ export function EmployerCandidates() {
 // away); everyone else gets the classic list as before
 export function EmployerInterviews() {
   const { token } = useOutletContext();
-  const [pilot, setPilot] = useState(null);
+  const liveFlags = useFlagsMe();
+  const pilot = liveFlags ? !!liveFlags.careerTimeline : null;
   const [classic, setClassic] = useState(false);
-  useEffect(() => {
-    careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false));
-  }, []);
   if (pilot === null) return <PageLoading />;
   if (pilot && !classic) return <CareerInterviews onClassic={() => setClassic(true)} />;
   return (
@@ -307,8 +303,7 @@ export function EmployerInterviews() {
 // FLAG_CAREER_TIMELINE: pilot employers also get "hiring by job" (their own jobs' funnel) above the reports
 export function EmployerReports() {
   const { token, stats } = useOutletContext();
-  const [pilot, setPilot] = useState(false);
-  useEffect(() => { careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false)); }, []);
+  const pilot = !!useFlagsMe()?.careerTimeline;
   return (
     <>
       {pilot && <div style={{ padding: "16px 0 0" }}><JobFunnel /></div>}

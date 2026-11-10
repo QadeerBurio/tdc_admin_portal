@@ -11,6 +11,7 @@ import { PageLoading, Button, IconButton, Field, Input, Textarea, Dropdown, Date
 import LoyaltyPreview, { ruleText, StampPreview, rewardLabelOf } from "../portal/LoyaltyPreview";
 import loyaltyApi from "../services/loyaltyApi";
 import api from "../services/api";
+import useFlagsMe from "../portal/useFlagsMe";
 import "./styles/BrandPortal.css";
 
 const DEFAULT_TIERS = [
@@ -112,6 +113,11 @@ export default function BrandLoyalty() {
     }
   }, []);
   useEffect(() => { load(); }, [load]);
+  // the flag changed on the server while the page was open (seen on focus): load again
+  const liveFlags = useFlagsMe();
+  useEffect(() => {
+    if (liveFlags && !loading && !!liveFlags.loyaltyV2 !== enabled) load();
+  }, [liveFlags]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const setTier = (i, key, value) => setForm((f) => ({ ...f, tiers: chain(f.tiers.map((t, j) => (j === i ? { ...t, [key]: value } : t))) }));
   const addTier = () => setForm((f) => {

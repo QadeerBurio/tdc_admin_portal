@@ -12,6 +12,7 @@ import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Checkbox, Tabs, StatCard, EmptyState, Pill, Facts, Modal, toast, confirmDialog } from "../portal/kit";
 import surplusApi, { STATE_LABEL, STATE_TONE, ACTION_LABEL, karachi, karachiToUtc, utcToKarachiInput } from "../services/surplusApi";
 import { duplicateForm, cancellableOrders } from "../portal/surplusDuplicate";
+import useFlagsMe from "../portal/useFlagsMe";
 import "./styles/BrandPortal.css";
 
 const money = (n, c = "PKR") => `${c} ${Number(n || 0).toLocaleString("en-PK")}`;
@@ -19,13 +20,13 @@ const time = (iso) => karachi(iso, { hour: "2-digit", minute: "2-digit" });
 const blankListing = (branchId = "") => ({ branchId, title: "", description: "", contentsMayVary: true, allergens: "", allergenNotes: "", dietary: "", bestBefore: "", quantityTotal: 5, listPrice: "", price: "", pickupStart: "", pickupEnd: "", orderCutoff: "", publish: true });
 
 export default function BrandSurpriseBoxes() {
-  const [enabled, setEnabled] = useState(null);
+  const liveFlags = useFlagsMe(); // refreshed on focus: no reload after a flag change
+  const enabled = liveFlags ? !!liveFlags.surplusBoxes : null;
   const [tab, setTab] = useState("today");
   const [branches, setBranches] = useState([]);
   useEffect(() => {
-    surplusApi.flagsMe().then((f) => setEnabled(!!f.surplusBoxes)).catch(() => setEnabled(false));
-    surplusApi.branches().then(setBranches).catch(() => setBranches([]));
-  }, []);
+    if (enabled) surplusApi.branches().then(setBranches).catch(() => setBranches([]));
+  }, [enabled]);
   if (enabled === null) return <PageLoading />;
   if (!enabled) return <div className="tdcp k-page"><EmptyState icon="gift" tone="orange" title="surprise boxes aren't available for your brand yet" text="tdc is piloting them with a few brands." /></div>;
   return (
