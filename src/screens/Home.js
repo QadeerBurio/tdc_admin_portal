@@ -16,7 +16,7 @@ import dotSorted from "./dots/sorted.png";
 import Discount from "./Discount";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
-import loyaltyApi from "../services/loyaltyApi";
+import useFlagsMe from "../portal/useFlagsMe";
 
 // path -> menu item (create offer sits under discounts, claimed users under redemptions)
 const NAV_FOR_PATH = {
@@ -58,11 +58,10 @@ export default function Home() {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false);
   const [brandData, setBrandData] = useState(null);
   const [offers, setOffers] = useState([]);
-  const [loyaltyOn, setLoyaltyOn] = useState(false);
-  const [surpriseOn, setSurpriseOn] = useState(false);
-  useEffect(() => {
-    loyaltyApi.flagsMe().then((f) => { setLoyaltyOn(!!f.loyaltyV2); setSurpriseOn(!!f.surplusBoxes); }).catch(() => { setLoyaltyOn(false); setSurpriseOn(false); });
-  }, []);
+  // the menu's flags, refreshed when the tab regains focus (at most once a minute): no reload after a flag change
+  const liveFlags = useFlagsMe();
+  const loyaltyOn = !!liveFlags?.loyaltyV2;
+  const surpriseOn = !!liveFlags?.surplusBoxes;
   const [loading, setLoading] = useState(true);
   const [showDiscountModal, setShowDiscountModal] = useState(false);
   const [hasOffers, setHasOffers] = useState(false);

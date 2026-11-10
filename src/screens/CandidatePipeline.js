@@ -17,6 +17,7 @@ import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateIn
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
 import resumeStudioApi from "../services/resumeStudioApi";
 import MatchEvidence from "./MatchEvidence";
+import useFlagsMe from "../portal/useFlagsMe";
 import { RateCandidate } from "./CareerRatings";
 
 const COLUMNS = [
@@ -59,8 +60,7 @@ export default function CandidatePipeline({ onClassic }) {
   const [dragging, setDragging] = useState(null);
   const [over, setOver] = useState(null);
   const [moving, setMoving] = useState(false);
-  const [flags, setFlags] = useState({});
-  useEffect(() => { careerApi.flagsMe().then(setFlags).catch(() => setFlags({})); }, []);
+  const flags = useFlagsMe() || {}; // refreshed on focus (matching can be switched on while the page is open)
   // order within each column: newest (default) or relevance (one job at a time, from the matching estimates)
   const [order, setOrder] = useState("newest");
   const [matches, setMatches] = useState(null); // { applicationId: { rank, match } }
