@@ -24,6 +24,8 @@ import ratingsApi from "../services/ratingsApi";
 import { careerApi } from "../services/careerApi";
 import SurplusOps from "./SurplusOps";
 import AdminActions from "./AdminActions";
+import AdminLoyaltyPrograms from "./AdminLoyaltyPrograms";
+import loyaltyApi from "../services/loyaltyApi";
 import adminActionsApi from "../services/adminActionsApi";
 import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
 import { AdminOverview } from "./BusinessAnalytics";
@@ -53,7 +55,7 @@ import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["company_verifications", "free_hire_trials"];
-const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions)) })).filter((s) => s.items.length > 0);
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms)) })).filter((s) => s.items.length > 0);
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -252,6 +254,9 @@ export default function AdminDashboard() {
   // "admin actions" shows once the unified admin action log is on the server
   const [actionsMenu, setActionsMenu] = useState(false);
   useEffect(() => { adminActionsApi.available().then(setActionsMenu); }, []);
+  // "loyalty programs" shows once the admin loyalty routes are on the server
+  const [loyaltyProgramsMenu, setLoyaltyProgramsMenu] = useState(false);
+  useEffect(() => { loyaltyApi.adminProgramsAvailable().then(setLoyaltyProgramsMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -389,6 +394,7 @@ export default function AdminDashboard() {
       case "hire_disputes": return <HireDisputes />;
       case "ratings_reports": return <RatingsReports />;
       case "admin_actions": return <AdminActions />;
+      case "loyalty_programs": return <AdminLoyaltyPrograms />;
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
       case "business_overview": return <AdminOverview />;
@@ -434,7 +440,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
-        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu })}
+        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, loyaltyPrograms: loyaltyProgramsMenu })}
         active={activePage}
         onSelect={go}
         userName={user?.name}

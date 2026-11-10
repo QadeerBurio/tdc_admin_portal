@@ -33,6 +33,13 @@ export const loyaltyApi = {
   brandProgram: (brandId) => unwrap(api.get(`/loyalty/brands/${brandId}/program`)),
   adminLedger: (params) => unwrap(api.get("/loyalty/admin/ledger", { params })),
   adminReverse: ({ redemptionId, reason }) => unwrap(api.post("/loyalty/admin/reverse", { redemptionId, reason })),
+  // admin: every brand's program (writes need a reason and are logged on the server)
+  adminPrograms: (params) => unwrap(api.get("/loyalty/admin/programs", { params })),
+  adminProgram: (id) => unwrap(api.get(`/loyalty/admin/programs/${id}`)),
+  adminCreateProgram: (body) => unwrap(api.post("/loyalty/admin/programs", body)),
+  adminUpdateProgram: (id, body) => unwrap(api.patch(`/loyalty/admin/programs/${id}`, body)),
+  adminRestartProgram: (id, body) => unwrap(api.post(`/loyalty/admin/programs/${id}/restart`, body)),
+  adminProgramsAvailable: () => api.get("/loyalty/admin/programs").then(() => true).catch(() => false),
 };
 
 export default loyaltyApi;
