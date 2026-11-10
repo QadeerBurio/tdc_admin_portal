@@ -12,6 +12,7 @@ export default function HiringFunnel() {
   const [from, setFrom] = useState("");
   const [to, setTo] = useState("");
   const [employerId, setEmployerId] = useState("");
+  const [jobId, setJobId] = useState("");
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
 
@@ -22,13 +23,14 @@ export default function HiringFunnel() {
       if (from) params.from = new Date(`${from}T00:00:00+05:00`).toISOString();
       if (to) params.to = new Date(`${to}T23:59:59+05:00`).toISOString();
       if (/^[a-f0-9]{24}$/i.test(employerId.trim())) params.employerId = employerId.trim();
+      if (/^[a-f0-9]{24}$/i.test(jobId.trim())) params.jobId = jobId.trim();
       setData(await careerApi.adminAnalytics(params));
     } catch (err) {
       toast(err.message || "couldn't load the funnel", "bad");
     } finally {
       setLoading(false);
     }
-  }, [from, to, employerId]);
+  }, [from, to, employerId, jobId]);
   useEffect(() => { load(); }, [load]);
 
   const c = data?.counts;
@@ -39,8 +41,12 @@ export default function HiringFunnel() {
         <Field label="applied from" htmlFor="hf-from"><DateInput id="hf-from" value={from} onChange={(e) => setFrom(e.target.value)} /></Field>
         <Field label="to" htmlFor="hf-to"><DateInput id="hf-to" value={to} onChange={(e) => setTo(e.target.value)} /></Field>
         <Field label="employer id (optional)" htmlFor="hf-emp"><Input id="hf-emp" value={employerId} onChange={(e) => setEmployerId(e.target.value)} placeholder="all employers" /></Field>
+        <Field label="job id (optional)" htmlFor="hf-job"><Input id="hf-job" value={jobId} onChange={(e) => setJobId(e.target.value)} placeholder="all jobs" /></Field>
         <Button variant="secondary" icon="search" onClick={load} loading={loading}>refresh</Button>
       </div>
+      {data?.job && (
+        <p className="k-hint" data-job-facts>job: <strong>{data.job.title || "untitled"}</strong>{data.job.archived ? " (deleted)" : ""} · {data.job.views} views · {data.job.applicants} applicants in all (classic applications included)</p>
+      )}
       {loading && !data ? <PageLoading /> : !c || c.applications === 0 ? (
         <EmptyState icon="chart" tone="green" title="no timeline activity yet" text="numbers appear once pilot employers and students use the hiring timeline." />
       ) : (

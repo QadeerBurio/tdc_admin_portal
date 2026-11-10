@@ -16,6 +16,7 @@ import AdminJobsManager from "./AdminJobsManager";
 import CandidatesManager from "./CandidateManager";
 import CandidatePipeline from "./CandidatePipeline";
 import CareerInterviews from "./CareerInterviews";
+import JobFunnel from "./JobFunnel";
 import careerApi from "../services/careerApi";
 import InterviewsManager from "./InterviewsManager";
 import ReportsManager from "./ReportsManager";
@@ -303,9 +304,17 @@ export function EmployerInterviews() {
     </>
   );
 }
+// FLAG_CAREER_TIMELINE: pilot employers also get "hiring by job" (their own jobs' funnel) above the reports
 export function EmployerReports() {
   const { token, stats } = useOutletContext();
-  return <ReportsManager token={token} stats={stats} />;
+  const [pilot, setPilot] = useState(false);
+  useEffect(() => { careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false)); }, []);
+  return (
+    <>
+      {pilot && <div style={{ padding: "16px 0 0" }}><JobFunnel /></div>}
+      <ReportsManager token={token} stats={stats} />
+    </>
+  );
 }
 
 // ─── dashboard (design/portal/EmpDashboard) ─────────────────────────
