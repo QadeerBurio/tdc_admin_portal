@@ -4,11 +4,14 @@
 //   listings  create / edit a box with the food disclosures (contents may vary, allergens, best-before),
 //             quantity, prices and the pickup window; publish, pause, close. Once a student has ordered,
 //             the disclosures, price and window are locked (they accepted them).
+//             duplicate (same box, next possible pickup day, as a draft); cancel box (closes it and cancels
+//             its open orders with one reason the students see)
 //   pickup    verify a student's 6-character code or QR at the branch, then "paid at pickup" completes it
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Checkbox, Tabs, StatCard, EmptyState, Pill, Facts, Modal, toast, confirmDialog } from "../portal/kit";
 import surplusApi, { STATE_LABEL, STATE_TONE, ACTION_LABEL, karachi, karachiToUtc, utcToKarachiInput } from "../services/surplusApi";
+import { duplicateForm, cancellableOrders } from "../portal/surplusDuplicate";
 import "./styles/BrandPortal.css";
 
 const money = (n, c = "PKR") => `${c} ${Number(n || 0).toLocaleString("en-PK")}`;
@@ -117,8 +120,10 @@ function Today() {
 // ---------- listings ----------
 function Listings({ branches }) {
   const [data, setData] = useState(null);
-  const [editing, setEditing] = useState(null); // { listing | null, form }
+  const [editing, setEditing] = useState(null); // { listing | null, duplicateOf?, form }
   const [saving, setSaving] = useState(false);
+  // cancel box: { listing, cancel: [orders] | null, stay: [orders], reason, busy, result }
+  const [cancelBox, setCancelBox] = useState(null);
   const load = useCallback(() => surplusApi.listings().then(setData).catch((e) => { toast(e.message, "bad"); setData({ listings: [] }); }), []);
   useEffect(() => { load(); }, [load]);
   const branchOptions = branches.filter((b) => b.isActive !== false);
@@ -130,6 +135,7 @@ function Listings({ branches }) {
       pickupStart: utcToKarachiInput(l.pickupStart), pickupEnd: utcToKarachiInput(l.pickupEnd), orderCutoff: utcToKarachiInput(l.orderCutoff), publish: l.status === "published",
     } : blankListing(branchOptions[0]?._id || ""),
   });
+  const duplicate = (l) => setEditing({ listing: null, duplicateOf: l, form: duplicateForm(l, branchOptions.map((b) => b._id)) });
   const set = (k, v) => setEditing((e) => ({ ...e, form: { ...e.form, [k]: v } }));
   const locked = !!editing?.listing && editing.listing.orders > 0;
   const save = async () => {
@@ -151,6 +157,45 @@ function Listings({ branches }) {
       setEditing(null);
     } catch (e) { toast(e.code === "STALE_VERSION" ? "this listing changed meanwhile (a student may have just ordered); reloaded" : e.message, "bad"); }
     finally { setSaving(false); load(); }
+  };
+  const openCancel = async (l) => {
+    setCancelBox({ listing: l, cancel: null, stay: [], reason: "", busy: false, result: null });
+    try {
+      const { cancel, stay } = cancellableOrders(await surplusApi.orders("live"), l.id);
+      setCancelBox((c) => c && { ...c, cancel, stay });
+    } catch (e) { toast(e.message, "bad"); setCancelBox(null); }
+  };
+  // close the box first (no new orders), then cancel each open order with the same reason
+  const runCancel = async () => {
+    const { listing: l, cancel, reason } = cancelBox;
+    setCancelBox((c) => ({ ...c, busy: true }));
+    const failed = [];
+    let done = 0;
+    try {
+      if (l.status !== "closed") await surplusApi.updateListing(l.id, { version: l.version, status: "closed" });
+    } catch (e) {
+      toast(e.code === "STALE_VERSION" ? "this box changed meanwhile (a student may have just ordered); try again" : e.message, "bad");
+      setCancelBox((c) => ({ ...c, busy: false }));
+      load();
+      return;
+    }
+    for (const o of cancel) {
+      try {
+        await surplusApi.transition(o.id, { to: "MERCHANT_CANCELLED", version: o.version, reason: reason.trim() });
+        done += 1;
+      } catch (e) {
+        // the order moved meanwhile: read it again and cancel it if that's still possible
+        try {
+          const fresh = cancellableOrders(await surplusApi.orders("live"), l.id).cancel.find((x) => x.id === o.id);
+          if (!fresh) throw e;
+          await surplusApi.transition(fresh.id, { to: "MERCHANT_CANCELLED", version: fresh.version, reason: reason.trim() });
+          done += 1;
+        } catch (e2) { failed.push({ ref: o.ref, message: e2.message || e.message }); }
+      }
+    }
+    setCancelBox((c) => ({ ...c, busy: false, result: { done, failed } }));
+    toast(failed.length ? `box closed; ${done} order${done === 1 ? "" : "s"} cancelled, ${failed.length} couldn't be` : `box closed; ${done} order${done === 1 ? "" : "s"} cancelled`, failed.length ? "bad" : "ok");
+    load();
   };
   const setStatus = async (l, status) => {
     if (status === "closed" && !(await confirmDialog("close this listing? no new orders; existing orders stay."))) return;
@@ -183,16 +228,23 @@ function Listings({ branches }) {
                 {["draft", "paused"].includes(l.status) && <Button size="sm" onClick={() => setStatus(l, "published")}>publish</Button>}
                 {["published", "sold_out"].includes(l.status) && <Button size="sm" variant="secondary" onClick={() => setStatus(l, "paused")}>pause</Button>}
                 {!["closed", "blocked"].includes(l.status) && <Button size="sm" variant="secondary" onClick={() => setStatus(l, "closed")}>close</Button>}
+                {!data.blocked && branchOptions.length > 0 && <Button size="sm" variant="secondary" icon="copy" onClick={() => duplicate(l)} aria-label={`duplicate ${l.title}`}>duplicate</Button>}
+                {l.status !== "blocked" && (l.status !== "closed" || l.orders > 0) && <Button size="sm" variant="danger" onClick={() => openCancel(l)} aria-label={`cancel box ${l.title}`}>cancel box</Button>}
               </div>
             </section>
           ))}
         </div>
       )}
-      <Modal open={!!editing} onClose={() => setEditing(null)} size="lg" icon="gift" tone="orange" title={editing?.listing ? "edit surprise box" : "new surprise box"}
+      <Modal open={!!editing} onClose={() => setEditing(null)} size="lg" icon="gift" tone="orange" title={editing?.listing ? "edit surprise box" : editing?.duplicateOf ? "duplicate surprise box" : "new surprise box"}
         sub="students see all of this before they confirm. pickup only; they pay you at pickup."
         footer={<><Button variant="secondary" onClick={() => setEditing(null)}>cancel</Button><Button loading={saving} onClick={save}>{editing?.listing ? "save" : editing?.form.publish ? "publish" : "save draft"}</Button></>}>
         {editing && (
           <div style={{ display: "grid", gap: 12 }}>
+            {editing.duplicateOf && (
+              <p className="k-hint" role="note">
+                a copy of "{editing.duplicateOf.title}". check the pickup times{editing.form.shiftedDays ? ` (moved ${editing.form.shiftedDays} day${editing.form.shiftedDays === 1 ? "" : "s"} ahead, same times)` : ""}{editing.form.branchChanged ? ", and the branch: the original one isn't active" : ""}. it's saved as a draft unless you tick "publish now".
+              </p>
+            )}
             {locked && <p className="k-hint" role="note">students have ordered this box, so its contents, allergens, prices and pickup window are locked. you can still change the quantity.</p>}
             {!editing.listing && (
               <Field label="branch (pickup place)" htmlFor="sb-branch">
@@ -218,6 +270,39 @@ function Listings({ branches }) {
             </div>
             <p className="k-hint">cancellation rule shown to students: they can cancel until 30 minutes before pickup starts; after that, not collecting is a no-show. you can cancel any time with a reason.</p>
             {!editing.listing && <Checkbox label="publish now" checked={!!editing.form.publish} onChange={(e) => set("publish", e.target.checked)} />}
+          </div>
+        )}
+      </Modal>
+      <Modal open={!!cancelBox} onClose={() => !cancelBox?.busy && setCancelBox(null)} icon="close" tone="red"
+        title={cancelBox ? `cancel "${cancelBox.listing.title}"?` : ""}
+        sub="the box closes (no new orders) and its open orders are cancelled. each student is told straight away, with your reason."
+        footer={cancelBox?.result
+          ? <Button onClick={() => setCancelBox(null)}>done</Button>
+          : <><Button variant="secondary" disabled={cancelBox?.busy} onClick={() => setCancelBox(null)}>keep it</Button>
+            <Button variant="danger" loading={cancelBox?.busy} disabled={!cancelBox?.cancel || (cancelBox?.reason || "").trim().length < 3} onClick={runCancel}>
+              {cancelBox?.cancel?.length ? `close and cancel ${cancelBox.cancel.length} order${cancelBox.cancel.length === 1 ? "" : "s"}` : "close the box"}
+            </Button></>}>
+        {cancelBox && (
+          <div style={{ display: "grid", gap: 12 }}>
+            {!cancelBox.cancel ? <PageLoading /> : cancelBox.result ? (
+              <div role="status">
+                <p><strong>{cancelBox.result.done}</strong> order{cancelBox.result.done === 1 ? "" : "s"} cancelled; the box is closed.</p>
+                {cancelBox.result.failed.length > 0 && (
+                  <>
+                    <p className="k-hint">these couldn't be cancelled; check them on the today tab:</p>
+                    <ul>{cancelBox.result.failed.map((f) => <li key={f.ref}>{f.ref}: {f.message}</li>)}</ul>
+                  </>
+                )}
+              </div>
+            ) : (
+              <>
+                <p>{cancelBox.cancel.length ? `${cancelBox.cancel.length} open order${cancelBox.cancel.length === 1 ? "" : "s"} will be cancelled: ${cancelBox.cancel.map((o) => o.ref).join(", ")}.` : "no open orders to cancel."}</p>
+                {cancelBox.stay.length > 0 && <p className="k-hint">{cancelBox.stay.length} order{cancelBox.stay.length === 1 ? "" : "s"} already handed over ({cancelBox.stay.map((o) => o.ref).join(", ")}) stay as they are.</p>}
+                <Field label="reason (students see it)" htmlFor="sb-box-cancel-reason">
+                  <Textarea id="sb-box-cancel-reason" value={cancelBox.reason} onChange={(e) => { const v = e.target.value; setCancelBox((c) => ({ ...c, reason: v })); }} placeholder="e.g. our oven broke down this evening" />
+                </Field>
+              </>
+            )}
           </div>
         )}
       </Modal>
