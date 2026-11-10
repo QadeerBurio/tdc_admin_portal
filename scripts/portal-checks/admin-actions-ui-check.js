@@ -42,7 +42,7 @@ http.createServer((q, s) => {
       else if (p.before) out = ok({ rows: rows.slice(3), next: null });
       else out = ok({ rows, next: null });
     }
-  } else if (k === "GET /api/loyalty/admin/programs") { status = 404; out = { success: false, error: { code: "NOT_FOUND" } }; } // another oversight page, not under test: off
+  } else if (k === "GET /api/loyalty/admin/programs" || k === "GET /api/career/admin/hires") { status = 404; out = { success: false, error: { code: "NOT_FOUND" } }; } // the other oversight pages, not under test: off
   else out = q.method === "GET" ? [] : { success: true };
   s.writeHead(status, h);
   s.end(JSON.stringify(out));
