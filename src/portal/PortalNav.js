@@ -30,6 +30,13 @@ export const ADMIN_MENU = [
     ],
   },
   {
+    // admin oversight across features; each item shows only once its server side is live (AdminDashboard.js)
+    title: "oversight",
+    items: [
+      ["admin_actions", "admin actions", "receipt", "ink"],
+    ],
+  },
+  {
     title: "engagement",
     items: [
       ["engagement_drops", "drops schedule", "spark", "yellow"],
