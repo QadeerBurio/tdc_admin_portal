@@ -4,11 +4,14 @@
 // shortlist, reject, schedule / reschedule / cancel the interview, record its outcome, send / withdraw an
 // offer, confirm the hire). Times are entered and shown in Asia/Karachi. Every action sends the version
 // this screen saw: if someone else changed the candidate meanwhile, it reloads instead of overwriting.
+// Candidate matching (FLAG_CAREER_MATCHING): a "match evidence" panel in the drawer and, for one job, an optional
+// "sort by relevance" (newest first stays the default; nobody is hidden).
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateInput, Drawer, Modal, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
 import resumeStudioApi from "../services/resumeStudioApi";
+import MatchEvidence from "./MatchEvidence";
 
 const COLUMNS = [
   { stage: "applied", label: "Applied", tone: "sand" },
@@ -42,6 +45,20 @@ export default function CandidatePipeline({ onClassic }) {
   const [data, setData] = useState({ jobs: [], applications: [] });
   const [jobId, setJobId] = useState("");
   const [openId, setOpenId] = useState(null);
+  const [flags, setFlags] = useState({});
+  useEffect(() => { careerApi.flagsMe().then(setFlags).catch(() => setFlags({})); }, []);
+  // order within each column: newest (default) or relevance (one job at a time, from the matching estimates)
+  const [order, setOrder] = useState("newest");
+  const [matches, setMatches] = useState(null); // { applicationId: { rank, match } }
+  useEffect(() => {
+    if (order !== "relevance" || !jobId || !flags.careerMatching) { setMatches(null); return; }
+    let alive = true;
+    careerApi.jobMatches(jobId, "relevance")
+      .then((d) => alive && setMatches(Object.fromEntries(d.applications.map((a, i) => [a.applicationId, { rank: i, match: a.match }]))))
+      .catch((e) => { if (alive) { toast(e.message, "bad"); setOrder("newest"); } });
+    return () => { alive = false; };
+  }, [order, jobId, flags.careerMatching]);
+  useEffect(() => { if (!jobId) setOrder("newest"); }, [jobId]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -58,8 +75,9 @@ export default function CandidatePipeline({ onClassic }) {
   const byColumn = useMemo(() => {
     const m = Object.fromEntries(COLUMNS.map((c) => [c.stage, []]));
     for (const a of data.applications || []) m[columnOf(a.stage)]?.push(a);
+    if (matches) for (const k of Object.keys(m)) m[k].sort((x, y) => (matches[x.applicationId]?.rank ?? 1e9) - (matches[y.applicationId]?.rank ?? 1e9));
     return m;
-  }, [data]);
+  }, [data, matches]);
 
   if (loading && !data.applications.length) return <PageLoading />;
   return (
@@ -74,6 +92,12 @@ export default function CandidatePipeline({ onClassic }) {
               {(data.jobs || []).map((j) => <option key={j.id} value={j.id}>{j.title}{j.archived ? " (deleted)" : ""}</option>)}
             </Select>
             <Button variant="secondary" icon="search" onClick={load} loading={loading}>refresh</Button>
+            {flags.careerMatching && (
+              <Select aria-label="order" value={order} onChange={(e) => setOrder(e.target.value)} disabled={!jobId} title={jobId ? "" : "pick a job to sort by relevance"} style={{ minWidth: 170 }}>
+                <option value="newest">newest first</option>
+                <option value="relevance">sort by relevance</option>
+              </Select>
+            )}
             {onClassic && <Button variant="secondary" onClick={onClassic}>classic list</Button>}
           </>
         )}
@@ -100,6 +124,7 @@ export default function CandidatePipeline({ onClassic }) {
                   <div style={{ fontWeight: 700 }}>{a.candidateName || "candidate"}</div>
                   <div className="k-muted" style={{ fontSize: 12.5 }}>{a.jobTitle} · applied {new Date(a.appliedAt).toLocaleDateString("en-GB")}</div>
                   {subline(a) && <div style={{ fontSize: 12.5, marginTop: 4 }}>{subline(a)}</div>}
+                  {matches && matches[a.applicationId]?.match && <div className="k-hint" style={{ fontSize: 12, marginTop: 4 }}>{matches[a.applicationId].match.label}</div>}
                   {!a.careerEnabled && <Pill tone="sand">classic flow</Pill>}
                 </button>
               ))}
@@ -180,6 +205,7 @@ function CandidateDetail({ applicationId, onClose, onChanged }) {
         {can("REJECTED") && <Button size="sm" variant="secondary" disabled={busy} onClick={async () => { if (await confirmDialog("reject this candidate? they'll get a polite update.")) act(() => careerApi.event(applicationId, { type: "REJECTED", version: v }), "rejected"); }}>reject</Button>}
       </div>
 
+      <MatchEvidence applicationId={applicationId} />
       {sentResume && (
         <section className="k-card pad" style={{ marginBottom: 12 }}>
           <div className="k-card-head"><Ico kind="file" tone="blue" size={30} /><h3>resume sent with this application</h3></div>
