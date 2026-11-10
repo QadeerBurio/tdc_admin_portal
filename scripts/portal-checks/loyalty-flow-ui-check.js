@@ -2,7 +2,8 @@
 // The brand's loyalty flow (FLAG_LOYALTY_V2) against a stateful mock API on 5197:
 // draft -> start/end dates (an end before the start is refused) -> preview (the student's card, with a
 // visits picker) -> publish (PATCH status active with the dates; scheduled when the start is ahead) ->
-// end program (confirmation; PATCH sends only the status; then read-only). Also: outside the pilot the
+// end program (confirmation; PATCH sends only the status; then read-only) -> restart (confirmation; POST
+// /restart with the version; a draft again). Also: outside the pilot the
 // page is "coming soon" and makes no loyalty calls. axe-core WCAG 2 A / AA on the page, the preview and
 // the confirmation. Exits 1 on any failure.
 const http = require("http");
@@ -17,6 +18,7 @@ let flags = { loyaltyV2: true };
 let program = { id: PID, brand: B, status: "draft", version: 1, tiers: [{ name: "Member", minVisit: 1, maxVisit: 5, discountPct: 15 }, { name: "Regular", minVisit: 6, maxVisit: null, discountPct: 25 }], maxDiscountPct: 25, brandMaxDiscountPct: 25, adminMaxDiscountPct: null, eligibleOfferIds: [], branchIds: [], maxVisitsPerDay: 1, resetMonths: 12, terms: "dine-in only", startsAt: null, endsAt: null };
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 const patches = [];
+const restarts = [];
 const calls = [];
 http.createServer((q, s) => {
   const h = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type,accept", "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS", "content-type": "application/json" };
@@ -37,6 +39,11 @@ http.createServer((q, s) => {
       patches.push(b);
       const { version, ...rest } = b;
       program = { ...program, ...rest, version: program.version + 1 };
+      body = ok(program);
+    } else if (key === `POST /api/loyalty/programs/${PID}/restart`) {
+      const b = JSON.parse(raw || "{}");
+      restarts.push(b);
+      program = { ...program, status: "draft", startsAt: null, endsAt: null, version: program.version + 1 };
       body = ok(program);
     } else body = q.method === "GET" ? [] : { success: true };
     s.writeHead(200, h);
@@ -133,6 +140,19 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   t = await text();
   check("ended: notice shown, no publish/pause/end buttons, fields read-only", t.includes("this program has ended") && !(await btn("end program")).found && !(await btn("pause")).found && !(await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-max").matches(":disabled")`)) === true);
   await axe(`document.querySelector("main") || document`, "loyalty page (ended)");
+
+  // restart: a confirmation, then a new draft (POST /restart with the version); the editor comes back
+  check("ended: 'restart as a new draft' offered, with what it means", (await text()).includes("visits from before never count again") && (await btn("restart as a new draft")).found);
+  await click("restart as a new draft");
+  await sleep(600);
+  d = await dialogText();
+  check("restart asks first", d.includes("restart your loyalty program?") && d.includes("Every student starts again from 0 visits"));
+  await axe(`[...document.querySelectorAll("[role=dialog]")].pop()`, "restart confirmation");
+  await click("restart as a draft", `[...document.querySelectorAll("[role=dialog]")].pop()`);
+  await sleep(1500);
+  check("restart: POST /restart with the ended version only", restarts.length === 1 && JSON.stringify(restarts[0]) === JSON.stringify({ version: 3 }), JSON.stringify(restarts));
+  t = await text();
+  check("after restarting: draft, editable, preview and publish again", t.includes("draft") && !t.includes("this program has ended") && (await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-max").matches(":disabled")`)) === false);
 
   // outside the pilot: "coming soon", no loyalty calls
   flags = {};

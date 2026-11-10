@@ -179,6 +179,26 @@ export default function BrandLoyalty() {
     if (ok) await save("ended");
   };
 
+  const restart = async () => {
+    const ok = await confirmDialog(
+      "This makes a new draft of your program with the same rules. Every student starts again from 0 visits: visits from before the end never count again. Nothing is live until you publish.",
+      { title: "restart your loyalty program?", confirmLabel: "restart as a draft", danger: false }
+    );
+    if (!ok) return;
+    setSaving(true);
+    try {
+      const next = await loyaltyApi.restartProgram(program.id, { version: program.version });
+      setProgram(next);
+      toast("restarted as a draft: preview it, then publish", "ok");
+      await load();
+    } catch (err) {
+      toast(err.message, "bad");
+      if (err.code === "VERSION_CONFLICT") load();
+    } finally {
+      setSaving(false);
+    }
+  };
+
   if (loading) return <PageLoading />;
   if (!enabled) {
     return (
@@ -233,6 +253,8 @@ export default function BrandLoyalty() {
             <h3>this program has ended</h3>
           </div>
           <p className="k-hint">visits no longer count and students get your offer's usual discount. the visits already counted stay in your numbers below.</p>
+          <p className="k-hint">restarting makes a new draft of this program (same rules, no dates). every student starts again from 0 visits; visits from before never count again.</p>
+          <Button icon="refresh" loading={saving} onClick={restart}>restart as a new draft</Button>
         </section>
       )}
 
