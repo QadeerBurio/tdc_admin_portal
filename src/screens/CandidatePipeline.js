@@ -12,6 +12,7 @@ import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateIn
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
 import resumeStudioApi from "../services/resumeStudioApi";
 import MatchEvidence from "./MatchEvidence";
+import { RateCandidate } from "./CareerRatings";
 
 const COLUMNS = [
   { stage: "applied", label: "Applied", tone: "sand" },
@@ -206,6 +207,7 @@ function CandidateDetail({ applicationId, onClose, onChanged }) {
       </div>
 
       <MatchEvidence applicationId={applicationId} />
+      <RateCandidate applicationId={applicationId} />
       {sentResume && (
         <section className="k-card pad" style={{ marginBottom: 12 }}>
           <div className="k-card-head"><Ico kind="file" tone="blue" size={30} /><h3>resume sent with this application</h3></div>
