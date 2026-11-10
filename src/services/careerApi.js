@@ -49,6 +49,8 @@ export const careerApi = {
   withdrawOffer: (id, body) => post(`/career/offers/${id}/withdraw`, body),
   confirmHire: (id, body) => post(`/career/offers/${id}/confirm-hire`, body),
   employerAnalytics: (params) => unwrap(api.get("/career/employers/me/analytics", { params })),
+  // my interviews (my own jobs only): ?jobId, ?status, ?from, ?to
+  employerInterviews: (params) => unwrap(api.get("/career/employers/me/interviews", { params })),
   // candidate matching (FLAG_CAREER_MATCHING): one application's evidence; a job's estimates (?sort=newest|relevance)
   matchFor: (applicationId) => unwrap(api.get(`/career/matching/applications/${applicationId}`)),
   jobMatches: (jobId, sort = "newest") => unwrap(api.get(`/career/matching/jobs/${jobId}`, { params: { sort } })),
