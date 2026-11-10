@@ -15,7 +15,7 @@ const ROOT = path.resolve(HERE, "..", "..");
 const CHECKS = [
   ["surplus", "surplus-ui-check.js"], ["first-hire-free", "fhf-ui-check.js"], ["analytics", "an-ui-check.js"],
   ["resume-studio", "studio-ui-check.js"], ["career", "career-ui-check.js"], ["loyalty", "loyalty-ui-check.js"],
-  ["hire-disputes", "disputes-ui-check.js"], ["ratings", "ratings-ui-check.js"], ["admin-ids", "admin-ids-ui-check.js"],
+  ["hire-disputes", "disputes-ui-check.js"], ["ratings", "ratings-ui-check.js"], ["loyalty-flow", "loyalty-flow-ui-check.js"], ["admin-ids", "admin-ids-ui-check.js"],
   ["a11y-surplus", "a11y-surplus.js"], ["a11y-first-hire-free", "a11y-fhf.js"], ["a11y-analytics", "a11y-analytics.js"],
   ["a11y-career", "a11y-career.js"], ["a11y-loyalty", "a11y-loyalty.js"], ["a11y-hire-disputes", "a11y-disputes.js"], ["a11y-ratings", "a11y-ratings.js"],
 ];
