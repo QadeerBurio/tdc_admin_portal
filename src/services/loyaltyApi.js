@@ -28,6 +28,8 @@ export const loyaltyApi = {
   analytics: (params) => unwrap(api.get("/loyalty/brands/me/analytics", { params })),
   // the tier and % for this student's visit, before confirming the bill
   quote: ({ studentId, offerId, branchId }) => unwrap(api.post("/loyalty/quotes", { studentId, offerId, branchId })),
+  // stamp card: apply a student's waiting reward (once; the key makes a retry safe)
+  useReward: (rewardId, body = {}, key) => unwrap(api.post(`/loyalty/rewards/${rewardId}/use`, body, { headers: { "Idempotency-Key": key } })),
 
   // admin
   brandProgram: (brandId) => unwrap(api.get(`/loyalty/brands/${brandId}/program`)),

@@ -7,8 +7,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import Ico from "../portal/Ico";
-import { PageLoading, Button, IconButton, Field, Input, Textarea, Dropdown, DateInput, Modal, Segmented, StatCard, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
-import LoyaltyPreview, { ruleText } from "../portal/LoyaltyPreview";
+import { PageLoading, Button, IconButton, Field, Input, Textarea, Dropdown, DateInput, Modal, Segmented, Select, StatCard, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
+import LoyaltyPreview, { ruleText, StampPreview, rewardLabelOf } from "../portal/LoyaltyPreview";
 import loyaltyApi from "../services/loyaltyApi";
 import api from "../services/api";
 import "./styles/BrandPortal.css";
@@ -27,7 +27,10 @@ const blankForm = () => ({
   branchIds: [],
   startDate: "",
   endDate: "",
+  mode: "tiers",
+  reward: { visitsNeeded: 5, kind: "item", value: "", item: "", maxPerStudent: "", maxPerMonth: "" },
 });
+const QUICK_VISITS = [2, 3, 5];
 
 // keep tiers contiguous: each tier starts right after the previous one ends, the last has no end
 const chain = (tiers) => {
@@ -96,6 +99,8 @@ export default function BrandLoyalty() {
           terms: p.terms || "",
           eligibleOfferIds: p.eligibleOfferIds || [],
           branchIds: p.branchIds || [],
+          mode: p.mode === "reward" ? "reward" : "tiers",
+          reward: p.reward ? { visitsNeeded: p.reward.visitsNeeded, kind: p.reward.kind, value: p.reward.value ?? "", item: p.reward.item || "", maxPerStudent: p.reward.maxPerStudent ?? "", maxPerMonth: p.reward.maxPerMonth ?? "" } : blankForm().reward,
           startDate: toDay(p.startsAt),
           endDate: toDay(p.endsAt),
         });
@@ -131,14 +136,30 @@ export default function BrandLoyalty() {
     terms: form.terms,
     eligibleOfferIds: form.eligibleOfferIds,
     branchIds: form.branchIds,
+    mode: form.mode,
+    ...(form.mode === "reward" ? { reward: {
+      visitsNeeded: Number(form.reward.visitsNeeded), kind: form.reward.kind,
+      ...(form.reward.kind === "item" ? { item: form.reward.item.trim() } : { value: Number(form.reward.value) }),
+      maxPerStudent: form.reward.maxPerStudent === "" ? null : Number(form.reward.maxPerStudent),
+      maxPerMonth: form.reward.maxPerMonth === "" ? null : Number(form.reward.maxPerMonth),
+    } } : {}),
     startsAt: startOfDay(form.startDate),
     endsAt: endOfDay(form.endDate),
   });
 
   const dateError = form.startDate && form.endDate && form.endDate < form.startDate ? "the end date must be on or after the start date" : null;
   const endInPast = form.endDate && new Date(endOfDay(form.endDate)) < new Date();
-  const tierError = form.tiers.some((t) => Number(t.discountPct) > cap);
-  const invalid = !!dateError || tierError;
+  const tierError = form.mode === "tiers" && form.tiers.some((t) => Number(t.discountPct) > cap);
+  // reward mode: visits 2-20; % within the cap, PKR a whole amount, or a named item
+  const rw = form.reward;
+  const rewardError = form.mode !== "reward" ? null
+    : !(Number.isInteger(Number(rw.visitsNeeded)) && rw.visitsNeeded >= 2 && rw.visitsNeeded <= 20) ? "visits needed: 2 to 20"
+      : rw.kind === "percent" && !(Number(rw.value) >= 1 && Number(rw.value) <= cap) ? `% off: 1 to ${cap}`
+        : rw.kind === "amount" && !(Number.isInteger(Number(rw.value)) && Number(rw.value) >= 1) ? "PKR off: a whole amount"
+          : rw.kind === "item" && rw.item.trim().length < 2 ? "name the free item"
+            : null;
+  const setReward = (k, v) => setForm((f) => ({ ...f, reward: { ...f.reward, [k]: v } }));
+  const invalid = !!dateError || tierError || !!rewardError;
 
   const save = async (status) => {
     if (invalid && status !== "paused" && status !== "ended") { toast("fix the highlighted fields first", "bad"); return false; }
@@ -243,6 +264,7 @@ export default function BrandLoyalty() {
           <StatCard label="members" value={stats.members} sub="students with a counted visit" icon="users" tone="blue" />
           <StatCard label="repeat customers" value={stats.repeatCustomers} sub="2 or more visits" icon="star" tone="yellow" />
           <StatCard label="reversals" value={stats.reversals} sub="refunds and corrections" icon="receipt" tone="coral" />
+          {stats.rewards && <StatCard label="rewards" value={stats.rewards.earned} sub={`${stats.rewards.used} used · ${stats.rewards.waiting} waiting`} icon="gift" tone="purple" />}
         </div>
       )}
 
@@ -259,6 +281,48 @@ export default function BrandLoyalty() {
       )}
 
       <fieldset disabled={ended} style={{ border: 0, padding: 0, margin: 0, minWidth: 0 }}>
+        <section className="k-card pad" aria-label="how students are rewarded">
+          <div className="k-card-head">
+            <Ico kind="gift" tone="purple" size={36} />
+            <h3>how it works</h3>
+          </div>
+          <Segmented label="loyalty type" value={form.mode} onChange={(v) => setForm((f) => ({ ...f, mode: v }))} options={[{ value: "tiers", label: "bigger discount with visits" }, { value: "reward", label: "stamp card: a reward every few visits" }]} />
+          <p className="k-hint">{form.mode === "tiers" ? "each visit's discount depends on how many verified visits the student has." : "every visit gets your offer's usual discount and a stamp; a full card earns a reward. after the reward is used, the card starts again."}</p>
+        </section>
+
+        {form.mode === "reward" && (
+          <section className="k-card pad" aria-label="stamp card">
+            <div className="k-card-head">
+              <Ico kind="star" tone="yellow" size={36} />
+              <h3>stamp card</h3>
+            </div>
+            <Field label="visits for a reward" htmlFor="rw-n" hint="quick picks, or any number from 2 to 20">
+              <div className="k-row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                {QUICK_VISITS.map((n) => <Button key={n} size="sm" variant={Number(rw.visitsNeeded) === n ? "primary" : "secondary"} aria-pressed={Number(rw.visitsNeeded) === n} onClick={() => setReward("visitsNeeded", n)}>{n} visits</Button>)}
+                <Input id="rw-n" type="number" min={2} max={20} style={{ width: 90 }} value={rw.visitsNeeded} onChange={(e) => setReward("visitsNeeded", e.target.value === "" ? "" : Number(e.target.value))} />
+              </div>
+            </Field>
+            <div className="k-row" style={{ flexWrap: "wrap", gap: 12 }}>
+              <Field label="the reward" htmlFor="rw-kind" style={{ flex: "1 1 180px" }}>
+                <Select id="rw-kind" value={rw.kind} onChange={(e) => setReward("kind", e.target.value)}>
+                  <option value="item">a free item</option>
+                  <option value="percent">% off the bill</option>
+                  <option value="amount">PKR off the bill</option>
+                </Select>
+              </Field>
+              {rw.kind === "item"
+                ? <Field label="free item" htmlFor="rw-item" style={{ flex: "2 1 220px" }}><Input id="rw-item" maxLength={80} value={rw.item} onChange={(e) => setReward("item", e.target.value)} placeholder="e.g. a free coffee" /></Field>
+                : <Field label={rw.kind === "percent" ? `% off (max ${cap}%)` : "PKR off"} htmlFor="rw-value" style={{ flex: "1 1 160px" }}><Input id="rw-value" type="number" min={1} max={rw.kind === "percent" ? cap : undefined} value={rw.value} onChange={(e) => setReward("value", e.target.value)} /></Field>}
+            </div>
+            <div className="k-row" style={{ flexWrap: "wrap", gap: 12 }}>
+              <Field label="most rewards per student" hint="empty = no limit" htmlFor="rw-max" style={{ flex: "1 1 160px" }}><Input id="rw-max" type="number" min={1} max={100} value={rw.maxPerStudent} onChange={(e) => setReward("maxPerStudent", e.target.value)} /></Field>
+              <Field label="most rewards per student a month" hint="empty = no limit" htmlFor="rw-month" style={{ flex: "1 1 160px" }}><Input id="rw-month" type="number" min={1} max={31} value={rw.maxPerMonth} onChange={(e) => setReward("maxPerMonth", e.target.value)} /></Field>
+            </div>
+            {rewardError ? <p className="k-hint" role="alert" style={{ color: "var(--red, #b3261e)" }}>{rewardError}</p> : <p className="k-hint">students see: {rw.visitsNeeded} visits = {rewardLabelOf(rw)}.</p>}
+          </section>
+        )}
+
+        {form.mode === "tiers" && (
         <section className="k-card pad">
           <div className="k-card-head">
             <Ico kind="tag" tone="red" size={36} />
@@ -289,6 +353,7 @@ export default function BrandLoyalty() {
             <span className="k-muted">{form.tiers.map((t) => `${ruleText(t)}: ${t.discountPct}%`).join(" · ")}</span>
           </div>
         </section>
+        )}
 
         <section className="k-card pad">
           <div className="k-card-head">
@@ -372,16 +437,22 @@ export default function BrandLoyalty() {
           {!live && <Button icon="check" loading={saving} onClick={publish}>publish</Button>}
         </>}
       >
-        <div style={{ marginBottom: 12 }}>
-          <span className="k-hint" id="loy-prev-label" style={{ display: "block", marginBottom: 6 }}>as a student with this many verified visits</span>
-          <Segmented
-            label="verified visits in the preview"
-            value={previewVisits}
-            onChange={setPreviewVisits}
-            options={[...new Set([0, ...form.tiers.map((t) => t.minVisit - 1).filter((n) => n > 0), Math.max(...form.tiers.map((t) => t.minVisit))])].sort((a, b) => a - b).slice(0, 6).map((n) => ({ value: String(n), label: String(n) }))}
-          />
-        </div>
-        <LoyaltyPreview {...previewProps} />
+        {form.mode === "reward" ? (
+          <StampPreview brandName={brandName} reward={rw} stamps={1} terms={form.terms} />
+        ) : (
+          <>
+            <div style={{ marginBottom: 12 }}>
+              <span className="k-hint" id="loy-prev-label" style={{ display: "block", marginBottom: 6 }}>as a student with this many verified visits</span>
+              <Segmented
+                label="verified visits in the preview"
+                value={previewVisits}
+                onChange={setPreviewVisits}
+                options={[...new Set([0, ...form.tiers.map((t) => t.minVisit - 1).filter((n) => n > 0), Math.max(...form.tiers.map((t) => t.minVisit))])].sort((a, b) => a - b).slice(0, 6).map((n) => ({ value: String(n), label: String(n) }))}
+              />
+            </div>
+            <LoyaltyPreview {...previewProps} />
+          </>
+        )}
         {!live && (
           <p className="k-hint" style={{ marginTop: 12 }}>
             {form.startDate && new Date(startOfDay(form.startDate)) > new Date() ? `publishing schedules it: visits count from ${form.startDate}.` : "publishing turns it on now: confirmed bills start counting as visits."}

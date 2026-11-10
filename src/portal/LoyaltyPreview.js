@@ -60,3 +60,39 @@ export default function LoyaltyPreview({ brandName, tiers, maxVisitsPerDay, rese
     </div>
   );
 }
+
+// reward mode: the stamp card students see (mirrors the app): "2 of 5 visits", the reward, the limits
+export function rewardLabelOf(r) {
+  if (!r) return "";
+  if (r.kind === "percent") return `${Number(r.value) || 0}% off`;
+  if (r.kind === "amount") return `PKR ${(Number(r.value) || 0).toLocaleString("en-PK")} off`;
+  return String(r.item || "a free item");
+}
+export function StampPreview({ brandName, reward, stamps = 0, terms }) {
+  const n = Math.max(2, Math.min(20, Number(reward?.visitsNeeded) || 2));
+  const have = Math.min(stamps, n);
+  const label = rewardLabelOf(reward);
+  return (
+    <div className="loy-preview" data-testid="stamp-preview" style={{ border: "1px solid var(--line, #e6e0d6)", borderRadius: 22, padding: 16, maxWidth: 380, background: "var(--card, #fff)" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+        <Ico kind="star" tone="yellow" size={28} />
+        <strong style={{ flex: 1, fontSize: 18 }}>loyalty<span aria-hidden="true">.</span>{brandName ? <span className="k-muted" style={{ fontWeight: 400, fontSize: 13 }}> · {brandName}</span> : null}</strong>
+      </div>
+      <p style={{ fontWeight: 700, fontSize: 20, margin: "12px 0 4px" }}>{have} of {n} visits</p>
+      <div role="img" aria-label={`${have} of ${n} stamps`} style={{ display: "flex", flexWrap: "wrap", gap: 6, margin: "8px 0" }}>
+        {Array.from({ length: n }, (_, i) => (
+          <span key={i} style={{ width: 26, height: 26, borderRadius: 13, border: "2px solid #f2c230", background: i < have ? "#f2c230" : "transparent" }} />
+        ))}
+      </div>
+      <p style={{ fontWeight: 600, fontSize: 13.5, margin: "8px 0 0" }}>
+        {have >= n ? `your reward is waiting: ${label}.` : `${n - have} more visit${n - have === 1 ? "" : "s"} to ${label}.`}
+      </p>
+      <p className="k-muted" style={{ fontSize: 12, margin: "6px 0 0", lineHeight: 1.45 }}>
+        a visit counts when the brand confirms your bill. after you use the reward, the card starts again.
+        {Number(reward?.maxPerMonth) ? ` up to ${reward.maxPerMonth} reward${Number(reward.maxPerMonth) === 1 ? "" : "s"} a month.` : ""}
+        {Number(reward?.maxPerStudent) ? ` up to ${reward.maxPerStudent} reward${Number(reward.maxPerStudent) === 1 ? "" : "s"} in all.` : ""}
+        {terms ? ` ${terms}` : ""}
+      </p>
+    </div>
+  );
+}
