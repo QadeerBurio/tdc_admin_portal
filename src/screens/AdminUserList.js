@@ -6,12 +6,13 @@ import { useNavigate } from "react-router-dom";
 import QRCode from "qrcode";
 import Ico from "../portal/Ico";
 import { TOKEN } from "../portal/tokens";
-import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, toast } from "../portal/kit";
+import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, Select, Input, toast } from "../portal/kit";
 import DeleteAccountDialog from "../portal/DeleteAccountDialog";
 import "./styles/AdminUserList.css";
 import { redemptionPlace } from "../portal/storeBadge";
 import { API_ORIGIN } from "../config/api";
 import trialApi from "../services/trialApi";
+import { formatIds, universityOptions, matchesUniversity, copyText } from "../portal/idSelection";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
 const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
@@ -34,6 +35,10 @@ export default function AdminUserList({ role, title }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterStatus, setFilterStatus] = useState("all");
   const [filterReferral, setFilterReferral] = useState("all");
+  const [filterUniversity, setFilterUniversity] = useState("all");
+  // rows picked for "copy ids" (kept across pages and filters until cleared)
+  const [selectedIds, setSelectedIds] = useState(() => new Set());
+  const [copyFallback, setCopyFallback] = useState("");
   const [togglingId, setTogglingId] = useState(null);
   // permanent delete (students only here; brands are deleted from Brand Approvals)
   const [deleteId, setDeleteId] = useState(null);
@@ -110,11 +115,14 @@ export default function AdminUserList({ role, title }) {
 
   useEffect(() => {
     fetchUsers();
+    setSelectedIds(new Set());
+    setFilterUniversity("all");
+    setCopyFallback("");
   }, [role]);
 
   useEffect(() => {
     setCurrentPage(1);
-  }, [searchTerm, filterStatus, filterReferral, sortField, sortDirection]);
+  }, [searchTerm, filterStatus, filterReferral, filterUniversity, sortField, sortDirection]);
 
   useEffect(() => {
     if (showModal && modalBodyRef.current) {
@@ -511,7 +519,9 @@ export default function AdminUserList({ role, title }) {
         (filterReferral === "low" && (user.referralCount || 0) > 0 && (user.referralCount || 0) < 5) ||
         (filterReferral === "none" && (user.referralCount || 0) === 0);
 
-      return matchesSearch && matchesStatus && matchesReferral;
+      const matchesUni = role !== "student" || matchesUniversity(user, filterUniversity);
+
+      return matchesSearch && matchesStatus && matchesReferral && matchesUni;
     })
     .sort((a, b) => {
       let aVal = a[sortField] || '';
@@ -531,6 +541,28 @@ export default function AdminUserList({ role, title }) {
       if (aVal > bVal) return sortDirection === "asc" ? 1 : -1;
       return 0;
     });
+
+  // selection for "copy ids"
+  const toggleSelected = (id) => setSelectedIds((prev) => {
+    const next = new Set(prev);
+    if (next.has(id)) next.delete(id); else next.add(id);
+    return next;
+  });
+  const selectMany = (list, on) => setSelectedIds((prev) => {
+    const next = new Set(prev);
+    list.forEach((u) => (on ? next.add(u._id) : next.delete(u._id)));
+    return next;
+  });
+  const allFilteredSelected = filteredAndSortedUsers.length > 0 && filteredAndSortedUsers.every((u) => selectedIds.has(u._id));
+  const copySelectedIds = async () => {
+    // keep the list's order, so the copied ids read like the table
+    const order = users.map((u) => u._id).filter((id) => selectedIds.has(id));
+    const text = formatIds(order);
+    const ok = await copyText(text);
+    if (ok) { setCopyFallback(""); toast(`copied ${order.length} id${order.length === 1 ? "" : "s"}`); }
+    else { setCopyFallback(text); toast("could not copy automatically: select the text below and copy it"); }
+  };
+  const uniOptions = role === "student" ? universityOptions(users) : [];
 
   const indexOfLastItem = currentPage * itemsPerPage;
   const indexOfFirstItem = indexOfLastItem - itemsPerPage;
@@ -647,6 +679,28 @@ export default function AdminUserList({ role, title }) {
           }}
           options={[{ value: "all", label: "All" }, { value: "high", label: "10+" }, { value: "medium", label: "5-9" }]}
         />
+        {role === "student" && (
+          <>
+            <label className="aul-filter-label" htmlFor="aul-university">University</label>
+            <Select id="aul-university" size="sm" value={filterUniversity} onChange={(e) => setFilterUniversity(e.target.value)} style={{ maxWidth: 260 }}>
+              <option value="all">All universities</option>
+              {uniOptions.map((o) => <option key={o.value} value={o.value}>{o.label} ({o.count})</option>)}
+            </Select>
+          </>
+        )}
+      </div>
+
+      {/* copy ids: pick rows (or every row the filters show) and copy them as "ids:id1,id2,..." */}
+      <div className="k-toolbar aul-select-bar" role="region" aria-label="selected rows">
+        <span aria-live="polite">{selectedIds.size} selected</span>
+        <Button size="sm" variant="secondary" onClick={() => selectMany(filteredAndSortedUsers, !allFilteredSelected)} disabled={filteredAndSortedUsers.length === 0}>
+          {allFilteredSelected ? `Unselect all filtered (${filteredAndSortedUsers.length})` : `Select all filtered (${filteredAndSortedUsers.length})`}
+        </Button>
+        <Button size="sm" variant="secondary" onClick={() => { setSelectedIds(new Set()); setCopyFallback(""); }} disabled={selectedIds.size === 0}>Clear</Button>
+        <Button size="sm" icon="copy" onClick={copySelectedIds} disabled={selectedIds.size === 0}>Copy ids</Button>
+        {copyFallback && (
+          <Input readOnly aria-label="selected ids" value={copyFallback} onFocus={(e) => e.target.select()} className="k-grow" style={{ maxWidth: 520 }} />
+        )}
       </div>
 
       {/* table */}
@@ -655,6 +709,9 @@ export default function AdminUserList({ role, title }) {
           <table className="k-table" style={{ minWidth: 1040 }}>
             <thead>
               <tr>
+                <th style={{ width: 40, textAlign: 'center' }}>
+                  <input type="checkbox" aria-label="select every row on this page" checked={currentUsers.length > 0 && currentUsers.every((u) => selectedIds.has(u._id))} onChange={(e) => selectMany(currentUsers, e.target.checked)} disabled={currentUsers.length === 0} />
+                </th>
                 <th>{sortHead('name', 'user')}</th>
                 <th>{sortHead('email', 'contact')}</th>
                 {(role === "brand" || role === "employee") && <th>{sortHead('brandName', 'company')}</th>}
@@ -674,6 +731,9 @@ export default function AdminUserList({ role, title }) {
                   const verified = u.status === "Verified";
                   return (
                     <tr key={u._id} className={`clickable${isTop ? " aul-top" : ""}`} onClick={() => openUserModal(u)}>
+                      <td style={{ textAlign: 'center' }} onClick={(e) => e.stopPropagation()}>
+                        <input type="checkbox" aria-label={`select ${u.name || u.email || "user"}`} checked={selectedIds.has(u._id)} onChange={() => toggleSelected(u._id)} />
+                      </td>
                       <td>
                         <div className="aul-user">
                           <span className="aul-avatar">
