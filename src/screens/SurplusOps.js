@@ -7,6 +7,7 @@
 import React, { useCallback, useEffect, useState } from "react";
 import { PageHeader, PageLoading, Button, Field, Textarea, Select, Tabs, EmptyState, Pill, Table, Modal, toast } from "../portal/kit";
 import surplusApi, { STATE_LABEL, STATE_TONE, karachi } from "../services/surplusApi";
+import AdminSurplusListings from "./AdminSurplusListings";
 
 const REASON = { not_as_described: "not as described", food_safety: "food safety", not_handed_over: "not handed over", wrong_no_show: "wrong no-show", merchant_cancelled_late: "cancelled late by the brand", charged_wrong_price: "charged the wrong price", other: "other" };
 
@@ -19,12 +20,13 @@ export default function SurplusOps() {
   return (
     <div className="tdcp k-page" data-screen="surplus-ops">
       <PageHeader title="surprise boxes" sub="pickup-only pilot, paid at pickup: tdc records orders, no-shows and disputes; it never takes money." />
-      <Tabs label="surprise box operations" value={tab} onChange={setTab} tabs={[{ id: "cases", label: "support cases", icon: "alert" }, { id: "orders", label: "orders", icon: "receipt" }, { id: "noshows", label: "no-shows", icon: "clock" }, { id: "brands", label: "brands", icon: "store" }]} />
+      <Tabs label="surprise box operations" value={tab} onChange={setTab} tabs={[{ id: "cases", label: "support cases", icon: "alert" }, { id: "orders", label: "orders", icon: "receipt" }, { id: "noshows", label: "no-shows", icon: "clock" }, { id: "brands", label: "brands", icon: "store" }, { id: "listings", label: "listings", icon: "gift" }]} />
       <div style={{ marginTop: 16 }}>
         {tab === "cases" && <Cases />}
         {tab === "orders" && <Orders />}
         {tab === "noshows" && <NoShows />}
         {tab === "brands" && <Brands />}
+        {tab === "listings" && <AdminSurplusListings />}
       </div>
     </div>
   );
