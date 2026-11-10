@@ -5,7 +5,7 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import QRCode from "qrcode";
 import Ico from "../portal/Ico";
-import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, toast } from "../portal/kit";
+import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, toast, confirmDialog } from "../portal/kit";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
 import loyaltyApi from "../services/loyaltyApi";
@@ -563,6 +563,7 @@ const VerifyClaim = () => {
     if (!studentId || !s?.offerId) return s;
     try {
       const q = await loyaltyApi.quote({ studentId, offerId: s.offerId });
+      if (q?.mode === "reward") return { ...s, loyalty: q }; // stamp card: the offer's own % stays
       return q?.applies ? { ...s, discountPercentage: q.discountPercentage, loyalty: q } : s;
     } catch {
       return s;
@@ -570,9 +571,36 @@ const VerifyClaim = () => {
   };
 
   // the tier and progress, next to the % pill
+  // stamp card: apply a waiting reward once (a retry with the same key gets the same answer)
+  const [usingReward, setUsingReward] = useState(null);
+  const applyReward = async (l) => {
+    if (!l?.available?.id || usingReward) return;
+    if (!(await confirmDialog(`use the reward now? ${l.available.label}. it can only be used once.`, { title: "use the reward?", confirmLabel: "use reward", danger: false }))) return;
+    setUsingReward(l.available.id);
+    try {
+      const key = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
+      await loyaltyApi.useReward(l.available.id, {}, key);
+      toast(`reward used: ${l.available.label}`, "ok");
+      const done = (x) => (x?.loyalty?.available?.id === l.available.id ? { ...x, loyalty: { ...x.loyalty, available: null, stamps: 0, visitsToReward: x.loyalty.needed, rewardUsed: true } } : x);
+      setResult((r) => done(r));
+      setSelectedStudent((s) => done(s));
+    } catch (e) { toast(e.message, "bad"); } finally { setUsingReward(null); }
+  };
   const renderLoyalty = (s) => {
     const l = s?.loyalty;
     if (!l) return null;
+    if (l.mode === "reward") {
+      return (
+        <>
+          <Pill tone="purple">{`stamps: ${l.stamps} of ${l.needed}`}</Pill>
+          {l.available
+            ? <><span className="bb-chip">{`reward waiting: ${l.available.label}`}</span><Button size="sm" loading={usingReward === l.available.id} onClick={() => applyReward(l)}>use reward</Button></>
+            : l.rewardUsed ? <span className="bb-chip">reward used</span>
+              : l.limitReached ? <span className="bb-chip">reward limit reached</span>
+                : <span className="bb-chip">{`${l.visitsToReward} more visit${l.visitsToReward === 1 ? "" : "s"} to ${l.reward?.label || "the reward"}`}</span>}
+        </>
+      );
+    }
     return (
       <>
         <Pill tone="purple">{`loyalty: ${l.tierName} · visit ${l.nextVisitNumber}`}</Pill>
