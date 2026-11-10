@@ -34,6 +34,11 @@ export const surplusApi = {
   decideCase: (id, body) => unwrap(api.post(`/surplus/admin/cases/${id}/decide`, body)),
   adminBrands: () => unwrap(api.get("/surplus/admin/brands")),
   blockBrand: (brandId, body) => unwrap(api.post(`/surplus/admin/brands/${brandId}/block`, body)),
+  // every brand's listings (writes need a reason and are logged on the server)
+  adminListings: (params) => unwrap(api.get("/surplus/admin/listings", { params })),
+  adminListing: (id) => unwrap(api.get(`/surplus/admin/listings/${id}`)),
+  adminUpdateListing: (id, body) => unwrap(api.patch(`/surplus/admin/listings/${id}`, body)),
+  adminCancelListing: (id, body) => unwrap(api.post(`/surplus/admin/listings/${id}/cancel`, body)),
   // is the pilot set up at all? (admin menu item)
   adminAvailable: () => api.get("/surplus/admin/cases", { params: { status: "open" } }).then(() => true).catch(() => false),
 };
