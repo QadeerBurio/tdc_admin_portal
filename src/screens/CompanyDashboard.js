@@ -15,6 +15,7 @@ import dotSorted from "./dots/sorted.png";
 import AdminJobsManager from "./AdminJobsManager";
 import CandidatesManager from "./CandidateManager";
 import CandidatePipeline from "./CandidatePipeline";
+import CareerInterviews from "./CareerInterviews";
 import careerApi from "../services/careerApi";
 import InterviewsManager from "./InterviewsManager";
 import ReportsManager from "./ReportsManager";
@@ -284,9 +285,23 @@ export function EmployerCandidates() {
     </>
   );
 }
+// FLAG_CAREER_TIMELINE: pilot employers get their timeline interviews by day (the classic list stays one click
+// away); everyone else gets the classic list as before
 export function EmployerInterviews() {
   const { token } = useOutletContext();
-  return <InterviewsManager token={token} />;
+  const [pilot, setPilot] = useState(null);
+  const [classic, setClassic] = useState(false);
+  useEffect(() => {
+    careerApi.flagsMe().then((f) => setPilot(!!f.careerTimeline)).catch(() => setPilot(false));
+  }, []);
+  if (pilot === null) return <PageLoading />;
+  if (pilot && !classic) return <CareerInterviews onClassic={() => setClassic(true)} />;
+  return (
+    <>
+      {pilot && <div style={{ padding: "12px 0 0" }}><Button variant="secondary" onClick={() => setClassic(false)}>back to timeline interviews</Button></div>}
+      <InterviewsManager token={token} />
+    </>
+  );
 }
 export function EmployerReports() {
   const { token, stats } = useOutletContext();
