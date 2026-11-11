@@ -32,7 +32,7 @@ http.createServer((q, s) => {
   else if (k === "GET /api/career/admin/applications") out = ok({ counts, total: 4, applications: apps.filter((a) => (!p.stage || a.stage === p.stage) && (!p.employerId || a.employer.id === p.employerId)) });
   else if (k === "GET /api/career/admin/interviews") out = ok({ interviews: [{ id: "i1", applicationId: apps[1].applicationId, job: { id: "j", title: "Backend dev" }, employer: { id: E1, name: "Hire Co" }, candidate: { id: "u1", firstName: "Ali" }, startsAt: "2026-11-20T10:00:00Z", endsAt: "2026-11-20T10:45:00Z", mode: "online", status: "accepted", active: true }] });
   else if (k === "GET /api/career/admin/hires") out = ok({ hires: [{ id: "h1", job: { id: "j", title: "Designer" }, employer: { id: E2, name: "Other Co" }, candidate: { id: "u2", firstName: "Zara" }, verificationLevel: "verified", confirmedAt: "2026-11-05T10:00:00Z", revokedAt: null }, { id: "h2", job: { id: "j", title: "Backend dev" }, employer: { id: E1, name: "Hire Co" }, candidate: { id: "u9", firstName: "Bilal" }, verificationLevel: "revoked", confirmedAt: "2026-10-05T10:00:00Z", revokedAt: "2026-10-09T10:00:00Z" }] });
-  else if (k === "GET /api/admin/actions" || k === "GET /api/loyalty/admin/programs") { status = 404; out = {}; } // the other oversight pages: off
+  else if (k === "GET /api/admin/actions" || k === "GET /api/loyalty/admin/programs" || k === "GET /api/admin/features/flags") { status = 404; out = {}; } // the other oversight pages: off
   else out = q.method === "GET" ? [] : { success: true };
   s.writeHead(status, h);
   s.end(JSON.stringify(out));

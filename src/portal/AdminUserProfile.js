@@ -5,6 +5,7 @@ import React, { useEffect, useState } from "react";
 import api, { usersApi, offersApi, engagementApi } from "../services/api";
 import Ico from "./Ico";
 import DeleteAccountDialog from "./DeleteAccountDialog";
+import AccountFeatures from "./AccountFeatures";
 
 const ROLE = {
   student: { list: "all students", icon: "grad", tone: "orange", label: "student" },
@@ -121,7 +122,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
   if (r === "brand" && user.brandApprovalStatus) chips.push([user.brandApprovalStatus === "approved" ? "approved" : user.brandApprovalStatus, user.brandApprovalStatus === "approved" ? "ok" : user.brandApprovalStatus === "rejected" ? "bad" : "warn"]);
   if (user.accountStatus && user.accountStatus !== "active") chips.push([user.accountStatus, "bad"]);
 
-  const tabs = r === "student" ? ["overview", "crew", "account"] : r === "brand" ? ["overview", "offers", "redemptions", "account"] : ["overview", "account"];
+  const tabs = r === "student" ? ["overview", "crew", "features", "account"] : r === "brand" ? ["overview", "offers", "redemptions", "features", "account"] : r === "employee" ? ["overview", "features", "account"] : ["overview", "account"];
   const p = extra.profile;
 
   const account = (
@@ -136,6 +137,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
 
   let body = null;
   if (tab === "account") body = account;
+  else if (tab === "features") body = <AccountFeatures accountId={user._id || id} />; // turn features on per account (admin log, reason)
   else if (r === "student" && tab === "overview") body = (
     <>
       <div className="tdcp-grid-small">
