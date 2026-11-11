@@ -28,6 +28,11 @@ const routes = {
   "GET /api/career/admin/analytics": ok({ range: {}, counts: { applications: 12, submitted: 10, joinedPilotLater: 2, reviewed: 9, shortlisted: 6, rejected: 3, withdrawn: 1, interviewsInvited: 5, interviewsAccepted: 4, interviewsCompleted: 3, noShowReports: 1, offersSent: 3, offersAccepted: 2, offersDeclined: 1, verifiedHires: 1, disputes: 2 }, conversions: { submittedToReviewed: 75, reviewedToShortlisted: 66.7, shortlistedToCompletedInterview: 50, completedInterviewToOffer: 100, offerToAccepted: 66.7, acceptedToVerifiedHire: 50 }, medianHours: { firstEmployerResponse: 20.5, toFirstInterviewInvite: 70, toVerifiedHire: 300 } }),
 };
 routes[`GET /api/career/applications/${A4}/timeline`] = ok({ ...timelineA2, applicationId: A4, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "INTERVIEW_INVITED", "REJECTED"] });
+// suggested candidates for j1 (anonymous: a label, skills, the resume section), one already interested
+routes["GET /api/career/matching/jobs/j1/suggested"] = ok({ jobId: "j1", invitesLeftToday: 19, note: "", candidates: [
+  { label: "candidate 1", token: "a".repeat(32), score: 100, quality: "strong", matchedSkills: [{ skill: "Node.js", where: ["a project", "skills list"] }, { skill: "SQL", where: ["work experience"] }], missingSkills: [], mandatorySummary: { met: 0, notMet: 0, unknown: 0 }, invite: null },
+  { label: "candidate 2", token: "b".repeat(32), score: 67, quality: "medium", matchedSkills: [{ skill: "Node.js", where: ["skills list"] }], missingSkills: ["Docker"], mandatorySummary: { met: 0, notMet: 0, unknown: 0 }, invite: { status: "interested", sentAt: new Date().toISOString() } },
+] });
 const calls = [];
 const posted = [];
 http.createServer((q, s) => {
@@ -104,6 +109,19 @@ http.createServer((q, s) => {
   const noJobBar = await (async () => { await pick("job", ""); await sleep(800); const t = await pg2.evaluate(`!!document.querySelector('[data-testid="match-quality"]')`); await pick("job", "j1"); await sleep(1200); return t; })();
   if (noJobBar) bad = 1;
   console.log(`match quality only for one job: ${noJobBar ? "WRONG (shown for all jobs)" : "hidden for all jobs"}`);
+  // suggested candidates: anonymous labels, skills with the resume section, invite once with a confirm step
+  const sc = await pg2.evaluate(`document.querySelector('[data-testid="suggested-candidates"]')?.innerText || ""`);
+  const scOk = sc.includes("candidate 1") && sc.includes("100% of the skills") && sc.includes("Node.js (a project, skills list)") && sc.includes("SQL (work experience)") && sc.includes("candidate 2") && sc.includes("interested") && sc.includes("not shown: Docker") && sc.includes("19 invites left today") && sc.includes("you see who they are only if they apply");
+  const oneButton = await pg2.evaluate(`[...document.querySelectorAll('[data-testid="suggested-candidates"] button')].map((x) => x.getAttribute("aria-label")).join("|")`);
+  if (!scOk || oneButton !== "invite candidate 1 to apply") bad = 1;
+  console.log(`suggested candidates: ${scOk && oneButton === "invite candidate 1 to apply" ? "2 anonymous candidates with skills and resume sections; invite only for the one not yet invited" : `WRONG (${sc.split("\n").join(" | ")} / buttons: ${oneButton})`}`);
+  await pg2.evaluate(`document.querySelector('[aria-label="invite candidate 1 to apply"]').click(); true`); await sleep(600);
+  const dlg = await pg2.evaluate(`document.querySelector('[role=dialog]')?.innerText || ""`);
+  await pg2.evaluate(`[...document.querySelectorAll('[role=dialog] button')].find((x) => /send the invite/.test(x.innerText))?.click(); true`); await sleep(1200);
+  const invited = posted.some((p) => p.url === `POST /api/career/matching/jobs/j1/suggested/${"a".repeat(32)}/invite`);
+  const inviteOk = dlg.includes("invite candidate 1 to apply?") && dlg.includes("you'll see their name only if they do") && invited;
+  if (!inviteOk) bad = 1;
+  console.log(`invite to apply: ${inviteOk ? "confirm step (they decide; their name only if they apply), then one POST with the candidate's token" : `WRONG (${dlg.split("\n").join(" | ")}; posted: ${invited})`}`);
   await pick("order", "relevance"); await sleep(1500);
   const after = await applied();
   const sortOk = before === "Zara Khan|Taha Ali" && after === "Taha Ali|Zara Khan" && /evidence for 2 of 3 listed skills/.test(await text(pg2));
