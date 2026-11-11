@@ -22,7 +22,7 @@ const timelineA2 = { applicationId: A2, job: { id: "j1", title: "Backend dev", c
 const routes = {
   "GET /api/app/flags/me": { metaEvents: false, loyaltyV2: false, careerTimeline: true, careerMatching: true },
   [`GET /api/career/matching/applications/${A2}`]: ok({ applicationId: A2, modelVersion: "skill-evidence-1", computedAt: new Date(now - 3600e3).toISOString(), source: "resume", note: "Decision support only: an estimate from the resume, not a hiring prediction. Nothing is rejected or hidden automatically.", relevance: { score: 67, insufficient: null, label: "estimate: evidence for 2 of 3 listed skills", formula: "estimate = 100 x (job skills with evidence in the resume) / (skills the job lists)" }, mandatory: [{ criterion: "at least 1 year of work experience", status: "not_met", evidence: "the resume lists no work experience" }, { criterion: "education: Bachelor's Degree", status: "met", evidence: "BS" }], mandatorySummary: { met: 1, notMet: 1, unknown: 0 }, skills: { matched: [{ skill: "Node.js", evidence: [{ path: "projects[0].technologies[0]", text: "Node.js" }] }, { skill: "MongoDB", evidence: [{ path: "skills[1]", text: "MongoDB" }] }], missing: [{ skill: "Docker", evidence: [{ path: "", text: "not found in the resume's skills, projects or experience" }] }], unknown: [] }, evidenceSummary: "2 matched, 1 missing" }),
-  "GET /api/career/matching/jobs/j1": ok({ sort: "relevance", applications: [{ applicationId: A2, match: { score: 67, label: "estimate: evidence for 2 of 3 listed skills" } }, { applicationId: A4, match: { score: 33, label: "estimate: evidence for 1 of 3 listed skills" } }, { applicationId: A1, match: null }] }),
+  "GET /api/career/matching/jobs/j1": ok({ sort: "relevance", applications: [{ applicationId: A2, match: { score: 67, label: "estimate: evidence for 2 of 3 listed skills" } }, { applicationId: A4, match: { score: 33, label: "estimate: evidence for 1 of 3 listed skills" } }, { applicationId: A1, match: null }], summary: { strong: 0, medium: 1, weak: 1, insufficient: 0, outsidePilot: 1, total: 3, thresholds: { strong: 70, medium: 40 }, note: "An estimate from each resume's skill evidence, not a judgment of the candidates." } }),
   "GET /api/career/employers/me/applications": ok({ enabled: true, jobs: [{ id: "j1", title: "Backend dev", archived: false, external: false }], applications: apps }),
   [`GET /api/career/applications/${A2}/timeline`]: ok(timelineA2),
   "GET /api/career/admin/analytics": ok({ range: {}, counts: { applications: 12, submitted: 10, joinedPilotLater: 2, reviewed: 9, shortlisted: 6, rejected: 3, withdrawn: 1, interviewsInvited: 5, interviewsAccepted: 4, interviewsCompleted: 3, noShowReports: 1, offersSent: 3, offersAccepted: 2, offersDeclined: 1, verifiedHires: 1, disputes: 2 }, conversions: { submittedToReviewed: 75, reviewedToShortlisted: 66.7, shortlistedToCompletedInterview: 50, completedInterviewToOffer: 100, offerToAccepted: 66.7, acceptedToVerifiedHire: 50 }, medianHours: { firstEmployerResponse: 20.5, toFirstInterviewInvite: 70, toVerifiedHire: 300 } }),
@@ -96,6 +96,14 @@ http.createServer((q, s) => {
   const pick = (label, value) => pg2.evaluate(`(() => { const s = document.querySelector('select[aria-label="${label}"]'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(s, "${value}"); s.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
   const before = await applied();
   await pick("job", "j1"); await sleep(1200);
+  // match quality for the job: strong / medium / weak counts, labelled as an estimate (P4d)
+  const mq = await pg2.evaluate(`document.querySelector('[data-testid="match-quality"]')?.innerText || ""`);
+  const mqOk = /0 strong/.test(mq) && /1 medium/.test(mq) && /1 weak/.test(mq) && /1 without an estimate/.test(mq) && /not a judgment/.test(mq) && !/not enough information/.test(mq);
+  if (!mqOk) bad = 1;
+  console.log(`match quality: ${mqOk ? "0 strong, 1 medium, 1 weak, 1 without an estimate; says it's an estimate" : `WRONG (${mq.split("\n").join(" | ")})`}`);
+  const noJobBar = await (async () => { await pick("job", ""); await sleep(800); const t = await pg2.evaluate(`!!document.querySelector('[data-testid="match-quality"]')`); await pick("job", "j1"); await sleep(1200); return t; })();
+  if (noJobBar) bad = 1;
+  console.log(`match quality only for one job: ${noJobBar ? "WRONG (shown for all jobs)" : "hidden for all jobs"}`);
   await pick("order", "relevance"); await sleep(1500);
   const after = await applied();
   const sortOk = before === "Zara Khan|Taha Ali" && after === "Taha Ali|Zara Khan" && /evidence for 2 of 3 listed skills/.test(await text(pg2));
