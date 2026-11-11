@@ -8,6 +8,7 @@ import Ico from "../portal/Ico";
 import { TOKEN } from "../portal/tokens";
 import { PageLoading, PageHeader, Button, IconButton, Spinner, StatCard, SearchInput, Segmented, Modal, EmptyState, Pill, Card, Facts, Select, Input, toast } from "../portal/kit";
 import DeleteAccountDialog from "../portal/DeleteAccountDialog";
+import FeatureBulkDialog from "../portal/FeatureBulkDialog";
 import "./styles/AdminUserList.css";
 import { redemptionPlace } from "../portal/storeBadge";
 import { API_ORIGIN } from "../config/api";
@@ -39,6 +40,9 @@ export default function AdminUserList({ role, title }) {
   // rows picked for "copy ids" (kept across pages and filters until cleared)
   const [selectedIds, setSelectedIds] = useState(() => new Set());
   const [copyFallback, setCopyFallback] = useState("");
+  // "Features…": turn a feature on / off for the selected rows (brands, employers, students)
+  const [bulkOpen, setBulkOpen] = useState(false);
+  const canFeatures = role === "student" || role === "brand" || role === "employee";
   const [togglingId, setTogglingId] = useState(null);
   // permanent delete (students only here; brands are deleted from Brand Approvals)
   const [deleteId, setDeleteId] = useState(null);
@@ -698,10 +702,20 @@ export default function AdminUserList({ role, title }) {
         </Button>
         <Button size="sm" variant="secondary" onClick={() => { setSelectedIds(new Set()); setCopyFallback(""); }} disabled={selectedIds.size === 0}>Clear</Button>
         <Button size="sm" icon="copy" onClick={copySelectedIds} disabled={selectedIds.size === 0}>Copy ids</Button>
+        {canFeatures && <Button size="sm" icon="settings" onClick={() => setBulkOpen(true)} disabled={selectedIds.size === 0}>Features…</Button>}
         {copyFallback && (
           <Input readOnly aria-label="selected ids" value={copyFallback} onFocus={(e) => e.target.select()} className="k-grow" style={{ maxWidth: 520 }} />
         )}
       </div>
+
+      {bulkOpen && (
+        <FeatureBulkDialog
+          role={role}
+          ids={users.map((u) => u._id).filter((id) => selectedIds.has(id))}
+          nameOf={(id) => { const u = users.find((x) => x._id === id); return u ? u.brandName || u.companyName || u.name || id : id; }}
+          onClose={() => setBulkOpen(false)}
+        />
+      )}
 
       {/* table */}
       <div className="k-table-card" ref={tableContainerRef}>

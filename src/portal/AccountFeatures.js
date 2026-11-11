@@ -1,0 +1,130 @@
+// AccountFeatures.js: the "features" tab on a brand, employer or student profile (AdminUserProfile.js).
+// One switch per feature this account's role can have (server: GET /api/admin/features/account/:id). A change asks
+// for a reason, and the server writes it to the admin action log; the tab then shows what the server says.
+// - "on from Railway list": the account's id is in the FLAG_* value on Railway; the switch is locked (to switch it
+//   off, remove the id there).
+// - "kill switch": the Railway value is only "off"; the feature is off for everyone and admin access is ignored.
+// - a brand with Loyalty or Surprise Box: how many students have it too, so a one-sided pilot is obvious.
+import React, { useCallback, useEffect, useState } from "react";
+import featuresApi from "../services/featuresApi";
+import { Card, Pill, Button, toast } from "./kit";
+import FeatureReasonDialog from "./FeatureReasonDialog";
+
+const date = (d) => (d ? new Date(d).toLocaleDateString("en-GB", { day: "numeric", month: "short", year: "numeric" }) : "");
+const n = (x) => Number(x || 0).toLocaleString("en-US");
+
+export function Switch({ checked, disabled, onClick, label }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={!!checked}
+      aria-label={label}
+      disabled={disabled}
+      onClick={onClick}
+      style={{
+        width: 48, height: 28, borderRadius: 14, border: "2px solid", flex: "none", position: "relative", padding: 0,
+        cursor: disabled ? "not-allowed" : "pointer",
+        borderColor: checked ? "#287A37" : "#6B6B6B",
+        background: checked ? "#287A37" : "#FFFFFF",
+        opacity: disabled ? 0.6 : 1,
+      }}
+    >
+      <span aria-hidden="true" style={{ position: "absolute", top: 2, left: checked ? 22 : 2, width: 20, height: 20, borderRadius: 10, background: checked ? "#FFFFFF" : "#6B6B6B", transition: "left .15s" }} />
+    </button>
+  );
+}
+
+function stateOf(f) {
+  if (f.killed) return { text: "off for everyone: kill switch in Railway", tone: "red", checked: false, locked: true };
+  if (f.fromRailway) return { text: "on from Railway list", tone: "blue", checked: true, locked: true };
+  if (f.granted) return { text: "on", tone: "green", checked: true, locked: false };
+  return { text: "off", tone: "sand", checked: false, locked: false };
+}
+
+function Students({ f }) {
+  const s = f.students;
+  if (!s) return null;
+  const someone = s.allStudentsFromRailway || s.withAdminAccess + s.fromRailwayList > 0;
+  const oneSided = f.effective && !someone;
+  return (
+    <div data-testid={`students-${f.flag}`} style={{ marginTop: 10, padding: 12, borderRadius: 10, background: oneSided ? "#FDECEC" : "#F5F2EA", fontSize: 14, lineHeight: 1.5 }}>
+      {oneSided && <div style={{ marginBottom: 4 }}><Pill tone="red">one-sided pilot</Pill></div>}
+      {s.allStudentsFromRailway
+        ? <div>Every student has {f.label} (a Railway rule).</div>
+        : <div>Students with {f.label}: <strong>{n(s.withAdminAccess)}</strong> with admin access, <strong>{n(s.fromRailwayList)}</strong> from the Railway list.</div>}
+      {s.usedThisBrand > 0 && <div>{n(s.usedThisBrandWithIt)} of the {n(s.usedThisBrand)} students who used this brand have it.</div>}
+      {oneSided && <div style={{ color: "#B63935" }}>No student has {f.label} yet, so it does nothing for this brand. Turn it on for its test students: all students → select them → Features…</div>}
+    </div>
+  );
+}
+
+export default function AccountFeatures({ accountId }) {
+  const [view, setView] = useState(null);
+  const [error, setError] = useState("");
+  const [pending, setPending] = useState(null); // { flag, label, enabled }
+
+  const load = useCallback(async () => {
+    try {
+      setView(await featuresApi.account(accountId));
+      setError("");
+    } catch (e) {
+      setError(e?.message || "could not load features");
+    }
+  }, [accountId]);
+  useEffect(() => { setView(null); load(); }, [load]);
+
+  if (error && !view) return <div className="tdcp-card tdcp-empty" role="alert">{error} <Button size="sm" variant="secondary" onClick={load}>try again</Button></div>;
+  if (!view) return <div className="tdcp-card tdcp-empty" role="status">loading features…</div>;
+  if (!view.flags.length) return <div className="tdcp-card tdcp-empty">No features can be turned on for this kind of account.</div>;
+
+  const save = async (reason) => {
+    const { flag, label, enabled } = pending;
+    await featuresApi.set(accountId, flag, enabled, reason); // throws: the dialog shows the error, nothing changes
+    setPending(null);
+    toast(`${label} turned ${enabled ? "on" : "off"}: saved`);
+    await load();
+  };
+
+  return (
+    <Card title="features" icon="settings" tone="sand">
+      <p className="k-hint" style={{ marginTop: 0 }}>Turning a feature on here is the same as adding this account's id to the FLAG_* list on Railway, without a deploy. Each change is kept in the admin log with its reason.</p>
+      <ul style={{ listStyle: "none", margin: 0, padding: 0 }} aria-label="features">
+        {view.flags.map((f) => {
+          const st = stateOf(f);
+          return (
+            <li key={f.flag} data-flag={f.flag} style={{ padding: "14px 0", borderTop: "1px solid #ECE7DA" }}>
+              <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+                <Switch
+                  checked={st.checked}
+                  disabled={st.locked}
+                  label={`${f.label}: ${st.text}`}
+                  onClick={() => setPending({ flag: f.flag, label: f.label, enabled: !f.granted })}
+                />
+                <strong style={{ fontSize: 16 }}>{f.label}</strong>
+                <Pill tone={st.tone}>{st.text}</Pill>
+                {f.killed && f.granted && <Pill tone="sand">admin access kept, ignored while the kill switch is on</Pill>}
+              </div>
+              {f.fromRailway && !f.killed && <div className="k-hint" style={{ marginTop: 6 }}>Locked: the FLAG_* value on Railway turns it on for this account (its id, its role or a percentage). To switch it off, change that value on Railway.</div>}
+              {f.lastChange && (
+                <div className="k-hint" style={{ marginTop: 6 }}>
+                  last change: turned {f.lastChange.enabled ? "on" : "off"} by {f.lastChange.setBy?.name || "admin"} on {date(f.lastChange.setAt)}: “{f.lastChange.reason}”
+                </div>
+              )}
+              <Students f={f} />
+            </li>
+          );
+        })}
+      </ul>
+      {pending && (
+        <FeatureReasonDialog
+          title={`turn ${pending.enabled ? "on" : "off"} ${pending.label}`}
+          sub={`for ${view.account.name || "this account"}`}
+          confirmLabel={`turn ${pending.enabled ? "on" : "off"}`}
+          onConfirm={save}
+          onClose={() => setPending(null)}
+        />
+      )}
+    </Card>
+  );
+}

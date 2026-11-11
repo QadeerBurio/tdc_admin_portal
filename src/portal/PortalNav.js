@@ -34,6 +34,7 @@ export const ADMIN_MENU = [
     title: "oversight",
     items: [
       ["admin_actions", "admin actions", "receipt", "ink"],
+      ["features", "features", "settings", "green"], // features per account (FeatureAccess)
       ["loyalty_programs", "loyalty programs", "star", "yellow"],
       ["hiring_overview", "hiring overview", "briefcase", "blue"],
     ],
