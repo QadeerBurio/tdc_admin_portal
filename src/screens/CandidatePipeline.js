@@ -17,6 +17,7 @@ import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateIn
 import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../services/careerApi";
 import resumeStudioApi from "../services/resumeStudioApi";
 import MatchEvidence from "./MatchEvidence";
+import SuggestedCandidates from "./SuggestedCandidates";
 import useFlagsMe from "../portal/useFlagsMe";
 import { RateCandidate } from "./CareerRatings";
 
@@ -160,6 +161,9 @@ export default function CandidatePipeline({ onClassic }) {
             an estimate from each resume's skill evidence (strong: {quality.thresholds?.strong ?? 70}%+ of the job's skills shown, medium: {quality.thresholds?.medium ?? 40}%+), not a judgment of the candidates. nobody is ranked out or hidden.
           </span>
         </section>
+      )}
+      {jobId && flags.careerMatching && flags.careerTimeline && (
+        <SuggestedCandidates jobId={jobId} jobTitle={(data.jobs || []).find((j) => j.id === jobId)?.title} />
       )}
       {(data.applications || []).length === 0 ? (
         <EmptyState icon="users" tone="blue" title="no applicants yet" text="applications to your jobs appear here." />

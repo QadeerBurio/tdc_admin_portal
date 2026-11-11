@@ -54,6 +54,9 @@ export const careerApi = {
   // candidate matching (FLAG_CAREER_MATCHING): one application's evidence; a job's estimates (?sort=newest|relevance)
   matchFor: (applicationId) => unwrap(api.get(`/career/matching/applications/${applicationId}`)),
   jobMatches: (jobId, sort = "newest") => unwrap(api.get(`/career/matching/jobs/${jobId}`, { params: { sort } })),
+  // suggested candidates for one job (students who opted in; anonymous: label, skills, resume section) and an invite
+  suggested: (jobId) => unwrap(api.get(`/career/matching/jobs/${jobId}/suggested`)),
+  invite: (jobId, token) => post(`/career/matching/jobs/${jobId}/suggested/${token}/invite`, {}),
   // admin
   adminAnalytics: (params) => unwrap(api.get("/career/admin/analytics", { params })),
   // open hire disputes (admin); 404 when the hiring timeline isn't set up on the server
