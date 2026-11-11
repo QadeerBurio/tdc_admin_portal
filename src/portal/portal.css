@@ -1,7 +1,9 @@
 /* tdc portal styles (admin first; brand, employer and traveler later).
    Same tokens as the public site and the app. Everything is scoped under .tdcp so nothing leaks
    into screens that are not inside the portal shell. */
-@import url("https://fonts.googleapis.com/css2?family=Outfit:wght@700;800&family=DM+Sans:wght@400;500;600;700&display=swap");
+/* Fonts (Outfit, DM Sans) are loaded by a <link> in public/index.html, never @import here: an @import that can't
+   reach Google makes the browser fail this whole CSS chunk, and the screen would not open. Each stack falls back to
+   the system font, so the portal reads fine if the fonts never load. */
 
 :root,
 .tdcp {
@@ -19,8 +21,8 @@
   --danger-bg: #FDECEA;
   --success: #1E6B3A;
   --success-bg: #E3F3E8;
-  --heading: 'Outfit', system-ui, sans-serif;
-  --body: 'DM Sans', system-ui, sans-serif;
+  --heading: 'Outfit', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  --body: 'DM Sans', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   /* design colours used outside the core set */
   --ink-soft: #4A473F;   /* body text on yellow cards */
   --orange: #C77700;     /* Ico orange tone */
