@@ -4,6 +4,9 @@ import React from "react";
 import { createTheme, ThemeProvider } from "@mui/material/styles";
 import { TOKEN as T } from "./tokens";
 
+// the system fonts behind Outfit / DM Sans (loaded in public/index.html): the portal reads fine without them
+const SYSTEM_FONTS = "system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif";
+
 export const tdcMuiTheme = createTheme({
   palette: {
     primary: { main: T.ink, contrastText: T.card },
@@ -18,13 +21,13 @@ export const tdcMuiTheme = createTheme({
   },
   shape: { borderRadius: 16 },
   typography: {
-    fontFamily: "'DM Sans', system-ui, sans-serif",
-    h1: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800 },
-    h2: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800 },
-    h3: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800 },
-    h4: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800, letterSpacing: "-0.5px" },
-    h5: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 700 },
-    h6: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 700 },
+    fontFamily: `'DM Sans', ${SYSTEM_FONTS}`,
+    h1: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 800 },
+    h2: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 800 },
+    h3: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 800 },
+    h4: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 800, letterSpacing: "-0.5px" },
+    h5: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 700 },
+    h6: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 700 },
     button: { textTransform: "none", fontWeight: 700 },
   },
   components: {
@@ -43,7 +46,7 @@ export const tdcMuiTheme = createTheme({
     MuiTab: { styleOverrides: { root: { textTransform: "none", fontWeight: 600, fontSize: 15 } } },
     MuiTabs: { styleOverrides: { indicator: { backgroundColor: T.yellow, height: 3 } } },
     MuiTableCell: { styleOverrides: { head: { fontWeight: 700, color: T.muted }, root: { borderColor: T.lineSoft } } },
-    MuiDialogTitle: { styleOverrides: { root: { fontFamily: "'Outfit', system-ui, sans-serif", fontWeight: 800, fontSize: 20, letterSpacing: "-0.4px" } } },
+    MuiDialogTitle: { styleOverrides: { root: { fontFamily: `'Outfit', ${SYSTEM_FONTS}`, fontWeight: 800, fontSize: 20, letterSpacing: "-0.4px" } } },
     MuiDialogActions: { styleOverrides: { root: { padding: "14px 22px", borderTop: `1px solid ${T.line}`, gap: 8 } } },
     MuiBackdrop: { styleOverrides: { root: { backgroundColor: "rgba(17, 17, 17, 0.4)" } } },
     MuiMenu: { styleOverrides: { paper: { borderRadius: 16, border: `1px solid ${T.line}`, boxShadow: "0 16px 40px rgba(17, 17, 17, 0.08)" } } },

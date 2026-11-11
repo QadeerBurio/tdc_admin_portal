@@ -1,5 +1,5 @@
 /* Dashboard.css */
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+/* Inter is loaded by a <link> in public/index.html (an @import here could fail this whole CSS chunk) */
 
 * {
   margin: 0;

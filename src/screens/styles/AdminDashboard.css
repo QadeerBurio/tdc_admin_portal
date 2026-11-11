@@ -9,7 +9,7 @@
 
 /* public pages keep their original body (the portal tokens are not loaded there) */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  font-family: 'Inter', system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   background: rgb(248, 250, 252);
 }
 
