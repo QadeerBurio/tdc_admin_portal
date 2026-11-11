@@ -166,36 +166,21 @@ function Listings({ branches }) {
       setCancelBox((c) => c && { ...c, cancel, stay });
     } catch (e) { toast(e.message, "bad"); setCancelBox(null); }
   };
-  // close the box first (no new orders), then cancel each open order with the same reason
+  // one request: the server closes the box (no new orders) and cancels each open order with the reason; a student
+  // is told straight away; handed-over orders stay (POST /api/surplus/merchant/listings/:id/cancel)
   const runCancel = async () => {
-    const { listing: l, cancel, reason } = cancelBox;
+    const { listing: l, reason } = cancelBox;
     setCancelBox((c) => ({ ...c, busy: true }));
-    const failed = [];
-    let done = 0;
     try {
-      if (l.status !== "closed") await surplusApi.updateListing(l.id, { version: l.version, status: "closed" });
+      const r = await surplusApi.cancelBox(l.id, { reason: reason.trim(), version: l.version });
+      const done = r.cancelled.length;
+      const failed = r.failed.map((f) => ({ ref: f.ref, message: f.message }));
+      setCancelBox((c) => ({ ...c, busy: false, result: { done, failed } }));
+      toast(failed.length ? `box closed; ${done} order${done === 1 ? "" : "s"} cancelled, ${failed.length} couldn't be` : `box closed; ${done} order${done === 1 ? "" : "s"} cancelled`, failed.length ? "bad" : "ok");
     } catch (e) {
       toast(e.code === "STALE_VERSION" ? "this box changed meanwhile (a student may have just ordered); try again" : e.message, "bad");
       setCancelBox((c) => ({ ...c, busy: false }));
-      load();
-      return;
     }
-    for (const o of cancel) {
-      try {
-        await surplusApi.transition(o.id, { to: "MERCHANT_CANCELLED", version: o.version, reason: reason.trim() });
-        done += 1;
-      } catch (e) {
-        // the order moved meanwhile: read it again and cancel it if that's still possible
-        try {
-          const fresh = cancellableOrders(await surplusApi.orders("live"), l.id).cancel.find((x) => x.id === o.id);
-          if (!fresh) throw e;
-          await surplusApi.transition(fresh.id, { to: "MERCHANT_CANCELLED", version: fresh.version, reason: reason.trim() });
-          done += 1;
-        } catch (e2) { failed.push({ ref: o.ref, message: e2.message || e.message }); }
-      }
-    }
-    setCancelBox((c) => ({ ...c, busy: false, result: { done, failed } }));
-    toast(failed.length ? `box closed; ${done} order${done === 1 ? "" : "s"} cancelled, ${failed.length} couldn't be` : `box closed; ${done} order${done === 1 ? "" : "s"} cancelled`, failed.length ? "bad" : "ok");
     load();
   };
   const setStatus = async (l, status) => {
@@ -281,7 +266,7 @@ function Listings({ branches }) {
         footer={cancelBox?.result
           ? <Button onClick={() => setCancelBox(null)}>done</Button>
           : <><Button variant="secondary" disabled={cancelBox?.busy} onClick={() => setCancelBox(null)}>keep it</Button>
-            <Button variant="danger" loading={cancelBox?.busy} disabled={!cancelBox?.cancel || (cancelBox?.reason || "").trim().length < 3} onClick={runCancel}>
+            <Button variant="danger" loading={cancelBox?.busy} disabled={!cancelBox?.cancel || (cancelBox?.reason || "").trim().length < 5} onClick={runCancel}>
               {cancelBox?.cancel?.length ? `close and cancel ${cancelBox.cancel.length} order${cancelBox.cancel.length === 1 ? "" : "s"}` : "close the box"}
             </Button></>}>
         {cancelBox && (
@@ -300,7 +285,7 @@ function Listings({ branches }) {
               <>
                 <p>{cancelBox.cancel.length ? `${cancelBox.cancel.length} open order${cancelBox.cancel.length === 1 ? "" : "s"} will be cancelled: ${cancelBox.cancel.map((o) => o.ref).join(", ")}.` : "no open orders to cancel."}</p>
                 {cancelBox.stay.length > 0 && <p className="k-hint">{cancelBox.stay.length} order{cancelBox.stay.length === 1 ? "" : "s"} already handed over ({cancelBox.stay.map((o) => o.ref).join(", ")}) stay as they are.</p>}
-                <Field label="reason (students see it)" htmlFor="sb-box-cancel-reason">
+                <Field label="reason (students see it)" htmlFor="sb-box-cancel-reason" hint="at least 5 characters">
                   <Textarea id="sb-box-cancel-reason" value={cancelBox.reason} onChange={(e) => { const v = e.target.value; setCancelBox((c) => ({ ...c, reason: v })); }} placeholder="e.g. our oven broke down this evening" />
                 </Field>
               </>

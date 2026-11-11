@@ -43,6 +43,7 @@ http.createServer((q, s) => {
     let status = 200, out;
     const m = /^POST \/api\/surplus\/merchant\/orders\/(\w+)\/transition$/.exec(k);
     const pl = /^PATCH \/api\/surplus\/merchant\/listings\/(\w+)$/.exec(k);
+    const cb = /^POST \/api\/surplus\/merchant\/listings\/(\w+)\/cancel$/.exec(k);
     if (k === "GET /api/app/flags/me") out = { surplusBoxes: true };
     else if (k === "GET /api/branches/my-branches") out = { branches: [{ _id: BR, name: "Alpha Clifton", city: "Karachi", isActive: true }] };
     else if (k === "GET /api/offers/my-offers") out = [{ _id: "6ae9cccccccccccccccccccc", title: "Alpha 20%", discountPercentage: 20, createdAt: new Date().toISOString(), isInStore: true }];
@@ -50,7 +51,19 @@ http.createServer((q, s) => {
     else if (k === "GET /api/surplus/merchant/summary") out = ok({ orders: 0, boxesOrdered: 0, toCollectAtPickup: 0, collectedAtPickup: 0, noShows: 0, boxesLeft: 3 });
     else if (k === "GET /api/surplus/merchant/orders") out = ok(orders.filter((o) => !["MERCHANT_CANCELLED", "COMPLETED"].includes(o.state)));
     else if (k === "POST /api/surplus/merchant/listings") out = ok({ ...listings[0], id: "l3", status: body.status });
-    else if (pl) {
+    else if (cb) {
+      // the server's cancel box: close it, cancel each open order it still can (with the reason), keep handed-over ones
+      const l = listings.find((x) => x.id === cb[1]);
+      if (l.status !== "closed" && body.version !== l.version) { status = 409; out = { success: false, error: { code: "STALE_VERSION", message: "changed" } }; }
+      else {
+        Object.assign(l, { status: "closed", version: l.version + 1 });
+        const cancelled = [], stayed = [];
+        for (const o of orders.filter((x) => x.listingId === l.id && !["MERCHANT_CANCELLED", "COMPLETED", "CUSTOMER_CANCELLED", "NO_SHOW"].includes(x.state))) {
+          if ((o.next || []).includes("MERCHANT_CANCELLED")) { Object.assign(o, { state: "MERCHANT_CANCELLED", next: [], cancelReason: body.reason }); cancelled.push(o.ref); } else stayed.push(o.ref);
+        }
+        out = ok({ listingId: l.id, closed: true, cancelled, stayed, failed: [] });
+      }
+    } else if (pl) {
       const l = listings.find((x) => x.id === pl[1]);
       if (body.version !== l.version) { status = 409; out = { success: false, error: { code: "STALE_VERSION", message: "changed" } }; }
       else { Object.assign(l, { status: body.status || l.status, version: l.version + 1 }); out = ok(l); }
@@ -142,10 +155,9 @@ const kInput = (isoStr) => new Date(new Date(isoStr).getTime() + 5 * 3600e3).toI
   await clickText("close and cancel 2 orders", DLG);
   await sleep(2500);
   const seq = log.slice(before);
-  check("closes the box first (PATCH closed with its version)", seq[0]?.k === "PATCH /api/surplus/merchant/listings/l1" && seq[0].body.status === "closed" && seq[0].body.version === 3, JSON.stringify(seq[0]));
-  const cancels = seq.filter((x) => /transition$/.test(x.k));
-  check("then cancels each open order with the reason (o2 retried after it changed)", cancels.length === 3 && cancels.every((x) => x.body.to === "MERCHANT_CANCELLED" && x.body.reason === "our oven broke down") && cancels.filter((x) => x.k.includes("/o2/")).length === 2 && cancels[2].body.version === 3, JSON.stringify(cancels.map((x) => [x.k.split("/")[5], x.body.version])));
-  check("handed-over and other boxes' orders untouched", !seq.some((x) => x.k.includes("/o3/") || x.k.includes("/o4/")) && orders.find((o) => o.id === "o3").state === "PICKUP_VERIFIED");
+  // the server does the whole cancel (closes the box, cancels each open order, keeps handed-over ones): one request
+  check("one request: POST …/l1/cancel with the reason and the box's version", seq.length === 1 && seq[0].k === "POST /api/surplus/merchant/listings/l1/cancel" && seq[0].body.reason === "our oven broke down" && seq[0].body.version === 3, JSON.stringify(seq));
+  check("the open orders cancelled with the reason; the handed-over one and other boxes' orders untouched", ["o1", "o2"].every((id) => { const o = orders.find((x) => x.id === id); return o.state === "MERCHANT_CANCELLED" && o.cancelReason === "our oven broke down"; }) && orders.find((o) => o.id === "o3").state === "PICKUP_VERIFIED" && orders.find((o) => o.id === "o4").state !== "MERCHANT_CANCELLED", JSON.stringify(orders.map((o) => [o.id, o.state])));
   d = await dialogText();
   check("result: 2 cancelled, box closed", d.includes("2 orders cancelled; the box is closed."));
   await clickText("done", DLG);
