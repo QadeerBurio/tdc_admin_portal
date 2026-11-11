@@ -22,6 +22,8 @@ export const surplusApi = {
   listings: () => unwrap(api.get("/surplus/merchant/listings")),
   createListing: (body) => unwrap(api.post("/surplus/merchant/listings", body)),
   updateListing: (id, body) => unwrap(api.patch(`/surplus/merchant/listings/${id}`, body)),
+  // cancel the whole box on the server: closed, and its open orders cancelled with the reason -> { cancelled, stayed, failed }
+  cancelBox: (id, body) => unwrap(api.post(`/surplus/merchant/listings/${id}/cancel`, body)),
   // the box's optional photo (images only, at most 5 MB; locked once a student has ordered)
   uploadPhoto: (id, file, version) => {
     const fd = new FormData();
