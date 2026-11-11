@@ -73,6 +73,14 @@ export default function CandidatePipeline({ onClassic }) {
     return () => { alive = false; };
   }, [order, jobId, flags.careerMatching]);
   useEffect(() => { if (!jobId) setOrder("newest"); }, [jobId]);
+  // match quality for the chosen job (FLAG_CAREER_MATCHING): how many applicants are strong / medium / weak matches
+  const [quality, setQuality] = useState(null);
+  useEffect(() => {
+    if (!jobId || !flags.careerMatching) { setQuality(null); return; }
+    let alive = true;
+    careerApi.jobMatches(jobId, "newest").then((d) => alive && setQuality(d.summary || null)).catch(() => alive && setQuality(null));
+    return () => { alive = false; };
+  }, [jobId, flags.careerMatching, data]);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -140,6 +148,19 @@ export default function CandidatePipeline({ onClassic }) {
           </>
         )}
       />
+      {quality && quality.total > 0 && (
+        <section className="k-card pad" aria-label="match quality" data-testid="match-quality" style={{ marginBottom: 12, display: "flex", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+          <strong style={{ marginRight: 4 }}>match quality</strong>
+          <Pill tone="green">{quality.strong} strong</Pill>
+          <Pill tone="yellow">{quality.medium} medium</Pill>
+          <Pill tone="sand">{quality.weak} weak</Pill>
+          {quality.insufficient > 0 && <Pill tone="sand">{quality.insufficient} not enough information</Pill>}
+          {quality.outsidePilot > 0 && <Pill tone="sand">{quality.outsidePilot} without an estimate</Pill>}
+          <span className="k-hint" style={{ flexBasis: "100%" }}>
+            an estimate from each resume's skill evidence (strong: {quality.thresholds?.strong ?? 70}%+ of the job's skills shown, medium: {quality.thresholds?.medium ?? 40}%+), not a judgment of the candidates. nobody is ranked out or hidden.
+          </span>
+        </section>
+      )}
       {(data.applications || []).length === 0 ? (
         <EmptyState icon="users" tone="blue" title="no applicants yet" text="applications to your jobs appear here." />
       ) : (
