@@ -25,6 +25,11 @@ const routes = {
   [`GET /api/career/matching/applications/${A2}`]: ok({ applicationId: A2, modelVersion: "skill-evidence-1", computedAt: new Date(now - 3600e3).toISOString(), source: "resume", note: "Decision support only: an estimate from the resume, not a hiring prediction. Nothing is rejected or hidden automatically.", relevance: { score: 67, insufficient: null, label: "estimate: evidence for 2 of 3 listed skills", formula: "estimate = 100 x (job skills with evidence in the resume) / (skills the job lists)" }, mandatory: [{ criterion: "at least 1 year of work experience", status: "not_met", evidence: "the resume lists no work experience" }, { criterion: "education: Bachelor's Degree", status: "met", evidence: "BS" }], mandatorySummary: { met: 1, notMet: 1, unknown: 0 }, skills: { matched: [{ skill: "Node.js", evidence: [{ path: "projects[0].technologies[0]", text: "Node.js" }] }, { skill: "MongoDB", evidence: [{ path: "skills[1]", text: "MongoDB" }] }], missing: [{ skill: "Docker", evidence: [{ path: "", text: "not found in the resume's skills, projects or experience" }] }], unknown: [] }, evidenceSummary: "2 matched, 1 missing" }),
   "GET /api/career/matching/jobs/j1": ok({ sort: "relevance", applications: [{ applicationId: A2, match: { score: 67, label: "estimate: evidence for 2 of 3 listed skills" } }, { applicationId: A4, match: { score: 33, label: "estimate: evidence for 1 of 3 listed skills" } }, { applicationId: A1, match: null }], summary: { strong: 0, medium: 1, weak: 1, insufficient: 0, outsidePilot: 1, total: 3, thresholds: { strong: 70, medium: 40 }, note: "An estimate from each resume's skill evidence, not a judgment of the candidates." } }),
   // suggested candidates (anonymous), scanned with the one-job pipeline
+  // best matches (Part 1): one applicant with an estimate, one outside the pilot
+  "GET /api/career/matching/jobs/j1/ranked": ok({ job: { id: "j1", title: "Backend dev", skills: ["Node.js", "MongoDB", "Docker"] }, modelVersion: "skill-evidence-1", thresholds: { strong: 70, medium: 40 }, summary: { strong: 0, medium: 1, weak: 0, insufficient: 0, outsidePilot: 1, total: 2 }, note: "", applications: [
+    { applicationId: A2, rank: 1, match: { score: 67, quality: "medium", qualityLabel: "medium", summary: "Matches 2 of 3 skills, missing Docker", strengths: [{ skill: "Node.js", evidence: "Node.js" }], gaps: { missingSkills: ["Docker"], unknownSkills: [], requirements: [] }, skillStatus: { "Node.js": "matched", MongoDB: "matched", Docker: "missing" }, mandatorySummary: { met: 1, notMet: 0, unknown: 0 } } },
+    { applicationId: "6ae9a3a3a3a3a3a3a3a3a3a3", rank: null, match: null },
+  ] }),
   "GET /api/career/matching/jobs/j1/suggested": ok({ jobId: "j1", invitesLeftToday: 19, note: "", candidates: [
     { label: "candidate 1", token: "a".repeat(32), score: 100, quality: "strong", matchedSkills: [{ skill: "Node.js", where: ["a project", "skills list"] }], missingSkills: [], mandatorySummary: { met: 0, notMet: 0, unknown: 0 }, invite: null },
     { label: "candidate 2", token: "b".repeat(32), score: 67, quality: "medium", matchedSkills: [{ skill: "Node.js", where: ["skills list"] }], missingSkills: ["Docker"], mandatorySummary: { met: 0, notMet: 0, unknown: 0 }, invite: { status: "interested", sentAt: new Date().toISOString() } },
@@ -138,6 +143,11 @@ http.createServer((q, s) => {
     await pgq.evaluate(`(() => { const s = document.querySelector('select[aria-label="job"]'); Object.getOwnPropertyDescriptor(HTMLSelectElement.prototype, "value").set.call(s, "j1"); s.dispatchEvent(new Event("change", { bubbles: true })); return true; })()`);
     await sleep(1500);
     await audit(pgq, "candidate pipeline for one job, with the match quality bar");
+    await audit(pgq, "best matches for this job", '[data-testid="best-matches"]');
+    // compare: tick the two listed applicants (the second has no estimate), open the side-by-side table
+    await pgq.evaluate(`[...document.querySelectorAll('[data-testid="best-matches"] input[type=checkbox]')].forEach((x) => x.click()); true`); await sleep(400);
+    await pgq.evaluate(`document.querySelector('[data-testid="best-matches"] button[aria-label^="compare 2"]')?.click(); true`); await sleep(700);
+    await audit(pgq, "compare applicants dialog", "[role=dialog]");
     const adm = await open(admin, "/admin");
     await clickMatch(adm, /hiring funnel/i); await sleep(2000); await audit(adm, "admin hiring funnel");
   }

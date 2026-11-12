@@ -54,6 +54,9 @@ export const careerApi = {
   // candidate matching (FLAG_CAREER_MATCHING): one application's evidence; a job's estimates (?sort=newest|relevance)
   matchFor: (applicationId) => unwrap(api.get(`/career/matching/applications/${applicationId}`)),
   jobMatches: (jobId, sort = "newest") => unwrap(api.get(`/career/matching/jobs/${jobId}`, { params: { sort } })),
+  // best matches for one job (FLAG_CAREER_MATCHING + FLAG_CAREER_TIMELINE): every applicant, highest estimate first,
+  // with the band, a one-line summary, strengths, gaps and each listed skill's status (compare 2-3)
+  ranked: (jobId) => unwrap(api.get(`/career/matching/jobs/${jobId}/ranked`)),
   // suggested candidates for one job (students who opted in; anonymous: label, skills, resume section) and an invite
   suggested: (jobId) => unwrap(api.get(`/career/matching/jobs/${jobId}/suggested`)),
   invite: (jobId, token) => post(`/career/matching/jobs/${jobId}/suggested/${token}/invite`, {}),

@@ -2,13 +2,17 @@
 // routes/careerMatching.routes.js). Decision support only: the job's mandatory criteria (met / not met / unknown),
 // then each listed skill with the resume text that shows it (matched), or why it doesn't (missing / unknown),
 // and the estimate with its formula. It never ranks people as hireable or not, and nothing is hidden.
-// Renders nothing when matching isn't on for this employer and candidate.
+// Renders nothing when matching isn't on for this employer and candidate. On top: the best-match summary (the
+// percentage and band, one line from the evidence, top strengths and gaps), the same as "best matches" shows.
 import React, { useEffect, useState } from "react";
 import Ico from "../portal/Ico";
 import { Pill } from "../portal/kit";
 import { careerApi, inKarachi } from "../services/careerApi";
 
+import { gapText } from "../portal/bestMatches";
+
 const STATUS = { met: ["green", "met"], not_met: ["red", "not met"], unknown: ["sand", "unknown"] };
+const TONE = { strong: "green", medium: "yellow", weak: "sand", insufficient: "sand" };
 
 export default function MatchEvidence({ applicationId }) {
   const [m, setM] = useState(undefined); // undefined loading, null not available
@@ -36,6 +40,22 @@ export default function MatchEvidence({ applicationId }) {
   return (
     <section className="k-card pad" style={{ marginBottom: 12 }} data-card="match-evidence" aria-label="match evidence">
       <div className="k-card-head"><Ico kind="search" tone="blue" size={30} /><h3>match evidence</h3></div>
+      {m.best && (
+        <div data-testid="best-match-summary" style={{ marginBottom: 10 }}>
+          <div className="k-row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+            {m.best.score != null && <strong style={{ fontSize: 18 }}>{m.best.score}%</strong>}
+            <Pill tone={TONE[m.best.quality] || "sand"}>{m.best.qualityLabel}</Pill>
+            <span>{m.best.summary}</span>
+          </div>
+          {m.best.strengths?.length > 0 && (
+            <ul style={{ margin: "6px 0 0", paddingLeft: 18, fontSize: 13.5 }} aria-label="top strengths">
+              {m.best.strengths.map((s) => <li key={s.skill}><strong>{s.skill}</strong>{s.evidence ? <span className="k-hint">: “{s.evidence}”</span> : null}</li>)}
+            </ul>
+          )}
+          {gapText(m.best) && <div className="k-hint" style={{ fontSize: 13, marginTop: 4 }}>gaps: {gapText(m.best)}</div>}
+          <div className="k-hint" style={{ fontSize: 12.5, marginTop: 4 }}>an estimate from the resume: check before deciding.</div>
+        </div>
+      )}
       <p className="k-hint" style={{ marginTop: 0 }}>{m.note}</p>
       {m.mandatory.length > 0 && (
         <>

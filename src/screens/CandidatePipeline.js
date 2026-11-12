@@ -5,7 +5,8 @@
 // offer, confirm the hire). Times are entered and shown in Asia/Karachi. Every action sends the version
 // this screen saw: if someone else changed the candidate meanwhile, it reloads instead of overwriting.
 // Candidate matching (FLAG_CAREER_MATCHING): a "match evidence" panel in the drawer and, for one job, an optional
-// "sort by relevance" (newest first stays the default; nobody is hidden).
+// "sort by relevance" (newest first stays the default; nobody is hidden). With FLAG_CAREER_TIMELINE too: "best
+// matches for this job" (BestMatches.js) with a side-by-side compare of 2-3 applicants.
 // Drag and drop (native HTML5, no library): dropping a card on a column asks for the same transition its button
 // would (reviewed, shortlisted, rejected directly; interview, offer and hired open the candidate with that dialog).
 // A move the candidate can't make from where they are snaps back with the reason; the server decides either way,
@@ -18,6 +19,7 @@ import careerApi, { karachiToUtc, utcToKarachiInput, inKarachi } from "../servic
 import resumeStudioApi from "../services/resumeStudioApi";
 import MatchEvidence from "./MatchEvidence";
 import SuggestedCandidates from "./SuggestedCandidates";
+import BestMatches from "./BestMatches";
 import useFlagsMe from "../portal/useFlagsMe";
 import { RateCandidate } from "./CareerRatings";
 
@@ -161,6 +163,17 @@ export default function CandidatePipeline({ onClassic }) {
             an estimate from each resume's skill evidence (strong: {quality.thresholds?.strong ?? 70}%+ of the job's skills shown, medium: {quality.thresholds?.medium ?? 40}%+), not a judgment of the candidates. nobody is ranked out or hidden.
           </span>
         </section>
+      )}
+      {jobId && flags.careerMatching && flags.careerTimeline && (
+        <BestMatches
+          jobId={jobId}
+          applications={data.applications}
+          onOpen={(id) => {
+            const a = (data.applications || []).find((x) => x.applicationId === id);
+            if (a && !a.careerEnabled) toast("this candidate isn't in the timeline pilot yet: use the classic list");
+            else setOpenId(id);
+          }}
+        />
       )}
       {jobId && flags.careerMatching && flags.careerTimeline && (
         <SuggestedCandidates jobId={jobId} jobTitle={(data.jobs || []).find((j) => j.id === jobId)?.title} />
