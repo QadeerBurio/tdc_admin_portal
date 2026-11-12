@@ -18,16 +18,30 @@ const apps = [
   { applicationId: A2, jobId: "j1", jobTitle: "Backend dev", candidateName: "Taha Ali", appliedAt: new Date(now - 2 * 864e5).toISOString(), careerEnabled: true, stage: "applied", version: 1, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "REJECTED"] },
   { applicationId: "6ae9a3a3a3a3a3a3a3a3a3a3", jobId: "j1", jobTitle: "Backend dev", candidateName: "Umar Old", appliedAt: new Date(now - 9 * 864e5).toISOString(), careerEnabled: false, stage: "reviewed", version: 0, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: [] },
 ];
+// best matches (Part 1): the server's best-match view per applicant (GET /jobs/:jobId/ranked, and "best" on one application)
+const BEST_A2 = { score: 67, quality: "medium", qualityLabel: "medium", insufficient: null, summary: "Matches 2 of 3 skills, missing Docker, 1 requirement not met", strengths: [{ skill: "Node.js", evidence: "Node.js" }, { skill: "MongoDB", evidence: "MongoDB" }], gaps: { missingSkills: ["Docker"], unknownSkills: [], requirements: [{ criterion: "at least 1 year of work experience", status: "not_met" }] }, skillStatus: { "Node.js": "matched", MongoDB: "matched", Docker: "missing" }, mandatorySummary: { met: 1, notMet: 1, unknown: 0 } };
+const BEST_A4 = { score: 33, quality: "weak", qualityLabel: "weak", insufficient: null, summary: "Matches 1 of 3 skills, missing MongoDB, Docker", strengths: [{ skill: "Node.js", evidence: "built a REST API in Node.js" }], gaps: { missingSkills: ["MongoDB", "Docker"], unknownSkills: [], requirements: [] }, skillStatus: { "Node.js": "matched", MongoDB: "missing", Docker: "missing" }, mandatorySummary: { met: 0, notMet: 0, unknown: 0 } };
 const timelineA2 = { applicationId: A2, job: { id: "j1", title: "Backend dev", company: "Hire Co", archived: false }, external: false, externalLabel: null, stage: "applied", legacyStatus: "pending", version: 1, interview: { status: "none" }, offer: { status: "none" }, hire: { status: "none" }, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "INTERVIEW_INVITED", "REJECTED"], events: [{ id: "e1", seq: 1, type: "APPLIED", actorRole: "system", source: "app", occurredAt: new Date(now - 2 * 864e5).toISOString(), metadata: {} }], interviewDetails: null, offerDetails: null };
 const routes = {
   "GET /api/app/flags/me": { metaEvents: false, loyaltyV2: false, careerTimeline: true, careerMatching: true },
-  [`GET /api/career/matching/applications/${A2}`]: ok({ applicationId: A2, modelVersion: "skill-evidence-1", computedAt: new Date(now - 3600e3).toISOString(), source: "resume", note: "Decision support only: an estimate from the resume, not a hiring prediction. Nothing is rejected or hidden automatically.", relevance: { score: 67, insufficient: null, label: "estimate: evidence for 2 of 3 listed skills", formula: "estimate = 100 x (job skills with evidence in the resume) / (skills the job lists)" }, mandatory: [{ criterion: "at least 1 year of work experience", status: "not_met", evidence: "the resume lists no work experience" }, { criterion: "education: Bachelor's Degree", status: "met", evidence: "BS" }], mandatorySummary: { met: 1, notMet: 1, unknown: 0 }, skills: { matched: [{ skill: "Node.js", evidence: [{ path: "projects[0].technologies[0]", text: "Node.js" }] }, { skill: "MongoDB", evidence: [{ path: "skills[1]", text: "MongoDB" }] }], missing: [{ skill: "Docker", evidence: [{ path: "", text: "not found in the resume's skills, projects or experience" }] }], unknown: [] }, evidenceSummary: "2 matched, 1 missing" }),
+  [`GET /api/career/matching/applications/${A2}`]: ok({ applicationId: A2, modelVersion: "skill-evidence-1", computedAt: new Date(now - 3600e3).toISOString(), source: "resume", note: "Decision support only: an estimate from the resume, not a hiring prediction. Nothing is rejected or hidden automatically.", relevance: { score: 67, insufficient: null, label: "estimate: evidence for 2 of 3 listed skills", formula: "estimate = 100 x (job skills with evidence in the resume) / (skills the job lists)" }, mandatory: [{ criterion: "at least 1 year of work experience", status: "not_met", evidence: "the resume lists no work experience" }, { criterion: "education: Bachelor's Degree", status: "met", evidence: "BS" }], mandatorySummary: { met: 1, notMet: 1, unknown: 0 }, skills: { matched: [{ skill: "Node.js", evidence: [{ path: "projects[0].technologies[0]", text: "Node.js" }] }, { skill: "MongoDB", evidence: [{ path: "skills[1]", text: "MongoDB" }] }], missing: [{ skill: "Docker", evidence: [{ path: "", text: "not found in the resume's skills, projects or experience" }] }], unknown: [] }, evidenceSummary: "2 matched, 1 missing", best: BEST_A2 }),
   "GET /api/career/matching/jobs/j1": ok({ sort: "relevance", applications: [{ applicationId: A2, match: { score: 67, label: "estimate: evidence for 2 of 3 listed skills" } }, { applicationId: A4, match: { score: 33, label: "estimate: evidence for 1 of 3 listed skills" } }, { applicationId: A1, match: null }], summary: { strong: 0, medium: 1, weak: 1, insufficient: 0, outsidePilot: 1, total: 3, thresholds: { strong: 70, medium: 40 }, note: "An estimate from each resume's skill evidence, not a judgment of the candidates." } }),
   "GET /api/career/employers/me/applications": ok({ enabled: true, jobs: [{ id: "j1", title: "Backend dev", archived: false, external: false }], applications: apps }),
   [`GET /api/career/applications/${A2}/timeline`]: ok(timelineA2),
   "GET /api/career/admin/analytics": ok({ range: {}, counts: { applications: 12, submitted: 10, joinedPilotLater: 2, reviewed: 9, shortlisted: 6, rejected: 3, withdrawn: 1, interviewsInvited: 5, interviewsAccepted: 4, interviewsCompleted: 3, noShowReports: 1, offersSent: 3, offersAccepted: 2, offersDeclined: 1, verifiedHires: 1, disputes: 2 }, conversions: { submittedToReviewed: 75, reviewedToShortlisted: 66.7, shortlistedToCompletedInterview: 50, completedInterviewToOffer: 100, offerToAccepted: 66.7, acceptedToVerifiedHire: 50 }, medianHours: { firstEmployerResponse: 20.5, toFirstInterviewInvite: 70, toVerifiedHire: 300 } }),
 };
 routes[`GET /api/career/applications/${A4}/timeline`] = ok({ ...timelineA2, applicationId: A4, nextAllowedActions: ["REVIEWED", "SHORTLISTED", "INTERVIEW_INVITED", "REJECTED"] });
+routes["GET /api/career/matching/jobs/j1/ranked"] = ok({
+  job: { id: "j1", title: "Backend dev", skills: ["Node.js", "MongoDB", "Docker"] }, modelVersion: "skill-evidence-1", formula: "estimate = 100 x ...", thresholds: { strong: 70, medium: 40 },
+  summary: { strong: 0, medium: 1, weak: 1, insufficient: 0, outsidePilot: 2, total: 4 },
+  note: "An estimate from each resume's skills: check before deciding. Nobody is rejected or hidden automatically.",
+  applications: [
+    { applicationId: A2, appliedAt: new Date(now - 2 * 864e5).toISOString(), rank: 1, match: BEST_A2 },
+    { applicationId: A4, appliedAt: new Date(now - 1 * 864e5).toISOString(), rank: 2, match: BEST_A4 },
+    { applicationId: A1, appliedAt: new Date(now - 5 * 864e5).toISOString(), rank: null, match: null },
+    { applicationId: "6ae9a3a3a3a3a3a3a3a3a3a3", appliedAt: new Date(now - 9 * 864e5).toISOString(), rank: null, match: null },
+  ],
+});
 // suggested candidates for j1 (anonymous: a label, skills, the resume section), one already interested
 routes["GET /api/career/matching/jobs/j1/suggested"] = ok({ jobId: "j1", invitesLeftToday: 19, note: "", candidates: [
   { label: "candidate 1", token: "a".repeat(32), score: 100, quality: "strong", matchedSkills: [{ skill: "Node.js", where: ["a project", "skills list"] }, { skill: "SQL", where: ["work experience"] }], missingSkills: [], mandatorySummary: { met: 0, notMet: 0, unknown: 0 }, invite: null },
@@ -88,6 +102,8 @@ http.createServer((q, s) => {
   await pg.evaluate(`[...document.querySelectorAll("button")].find((x) => /Taha Ali/.test(x.innerText))?.click(); true`);
   await sleep(1500);
   expect("candidate drawer", await text(pg), ["timeline and audit", "applied", "by system", "mark reviewed", "shortlist", "schedule interview", "reject"]);
+  const bms = await pg.evaluate(`document.querySelector('[data-testid="best-match-summary"]')?.innerText || ""`);
+  check("drawer: the best-match summary on top of the evidence (67%, medium, the line, strengths, gaps, check before deciding)", /67%/.test(bms) && /medium/.test(bms) && bms.includes("Matches 2 of 3 skills, missing Docker, 1 requirement not met") && /Node.js/.test(bms) && /gaps: missing Docker · not met: at least 1 year of work experience/.test(bms) && /check before deciding/.test(bms));
   expect("match evidence panel", await text(pg), ["match evidence", "decision support only", "mandatory criteria", "not met", "at least 1 year of work experience", "skills the job lists", "estimate: evidence for 2 of 3 listed skills", "evidence in the resume", "Node.js", "not found", "Docker", "how this is worked out"]);
   await pg.evaluate(`[...document.querySelectorAll("button")].find((x) => x.innerText.trim() === "schedule interview")?.click(); true`);
   await sleep(800);
@@ -127,6 +143,24 @@ http.createServer((q, s) => {
   const sortOk = before === "Zara Khan|Taha Ali" && after === "Taha Ali|Zara Khan" && /evidence for 2 of 3 listed skills/.test(await text(pg2));
   if (!sortOk) bad = 1;
   console.log(`sort by relevance: ${sortOk ? "newest first by default, matching order for one job, both still listed" : `WRONG ORDER (${before} → ${after})`}`);
+  // best matches for this job (Part 1): every applicant, highest estimate first, band, line, strengths, gaps
+  const bm = await pg2.evaluate(`document.querySelector('[data-testid="best-matches"]')?.innerText || ""`);
+  const bmOrder = await pg2.evaluate(`[...document.querySelectorAll('[data-testid="best-matches"] li[data-application] [data-role=name]')].map((x) => x.innerText).join("|")`);
+  if (!(bmOrder.split("|").slice(0, 2).join("|") === "Taha Ali|Zara Khan" && bmOrder.split("|").length === 4)) console.log(`    best matches order seen: ${bmOrder} / ${bm.split(/\n/).slice(0, 12).join(" | ")}`);
+  check("best matches: all 4 applicants, highest estimate first (Taha 67% medium, Zara 33% weak, then the two without an estimate)", bmOrder.split("|").slice(0, 2).join("|") === "Taha Ali|Zara Khan" && bmOrder.split("|").length === 4 && /#1/.test(bm) && /67%/.test(bm) && /33%/.test(bm) && bm.includes("no estimate (outside the matching pilot)"));
+  check("…each with the one-line summary, strengths with the resume line, and gaps", bm.includes("Matches 2 of 3 skills, missing Docker, 1 requirement not met") && bm.includes("built a REST API in Node.js") && bm.includes("gaps: missing MongoDB, Docker"));
+  check("…worded as an estimate to check, nobody rejected or hidden", /check before deciding/.test(bm) && /nobody is rejected or hidden/.test(bm));
+  const tick = (name) => pg2.evaluate(`document.querySelector('[data-testid="best-matches"] input[aria-label="compare ${name}"]').click(); true`);
+  const cmpDisabled = await pg2.evaluate(`document.querySelector('[data-testid="best-matches"] button[aria-label^="compare "]').disabled`);
+  await tick("Taha Ali"); await sleep(200); await tick("Zara Khan"); await sleep(300);
+  await pg2.evaluate(`document.querySelector('[data-testid="best-matches"] button[aria-label="compare 2 selected applicants"]').click(); true`); await sleep(700);
+  const cmp = await pg2.evaluate(`document.querySelector('[data-testid="compare-table"]')?.innerText || ""`);
+  const heads = await pg2.evaluate(`[...document.querySelectorAll('[data-testid="compare-table"] thead th')].map((x) => x.innerText).join("|")`);
+  const rowsCmp = await pg2.evaluate(`[...document.querySelectorAll('[data-testid="compare-table"] tbody th')].map((x) => x.innerText).join("|")`);
+  check("compare: off with fewer than 2 ticked; 2 side by side against the job's skills", cmpDisabled === true && heads === "job skill|Taha Ali|Zara Khan" && rowsCmp === "estimate|band|Node.js|MongoDB|Docker|requirements|summary" && /✓ shown/.test(cmp) && /✗ not found/.test(cmp) && cmp.includes("built a REST API in Node.js") && /1 met · 1 not met/.test(cmp));
+  await pg2.evaluate(`[...document.querySelectorAll('[role=dialog] button')].find((x) => x.innerText.trim() === "close")?.click(); true`); await sleep(400);
+  await pg2.evaluate(`document.querySelector('[data-testid="best-matches"] button[aria-label="open Taha Ali"]').click(); true`); await sleep(1500);
+  check("best matches: open → the candidate drawer", /timeline and audit/.test(await text(pg2)));
   if (pg2.errs.length) { bad = 1; pg2.errs.forEach((e) => console.log("    " + e)); }
   // drag and drop: the same transitions as the buttons; invalid drops snap back with the reason
   const pg3 = await open(emp, "/candidate");
