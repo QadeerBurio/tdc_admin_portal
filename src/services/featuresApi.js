@@ -16,12 +16,18 @@ const unwrap = (request) =>
     });
 
 export const featuresApi = {
-  // [{ flag, label, roles, killed, railway, railwayIdCount, adminAccessCount }]
+  // [{ flag, label, roles, killed, railway, railwayIdCount, adminAccessCount (forced on), forcedOffCount,
+  //    studentDefaultable, studentDefault: { enabled: true | false | null, reason, setAt, setBy } | null }]
   flags: () => unwrap(api.get("/admin/features/flags")),
-  // { account: { id, role, name }, flags: [{ flag, label, killed, fromRailway, granted, effective, lastChange, students? }] }
+  // { account: { id, role, name }, flags: [{ flag, label, killed, forced: "on" | "off" | null, defaultForRole, fromRailway,
+  //   source, effective, lastChange, students? }] }
   account: (id) => unwrap(api.get(`/admin/features/account/${id}`)),
-  // { changed, before, after, state }
+  // { changed, before, after, state }; enabled true / false = forced on / off
   set: (id, flag, enabled, reason) => unwrap(api.put(`/admin/features/account/${id}/${flag}`, { enabled, reason })),
+  // state "on" (forced on), "off" (forced off) or "default" (reset to default: the account's row removed)
+  setState: (id, flag, state, reason) => unwrap(api.put(`/admin/features/account/${id}/${flag}`, { state, reason })),
+  // the default for every student: { flag, role, changed, before, after }
+  setDefault: (flag, enabled, reason) => unwrap(api.put(`/admin/features/defaults/${flag}`, { role: "student", enabled, reason })),
   // { changed: [ids], unchanged: [ids], skipped: [{ id, why }] }; at most 500 ids per call
   bulk: ({ flag, enabled, accountIds, reason }) => unwrap(api.post("/admin/features/bulk", { flag, enabled, accountIds, reason })),
   // { flag, label, killed, railwayIdCount, total, offset, limit, accounts: [...] }
