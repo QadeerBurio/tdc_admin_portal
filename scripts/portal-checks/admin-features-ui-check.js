@@ -1,11 +1,14 @@
 // node --experimental-websocket admin-features-ui-check.js <buildDir>    (or: node scripts/portal-checks/run.js)
 // Admin features per account (server: /api/admin/features), against a mock API that keeps state:
-// - a brand profile's "features" tab: one switch per feature for the role; a Railway-listed feature is locked
-//   ("on from Railway list"); a change asks for a reason; a server error leaves the switch as it was; after a save
-//   the switch is on and a one-sided pilot (no student has it) is flagged, then not once students have it;
+// - a brand profile's "features" tab: three states per feature (default (on/off), forced on, forced off); a
+//   Railway-listed feature shows "default (on)" and isn't locked (only the kill switch locks); a change asks for a
+//   reason; a server error leaves the state as it was; after a save it's forced on and a one-sided pilot (no student
+//   has it) is flagged, then not once students have it;
 // - the students list: "Features…" on the selection (university filter + select all filtered); over 500 accounts the
 //   number must be typed; sent in batches of 500; the result lists changed / already / skipped; 2 accounts: no typing;
-// - the features page (oversight menu): a tab per feature, the accounts with it, Remove with a reason;
+// - the features page (oversight menu): a tab per feature, the accounts forced on / off, reset to default with a
+//   reason; the "default for all students" switch with a reason and a confirm ("turn on for every student");
+// - a student's features tab: default (on) from the student default, force off, reset to default; kill switch locked;
 // - axe-core WCAG 2 A / AA on the features tab, the bulk dialog and the features page; no console errors.
 const http = require("http");
 const fs = require("fs");
@@ -30,20 +33,28 @@ const FLAGS = [
 ];
 const railway = { surplusBoxes: new Set([BRAND._id]) }; // the brand is in FLAG_SURPLUS_BOXES on Railway
 const killed = { careerTimeline: true };
-const access = { loyaltyV2: new Map(), surplusBoxes: new Map(), careerTimeline: new Map() };
-const calls = { put: [], bulk: [] };
+const access = { loyaltyV2: new Map(), surplusBoxes: new Map(), careerTimeline: new Map() }; // id → { enabled, reason, setAt }
+const defaults = { loyaltyV2: null, surplusBoxes: null, careerTimeline: null }; // the student default: true / false / null
+const defaultMeta = {};
+const calls = { put: [], bulk: [], defaults: [] };
+const forcedOn = (flag) => [...access[flag].values()].filter((r) => r.enabled).length;
+const forcedOff = (flag) => [...access[flag].values()].filter((r) => !r.enabled).length;
 let failNextPut = false;
 
 const flagView = (id, f) => {
   const u = users.get(id);
-  const granted = access[f.flag].has(id);
   const fromRailway = !!railway[f.flag]?.has(id);
   const row = access[f.flag].get(id) || null;
-  const v = { ...f, killed: !!killed[f.flag], fromRailway, granted, effective: !killed[f.flag] && (granted || fromRailway),
-    lastChange: row ? { enabled: true, reason: row.reason, setAt: row.setAt, setBy: { id: "a", name: "Ayesha Admin" } } : null };
+  const forced = row ? (row.enabled ? "on" : "off") : null;
+  const defaultForRole = u.role === "student" ? defaults[f.flag] : null;
+  const k = !!killed[f.flag];
+  const source = k ? "kill" : forced ? "account" : defaultForRole !== null ? "default" : "railway";
+  const effective = k ? false : forced ? forced === "on" : defaultForRole !== null ? defaultForRole : fromRailway;
+  const v = { ...f, killed: k, forced, defaultForRole, fromRailway, granted: forced === "on", source, effective,
+    lastChange: row ? { enabled: row.enabled, reason: row.reason, setAt: row.setAt, setBy: { id: "a", name: "Ayesha Admin" } } : null };
   if (u.role === "brand" && (f.flag === "loyaltyV2" || f.flag === "surplusBoxes")) {
-    const studentsWith = [...access[f.flag].keys()].filter((x) => users.get(x)?.role === "student").length;
-    v.students = { killed: false, allStudentsFromRailway: false, withAdminAccess: studentsWith, fromRailwayList: 0, usedThisBrand: 3, usedThisBrandWithIt: Math.min(3, studentsWith) };
+    const studentsWith = [...access[f.flag].entries()].filter(([x, r]) => r.enabled && users.get(x)?.role === "student").length;
+    v.students = { killed: false, allStudentsFromRailway: false, allStudentsFromDefault: defaults[f.flag] === true, withAdminAccess: studentsWith, fromRailwayList: 0, usedThisBrand: 3, usedThisBrandWithIt: Math.min(3, studentsWith) };
   }
   return v;
 };
@@ -55,7 +66,15 @@ function handle(method, url, body) {
   if (method === "GET" && p === "/api/admin/users/student") return students;
   if (method === "GET" && p === "/api/admin/users/brand") return [BRAND];
   if (method === "GET" && (m = p.match(/^\/api\/admin\/users\/details\/(\w+)$/))) return users.get(m[1]) || null;
-  if (method === "GET" && p === "/api/admin/features/flags") return ok(FLAGS.map((f) => ({ ...f, killed: !!killed[f.flag], railway: railway[f.flag] ? `${railway[f.flag].size} id` : "not set, using off", railwayIdCount: railway[f.flag]?.size || 0, adminAccessCount: access[f.flag].size })));
+  if (method === "GET" && p === "/api/admin/features/flags") return ok(FLAGS.map((f) => ({ ...f, killed: !!killed[f.flag], railway: railway[f.flag] ? `${railway[f.flag].size} id` : "not set, using off", railwayIdCount: railway[f.flag]?.size || 0, adminAccessCount: forcedOn(f.flag), forcedOffCount: forcedOff(f.flag),
+    studentDefaultable: true, studentDefault: { enabled: defaults[f.flag], ...(defaultMeta[f.flag] || { reason: null, setAt: null, setBy: null }) } })));
+  if (method === "PUT" && (m = p.match(/^\/api\/admin\/features\/defaults\/(\w+)$/))) {
+    calls.defaults.push({ flag: m[1], ...body });
+    const before = defaults[m[1]];
+    defaults[m[1]] = body.enabled;
+    defaultMeta[m[1]] = { reason: body.reason, setAt: new Date().toISOString(), setBy: { id: "a", name: "Ayesha Admin" } };
+    return ok({ flag: m[1], role: "student", changed: before !== body.enabled, before, after: body.enabled });
+  }
   if (method === "GET" && (m = p.match(/^\/api\/admin\/features\/account\/(\w+)$/))) {
     const u = users.get(m[1]);
     return ok({ account: { id: u._id, role: u.role, name: u.brandName || u.name }, flags: FLAGS.filter((f) => f.roles.includes(u.role)).map((f) => flagView(u._id, f)) });
@@ -63,9 +82,12 @@ function handle(method, url, body) {
   if (method === "PUT" && (m = p.match(/^\/api\/admin\/features\/account\/(\w+)\/(\w+)$/))) {
     calls.put.push({ id: m[1], flag: m[2], ...body });
     if (failNextPut) { failNextPut = false; return fail(500, "SERVER_ERROR", "Something went wrong"); }
-    const before = access[m[2]].has(m[1]);
-    if (body.enabled) access[m[2]].set(m[1], { reason: body.reason, setAt: new Date().toISOString() }); else access[m[2]].delete(m[1]);
-    return ok({ changed: before !== body.enabled, before, after: body.enabled, state: {} });
+    const st = body.state || (body.enabled ? "on" : "off");
+    const row = access[m[2]].get(m[1]);
+    const before = row ? row.enabled : null;
+    const after = st === "default" ? null : st === "on";
+    if (after === null) access[m[2]].delete(m[1]); else access[m[2]].set(m[1], { enabled: after, reason: body.reason, setAt: new Date().toISOString() });
+    return ok({ changed: before !== after, before, after, state: {} });
   }
   if (method === "POST" && p === "/api/admin/features/bulk") {
     calls.bulk.push({ ...body, n: body.accountIds.length });
@@ -74,19 +96,19 @@ function handle(method, url, body) {
       const u = users.get(id);
       if (!u) { out.skipped.push({ id, why: "not found" }); continue; }
       if (id === students[0]._id) { out.skipped.push({ id, why: "wrong role (traveler)" }); continue; } // pretend
-      const had = access[body.flag].has(id);
+      const had = access[body.flag].get(id)?.enabled === true;
       if (had === body.enabled) { out.unchanged.push(id); continue; }
-      if (body.enabled) access[body.flag].set(id, { reason: body.reason, setAt: new Date().toISOString() }); else access[body.flag].delete(id);
+      access[body.flag].set(id, { enabled: body.enabled, reason: body.reason, setAt: new Date().toISOString() });
       out.changed.push(id);
     }
     return ok(out);
   }
   if (method === "GET" && (m = p.match(/^\/api\/admin\/features\/flag\/(\w+)$/))) {
     const q = new URLSearchParams(qs || "");
-    const all = [...access[m[1]].entries()].reverse().map(([id, r]) => { const u = users.get(id); return { id, name: u.brandName || u.name, role: u.role, university: u.university?.name || null, fromRailway: !!railway[m[1]]?.has(id), setBy: { id: "a", name: "Ayesha Admin" }, reason: r.reason, setAt: r.setAt }; });
+    const all = [...access[m[1]].entries()].reverse().map(([id, r]) => { const u = users.get(id); return { id, name: u.brandName || u.name, role: u.role, university: u.university?.name || null, fromRailway: !!railway[m[1]]?.has(id), forced: r.enabled ? "on" : "off", setBy: { id: "a", name: "Ayesha Admin" }, reason: r.reason, setAt: r.setAt }; });
     const off = Number(q.get("offset") || 0), lim = Number(q.get("limit") || 50);
     const f = FLAGS.find((x) => x.flag === m[1]);
-    return ok({ ...f, killed: !!killed[m[1]], railwayIdCount: railway[m[1]]?.size || 0, total: all.length, offset: off, limit: lim, accounts: all.slice(off, off + lim) });
+    return ok({ ...f, killed: !!killed[m[1]], railwayIdCount: railway[m[1]]?.size || 0, studentDefault: defaults[m[1]], total: all.length, offset: off, limit: lim, accounts: all.slice(off, off + lim) });
   }
   return undefined;
 }
@@ -135,7 +157,9 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   const click = (re, sel = "button, a") => pg.evaluate(`(() => { const e = [...document.querySelectorAll(${JSON.stringify(sel)})].find((x) => ${re}.test(x.innerText.trim()) && !x.disabled); if (e) e.click(); return !!e; })()`);
   const btn = (re) => pg.evaluate(`(() => { const e = [...document.querySelectorAll("button")].find((x) => ${re}.test(x.innerText.trim())); return e ? { found: true, disabled: e.disabled } : { found: false }; })()`);
   const text = () => pg.evaluate(`document.body.innerText`);
-  const sw = (flag) => pg.evaluate(`(() => { const e = document.querySelector('li[data-flag="${flag}"] [role=switch]'); return e ? { checked: e.getAttribute("aria-checked") === "true", disabled: e.disabled, label: e.getAttribute("aria-label") } : null; })()`);
+  // a feature's row on a features tab: the checked state, whether it's locked, the pill and the default label
+  const sw = (flag) => pg.evaluate(`(() => { const li = document.querySelector('li[data-flag="${flag}"]'); if (!li) return null; const r = li.querySelector("input[type=radio]:checked"); const fsd = li.querySelector("fieldset"); return { mode: r ? r.value : null, disabled: !!fsd?.disabled, pill: li.querySelector(".k-pill, [class*=pill]")?.innerText || "", defaultLabel: li.querySelector('label[data-state="default"]')?.innerText.trim() || "", text: li.innerText }; })()`);
+  const pick = (flag, label) => pg.evaluate(`(() => { const e = document.querySelector('li[data-flag="${flag}"] input[aria-label="${label}"]'); if (!e) return false; e.click(); return true; })()`);
   const type = (sel, value) => pg.evaluate(`(() => { const el = document.querySelector(${JSON.stringify(sel)}); if (!el) return false; const proto = el.tagName === "TEXTAREA" ? HTMLTextAreaElement.prototype : HTMLInputElement.prototype; Object.getOwnPropertyDescriptor(proto, "value").set.call(el, ${JSON.stringify(value)}); el.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
   const axe = async (label) => {
     await pg.evaluate(AXE + "; true");
@@ -151,32 +175,32 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   let t = await text();
   check("brand: Loyalty and Surprise Box, no career flag", t.includes("Loyalty") && t.includes("Surprise Box") && !t.includes("Hiring timeline"));
   let s = await sw("surplusBoxes");
-  check("Surprise Box: on from Railway list, locked", s && s.checked && s.disabled && /on from Railway list/.test(s.label), JSON.stringify(s));
-  check("…with the hint to change the value on Railway", t.includes("To switch it off, change that value on Railway"));
+  check("Surprise Box (brand on the Railway list): 'default (on)', not locked (only the kill switch locks)", s && s.mode === "default" && !s.disabled && s.defaultLabel === "default (on)" && /on: default/.test(s.text), JSON.stringify(s));
+  check("…the default's source: Railway", /Default here: on, from Railway/.test(s.text));
   s = await sw("loyaltyV2");
-  check("Loyalty: off, can be switched", s && !s.checked && !s.disabled, JSON.stringify(s));
+  check("Loyalty: 'default (off)', three choices, not locked", s && s.mode === "default" && !s.disabled && s.defaultLabel === "default (off)" && /forced on/.test(s.text) && /forced off/.test(s.text), JSON.stringify(s));
   await axe("brand features tab");
 
-  await pg.evaluate(`document.querySelector('li[data-flag="loyaltyV2"] [role=switch]').click(); true`);
+  await pick("loyaltyV2", "Loyalty: forced on");
   await sleep(500);
-  check("switching asks for a reason (dialog), confirm disabled without one", (await text()).includes("turn on Loyalty") && (await btn(/^turn on$/i)).disabled === true);
+  check("choosing 'forced on' asks for a reason (dialog), confirm disabled without one", (await text()).includes("force on: Loyalty") && (await btn(/^force on$/i)).disabled === true);
   await axe("reason dialog");
   failNextPut = true;
   await type("#feature-reason", "fail this one");
   await sleep(200);
-  await click(/^turn on$/i);
+  await click(/^force on$/i);
   await sleep(1000);
   t = await text();
-  check("server error: shown in the dialog, the switch stays off", /Something went wrong/.test(t) && !(await sw("loyaltyV2")).checked);
+  check("server error: shown in the dialog, the state stays default", /Something went wrong/.test(t) && (await sw("loyaltyV2")).mode === "default");
   await type("#feature-reason", "Alpha Cafe loyalty pilot");
   await sleep(200);
-  await click(/^turn on$/i);
+  await click(/^force on$/i);
   await sleep(1500);
   const lastPut = calls.put[calls.put.length - 1];
-  check("PUT sent: enabled true, the reason", lastPut && lastPut.id === BRAND._id && lastPut.flag === "loyaltyV2" && lastPut.enabled === true && lastPut.reason === "Alpha Cafe loyalty pilot", JSON.stringify(lastPut));
+  check("PUT sent: state on, the reason", lastPut && lastPut.id === BRAND._id && lastPut.flag === "loyaltyV2" && lastPut.state === "on" && lastPut.reason === "Alpha Cafe loyalty pilot", JSON.stringify(lastPut));
   s = await sw("loyaltyV2");
   t = await text();
-  check("after the save: Loyalty on, the dialog gone, last change shown", s.checked && !(await pg.evaluate(`!!document.getElementById("feature-reason")`)) && t.includes("turned on by Ayesha Admin") && t.includes("Alpha Cafe loyalty pilot"));
+  check("after the save: Loyalty forced on, the dialog gone, last change shown, reset offered", s.mode === "on" && /on: forced on/.test(s.text) && !(await pg.evaluate(`!!document.getElementById("feature-reason")`)) && t.includes("forced on by Ayesha Admin") && t.includes("Alpha Cafe loyalty pilot") && /reset to default/.test(s.text));
   check("one-sided pilot flagged: no student has Loyalty", t.includes("one-sided pilot") && /No student has Loyalty yet/.test(t));
   const blk = await pg.evaluate(`document.querySelector('[data-testid="students-loyaltyV2"]')?.innerText || ""`);
   check("…students block: 0 with admin access, 0 from Railway; 0 of 3 who used the brand", /0 with admin access, 0 from the Railway list/.test(blk) && /0 of the 3 students who used this brand/.test(blk), blk);
@@ -248,7 +272,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await sleep(1500);
   t = await text();
   const blk2 = await pg.evaluate(`document.querySelector('[data-testid="students-loyaltyV2"]')?.innerText || ""`);
-  const nStudents = [...access.loyaltyV2.keys()].filter((x) => users.get(x)?.role === "student").length;
+  const nStudents = [...access.loyaltyV2.entries()].filter(([x, r]) => r.enabled && users.get(x)?.role === "student").length;
   const blkSurplus = await pg.evaluate(`document.querySelector('[data-testid="students-surplusBoxes"]')?.innerText || ""`);
   check(`Loyalty: no one-sided warning; ${nStudents} students with admin access`, !blk2.includes("one-sided pilot") && blk2.includes(`${nStudents} with admin access`), blk2);
   check("Surprise Box (on from Railway, no student has it): still flagged one-sided", blkSurplus.includes("one-sided pilot"), blkSurplus);
@@ -274,17 +298,70 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await click(/^load more/i);
   await sleep(1200);
   check("load more: 100 rows", (await rowsNow()) === 100, await rowsNow());
-  // remove the newest account (first row)
-  const victim = await pg.evaluate(`(() => { const e = document.querySelector('tbody button[aria-label^="remove Loyalty for "]'); if (!e) return null; const name = e.getAttribute("aria-label").replace("remove Loyalty for ", ""); e.click(); return name; })()`);
-  check("remove for one account asks for a reason", !!victim && (await sleep(500), await pg.evaluate(`!!document.getElementById("feature-reason")`)), victim);
+  check("each row says forced on", await pg.evaluate(`[...document.querySelectorAll("tbody tr")].slice(0, 5).every((tr) => /forced on/.test(tr.innerText))`));
+  // reset the newest account (first row) to default
+  const victim = await pg.evaluate(`(() => { const e = document.querySelector('tbody button[aria-label^="reset Loyalty to default for "]'); if (!e) return null; const name = e.getAttribute("aria-label").replace("reset Loyalty to default for ", ""); e.click(); return name; })()`);
+  check("reset to default for one account asks for a reason", !!victim && (await sleep(500), await pg.evaluate(`!!document.getElementById("feature-reason")`)) && /the default decides again/.test(await text()), victim);
   await type("#feature-reason", "pilot over");
   await sleep(200);
-  await click(/^remove$/i, ".k-modal button");
+  await click(/^reset to default$/i, ".k-modal button");
   await sleep(1500);
   const rem = calls.put[calls.put.length - 1];
   const victimId = [...users.values()].find((u) => (u.brandName || u.name) === victim)?._id;
   const names = await pg.evaluate(`[...document.querySelectorAll("tbody tr td:first-child")].map((x) => x.innerText.trim())`);
-  check("PUT enabled false with the reason; that account is gone from the list", rem.id === victimId && rem.enabled === false && rem.reason === "pilot over" && !names.includes(victim), JSON.stringify(rem));
+  check("PUT state default with the reason; that account is gone from the list", rem.id === victimId && rem.state === "default" && rem.reason === "pilot over" && !names.includes(victim), JSON.stringify(rem));
+
+  console.log("── the default for all students (features page)");
+  const dsw = () => pg.evaluate(`(() => { const e = document.querySelector('[data-testid="student-default"] [role=switch]'); return e ? { checked: e.getAttribute("aria-checked") === "true", label: e.getAttribute("aria-label"), text: document.querySelector('[data-testid="student-default"]').innerText } : null; })()`);
+  let d = await dsw();
+  check("Loyalty: 'default for all students' switch, not set (Railway decides)", d && !d.checked && /not set/.test(d.label) && /not set: Railway decides/.test(d.text) && /Employers and brands aren't affected/.test(d.text), JSON.stringify(d));
+  await pg.evaluate(`document.querySelector('[data-testid="student-default"] [role=switch]').click(); true`);
+  await sleep(500);
+  t = await text();
+  check("a confirm step with a reason: 'turn on Loyalty for every student', disabled without a reason", t.includes("turn on Loyalty for every student") && /except students an admin forced off/.test(t) && (await btn(/^turn on for every student$/i)).disabled === true);
+  await axe("default for all students: confirm dialog");
+  await type("#feature-reason", "launch loyalty for everyone");
+  await sleep(200);
+  await click(/^turn on for every student$/i);
+  await sleep(1500);
+  const dput = calls.defaults[calls.defaults.length - 1];
+  d = await dsw();
+  check("PUT /defaults/loyaltyV2: student, on, the reason; the switch on, who and why shown", dput && dput.flag === "loyaltyV2" && dput.role === "student" && dput.enabled === true && dput.reason === "launch loyalty for everyone" && d.checked && /set on by Ayesha Admin/.test(d.text) && /launch loyalty for everyone/.test(d.text), JSON.stringify(dput));
+  check("Hiring timeline (kill switch): the default switch is locked", (await click(/^Hiring timeline/i, "[role=tab]")) && (await sleep(1200), await pg.evaluate(`document.querySelector('[data-testid="student-default"] [role=switch]')?.disabled === true`)));
+  await click(/^Loyalty/i, "[role=tab]");
+  await sleep(800);
+
+  console.log("── a student's features tab: three states");
+  const st = students.find((x) => !access.loyaltyV2.has(x._id));
+  await go(pg, `http://127.0.0.1:${WEB}/admin/users/student/${st._id}`);
+  await sleep(3500);
+  check("a features tab on the student", await click(/^features$/i, "[role=tab]"));
+  await sleep(1500);
+  s = await sw("loyaltyV2");
+  check("Loyalty: 'default (on)' from the default for all students", s && s.mode === "default" && s.defaultLabel === "default (on)" && /on: default/.test(s.text) && /from the default for all students/.test(s.text), JSON.stringify(s));
+  s = await sw("careerTimeline");
+  check("Hiring timeline: locked by the kill switch, said so", s && s.disabled && /kill switch/.test(s.text), JSON.stringify(s));
+  await axe("student features tab");
+  await pick("loyaltyV2", "Loyalty: forced off");
+  await sleep(500);
+  t = await text();
+  check("force off: the dialog says it beats the default and the Railway list", t.includes("force off: Loyalty") && /off even if the default for all students or the Railway list turns it on/.test(t));
+  await type("#feature-reason", "abuse report 123");
+  await sleep(200);
+  await click(/^force off$/i);
+  await sleep(1500);
+  let put = calls.put[calls.put.length - 1];
+  s = await sw("loyaltyV2");
+  check("PUT state off; now 'off: forced off' with reset to default", put.id === st._id && put.state === "off" && s.mode === "off" && /off: forced off/.test(s.text) && /reset to default/.test(s.text), JSON.stringify(put));
+  await pg.evaluate(`document.querySelector('li[data-flag="loyaltyV2"] button[aria-label="reset Loyalty to default"]').click(); true`);
+  await sleep(500);
+  await type("#feature-reason", "report resolved");
+  await sleep(200);
+  await click(/^reset to default$/i, ".k-modal button");
+  await sleep(1500);
+  put = calls.put[calls.put.length - 1];
+  s = await sw("loyaltyV2");
+  check("reset to default: PUT state default; back to 'default (on)'", put.state === "default" && put.reason === "report resolved" && s.mode === "default" && /on: default/.test(s.text), JSON.stringify(put));
 
   errs.forEach((e) => console.log("    " + e));
   check("no page errors, no console errors", errs.length === 0);
