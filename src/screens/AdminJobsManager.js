@@ -8,6 +8,8 @@ import Ico from "../portal/Ico";
 import { PageHeader, PageLoading, Button, IconButton, Field, Input, Textarea, Select, Checkbox, SearchInput, Segmented, StatCard, Tabs, Modal, EmptyState, Pill, Card, Facts, FileUpload, toast, confirmDialog } from "../portal/kit";
 import "./styles/AdminJobsManager.css";
 import { API_ORIGIN } from "../config/api";
+import SkillTagInput from "../portal/SkillTagInput"; // skills as tags: at most 15, each up to 40 characters
+import { tagsOf } from "../portal/skillTags";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -140,8 +142,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
       });
 
       if (res.data && res.data.success) {
-        const { created, updated, skipped } = res.data;
-        setCsvResult({ created, updated, skipped });
+        const { created, updated, skipped, rejected = [] } = res.data;
+        setCsvResult({ created, updated, skipped, rejected });
         fetchJobs();
         fetchStats();
       } else {
@@ -217,7 +219,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
       fetchJobs();
       fetchStats();
     } catch (err) {
-      toast(err.response?.data?.error || "Failed to create job");
+      toast(err.response?.data?.error || "Failed to create job", "bad");
     }
   };
 
@@ -230,7 +232,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
       resetForm();
       fetchJobs();
     } catch (err) {
-      toast(err.response?.data?.error || "Failed to update job");
+      toast(err.response?.data?.error || "Failed to update job", "bad");
     }
   };
 
@@ -400,6 +402,24 @@ const AdminJobsManager = ({ userRole, userName }) => {
   ];
 
   const isAdmin = userRole === "admin";
+  // jobs whose stored skills look broken (over 40 characters, unbalanced brackets, more than 15): read-only, fix by hand
+  const [skillsReport, setSkillsReport] = useState(null); // null closed, { loading } or the report
+  const openSkillsReport = async () => {
+    setSkillsReport({ loading: true });
+    try {
+      const res = await axios.get(`${API_URL}/admin/skills-report`, config);
+      setSkillsReport(res.data);
+    } catch (err) {
+      setSkillsReport(null);
+      toast(err.response?.data?.message || "Couldn't load the skills report", "bad");
+    }
+  };
+  const editFromReport = (id) => {
+    const j = (jobs || []).find((x) => String(x._id) === String(id));
+    if (!j) { toast("That job isn't in the list below: search for it, then edit", "bad"); return; }
+    setSkillsReport(null);
+    handleEditJob(j);
+  };
   const empTerm = empSearch.toLowerCase().trim();
   const empJobs = jobs.filter((j) =>
     (empStatus === "all" || (empStatus === "active" ? j.active : !j.active)) &&
@@ -458,6 +478,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
           ? "all jobs and internships students see in the career hub."
           : `Welcome back, ${userName}! Manage your job postings`}
         actions={<>
+          {userRole === "admin" && <Button variant="secondary" icon="search" onClick={openSkillsReport} aria-label="skills to fix">{isMobile ? "Skills" : "Skills to fix"}</Button>}
           <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog}>{isMobile ? "CSV" : "Upload Jobs CSV"}</Button>
           <Button icon="plus" onClick={openNewJob}>{isMobile ? "New" : "Post New Job"}</Button>
         </>}
@@ -856,7 +877,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
               {sectionHead("checkCircle", "Requirements & Responsibilities", "Define what candidates need and what they'll do")}
               <div className="jm-grid">
                 <Field label="Required Skills" htmlFor="jm-skills">
-                  <Input id="jm-skills" type="text" placeholder="React, Node.js, Python, AWS" value={safeJoin(formData.skills, ', ')} onChange={(e) => set({ skills: e.target.value.split(',').map(s => s.trim()).filter(s => s) })} />
+                  <SkillTagInput id="jm-skills" value={tagsOf(formData.skills)} onChange={(skills) => set({ skills })} />
                 </Field>
                 <Field label="Key Requirements" htmlFor="jm-reqs">
                   <Textarea id="jm-reqs" rows={isMobile ? "3" : "4"} placeholder={"• Bachelor's degree in Computer Science\n• 5+ years of experience"} value={safeJoin(formData.requirements, '\n')} onChange={(e) => set({ requirements: e.target.value.split('\n').filter(r => r.trim()) })} />
@@ -941,7 +962,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             inputRef={csvFileInputRef}
             file={csvFile}
             label="Click to select or drop .csv / .xlsx file"
-            hint="Expected columns: Company, Job Title, Department, Job Type, Target Audience, Application Link, Location"
+            hint="Expected columns: Company, Job Title, Department, Job Type, Target Audience, Application Link, Location, and optionally Skills (separated by commas)"
           />
           {csvUploading && <PageLoading label="Processing & importing jobs..." minHeight={110} />}
           {csvResult && (
@@ -950,9 +971,54 @@ const AdminJobsManager = ({ userRole, userName }) => {
               {csvResult.skipped > 0 && <div>{csvResult.skipped} duplicates skipped</div>}
             </div>
           )}
+          {csvResult?.rejected?.length > 0 && (
+            <div className="k-note bad" data-testid="csv-rejected">
+              <b>{csvResult.rejected.length} row{csvResult.rejected.length === 1 ? "" : "s"} not saved because of their skills (at most 15, each up to 40 characters). Fix them in the file and upload again:</b>
+              <ul style={{ margin: "6px 0 0", paddingLeft: 18 }}>
+                {csvResult.rejected.map((r) => <li key={r.row}>row {r.row}{r.title ? ` (${r.title}${r.company ? `, ${r.company}` : ""})` : ""}: {r.reason}</li>)}
+              </ul>
+            </div>
+          )}
           {csvError && <div className="k-note bad">{csvError}</div>}
         </form>
       </Modal>
+
+      {skillsReport && (
+        <Modal
+          open
+          onClose={() => setSkillsReport(null)}
+          icon="search"
+          tone="yellow"
+          size="lg"
+          title="skills to fix"
+          sub="jobs whose skills look broken: over 40 characters, unbalanced brackets, or more than 15 skills. read-only: open a job to fix it by hand."
+          footer={<Button variant="secondary" onClick={() => setSkillsReport(null)}>close</Button>}
+        >
+          {skillsReport.loading ? <PageLoading label="checking every job's skills..." minHeight={110} /> : (
+            <div data-testid="skills-report">
+              <p className="k-hint" style={{ marginTop: 0 }}>{skillsReport.jobs.length} of {skillsReport.checked} jobs need a look.</p>
+              {skillsReport.jobs.length === 0 ? <div className="k-note ok">every job's skills look fine.</div> : (
+                <ul style={{ listStyle: "none", margin: 0, padding: 0 }}>
+                  {skillsReport.jobs.map((j) => (
+                    <li key={j.id} style={{ padding: "10px 0", borderTop: "1px solid var(--line-soft)" }}>
+                      <div className="k-row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
+                        <strong>{j.title || "untitled"}</strong>
+                        {j.companyName && <span className="k-hint">{j.companyName}</span>}
+                        {j.archived ? <Pill tone="sand">deleted</Pill> : j.active ? <Pill tone="green">live</Pill> : <Pill tone="sand">off</Pill>}
+                        <span style={{ flex: 1 }} />
+                        {!j.archived && <Button size="sm" variant="secondary" onClick={() => editFromReport(j.id)} aria-label={`edit ${j.title}`}>edit</Button>}
+                      </div>
+                      <ul style={{ margin: "4px 0 0", paddingLeft: 18, fontSize: 13.5 }}>
+                        {j.problems.map((p, i) => <li key={i}>{p.skill ? <>“{p.skill.length > 90 ? `${p.skill.slice(0, 87)}...` : p.skill}”: </> : null}{p.reasons.join(", ")}</li>)}
+                      </ul>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          )}
+        </Modal>
+      )}
     </div>
   );
 };
