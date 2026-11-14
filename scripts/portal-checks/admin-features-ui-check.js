@@ -77,7 +77,10 @@ function handle(method, url, body) {
   }
   if (method === "GET" && (m = p.match(/^\/api\/admin\/features\/account\/(\w+)$/))) {
     const u = users.get(m[1]);
-    return ok({ account: { id: u._id, role: u.role, name: u.brandName || u.name }, flags: FLAGS.filter((f) => f.roles.includes(u.role)).map((f) => flagView(u._id, f)) });
+    const fl = FLAGS.filter((f) => f.roles.includes(u.role)).map((f) => flagView(u._id, f));
+    // what the app sees: the flags/me answer for this account (here: each flag's effective state)
+    const appView = { flags: { metaEvents: false, ...Object.fromEntries(FLAGS.map((f) => [f.flag, !!(fl.find((x) => x.flag === f.flag) || {}).effective])) }, at: new Date().toISOString(), loaded: true };
+    return ok({ account: { id: u._id, role: u.role, roleStored: true, name: u.brandName || u.name }, flags: fl, appView });
   }
   if (method === "PUT" && (m = p.match(/^\/api\/admin\/features\/account\/(\w+)\/(\w+)$/))) {
     calls.put.push({ id: m[1], flag: m[2], ...body });
@@ -341,7 +344,9 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   check("Loyalty: 'default (on)' from the default for all students", s && s.mode === "default" && s.defaultLabel === "default (on)" && /on: default/.test(s.text) && /from the default for all students/.test(s.text), JSON.stringify(s));
   s = await sw("careerTimeline");
   check("Hiring timeline: locked by the kill switch, said so", s && s.disabled && /kill switch/.test(s.text), JSON.stringify(s));
-  await axe("student features tab");
+  await axe("student features tab (with what the app sees)");
+  const appSees = await pg.evaluate(`(() => { const sec = document.querySelector('[data-testid="app-view"]'); if (!sec) return null; const row = (k) => sec.querySelector('[data-flag="' + k + '"]')?.textContent || ""; return { title: sec.querySelector("h3")?.textContent || "", loyalty: row("loyaltyV2"), timeline: row("careerTimeline"), btn: !!sec.querySelector('button[aria-label="check what the app sees again"]'), raw: !!sec.querySelector("details pre") }; })()`);
+  check("student features tab: 'what the app sees' shows the app's answer (Loyalty on, Hiring timeline off) with 'check again' and the raw answer", appSees && /what the app sees/.test(appSees.title) && /on in the app/.test(appSees.loyalty) && /off in the app/.test(appSees.timeline) && appSees.btn && appSees.raw, JSON.stringify(appSees));
   await pick("loyaltyV2", "Loyalty: forced off");
   await sleep(500);
   t = await text();
