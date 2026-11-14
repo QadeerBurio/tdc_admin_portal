@@ -457,7 +457,7 @@ export default function DropsSchedule() {
   return (
     <div className="tdcp k-page" data-screen="drops">
       <PageHeader
-        title="drops schedule"
+        title="daily drops"
         sub="one question a day at the top of the app's home screen."
         actions={<Button variant="secondary" icon="refresh" onClick={load}>refresh</Button>}
       />

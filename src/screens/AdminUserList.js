@@ -27,14 +27,15 @@ const ROLE_ICON = { student: "grad", brand: "store", employee: "briefcase", trav
 const ROLE_TONE = { student: "blue", brand: "purple", employee: "green", traveler: "ink", admin: "red" };
 const APP_TONE = { pending: "orange", reviewed: "blue", shortlisted: "green", interview: "purple", rejected: "red", hired: "green" };
 
-export default function AdminUserList({ role, title }) {
+// heading: the page title (default "all students" etc.); initialStatus: "pending" opens on the accounts waiting for approval
+export default function AdminUserList({ role, title, heading = "", initialStatus = "all" }) {
   const [users, setUsers] = useState([]);
   // employers: is their company verified for First Hire Free? (null when that pilot isn't set up)
   const [companyStatus, setCompanyStatus] = useState(null);
   useEffect(() => { if (role === "employee") trialApi.companyStatus().then(setCompanyStatus); }, [role]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState("");
-  const [filterStatus, setFilterStatus] = useState("all");
+  const [filterStatus, setFilterStatus] = useState(initialStatus);
   const [filterReferral, setFilterReferral] = useState("all");
   const [filterUniversity, setFilterUniversity] = useState("all");
   // rows picked for "copy ids" (kept across pages and filters until cleared)
@@ -61,7 +62,7 @@ export default function AdminUserList({ role, title }) {
     stats: {}
   });
   const [loadingDetails, setLoadingDetails] = useState(false);
-  const [activeStatFilter, setActiveStatFilter] = useState(null);
+  const [activeStatFilter, setActiveStatFilter] = useState(initialStatus === "pending" ? "pending" : null);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isTablet, setIsTablet] = useState(window.innerWidth <= 1024);
 
@@ -628,7 +629,7 @@ export default function AdminUserList({ role, title }) {
   return (
     <div className="tdcp k-page aul" ref={pageWrapperRef} data-screen={`users-${role}`}>
       <PageHeader
-        title={BOARD[role]?.title || title}
+        title={heading || BOARD[role]?.title || title}
         sub={BOARD[role] ? BOARD[role].sub(loading ? null : users.length) : `all ${role} accounts.`}
         actions={<>
           <Button variant="secondary" icon="refresh" onClick={refreshUsers} loading={refreshing}>Refresh</Button>

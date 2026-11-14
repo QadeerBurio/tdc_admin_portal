@@ -117,7 +117,7 @@ http.createServer((q, s) => {
   setUp = true;
   const adm = await open(admin, "/admin");
   if (!A11Y) check("set up: 'hire disputes' in the admin menu", /hire disputes/.test(await menu(adm)));
-  await click(adm, /^hire disputes$/i);
+  await adm.evaluate(`document.querySelector('.tdcp-nav [data-page="hire_disputes"]')?.click(); true`); // by page id (the item shows a badge with the number open)
   await sleep(2000);
   if (A11Y) await audit(adm, "admin hire disputes: list");
   else expect("disputes list", await text(adm), ["hire disputes", "Data intern", "Bright Labs", "Sana Khan", "Hire Co", "I never started this job", "open", "Ops intern", "timeline switched off", "review"], ["@", "0300"]);

@@ -40,9 +40,6 @@ const BrandSurpriseBoxes = lazy(() => import("./screens/BrandSurpriseBoxes")); /
 // ── Admin ───────────────────────────────────────────────────────────────
 const AdminDashboard = lazy(() => import("./screens/AdminDashboard"));
 const CreateOfferAdmin = lazy(() => import("./screens/CreateOfferAdmin"));
-const AdminOffers = lazy(() => import("./screens/AdminOffers"));
-const AdminJobsManager = lazy(() => import("./screens/AdminJobsManager"));
-const ManageExchange = lazy(() => import("./screens/ManageExchange"));
 const ProgramApplication = lazy(() => import("./screens/ProgramApplication"));
 const StudentDossier = lazy(() => import("./screens/StudentDossier"));
 const AdminPackageScreen = lazy(() => import("./screens/Traveling"));
@@ -71,7 +68,6 @@ const EmployerCandidateProfile = lazy(() => import("./screens/CandidateProfile")
 const EmployerSettings = lazy(() => import("./screens/EmployerSettings"));
 const EventManagement = lazy(() => import("./screens/EventManagement"));
 const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
-const AllBrandsRevenue = lazy(() => import("./screens/AllBrandsRevenue"));
 
 // ── 🆕 Crew (Admin) ─────────────────────────────────────────────────────
 const CrewInbox = lazy(() => import("./screens/CrewInbox"));
@@ -128,16 +124,17 @@ export default function AppNavigator() {
         <Route path="/admin" element={<AdminDashboard />} />
         <Route path="/admin/users/:role/:id" element={<AdminDashboard />} />
         <Route path="/createofferadmin" element={<CreateOfferAdmin />} />
-        <Route path="/adminoffers" element={<AdminOffers />} />
-        <Route path="/adminjobsmanager" element={<AdminJobsManager />} />
-        <Route path="/adminexchangemanage" element={<ManageExchange />} />
+        {/* old admin URLs: the page inside the admin portal (its menu and sign-in check) */}
+        <Route path="/adminoffers" element={<Navigate to="/admin" replace state={{ page: "offers", tab: "all" }} />} />
+        <Route path="/adminjobsmanager" element={<Navigate to="/admin" replace state={{ page: "manage_jobs" }} />} />
+        <Route path="/adminexchangemanage" element={<Navigate to="/admin" replace state={{ page: "exchange_program" }} />} />
         <Route path="/program" element={<ProgramApplication />} />
         <Route path="/dossier" element={<StudentDossier />} />
         <Route path="/package" element={<AdminPackageScreen />} />
         <Route path="/cardmanager" element={<CardManager />} />
         <Route path="/booking" element={<AdminPackage />} />
         <Route path="/BrandApprovalScreen" element={<BrandApprovalScreen />} />
-        <Route path="/admin/brands-revenue" element={<AllBrandsRevenue />} />
+        <Route path="/admin/brands-revenue" element={<Navigate to="/admin" replace state={{ page: "all_brands_revenue" }} />} />
         <Route path="/eventmanagement" element={<EventManagement />} />
 
         {/* 🆕 Crew — standalone routes */}

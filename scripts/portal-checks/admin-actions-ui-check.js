@@ -76,7 +76,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
 
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
   await sleep(3000);
-  check("menu: 'admin actions' under oversight", (await pg.evaluate(`document.getElementById("root").innerText.toLowerCase()`)).includes("oversight") && (await click(/^admin actions$/i)));
+  check("menu: 'admin actions' under general", (await pg.evaluate(`document.querySelector('.tdcp-nav [data-group="general"] [data-page="admin_actions"]') !== null`)) && (await click(/^admin actions$/i)));
   await sleep(2000);
   let t = await text();
   check("rows: time, admin, action, target, changes, reason", ["Ayesha Admin", "Bilal Admin", "loyalty.program.update", "LoyaltyProgram", "adminMaxDiscountPct: null → 20", "too generous for the pilot", "status: open → decided", "decision: – → upheld"].every((w) => t.includes(w)), t.replace(/\n/g, " | ").slice(0, 300));
@@ -109,7 +109,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   available = false;
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
   await sleep(3000);
-  check("endpoint missing: no 'admin actions' item (and no empty 'oversight' section)", !(await pg.evaluate(`[...document.querySelectorAll("button, a")].some((x) => /^admin actions$/i.test(x.innerText.trim()))`)) && !(await pg.evaluate(`document.getElementById("root").innerText.toLowerCase().includes("oversight")`)));
+  check("endpoint missing: no 'admin actions' item", !(await pg.evaluate(`[...document.querySelectorAll("button, a")].some((x) => /^admin actions$/i.test(x.innerText.trim()))`)));
 
   errs.forEach((e) => console.log("    " + e));
   check("no page errors, no console errors", errs.length === 0);

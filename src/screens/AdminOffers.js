@@ -120,7 +120,7 @@ export default function AdminOffers() {
   return (
     <div className="tdcp k-page ao" data-screen="offers">
       <PageHeader
-        title="manage offers"
+        title="offers"
         sub={`every slider and offer in the app. ${items.length} total.`}
         actions={
           <Segmented

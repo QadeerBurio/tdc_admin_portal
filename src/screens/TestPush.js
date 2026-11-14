@@ -310,7 +310,7 @@ export default function PushCenter() {
   return (
     <div className="tdcp k-page tp" data-screen="push">
       <PageHeader
-        title="push center"
+        title="push test"
         sub="compose, test and send notifications. keep them fun, never pushy."
         actions={<Button variant="secondary" icon="refresh" onClick={loadUsers} loading={loadingUsers}>refresh</Button>}
       />

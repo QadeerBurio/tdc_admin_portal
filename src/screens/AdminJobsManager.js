@@ -473,7 +473,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
     <div className="tdcp k-page jm" data-screen="career">
       {isAdmin ? (
       <PageHeader
-        title={userRole === "admin" ? "career portal" : "My Job Postings"}
+        title={userRole === "admin" ? "jobs & internships" : "My Job Postings"}
         sub={userRole === "admin"
           ? "all jobs and internships students see in the career hub."
           : `Welcome back, ${userName}! Manage your job postings`}

@@ -7,15 +7,14 @@ import { engagementApi } from "../services/api";
 import "./styles/AdminDashboard.css";
 import "../portal/portal.css";
 import Ico from "../portal/Ico";
-import PortalNav, { pageLabel, ADMIN_MENU } from "../portal/PortalNav";
+import PortalNav, { pageLabel, ADMIN_MENU, ADMIN_PAGE_ALIASES } from "../portal/PortalNav";
 import { CountUp, useRouteFade } from "../portal/motion";
 import AdminUserProfile from "../portal/AdminUserProfile";
 import logoInk from "../portal/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
 
 // Sub-Components
-import CreateOfferAdmin from "./CreateOfferAdmin";
-import AdminOffers from "./AdminOffers";
+import AdminOffersTabs from "./AdminOffersTabs";
 import LoyaltyExceptions from "./LoyaltyExceptions";
 import HiringFunnel from "./HiringFunnel";
 import HireDisputes from "./HireDisputes";
@@ -67,6 +66,8 @@ const karachiDayKey = (d) =>
 const fmt = (n) => Number(n || 0).toLocaleString("en-US");
 // user list page for each role in a profile URL (/admin/users/:role/:id)
 const ROLE_PAGE = { student: "students", brand: "brands", employee: "employees", traveler: "travelers" };
+// a page id from before the menu was reorganised ("offer", "all offer") → [page, offers tab]
+const resolvePage = (id) => (ADMIN_PAGE_ALIASES[id] ? ADMIN_PAGE_ALIASES[id] : [id, null]);
 
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
@@ -74,7 +75,13 @@ export default function AdminDashboard() {
 
   const { role: profileRole, id: profileId } = useParams();
   const location = useLocation();
-  const [activePage, setActivePage] = useState(location.state?.page || ROLE_PAGE[profileRole] || "dashboard");
+  const [activePage, setActivePageRaw] = useState(() => resolvePage(location.state?.page || ROLE_PAGE[profileRole] || "dashboard")[0]);
+  const [offersTab, setOffersTab] = useState(() => resolvePage(location.state?.page)[1] || location.state?.tab || "all");
+  const setActivePage = useCallback((id) => {
+    const [page, tab] = resolvePage(id);
+    if (tab) setOffersTab(tab);
+    setActivePageRaw(page);
+  }, []);
   const mainRef = useRef(null);
   useRouteFade(mainRef, activePage);
   const [isFetching, setIsFetching] = useState(false);
@@ -175,6 +182,8 @@ export default function AdminDashboard() {
         travelers: Array.isArray(responses[5]) ? responses[5].length : 0,
         exchange: Array.isArray(responses[6]) ? responses[6].length : 0,
         packages: Array.isArray(responses[7]) ? responses[7].length : 0,
+        // accounts not approved yet ("student verifications"), from the list already loaded
+        pendingStudents: Array.isArray(responses[2]) ? responses[2].filter((u) => u && u.status !== "Verified").length : 0,
         pendingCards: responses[8]?.pending || 0,
         approvedCards: responses[8]?.approvedTotal || 0,
         bookings: responses[9]?.totalBookings || 0,
@@ -241,6 +250,19 @@ export default function AdminDashboard() {
     }
   }, [token]);
 
+  // menu badges: what's waiting, from the calls these pages already make (no new endpoint); null = unknown (hidden)
+  const [waiting, setWaiting] = useState({});
+  const countOf = (p, pick) => p.then((d) => pick(d)).catch(() => null);
+  useEffect(() => {
+    let live = true;
+    Promise.all([
+      countOf(trialApi.verifications("pending"), (d) => (Array.isArray(d) ? d.length : null)),
+      countOf(careerApi.adminDisputes(), (d) => (Array.isArray(d?.disputes) ? d.disputes.length : null)),
+      countOf(ratingsApi.adminReports("open"), (d) => (Array.isArray(d) ? d.length : null)),
+    ]).then(([company, disputes, reports]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports }); });
+    return () => { live = false; };
+  }, [activePage]); // refreshed when the admin moves between pages (after deciding one, the count drops)
+
   // Today's drop and its votes (read only)
   const [todayDrop, setTodayDrop] = useState(undefined);
   // "surprise boxes" shows only once the pilot is set up on the server (FLAG_SURPLUS_BOXES)
@@ -303,6 +325,11 @@ export default function AdminDashboard() {
     if (profileId) { navigate("/admin", { state: { page: id } }); return; }
     setActivePage(id);
   };
+  // the browser tab says which page this is (the menu name)
+  useEffect(() => {
+    const label = pageLabel(activePage);
+    document.title = label ? `${label} · tdc admin` : "tdc admin";
+  }, [activePage]);
 
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   const BIG = [
@@ -412,12 +439,13 @@ export default function AdminDashboard() {
       case "free_hire_trials": return <FreeHireTrials />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
-      case "offer": return <CreateOfferAdmin />;
-      case "all offer": return <AdminOffers />;
+      case "offers": return <AdminOffersTabs tab={offersTab} onTab={setOffersTab} />;
       case "manage_jobs": return <AdminJobManager userRole="admin" />;
       case "exchange_program": return <ManageExchange />;
       case "traveling": return <AdminPackageScreen />;
-      case "students": return <AdminUserList role="student" title="Student Directory" />;
+      case "students": return <AdminUserList key="students" role="student" title="all students" />;
+      // all students, filtered to the accounts waiting for approval
+      case "student_verifications": return <AdminUserList key="student_verifications" role="student" title="student verifications" heading="student verifications" initialStatus="pending" />;
       case "brands": return <AdminUserList role="brand" title="Brand Management" />;
       case "employees": return <AdminUserList role="employee" title="Employee Management" />;
       case "travelers": return <AdminUserList role="traveler" title="Traveler Management" />;
@@ -454,6 +482,14 @@ export default function AdminDashboard() {
         menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu })}
         active={activePage}
         onSelect={go}
+        collapsible
+        searchable
+        storageKey={`tdc.admin.nav.${user?._id || user?.id || "admin"}`}
+        badges={{
+          brand_approval: pendingApprovals,
+          student_verifications: isFetching ? null : stats.pendingStudents,
+          ...waiting,
+        }}
         userName={user?.name}
         userRole="admin"
         portalLabel="admin"

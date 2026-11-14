@@ -97,7 +97,7 @@ export function FreeHireTrials() {
   if (!available) return <Off />;
   return (
     <div className="tdcp k-page" data-screen="free-hire-trials">
-      <PageHeader title="free-hire trials" sub="consumed only by a verified hire (offer accepted + employer confirmed). nothing is charged: the ledger only records." />
+      <PageHeader title="first hire free" sub="consumed only by a verified hire (offer accepted + employer confirmed). nothing is charged: the ledger only records." />
       <Tabs label="first hire free" value={tab} onChange={setTab} tabs={[{ id: "trials", label: "trials", icon: "gift" }, { id: "ledger", label: "billing ledger", icon: "receipt" }]} />
       <div style={{ marginTop: 16 }}>
         {tab === "trials" && (

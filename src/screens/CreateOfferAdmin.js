@@ -127,7 +127,7 @@ export default function CreateOfferAdmin() {
 
   return (
     <div className="tdcp k-page co" data-screen="create-offer">
-      <PageHeader title="create offer" sub="add a home slider image or an exclusive offer to the app." />
+      <PageHeader title="new offer" sub="add a home slider image or an exclusive offer to the app." />
 
       <Segmented
         label="what to add"

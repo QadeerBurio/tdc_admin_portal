@@ -122,7 +122,7 @@ export default function EngagementMetrics() {
 
   const closeDrilldown = () => setDrilldown(null);
 
-  const header = (sub, actions) => <PageHeader title="engagement" sub={sub} actions={actions} />;
+  const header = (sub, actions) => <PageHeader title="metrics" sub={sub} actions={actions} />;
 
   // ═════════════════════════════════════════════
   // LOADING
