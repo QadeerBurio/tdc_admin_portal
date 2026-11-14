@@ -7,7 +7,8 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { useOutletContext } from "react-router-dom";
 import Ico from "../portal/Ico";
-import { PageLoading, Button, IconButton, Field, Input, Textarea, Dropdown, DateInput, Modal, Segmented, Select, StatCard, EmptyState, Pill, Facts, toast, confirmDialog } from "../portal/kit";
+import { PageLoading, Button, IconButton, Field, Input, Textarea, Dropdown, DateInput, Modal, Segmented, Select, StatCard, EmptyState, Pill, Facts, Tabs, toast, confirmDialog } from "../portal/kit";
+import LoyaltyMembers from "../portal/LoyaltyMembers";
 import LoyaltyPreview, { ruleText, StampPreview, rewardLabelOf } from "../portal/LoyaltyPreview";
 import loyaltyApi from "../services/loyaltyApi";
 import api from "../services/api";
@@ -76,6 +77,9 @@ export default function BrandLoyalty() {
   const [saving, setSaving] = useState(false);
   const [preview, setPreview] = useState(false);
   const [previewVisits, setPreviewVisits] = useState("0");
+  const [tab, setTab] = useState("program"); // program | members
+  const loadMembers = useCallback((filter) => loyaltyApi.members(filter), []);
+  const loadMembersCsv = useCallback((filter) => loyaltyApi.membersCsv(filter), []);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -264,6 +268,10 @@ export default function BrandLoyalty() {
         </div>
       </div>
 
+      {program && <Tabs label="loyalty" value={tab} onChange={setTab} tabs={[{ id: "program", label: "program" }, { id: "members", label: "members" }]} />}
+      {program && tab === "members" ? (
+        <LoyaltyMembers load={loadMembers} loadCsv={loadMembersCsv} />
+      ) : (<>
       {stats?.program && (
         <div className="k-stats">
           <StatCard label="verified visits" value={stats.verifiedVisits} icon="check" tone="green" />
@@ -370,7 +378,7 @@ export default function BrandLoyalty() {
             <Field label="maximum discount %" hint={program?.adminMaxDiscountPct != null ? `tdc caps this program at ${program.adminMaxDiscountPct}%` : "no tier can go above this"} htmlFor="loy-max" style={{ flex: "1 1 160px" }}>
               <Input id="loy-max" type="number" min={1} max={100} value={form.maxDiscountPct} onChange={(e) => setForm((f) => ({ ...f, maxDiscountPct: e.target.value }))} />
             </Field>
-            <Field label="visits that count per day" hint="per student; 0 = no limit" htmlFor="loy-day" style={{ flex: "1 1 160px" }}>
+            <Field label="max visits counted per day" hint="per student (default 1; 0 = no limit). a second visit that day still gets the discount, and you and the student see: visit already counted today" htmlFor="loy-day" style={{ flex: "1 1 160px" }}>
               <Input id="loy-day" type="number" min={0} max={10} value={form.maxVisitsPerDay} onChange={(e) => setForm((f) => ({ ...f, maxVisitsPerDay: e.target.value }))} />
             </Field>
             <Field label="visits expire after (months)" hint="0 = never" htmlFor="loy-reset" style={{ flex: "1 1 160px" }}>
@@ -430,6 +438,7 @@ export default function BrandLoyalty() {
           <p className="k-hint">{stats.creditsNotCounted} confirmed bills didn't count as visits (e.g. a second visit on the same day).</p>
         </section>
       )}
+      </>)}
 
       <Modal
         open={preview}

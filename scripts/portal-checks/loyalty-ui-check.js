@@ -22,18 +22,23 @@ const routes = {
   "GET /api/offers/pending-scans": [{ studentId: S, name: "Sana", rollNo: "21K-1", universityName: "SZABIST", offerId: O, offerTitle: "Alpha 20%", discountPercentage: 15, offerDiscountPercentage: 20, scannedAt: new Date().toISOString(), status: "pending", loyalty: loyaltyQuote }],
   "GET /api/offers/claimed-users": [{ _id: S, name: "Sana", rollNo: "21K-1", universityName: "SZABIST", offerId: O, offerTitle: "Alpha 20%", discountPercentage: 20 }],
   "POST /api/loyalty/quotes": ok({ ...loyaltyQuote, discountPercentage: 15 }),
+  // members tab (fix/loyalty-visits): no name, phone or e-mail
+  "GET /api/loyalty/brands/me/members": ok({ filter: "all", mode: "reward", totals: { members: 2, visitsThisMonth: 5, rewardsEarned: 3, rewardsUsed: 1 }, members: [
+    { studentId: S, label: "tdc verified user", university: "NED University", visits: 1, visitsNeeded: 2, rewardsEarned: 2, rewardsUsed: 1, rewardReady: false, lastVisitAt: "2026-11-10T10:00:00Z" },
+    { studentId: "6ae9bbbbbbbbbbbbbbbbbbbc", label: "tdc verified user", university: "SZABIST", visits: 2, visitsNeeded: 2, rewardsEarned: 1, rewardsUsed: 0, rewardReady: true, lastVisitAt: "2026-11-12T10:00:00Z" },
+  ] }),
   "GET /api/loyalty/admin/ledger": ok({ rows: [
     { id: "r1", type: "CREDIT", visitsDelta: 1, redemptionId: "x1", brand: B, brandName: "Alpha Cafe", student: S, studentName: "Sana", source: "redeem-payment", reason: "", visitNumber: 3, tierName: "Member", discountPct: 15, billAmount: 1000, savedAmount: 150, reversed: false, at: new Date().toISOString() },
     { id: "r2", type: "CREDIT", visitsDelta: 0, redemptionId: "x2", brand: B, brandName: "Alpha Cafe", student: S, studentName: "Sana", source: "redeem-payment", reason: "daily-limit", visitNumber: null, tierName: "Member", discountPct: 15, reversed: false, at: new Date().toISOString() },
     { id: "r3", type: "REVERSAL", visitsDelta: -1, redemptionId: "x0", brand: B, brandName: "Alpha Cafe", student: S, studentName: "Sana", source: "admin", reason: "refund: order returned", actorName: "admin", reversed: false, at: new Date().toISOString() },
   ] }),
 };
-const calls = [];
+const calls = []; const urls = [];
 http.createServer((q, s) => {
   const h = { "access-control-allow-origin": "*", "access-control-allow-headers": "authorization,content-type,accept", "access-control-allow-methods": "GET,POST,PATCH,PUT,DELETE,OPTIONS", "content-type": "application/json" };
   if (q.method === "OPTIONS") { s.writeHead(204, h); return s.end(); }
   const key = `${q.method} ${q.url.split("?")[0]}`;
-  calls.push(key);
+  calls.push(key); urls.push(q.url);
   const body = routes[key];
   s.writeHead(200, h);
   s.end(JSON.stringify(body !== undefined ? body : (q.method === "GET" ? [] : { success: true })));
@@ -73,6 +78,23 @@ http.createServer((q, s) => {
   const brand = { _id: B, id: B, role: "brand", name: "Alpha", brandName: "Alpha Cafe" };
   const admin = { _id: "6ae9ffffffffffffffffffff", id: "6ae9ffffffffffffffffffff", role: "admin", name: "admin" };
   await visit(brand, "/loyalty", ["loyalty", "verified visits", "42", "repeat customers", "Member", "Regular", "visits 1–5: 15%", "visit 6 onward: 25%", "members by tier", "on"]);
+  // the members tab: totals, one row per student ("tdc verified user · university"), visits / needed, filters
+  {
+    const mp = await visit(brand, "/loyalty", ["members", "program", "max visits counted per day"]);
+    await mp.evaluate(`[...document.querySelectorAll("[role=tab]")].find((e) => e.innerText.trim() === "members")?.click(); true`);
+    await sleep(1800);
+    const mt = await mp.evaluate(`document.querySelector('[data-testid="loyalty-members"]')?.innerText || ""`);
+    const wantM = ["visits this month", "rewards earned", "rewards used", "tdc verified user · NED University", "1 / 2", "reward ready", "export csv"];
+    const missM = wantM.filter((w) => !mt.toLowerCase().includes(w.toLowerCase()));
+    const leak = /sana|@|0300/i.test(mt);
+    if (missM.length || leak) bad = 1;
+    console.log(`brand members tab: ${missM.length ? "MISSING " + missM.join(" | ") : "totals, rows and export shown"}${leak ? "; LEAK: a name or contact detail" : "; no name or contact detail"}`);
+    await mp.evaluate(`[...document.querySelectorAll('[data-testid="loyalty-members"] button')].find((e) => e.innerText.trim() === "reward ready")?.click(); true`);
+    await sleep(1200);
+    const asked = urls.some((u) => u.startsWith("/api/loyalty/brands/me/members") && u.includes("filter=reward-ready"));
+    if (!asked) bad = 1;
+    console.log(`members filter "reward ready": ${asked ? "asked the server with filter=reward-ready" : "MISSING the filtered request"}`);
+  }
   await visit(brand, "/home", ["loyalty"]); // the menu item for a pilot brand
   await visit(brand, "/verifyclaim", ["15%", "loyalty: Member · visit 3", "3 more visits to 25%"]);
   const pg = await visit(admin, "/admin", ["loyalty exceptions"]);

@@ -150,8 +150,11 @@ const BrandVerifyScreen = () => {
         });
 
         if (data.success) {
+          // loyalty: what this bill did ("visit counted", "visit already counted today", "this offer isn't part of
+          // your loyalty program…"): said here instead of failing silently
+          const loy = data.data.loyalty;
           setSuccess(
-            `✅ Redemption Confirmed! Student saved Rs. ${data.data.transaction.savedAmount}`
+            `✅ Redemption Confirmed! Student saved Rs. ${data.data.transaction.savedAmount}${loy?.message ? ` · loyalty: ${loy.message}` : ""}`
           );
           // Reset form
           setPromoCode('');
