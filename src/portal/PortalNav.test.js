@@ -20,14 +20,15 @@ const group = (title) => screen.getByRole("button", { name: new RegExp(`^${title
 beforeEach(() => window.localStorage.clear());
 
 test("the menu: groups in order, names, no duplicates", () => {
-  expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "settings"]);
+  expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "crew", "settings"]);
   expect(ADMIN_MENU.map((g) => g.items.map((i) => i[1]))).toEqual([
     ["dashboard", "overview", "metrics", "admin actions"],
     ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"],
-    ["jobs & internships", "scholarships", "events", "travel", "rewards"],
+    ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"],
     ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"],
     ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free"],
     ["daily drops", "push test"],
+    ["crew inbox", "crew partners", "crew campaigns", "crew credentials"],
     ["features"],
   ]);
   const ids = ADMIN_MENU.flatMap((g) => g.items.map((i) => i[0]));

@@ -47,7 +47,7 @@ export default function CrewInbox() {
   return (
     <div>
       <div style={s.header}>
-        <h2 style={s.title}>Crew Inbox</h2>
+        <h1 style={s.title}>crew inbox</h1>
         <button style={s.btnGhost} onClick={load}>refresh</button>
       </div>
 

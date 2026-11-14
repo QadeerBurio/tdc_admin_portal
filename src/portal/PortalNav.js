@@ -37,6 +37,7 @@ export const ADMIN_MENU = [
       ["exchange_program", "scholarships", "grad", "blue"],
       ["events", "events", "calendar", "purple"],
       ["traveling", "travel", "plane", "sky"],
+      ["booking", "AI travel plans", "compass", "blue"], // the travel plans students made, and their revenue
       ["engagement_rewards", "rewards", "gift", "purple"],
     ],
   },
@@ -67,6 +68,16 @@ export const ADMIN_MENU = [
     items: [
       ["engagement_drops", "daily drops", "spark", "yellow"],
       ["engagement_test_push", "push test", "bell", "coral"],
+    ],
+  },
+  {
+    // the Crew programme (server: /api/admin/crew): partner applications, partners, campaigns, credentials
+    title: "crew",
+    items: [
+      ["crew_inbox", "crew inbox", "receipt", "orange"],
+      ["crew_partners", "crew partners", "users", "blue"],
+      ["crew_campaigns", "crew campaigns", "spark", "yellow"],
+      ["crew_credentials", "crew credentials", "shield", "green"],
     ],
   },
   {

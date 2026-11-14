@@ -46,7 +46,7 @@ export default function CrewCredentials() {
   return (
     <div>
       <div style={s.header}>
-        <h2 style={s.title}>Credentials</h2>
+        <h1 style={s.title}>crew credentials</h1>
         <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ issue credential</button>
       </div>
 

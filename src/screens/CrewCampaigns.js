@@ -43,7 +43,7 @@ export default function CrewCampaigns() {
   return (
     <div>
       <div style={s.header}>
-        <h2 style={s.title}>Campaigns</h2>
+        <h1 style={s.title}>crew campaigns</h1>
         <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ new campaign</button>
       </div>
 

@@ -134,7 +134,7 @@ const AdminPackage = () => {
     return (
         <div className="tdcp k-page" data-screen="bookings">
             <PageHeader
-                title="bookings"
+                title="AI travel plans"
                 sub="Overview of your travel packages and revenue"
                 actions={<Button variant="secondary" icon="refresh" onClick={fetchData}>Refresh Data</Button>}
             />

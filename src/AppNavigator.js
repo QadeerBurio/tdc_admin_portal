@@ -70,10 +70,6 @@ const EventManagement = lazy(() => import("./screens/EventManagement"));
 const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
 
 // ── 🆕 Crew (Admin) ─────────────────────────────────────────────────────
-const CrewInbox = lazy(() => import("./screens/CrewInbox"));
-const CrewPartners = lazy(() => import("./screens/CrewPartners"));
-const CrewCampaigns = lazy(() => import("./screens/CrewCampaigns"));
-const CrewCredentials = lazy(() => import("./screens/CrewCredentials"));
 
 // ── 🆕 Engagement (Admin) ───────────────────────────────────────────────
 const DropsSchedule = lazy(() => import("./screens/DropsSchedule"));
@@ -138,10 +134,11 @@ export default function AppNavigator() {
         <Route path="/eventmanagement" element={<EventManagement />} />
 
         {/* 🆕 Crew — standalone routes */}
-        <Route path="/crew/inbox" element={<CrewInbox />} />
-        <Route path="/crew/partners" element={<CrewPartners />} />
-        <Route path="/crew/campaigns" element={<CrewCampaigns />} />
-        <Route path="/crew/credentials" element={<CrewCredentials />} />
+        {/* the crew pages live in the admin portal (menu "crew"): the old URLs open them there */}
+        <Route path="/crew/inbox" element={<Navigate to="/admin" replace state={{ page: "crew_inbox" }} />} />
+        <Route path="/crew/partners" element={<Navigate to="/admin" replace state={{ page: "crew_partners" }} />} />
+        <Route path="/crew/campaigns" element={<Navigate to="/admin" replace state={{ page: "crew_campaigns" }} />} />
+        <Route path="/crew/credentials" element={<Navigate to="/admin" replace state={{ page: "crew_credentials" }} />} />
 
         {/* 🆕 Engagement — standalone routes */}
         <Route path="/engagement/drops" element={<DropsSchedule />} />
