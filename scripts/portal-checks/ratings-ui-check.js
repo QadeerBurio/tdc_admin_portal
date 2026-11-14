@@ -148,7 +148,7 @@ http.createServer((q, s) => {
   ratingsSetUp = true;
   const adm = await open(admin, "/admin");
   if (!A11Y) check("set up: 'ratings reports' in the admin menu", /ratings reports/.test(await menu(adm)));
-  await adm.evaluate(`[...document.querySelectorAll("aside a, aside button")].find((x) => /^ratings reports$/i.test(x.innerText.trim()))?.click(); true`);
+  await adm.evaluate(`document.querySelector('.tdcp-nav [data-page="ratings_reports"]')?.click(); true`); // by page id (the item shows a badge with the number open)
   await sleep(2000);
   if (A11Y) {
     await audit(adm, "admin ratings reports");

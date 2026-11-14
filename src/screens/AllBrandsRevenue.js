@@ -221,7 +221,7 @@ export default function AllBrandsRevenue() {
   return (
     <div className="tdcp k-page br" data-screen="brands-revenue">
       <PageHeader
-        title="brands revenue"
+        title="brand revenue"
         sub="what tdc users spend at partner brands, in-store and online."
         actions={<>
           <Button variant="secondary" icon="refresh" onClick={refreshData} loading={refreshing}>Refresh</Button>

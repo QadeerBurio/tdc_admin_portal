@@ -126,9 +126,9 @@ http.createServer((q, s) => {
   console.log(`decision button off until a reason is written: ${disabled ? "yes" : "NO"}`);
   await click(adm, "cancel");
   await sleep(300);
-  await adm.evaluate(`[...document.querySelectorAll("button, a")].find((e) => /free-hire trials/i.test(e.innerText))?.click(); true`);
+  await adm.evaluate(`document.querySelector('.tdcp-nav [data-page="free_hire_trials"]')?.click(); true`); // "first hire free" in the menu
   await sleep(2000);
-  expect("admin: trials", await text(adm), ["free-hire trials", "Bright Labs (Pvt) Ltd", "under review", "revoked after the 7-day window", "QA engineer", "restore", "keep", "1 suspected duplicate account"]);
+  expect("admin: trials", await text(adm), ["first hire free", "Bright Labs (Pvt) Ltd", "under review", "revoked after the 7-day window", "QA engineer", "restore", "keep", "1 suspected duplicate account"]);
   await adm.evaluate(`[...document.querySelectorAll("[role=tab]")].find((x) => /billing ledger/.test(x.innerText))?.click(); true`);
   await sleep(1200);
   expect("admin: billing ledger (records only)", await text(adm), ["free hire used", "waived (0)", "hire (pricing pending)", "pricing pending"]);
@@ -145,7 +145,7 @@ http.createServer((q, s) => {
   console.log(`flag off: employer dashboard ${/first verified hire is free/.test(t) ? "STILL SHOWS the card" : "has no card"}`);
   const adm2 = await open(admin, "/admin");
   const menu = await adm2.evaluate(`[...document.querySelectorAll("aside a, aside button")].map((a) => a.innerText.trim().toLowerCase()).join("|")`);
-  const hiddenMenu = !/company verifications|free-hire trials/.test(menu);
+  const hiddenMenu = !/company verifications|first hire free/.test(menu);
   if (!hiddenMenu) bad = 1;
   console.log(`flag off: admin menu ${hiddenMenu ? "has no first-hire-free pages" : "STILL SHOWS them"}`);
   console.log("API calls: " + [...new Set(calls)].filter((c) => /career|flags/.test(c)).join(", "));

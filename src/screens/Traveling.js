@@ -236,7 +236,7 @@ const AdminPackageScreen = () => {
   return (
     <div className="tdcp k-page tv" data-screen="traveling">
       <PageHeader
-        title="traveling"
+        title="travel"
         sub="travel packages students see in the app."
         actions={<Button icon="plus" onClick={() => openModal()}>{isMobile ? 'Create' : 'Create Package'}</Button>}
       />

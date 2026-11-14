@@ -128,7 +128,7 @@ http.createServer((q, s) => {
 
   console.log("── admin: skills to fix (read-only)");
   const adm = await open({ _id: ADMIN, id: ADMIN, role: "admin", name: "admin" }, "/admin");
-  await click(adm, `[...document.querySelectorAll("button, a")].find((x) => x.innerText.trim().toLowerCase() === "career portal")`); await sleep(2500);
+  await click(adm, `[...document.querySelectorAll("button, a")].find((x) => x.innerText.trim().toLowerCase() === "jobs & internships")`); await sleep(2500);
   const writesBefore = calls.filter((c) => !c.k.startsWith("GET ")).length;
   check("'Skills to fix' is there for admins", await click(adm, `document.querySelector('button[aria-label="skills to fix"]')`));
   await sleep(1200);
