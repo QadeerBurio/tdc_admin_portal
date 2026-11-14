@@ -70,6 +70,45 @@ function Students({ f }) {
   );
 }
 
+const time = (d) => (d ? new Date(d).toLocaleTimeString("en-GB", { hour: "2-digit", minute: "2-digit", second: "2-digit" }) : "");
+
+/**
+ * What the app sees: exactly what GET /api/app/flags/me answers this account right now (server: accountView's
+ * appView), so an admin can check a student's features without their phone.
+ */
+export function AppView({ view, onRefresh }) {
+  const av = view?.appView;
+  if (!av || !av.flags) return null;
+  const labels = Object.fromEntries((view.flags || []).map((f) => [f.flag, f.label]));
+  const entries = Object.entries(av.flags);
+  const name = view.account?.name || "this account";
+  return (
+    <section data-testid="app-view" aria-labelledby="app-view-title" style={{ marginTop: 16, padding: 14, borderRadius: 14, background: "#FFFFFF", border: "1px solid #ECE7DA" }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+        <h3 id="app-view-title" style={{ margin: 0, fontSize: 16 }}>what the app sees</h3>
+        <Button size="sm" variant="secondary" onClick={onRefresh} aria-label="check what the app sees again">check again</Button>
+      </div>
+      <p className="k-hint" style={{ margin: "6px 0 8px" }}>
+        Exactly what the app gets for {name} right now (GET /api/app/flags/me, checked at {time(av.at)}). The phone shows it after its next check: app open, sign-in or back in the foreground (at most once a minute).
+        {view.account?.roleStored === false ? " This account has no stored role: the app treats it as a student." : ""}
+        {av.loaded === false ? " The server hasn't loaded the admin settings yet: try again in a few seconds." : ""}
+      </p>
+      <ul aria-label="what the app sees" style={{ listStyle: "none", margin: 0, padding: 0, display: "grid", gap: 6 }}>
+        {entries.map(([k, v]) => (
+          <li key={k} data-flag={k} style={{ display: "flex", alignItems: "center", gap: 10, flexWrap: "wrap" }}>
+            <span style={{ minWidth: 180 }}>{labels[k] || k}</span>
+            <Pill tone={v ? "green" : "sand"}>{v ? "on in the app" : "off in the app"}</Pill>
+          </li>
+        ))}
+      </ul>
+      <details style={{ marginTop: 8 }}>
+        <summary style={{ cursor: "pointer" }}>the raw answer</summary>
+        <pre style={{ fontSize: 12, background: "#F7F4EC", padding: 10, borderRadius: 8, overflowX: "auto" }}>{JSON.stringify(av.flags, null, 2)}</pre>
+      </details>
+    </section>
+  );
+}
+
 export default function AccountFeatures({ accountId }) {
   const [view, setView] = useState(null);
   const [error, setError] = useState("");
@@ -87,7 +126,7 @@ export default function AccountFeatures({ accountId }) {
 
   if (error && !view) return <div className="tdcp-card tdcp-empty" role="alert">{error} <Button size="sm" variant="secondary" onClick={load}>try again</Button></div>;
   if (!view) return <div className="tdcp-card tdcp-empty" role="status">loading features…</div>;
-  if (!view.flags.length) return <div className="tdcp-card tdcp-empty">No features can be turned on for this kind of account.</div>;
+  if (!view.flags.length) return <div className="tdcp-card tdcp-empty">No features can be turned on for this kind of account.<AppView view={view} onRefresh={load} /></div>;
 
   const save = async (reason) => {
     const { flag, label, state } = pending;
@@ -139,6 +178,7 @@ export default function AccountFeatures({ accountId }) {
           );
         })}
       </ul>
+      <AppView view={view} onRefresh={load} />
       {pending && (
         <FeatureReasonDialog
           title={`${ACTION[pending.state]}: ${pending.label}`}

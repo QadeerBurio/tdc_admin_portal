@@ -55,3 +55,19 @@ test("locked only by the kill switch: a Railway-listed account isn't locked", as
   expect(screen.getByLabelText("Surprise Box: forced on")).toBeDisabled();
   expect(screen.getByText(/kill switch \(off for everyone\)/)).toBeInTheDocument();
 });
+
+test("what the app sees: exactly the flags/me answer for this student, with 'check again'", async () => {
+  const appView = { flags: { metaEvents: false, loyaltyV2: true, surplusBoxes: false }, at: "2026-11-14T10:00:00Z", loaded: true };
+  featuresApi.account.mockResolvedValueOnce({ account: { id: "s9", role: "student", roleStored: false, name: "Old Student" }, flags: [flag({ defaultForRole: true, effective: true, source: "default" })], appView });
+  render(<AccountFeatures accountId="s9" />);
+  const section = await screen.findByTestId("app-view");
+  expect(section).toHaveTextContent("what the app sees");
+  expect(section).toHaveTextContent("This account has no stored role: the app treats it as a student.");
+  const list = screen.getByRole("list", { name: "what the app sees" });
+  expect(list.querySelector('[data-flag="loyaltyV2"]')).toHaveTextContent("Loyalty");
+  expect(list.querySelector('[data-flag="loyaltyV2"]')).toHaveTextContent("on in the app");
+  expect(list.querySelector('[data-flag="surplusBoxes"]')).toHaveTextContent("off in the app");
+  featuresApi.account.mockResolvedValueOnce({ account: { id: "s9", role: "student", roleStored: false, name: "Old Student" }, flags: [flag({ defaultForRole: true, effective: true, source: "default" })], appView: { ...appView, flags: { ...appView.flags, surplusBoxes: true } } });
+  fireEvent.click(screen.getByRole("button", { name: "check what the app sees again" }));
+  await waitFor(() => expect(screen.getByRole("list", { name: "what the app sees" }).querySelector('[data-flag="surplusBoxes"]')).toHaveTextContent("on in the app"));
+});
