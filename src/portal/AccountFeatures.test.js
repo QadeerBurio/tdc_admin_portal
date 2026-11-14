@@ -71,3 +71,9 @@ test("what the app sees: exactly the flags/me answer for this student, with 'che
   fireEvent.click(screen.getByRole("button", { name: "check what the app sees again" }));
   await waitFor(() => expect(screen.getByRole("list", { name: "what the app sees" }).querySelector('[data-flag="surplusBoxes"]')).toHaveTextContent("on in the app"));
 });
+
+test("defaultOf names the account's role: brands, employers, students", () => {
+  expect(defaultOf({ defaultForRole: true }, "brand")).toEqual({ on: true, from: "the default for all brands" });
+  expect(defaultOf({ defaultForRole: false }, "employee")).toEqual({ on: false, from: "the default for all employers" });
+  expect(defaultOf({ defaultForRole: true })).toEqual({ on: true, from: "the default for all students" });
+});

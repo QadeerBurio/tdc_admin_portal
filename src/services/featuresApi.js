@@ -27,7 +27,8 @@ export const featuresApi = {
   // state "on" (forced on), "off" (forced off) or "default" (reset to default: the account's row removed)
   setState: (id, flag, state, reason) => unwrap(api.put(`/admin/features/account/${id}/${flag}`, { state, reason })),
   // the default for every student: { flag, role, changed, before, after }
-  setDefault: (flag, enabled, reason) => unwrap(api.put(`/admin/features/defaults/${flag}`, { role: "student", enabled, reason })),
+  // the default for every account of a role ("student" | "brand" | "employee"); on unless turned off
+  setDefault: (flag, enabled, reason, role = "student") => unwrap(api.put(`/admin/features/defaults/${flag}`, { role, enabled, reason })),
   // { changed: [ids], unchanged: [ids], skipped: [{ id, why }] }; at most 500 ids per call
   bulk: ({ flag, enabled, accountIds, reason }) => unwrap(api.post("/admin/features/bulk", { flag, enabled, accountIds, reason })),
   // { flag, label, killed, railwayIdCount, total, offset, limit, accounts: [...] }

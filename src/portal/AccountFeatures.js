@@ -36,9 +36,10 @@ export function Switch({ checked, disabled, onClick, label }) {
   );
 }
 
-// what "default" means for this account: the student default when set (students), else the Railway rules
-export function defaultOf(f) {
-  if (f.defaultForRole === true || f.defaultForRole === false) return { on: f.defaultForRole, from: "the default for all students" };
+const MANY = { student: "students", brand: "brands", employee: "employers" };
+// what "default" means for this account: its role's default (on unless an admin turned it off), else the Railway rules
+export function defaultOf(f, role = "student") {
+  if (f.defaultForRole === true || f.defaultForRole === false) return { on: f.defaultForRole, from: `the default for all ${MANY[role] || "accounts of this kind"}` };
   return { on: !!f.fromRailway, from: f.fromRailway ? "Railway (its id, role or a percentage)" : "nothing turns it on" };
 }
 export const modeOf = (f) => (f.forced === "on" ? "on" : f.forced === "off" ? "off" : "default");
@@ -138,11 +139,11 @@ export default function AccountFeatures({ accountId }) {
 
   return (
     <Card title="features" icon="settings" tone="sand">
-      <p className="k-hint" style={{ marginTop: 0 }}>Each feature follows its default unless you force it on or off for this account. Forced off beats the default for all students and the Railway list; only the Railway kill switch beats it. Each change is kept in the admin log with its reason.</p>
+      <p className="k-hint" style={{ marginTop: 0 }}>Every feature is on by default for the accounts that can use it: switch one off for this account when needed ("forced off"). Forced off beats the default and the Railway list; only the Railway kill switch beats it. "forced on" is only needed where a feature has no default. Each change is kept in the admin log with its reason.</p>
       <ul style={{ listStyle: "none", margin: 0, padding: 0 }} aria-label="features">
         {view.flags.map((f) => {
           const st = stateOf(f);
-          const d = defaultOf(f);
+          const d = defaultOf(f, view.account?.role);
           const mode = modeOf(f);
           const choose = (state) => { if (state !== mode) setPending({ flag: f.flag, label: f.label, state }); };
           const options = [
