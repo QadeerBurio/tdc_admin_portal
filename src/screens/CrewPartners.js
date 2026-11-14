@@ -39,7 +39,7 @@ export default function CrewPartners() {
   return (
     <div>
       <div style={s.header}>
-        <h2 style={s.title}>Partners</h2>
+        <h1 style={s.title}>crew partners</h1>
         <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ add partner</button>
       </div>
 

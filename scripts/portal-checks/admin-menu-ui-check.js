@@ -34,6 +34,7 @@ function handle(method, url) {
   if (p.startsWith("/api/admin/features/flag/")) return ok({ flag: "loyaltyV2", label: "Loyalty", roles: ["brand", "student"], killed: false, railwayIdCount: 0, total: 0, offset: 0, limit: 50, accounts: [] });
   if (p === "/api/career/ratings/admin/reports") return ok([]);
   if (p === "/api/admin/card-stats") return { pending: 0, approvedTotal: 0, totalRevenue: 0 };
+  if (p === "/api/admin/bookings/stats") return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, totalRevenue: 0 };
   if (p === "/api/admin/actions") return ok({ rows: [], next: null });
   if (p === "/api/admin/actions/facets") return ok({ actions: [], targetTypes: [], admins: [] });
   return undefined;
@@ -61,10 +62,11 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
 const MENU = [
   ["general", ["dashboard", "overview", "metrics", "admin actions"]],
   ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"]],
-  ["student app", ["jobs & internships", "scholarships", "events", "travel", "rewards"]],
+  ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],
   ["employers", ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free"]],
   ["engagement", ["daily drops", "push test"]],
+  ["crew", ["crew inbox", "crew partners", "crew campaigns", "crew credentials"]],
   ["settings", ["features"]],
 ];
 
@@ -115,10 +117,10 @@ const MENU = [
     const h = await heading();
     const titleOk = st.title === `${label} · tdc admin` && st.current === id;
     // the dashboard's own heading is a greeting; offers shows its tabs
-    const headOk = label === "dashboard" || (label === "offers" ? /offers/.test(h) : h.toLowerCase().includes(label));
+    const headOk = label === "dashboard" || (label === "offers" ? /offers/.test(h) : h.toLowerCase().includes(label.toLowerCase()));
     if (!titleOk || !headOk) titled.push(`${label}: tab "${st.title}", heading "${h}", current ${st.current}`);
   }
-  check("each of the 30 items opens its page; the browser tab and the page heading use the menu name", titled.length === 0, titled.join(" ;; "));
+  check("each of the 35 items opens its page; the browser tab and the page heading use the menu name", titled.length === 0, titled.join(" ;; "));
   await clickPage("offers");
   await sleep(700);
   const tabs = await pg.evaluate(`[...document.querySelectorAll('[data-screen="admin-offers-tabs"] [role=tab]')].map((t) => t.innerText.trim() + (t.getAttribute("aria-selected") === "true" ? "*" : ""))`);
@@ -156,7 +158,7 @@ const MENU = [
   m = await menu();
   const url = await pg.evaluate(`location.pathname`);
   check("old URL /adminoffers: lands on /admin with offers open, and its (closed) group opens by itself", url === "/admin" && m.find((g) => g.title === "brands").expanded === "true" && m.flatMap((g) => g.items).find((i) => i.id === "offers")?.current === "page", `${url} ${JSON.stringify(m.find((g) => g.title === "brands"))}`);
-  for (const [old, label] of [["/adminjobsmanager", "jobs & internships"], ["/adminexchangemanage", "scholarships"], ["/admin/brands-revenue", "brand revenue"]]) {
+  for (const [old, label] of [["/adminjobsmanager", "jobs & internships"], ["/adminexchangemanage", "scholarships"], ["/admin/brands-revenue", "brand revenue"], ["/crew/inbox", "crew inbox"], ["/crew/partners", "crew partners"], ["/crew/campaigns", "crew campaigns"], ["/crew/credentials", "crew credentials"]]) {
     await go(pg, `http://127.0.0.1:${WEB}${old}`);
     await sleep(3000);
     const st = await pg.evaluate(`({ path: location.pathname, title: document.title })`);
