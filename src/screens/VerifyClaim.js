@@ -513,7 +513,7 @@ const VerifyClaim = () => {
 
     setProcessingPayment(true);
     try {
-      await axios.post(
+      const redeemed = await axios.post(
         `${API_ORIGIN}/api/offers/redeem-payment`,
         {
           offerId: offerId,
@@ -543,6 +543,10 @@ const VerifyClaim = () => {
 
       setRedemptionSuccess(true);
       toast(`✅ Success! Transaction has been recorded.\n\nOriginal: Rs. ${Number(bill).toLocaleString()}\nDiscount: Rs. ${paymentInfo.saved.toLocaleString()}\nFinal: Rs. ${paymentInfo.total.toLocaleString()}`);
+      // loyalty: what this bill did ("visit counted", "visit already counted today", "this offer isn't part of your
+      // loyalty program…"): said here instead of failing silently
+      const loy = redeemed?.data?.loyalty;
+      if (loy?.message) toast(`loyalty: ${loy.message}`, loy.credited ? "ok" : "warn");
 
       resetAllStates();
       await loadScannedStudents();

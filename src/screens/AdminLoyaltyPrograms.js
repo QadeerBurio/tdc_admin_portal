@@ -7,6 +7,7 @@ import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, DateIn
 import loyaltyApi from "../services/loyaltyApi";
 import api from "../services/api";
 import { ruleText } from "../portal/LoyaltyPreview";
+import LoyaltyMembers from "../portal/LoyaltyMembers";
 
 const STATUS_TONE = { draft: "sand", active: "green", paused: "orange", ended: "red" };
 const day = (iso) => (iso ? new Date(iso).toLocaleDateString("en-GB", { timeZone: "Asia/Karachi", day: "numeric", month: "short", year: "numeric" }) : "–");
@@ -75,6 +76,9 @@ function ProgramDrawer({ id, onClose, onChanged }) {
     try { setD(await loyaltyApi.adminProgram(id)); } catch (e) { toast(e.message, "bad"); onClose(); }
   }, [id, onClose]);
   useEffect(() => { load(); }, [load]);
+  // the brand's members (same view as the brand's members tab)
+  const loadMembers = useCallback((filter) => loyaltyApi.adminMembers(id, filter), [id]);
+  const loadMembersCsv = useCallback((filter) => loyaltyApi.adminMembersCsv(id, filter), [id]);
   if (!d) return <Drawer open onClose={onClose} title="loyalty program"><PageLoading /></Drawer>;
   const p = d.program;
   const start = (kind) => {
@@ -134,6 +138,10 @@ function ProgramDrawer({ id, onClose, onChanged }) {
           ["runs", p.startsAt || p.endsAt ? `${day(p.startsAt)} – ${day(p.endsAt)}` : "no dates"],
           ["terms", p.terms || "–"],
         ]} />
+      </section>
+      <section className="k-card pad" style={{ marginBottom: 12 }}>
+        <h3 style={{ marginTop: 0 }}>members</h3>
+        <LoyaltyMembers load={loadMembers} loadCsv={loadMembersCsv} />
       </section>
       <section className="k-card pad" style={{ marginBottom: 12 }}>
         <h3 style={{ marginTop: 0 }}>history</h3>

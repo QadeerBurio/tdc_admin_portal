@@ -26,6 +26,9 @@ export const loyaltyApi = {
   // an ended program becomes a draft at a new version; visits from before never count again
   restartProgram: (id, body) => unwrap(api.post(`/loyalty/programs/${id}/restart`, body)),
   analytics: (params) => unwrap(api.get("/loyalty/brands/me/analytics", { params })),
+  // who has the loyalty: { totals, members: [...] } (filter: all | reward-ready | reward-used), and the same as CSV
+  members: (filter = "all") => unwrap(api.get("/loyalty/brands/me/members", { params: { filter } })),
+  membersCsv: (filter = "all") => api.get("/loyalty/brands/me/members", { params: { filter, format: "csv" }, responseType: "text" }).then((r) => r.data),
   // the tier and % for this student's visit, before confirming the bill
   quote: ({ studentId, offerId, branchId }) => unwrap(api.post("/loyalty/quotes", { studentId, offerId, branchId })),
   // stamp card: apply a student's waiting reward (once; the key makes a retry safe)
@@ -38,6 +41,8 @@ export const loyaltyApi = {
   // admin: every brand's program (writes need a reason and are logged on the server)
   adminPrograms: (params) => unwrap(api.get("/loyalty/admin/programs", { params })),
   adminProgram: (id) => unwrap(api.get(`/loyalty/admin/programs/${id}`)),
+  adminMembers: (id, filter = "all") => unwrap(api.get(`/loyalty/admin/programs/${id}/members`, { params: { filter } })),
+  adminMembersCsv: (id, filter = "all") => api.get(`/loyalty/admin/programs/${id}/members`, { params: { filter, format: "csv" }, responseType: "text" }).then((r) => r.data),
   adminCreateProgram: (body) => unwrap(api.post("/loyalty/admin/programs", body)),
   adminUpdateProgram: (id, body) => unwrap(api.patch(`/loyalty/admin/programs/${id}`, body)),
   adminRestartProgram: (id, body) => unwrap(api.post(`/loyalty/admin/programs/${id}/restart`, body)),
