@@ -1,6 +1,7 @@
 // AdminFeatures.js: admin "features" page (oversight menu). One tab per feature that can be set per account:
-// - "default for all students" (the student features): a switch, with a reason and a confirm step ("turn on for every
-//   student"); server: PUT /api/admin/features/defaults/:flag. Shown with who set it, when and why.
+// - "default for all students / brands / employers": one switch per role the feature has a default for, ON unless an
+//   admin turned it off; a change asks for a reason and a confirm ("turn off for every brand"); server:
+//   PUT /api/admin/features/defaults/:flag { role }. Shown with who set it, when and why.
 // - every account forced on or forced off (server: GET /api/admin/features/flag/:flag), newest first, with who and
 //   why, and "reset to default" (asks for a reason; the admin log keeps it).
 // The Railway state is shown as counts only.
@@ -10,6 +11,10 @@ import featuresApi from "../services/featuresApi";
 import { PageHeader, PageLoading, Tabs, Table, Button, Pill, EmptyState, Card, toast } from "../portal/kit";
 import FeatureReasonDialog from "../portal/FeatureReasonDialog";
 import { Switch } from "../portal/AccountFeatures";
+
+const ONE = { student: "student", brand: "brand", employee: "employer" };
+const MANY = { student: "students", brand: "brands", employee: "employers" };
+const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1);
 
 const PAGE = 50;
 const ROLE_LABEL = { student: "student", brand: "brand", employee: "employer" };
@@ -23,7 +28,7 @@ export default function AdminFeatures() {
   const [list, setList] = useState(null);
   const [loadingList, setLoadingList] = useState(false);
   const [removing, setRemoving] = useState(null); // account row to reset to default
-  const [defaulting, setDefaulting] = useState(null); // { enabled } for the student default
+  const [defaulting, setDefaulting] = useState(null); // { role, enabled }: a role's default
 
   const loadFlags = useCallback(async () => {
     try {
@@ -61,13 +66,14 @@ export default function AdminFeatures() {
     await Promise.all([loadList(0), loadFlags()]);
   };
   const saveDefault = async (reason) => {
-    await featuresApi.setDefault(flag, defaulting.enabled, reason); // throws: the dialog shows the error
-    toast(`${f.label}: ${defaulting.enabled ? "on" : "off"} for every student: saved`);
+    await featuresApi.setDefault(flag, defaulting.enabled, reason, defaulting.role); // throws: the dialog shows the error
+    toast(`${f.label}: ${defaulting.enabled ? "on" : "off"} for every ${ONE[defaulting.role]}: saved`);
     setDefaulting(null);
     await loadFlags();
   };
-  const sd = f?.studentDefault;
-  const defaultOn = sd?.enabled === true;
+  // the default per role this feature has one for: { student: { enabled, set, reason, setAt, setBy }, brand: … }
+  const defaults = f?.defaults || (f?.studentDefault ? { student: { ...f.studentDefault, set: !!f.studentDefault.setAt } } : {});
+  const roleDefaults = ["student", "brand", "employee"].filter((r) => defaults[r]);
 
   const columns = [
     { key: "name", label: "account", render: (r) => (r.role
@@ -85,7 +91,7 @@ export default function AdminFeatures() {
 
   return (
     <div className="tdcp k-page" data-screen="admin-features">
-      <PageHeader title="features" sub="each feature's default for all students, and the accounts forced on or off. Force one account from its profile's features tab, or many from a list: select → Features…" actions={<Button variant="secondary" icon="refresh" onClick={() => { loadFlags(); loadList(0); }}>Refresh</Button>} />
+      <PageHeader title="features" sub="every feature is on by default for the accounts that can use it. Switch a role's default off here, or one account off from its profile's features tab (or many from a list: select → Features…)." actions={<Button variant="secondary" icon="refresh" onClick={() => { loadFlags(); loadList(0); }}>Refresh</Button>} />
       <Tabs label="features" value={flag} onChange={setFlag} tabs={flags.map((x) => ({ id: x.flag, label: x.label, count: (x.adminAccessCount || 0) + (x.forcedOffCount || 0) }))} />
       {f && (
         <Card style={{ margin: "16px 0" }}>
@@ -95,20 +101,24 @@ export default function AdminFeatures() {
             {f.killed ? <Pill tone="red">kill switch on in Railway: off for everyone</Pill> : <Pill tone="sand">Railway: {f.railway || "not set"}</Pill>}
             {f.railwayIdCount > 0 && <Pill tone="blue">also on through Railway: {f.railwayIdCount} id{f.railwayIdCount === 1 ? "" : "s"}</Pill>}
           </div>
-          {f.studentDefaultable && (
-            <div data-testid="student-default" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: "1px solid #ECE7DA" }}>
-              <Switch
-                checked={defaultOn}
-                disabled={f.killed}
-                label={`${f.label}: default for all students ${sd?.enabled === true ? "on" : sd?.enabled === false ? "off" : "not set"}`}
-                onClick={() => setDefaulting({ enabled: !defaultOn })}
-              />
-              <strong>default for all students</strong>
-              <Pill tone={defaultOn ? "green" : sd?.enabled === false ? "red" : "sand"}>{sd?.enabled === true ? "on" : sd?.enabled === false ? "off" : "not set: Railway decides"}</Pill>
-              {sd?.setAt && <span className="k-hint" style={{ flexBasis: "100%" }}>set {sd.enabled ? "on" : "off"} by {sd.setBy?.name || "admin"} on {date(sd.setAt)}: “{sd.reason}”</span>}
-              <span className="k-hint" style={{ flexBasis: "100%" }}>Students forced off stay off; students forced on stay on. Employers and brands aren't affected.{f.killed ? " The Railway kill switch is on: off for everyone." : ""}</span>
-            </div>
-          )}
+          {roleDefaults.map((role) => {
+            const d = defaults[role];
+            const on = d.enabled === true;
+            return (
+              <div key={role} data-testid={role === "student" ? "student-default" : `${role}-default`} data-role={role} style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginTop: 14, paddingTop: 14, borderTop: "1px solid #ECE7DA" }}>
+                <Switch
+                  checked={on}
+                  disabled={f.killed}
+                  label={`${f.label}: default for all ${MANY[role]} ${on ? "on" : d.enabled === false ? "off" : "not set"}`}
+                  onClick={() => setDefaulting({ role, enabled: !on })}
+                />
+                <strong>default for all {MANY[role]}</strong>
+                <Pill tone={on ? "green" : d.enabled === false ? "red" : "sand"}>{on ? (d.set ? "on" : "on by default") : d.enabled === false ? "off" : "not set: Railway decides"}</Pill>
+                {d.set && d.setAt && <span className="k-hint" style={{ flexBasis: "100%" }}>set {d.enabled ? "on" : "off"} by {d.setBy?.name || "admin"} on {date(d.setAt)}: “{d.reason}”</span>}
+                <span className="k-hint" style={{ flexBasis: "100%" }}>{cap(MANY[role])} forced off stay off. Only {MANY[role]} are affected.{f.killed ? " The Railway kill switch is on: off for everyone." : ""}</span>
+              </div>
+            );
+          })}
         </Card>
       )}
       <Table
@@ -134,11 +144,11 @@ export default function AdminFeatures() {
       )}
       {defaulting && (
         <FeatureReasonDialog
-          title={`turn ${defaulting.enabled ? "on" : "off"} ${f?.label} for every student`}
+          title={`turn ${defaulting.enabled ? "on" : "off"} ${f?.label} for every ${ONE[defaulting.role]}`}
           sub={defaulting.enabled
-            ? "Every student gets it, except students an admin forced off. Employers and brands aren't affected."
-            : "Every student loses it, also students on the Railway list, except students an admin forced on. Employers and brands aren't affected."}
-          confirmLabel={`turn ${defaulting.enabled ? "on" : "off"} for every student`}
+            ? `Every ${ONE[defaulting.role]} gets it, except those an admin forced off. Only ${MANY[defaulting.role]} are affected.`
+            : `Every ${ONE[defaulting.role]} loses it, also those on the Railway list, except those an admin forced on. Only ${MANY[defaulting.role]} are affected.`}
+          confirmLabel={`turn ${defaulting.enabled ? "on" : "off"} for every ${ONE[defaulting.role]}`}
           onConfirm={saveDefault}
           onClose={() => setDefaulting(null)}
         />
