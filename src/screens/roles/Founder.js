@@ -54,7 +54,7 @@ export default function Founder() {
               <p>MSB has been building in tech since 2016. he started at Smartchoice.pk, then led growth and marketing at startups, including PayActiv, a US fintech, and GiftKarte Technologies.</p>
               <p>in 2022 he founded The Deft Crew, a full-service digital growth agency based in DHA Phase 6, Karachi. building it meant working every day with students and fresh grads from universities across Pakistan, and he kept seeing the same gap between what students need and what they can actually find.</p>
               <p>tdc is his answer to that gap. the idea took shape in 2025 and tdc launched in early 2026. today it is live in Karachi, Lahore and Islamabad, with 100+ partner brands.</p>
-              <p className="muted">he also writes about Pakistan's youth skills gap, with pieces published in The Financial Daily.</p>
+              <p className="muted">he speaks and writes about Pakistan's youth skills gap, including in The Financial Daily.</p>
             </div>
           </div>
         </section>
@@ -102,9 +102,9 @@ export default function Founder() {
           <div className="grid-2">
             {PRESS.map((p) => (
               <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
-                <img className="press-logo" src={p.logo} alt="" />
+                {p.logo && <img className="press-logo" src={p.logo} alt="" />}
                 <span className="card-h">{p.outlet}</span>
-                <span className="muted">the tdc story, covered by {p.outlet}.</span>
+                <span className="muted">{p.headline ? `"${p.headline}", with MSB.` : `the tdc story, covered by ${p.outlet}.`}</span>
                 <span style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>read the story <Arrow size={16} /></span>
               </a>
             ))}
