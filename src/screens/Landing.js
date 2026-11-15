@@ -1,7 +1,7 @@
 // Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
-import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS, CountUp } from "../web/site";
+import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS, CountUp, FeaturedIn } from "../web/site";
 import { useOffers } from "../web/useOffers";
 import logoInk from "../web/assets/tdc-logo-ink.png";
 import dotSorted from "./dots/sorted.png";
@@ -116,6 +116,8 @@ export default function Landing() {
         </div>
 
         {/* app */}
+        <div className="wrap"><FeaturedIn /></div>
+
         <section id="app" className="wrap section">
           <div className="section-head">
             <h2 className="h-lg">one app.<br />everything sorted<span className="dot" aria-hidden="true">.</span></h2>

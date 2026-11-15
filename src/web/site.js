@@ -18,6 +18,24 @@ export const LINKS = {
   whatsapp: "https://wa.me/923249287649",
 };
 
+// Press coverage. Shown on the home page and /founder. Add new features at the top.
+export const PRESS = [
+  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/" },
+  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/" },
+];
+
+/** "as featured in" strip: outlet names, each opens its story. */
+export function FeaturedIn({ style }) {
+  return (
+    <div className="featured" style={style}>
+      <span className="featured-label">as featured in</span>
+      {PRESS.map((p) => (
+        <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
+      ))}
+    </div>
+  );
+}
+
 export function Logo({ dark = false, size = "", to = "/" }) {
   return (
     <Link to={to} className={`logo ${size}`} aria-label="tdc. home">
@@ -216,6 +234,7 @@ export function WebFooter() {
           <Link to="/AppStoreReviews">reviews</Link>
           <Link to="/ambassador">campus ambassadors</Link>
           <a href="/#campus">for campuses</a>
+          <Link to="/founder">meet the founder</Link>
         </div>
         <div className="footer-col">
           <b>partners</b>

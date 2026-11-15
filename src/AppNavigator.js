@@ -20,6 +20,7 @@ import OfferImagesGallery from "./screens/OfferImagesGallery";
 import AppStoreReviews from "./screens/roles/AppStoreReviews";
 import UniversitiesSection from "./screens/roles/UniversitiesSection";
 import PrivacyPolicy from "./screens/roles/PrivacyPolicy";
+import Founder from "./screens/roles/Founder";
 
 // ── Portal screens: loaded on demand, so the public pages ship without portal code ──
 // Their CSS stays in the main stylesheet, in the same order as before (it includes the global reset).
@@ -107,6 +108,7 @@ export default function AppNavigator() {
         <Route path="/AppStoreReviews" element={<AppStoreReviews />} />
         <Route path="/universities" element={<UniversitiesSection />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/founder" element={<Founder />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -153,6 +155,7 @@ export default function AppNavigator() {
 
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/founder" element={<Founder />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
       </PortalShell>
@@ -178,6 +181,7 @@ export default function AppNavigator() {
         </Route>
         <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/founder" element={<Founder />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>
       </PortalShell>
@@ -205,6 +209,7 @@ export default function AppNavigator() {
         </Route>
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
+        <Route path="/founder" element={<Founder />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>
       </PortalShell>
@@ -237,6 +242,7 @@ export default function AppNavigator() {
 
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
+      <Route path="/founder" element={<Founder />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
     </PortalShell>
