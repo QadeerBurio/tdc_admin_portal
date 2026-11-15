@@ -24,6 +24,7 @@ export const LINKS = {
 export const PRESS = [
   { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/", logo: helloPakistanLogo },
   { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/", logo: startupPakistanLogo },
+  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates" },
 ];
 
 /** "as featured in" strip: each outlet's logo opens its story. */
@@ -32,9 +33,13 @@ export function FeaturedIn({ style }) {
     <div className="featured" style={style}>
       <span className="featured-label">as featured in</span>
       {PRESS.map((p) => (
-        <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
-          <img src={p.logo} alt={p.outlet} height="48" />
-        </a>
+        p.logo ? (
+          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
+            <img src={p.logo} alt={p.outlet} height="48" />
+          </a>
+        ) : (
+          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
+        )
       ))}
     </div>
   );
