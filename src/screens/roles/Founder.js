@@ -101,10 +101,10 @@ export default function Founder() {
           </div>
           <div className="grid-2">
             {PRESS.map((p) => (
-              <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
+              <a key={p.href} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
                 {p.logo && <img className="press-logo" src={p.logo} alt="" />}
                 <span className="card-h">{p.outlet}</span>
-                <span className="muted">{p.headline ? `"${p.headline}", with MSB.` : `the tdc story, covered by ${p.outlet}.`}</span>
+                <span className="muted">{p.headline ? `${p.headline}${p.date ? ` (${p.date})` : ""}` : `the tdc story, covered by ${p.outlet}.`}</span>
                 <span style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>read the story <Arrow size={16} /></span>
               </a>
             ))}
