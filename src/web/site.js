@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import "./web.css";
 import logoInk from "./assets/tdc-logo-ink.png";
 import logoWhite from "./assets/tdc-logo-white.png";
+import helloPakistanLogo from "./assets/press-hello-pakistan.png";
+import startupPakistanLogo from "./assets/press-startup-pakistan.png";
 
 export const LINKS = {
   getApp: "https://go.gettdc.pk",
@@ -20,17 +22,19 @@ export const LINKS = {
 
 // Press coverage. Shown on the home page and /founder. Add new features at the top.
 export const PRESS = [
-  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/" },
-  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/" },
+  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/", logo: helloPakistanLogo },
+  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/", logo: startupPakistanLogo },
 ];
 
-/** "as featured in" strip: outlet names, each opens its story. */
+/** "as featured in" strip: each outlet's logo opens its story. */
 export function FeaturedIn({ style }) {
   return (
     <div className="featured" style={style}>
       <span className="featured-label">as featured in</span>
       {PRESS.map((p) => (
-        <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
+        <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
+          <img src={p.logo} alt={p.outlet} height="48" />
+        </a>
       ))}
     </div>
   );

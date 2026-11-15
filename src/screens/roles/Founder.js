@@ -102,7 +102,7 @@ export default function Founder() {
           <div className="grid-2">
             {PRESS.map((p) => (
               <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
-                <span className="eyebrow">featured</span>
+                <img className="press-logo" src={p.logo} alt="" />
                 <span className="card-h">{p.outlet}</span>
                 <span className="muted">the tdc story, covered by {p.outlet}.</span>
                 <span style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>read the story <Arrow size={16} /></span>
