@@ -240,6 +240,7 @@ export function WebFooter() {
         <span style={{ display: "flex", gap: 18 }}>
           <a href={LINKS.instagram}>Instagram</a>
           <a href={LINKS.linkedin}>LinkedIn</a>
+          <Link to="/privacy">privacy</Link>
         </span>
       </div>
     </footer>
