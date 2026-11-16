@@ -178,10 +178,15 @@ export default function AdminDashboard() {
         offers: responses[0]?.data?.groups?.brands?.activeOffers?.value ?? 0,
         // open jobs: not switched off and not archived (this used to count every job ever posted)
         jobs: Array.isArray(responses[1]) ? responses[1].filter((j) => j && j.active !== false && !j.archivedAt).length : 0,
-        students: Array.isArray(responses[2]) ? responses[2].length : 0,
-        brands: Array.isArray(responses[3]) ? responses[3].length : 0,
-        employees: Array.isArray(responses[4]) ? responses[4].length : 0,
-        travelers: Array.isArray(responses[5]) ? responses[5].length : 0,
+        // accounts from the shared metrics call: without suspended / banned / deactivated and test accounts
+        // (the list lengths, the old count, included them); the "including suspended" note shows the rest
+        ...(() => {
+          const U = responses[0]?.data?.users;
+          const len = (i) => (Array.isArray(responses[i]) ? responses[i].length : 0);
+          const pick = (role, i) => (U?.[role] ? [U[role].active, U[role].includingSuspended] : [len(i), null]);
+          const [students, studentsAll] = pick("student", 2), [brands, brandsAll] = pick("brand", 3), [employees, employeesAll] = pick("employee", 4), [travelers, travelersAll] = pick("traveler", 5);
+          return { students, brands, employees, travelers, withSuspended: { students: studentsAll, brands: brandsAll, employees: employeesAll, travelers: travelersAll } };
+        })(),
         exchange: Array.isArray(responses[6]) ? responses[6].length : 0,
         packages: Array.isArray(responses[7]) ? responses[7].length : 0,
         // accounts not approved yet ("student verifications"), from the list already loaded
@@ -337,19 +342,21 @@ export default function AdminDashboard() {
   const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu });
   const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
+  // "including suspended: N" when suspended / banned accounts are left out of the number
+  const susp = (k, plain) => { const all = stats.withSuspended?.[k]; return all != null && all !== stats[k] ? `including suspended: ${fmt(all)}` : plain; };
   const BIG = [
-    { id: "students", label: "total students", value: n(stats.students), sub: "registered on tdc", icon: "grad", dark: true },
-    { id: "brands", label: "brands", value: n(stats.brands), sub: "brand accounts", icon: "store", tone: "red" },
+    { id: "students", label: "total students", value: n(stats.students), sub: susp("students", "active accounts"), icon: "grad", dark: true },
+    { id: "brands", label: "brands", value: n(stats.brands), sub: susp("brands", "brand accounts"), icon: "store", tone: "red" },
     { id: "all_brands_revenue", label: "all brands revenue", value: isFetching ? <span className="tdcp-skel" /> : `rs ${fmt(stats.totalRevenue)}`, sub: `${fmt(stats.brands)} brands tracked`, icon: "coin", tone: "green" },
     { id: "manage_jobs", label: "open jobs", value: n(stats.jobs), sub: "in the career hub", icon: "briefcase", tone: "coral" },
   ];
   const SMALL = [
-    { id: "employees", label: "employers", value: n(stats.employees), sub: "companies", icon: "hat", tone: "sky" },
+    { id: "employees", label: "employers", value: n(stats.employees), sub: susp("employees", "companies"), icon: "hat", tone: "sky" },
     { id: "all offer", label: "live offers", value: n(stats.offers), sub: "not archived", icon: "tag", tone: "red" },
     { id: "exchange_program", label: "scholarships", value: n(stats.exchange), sub: "study abroad", icon: "grad", tone: "blue" },
     { id: "events", label: "your events", value: n(stats.events), sub: `${fmt(stats.eventRegistrations)} registrations (events you created)`, icon: "calendar", tone: "purple" },
     { id: "card_manager", label: "approved cards", value: n(stats.approvedCards), sub: `${fmt(stats.pendingCards)} pending`, icon: "card", tone: "pink" },
-    { id: "travelers", label: "travelers", value: n(stats.travelers), sub: "all time", icon: "compass", tone: "coral" },
+    { id: "travelers", label: "travelers", value: n(stats.travelers), sub: susp("travelers", "all time"), icon: "compass", tone: "coral" },
     { id: "booking", label: "AI travel plans", value: n(stats.bookings), sub: "all time", icon: "plane", tone: "sky" },
   ];
   const TODO = [

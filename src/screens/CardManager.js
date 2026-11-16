@@ -130,7 +130,8 @@ const CardManager = () => {
 
       <div className="k-stats">
         <StatCard label="Total Issued" value={stats.approvedTotal} icon="users" tone="green" />
-        <StatCard label="Net Revenue" value={`₨ ${stats.totalRevenue.toLocaleString()}`} icon="wallet" tone="blue" />
+        {/* card payments are recorded without an amount, so revenue isn't tracked (it used to be approved cards × 750) */}
+        <StatCard label="Net Revenue" value={stats.totalRevenue == null ? "not tracked" : `₨ ${Number(stats.totalRevenue).toLocaleString()}`} sub={stats.totalRevenue == null ? "payments have no amount recorded" : undefined} icon="wallet" tone="blue" />
         <StatCard label="Awaiting" value={stats.pending} icon="clock" tone="orange" />
       </div>
 

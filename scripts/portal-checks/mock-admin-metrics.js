@@ -29,6 +29,7 @@ function metrics(q = {}) {
     minCohort: 5,
     funnel: { applications: 30, shortlisted: 12, interviews: 6, offers: 3, hires: 2 },
     needsAction: { brandApprovals: 3, studentVerifications: 2, companyVerifications: 2, hireDisputes: null, ratingsReports: 0, failedPushes: 4 },
+    users: { student: { active: 840, suspended: 12, includingSuspended: 852 }, brand: { active: 46, suspended: 0, includingSuspended: 46 }, employee: { active: 20, suspended: 1, includingSuspended: 21 }, traveler: { active: 5, suspended: 0, includingSuspended: 5 }, definition: "accounts now" },
   };
   return { success: true, data, requestId: "mock" };
 }
