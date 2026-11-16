@@ -37,6 +37,7 @@ function handle(method, url) {
   if (p === "/api/admin/bookings/stats") return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, totalRevenue: 0 };
   if (p === "/api/admin/actions") return ok({ rows: [], next: null });
   if (p === "/api/admin/actions/facets") return ok({ actions: [], targetTypes: [], admins: [] });
+  if (p === "/api/analytics/admin/metrics") return require("./mock-admin-metrics").metrics();
   return undefined;
 }
 

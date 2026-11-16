@@ -76,33 +76,39 @@ const resumeStudioRows = (s) => [
 ];
 const hiringRows = (c, conv) => [["applications", n(c.applications)], ["shortlisted", n(c.shortlisted)], ["interviews completed", n(c.interviewsCompleted)], ["offers accepted", n(c.offersAccepted)], ["verified hires", n(c.verifiedHires)], ["offer to verified hire", pct(conv?.acceptedToVerifiedHire, c.offersAccepted)]];
 
-export function AdminOverview() {
+// only: show just these sections (the metrics page uses ["resumeStudio", "employers"]; the rest is on the metrics tab)
+export function AdminOverview({ only } = {}) {
   const f = useFigures(analyticsApi.adminOverview);
   const d = f.data;
+  const show = (k) => !only || only.includes(k);
   const exportCsv = () => {
     if (!d) return;
     const rows = [["section", "metric", "value"], ["range", "from", d.range.from], ["range", "to", d.range.to]];
     const add = (section, list) => list.forEach(([k, v]) => rows.push([section, k, v]));
-    add("discounts", discountRows(d.discounts)); add("loyalty", loyaltyRows(d.loyalty)); add("surprise box", surplusRows(d.surpriseBox));
-    add("hiring", hiringRows(d.hiring.counts, d.hiring.conversions)); if (d.resumeStudio) add("resume studio", resumeStudioRows(d.resumeStudio)); add("employers", Object.entries(d.employers).filter(([k]) => k !== "definitions").map(([k, v]) => [k, v == null ? "" : v]));
+    if (show("discounts")) add("discounts", discountRows(d.discounts));
+    if (show("loyalty")) add("loyalty", loyaltyRows(d.loyalty));
+    if (show("surpriseBox")) add("surprise box", surplusRows(d.surpriseBox));
+    if (show("hiring")) add("hiring", hiringRows(d.hiring.counts, d.hiring.conversions));
+    if (d.resumeStudio && show("resumeStudio")) add("resume studio", resumeStudioRows(d.resumeStudio));
+    if (show("employers")) add("employers", Object.entries(d.employers).filter(([k]) => k !== "definitions").map(([k, v]) => [k, v == null ? "" : v]));
     downloadCsv(`tdc-overview-${f.range.from}-to-${f.range.to}.csv`, rows);
   };
   return (
     <div className="tdcp k-page" data-screen="business-overview">
-      <PageHeader title="overview" sub="counted from confirmed records only: redemptions the brand confirmed, orders, the hiring timeline, the hiring ledger. claims, holds and scheduled interviews never count." />
+      {only ? <p className="k-hint">from the hiring ledger, company verifications and Resume Studio requests (all accounts).</p> : <PageHeader title="overview" sub="counted from confirmed records only: redemptions the brand confirmed, orders, the hiring timeline, the hiring ledger. claims, holds and scheduled interviews never count." />}
       <RangeBar range={f.range} setRange={f.setRange} onExport={d ? exportCsv : null} />
       {f.loading && !d ? <PageLoading /> : !d ? <EmptyState icon="alert" title="couldn't load" action={<Button onClick={f.load}>retry</Button>} /> : (
         <div style={grid}>
-          <Figures title="discounts" icon="tag" tone="red" rows={[...discountRows(d.discounts), ["of which deleted brands", n(d.discounts.archivedRedemptions)]]} definitions={d.discounts.definitions} note={d.discounts.brandsHidden ? `${d.discounts.brandsHidden} brand(s) with fewer than ${d.minCohort} students not listed below.` : ""} />
-          <Figures title="loyalty" icon="star" tone="yellow" rows={loyaltyRows(d.loyalty)} definitions={d.loyalty.definitions} note={d.loyalty.membersByTierNote} />
-          <Figures title="surprise box" icon="gift" tone="orange" rows={surplusRows(d.surpriseBox)} definitions={d.surpriseBox.definitions} />
-          <Figures title="hiring" icon="briefcase" tone="coral" rows={[...hiringRows(d.hiring.counts, d.hiring.conversions), ["median first employer response", d.hiring.medianHours?.firstEmployerResponse == null ? "no data" : `${d.hiring.medianHours.firstEmployerResponse} h`]]} note="from the hiring timeline: a hire counts only when the candidate accepted and the employer confirmed it, and it wasn't revoked." />
-          <Figures title="employers" icon="hat" tone="sky" rows={[["companies verified", n(d.employers.companiesVerified)], ["verifications to check / suspected duplicates", `${n(d.employers.verificationsPending)} / ${n(d.employers.suspectedDuplicates)}`], ["free-hire trials issued", n(d.employers.trialsIssued)], ["trials active / used / under review", `${n(d.employers.trialsActive)} / ${n(d.employers.trialsUsed)} / ${n(d.employers.trialsUnderReview)}`], ["free hires used (net of restored)", n(d.employers.netFreeHires)], ["hires pending pricing", n(d.employers.hiresPendingPricing)], ["paying employers", n(d.employers.payingEmployers)], ["trial to paid", d.employers.trialToPaidPct == null ? "not measurable yet" : `${d.employers.trialToPaidPct}%`]]} definitions={d.employers.definitions} />
-          {d.resumeStudio && (
+          {show("discounts") && <Figures title="discounts" icon="tag" tone="red" rows={[...discountRows(d.discounts), ["of which deleted brands", n(d.discounts.archivedRedemptions)]]} definitions={d.discounts.definitions} note={d.discounts.brandsHidden ? `${d.discounts.brandsHidden} brand(s) with fewer than ${d.minCohort} students not listed below.` : ""} />}
+          {show("loyalty") && <Figures title="loyalty" icon="star" tone="yellow" rows={loyaltyRows(d.loyalty)} definitions={d.loyalty.definitions} note={d.loyalty.membersByTierNote} />}
+          {show("surpriseBox") && <Figures title="surprise box" icon="gift" tone="orange" rows={surplusRows(d.surpriseBox)} definitions={d.surpriseBox.definitions} />}
+          {show("hiring") && <Figures title="hiring" icon="briefcase" tone="coral" rows={[...hiringRows(d.hiring.counts, d.hiring.conversions), ["median first employer response", d.hiring.medianHours?.firstEmployerResponse == null ? "no data" : `${d.hiring.medianHours.firstEmployerResponse} h`]]} note="from the hiring timeline: a hire counts only when the candidate accepted and the employer confirmed it, and it wasn't revoked." />}
+          {show("employers") && <Figures title="employers" icon="hat" tone="sky" rows={[["companies verified", n(d.employers.companiesVerified)], ["verifications to check / suspected duplicates", `${n(d.employers.verificationsPending)} / ${n(d.employers.suspectedDuplicates)}`], ["free-hire trials issued", n(d.employers.trialsIssued)], ["trials active / used / under review", `${n(d.employers.trialsActive)} / ${n(d.employers.trialsUsed)} / ${n(d.employers.trialsUnderReview)}`], ["free hires used (net of restored)", n(d.employers.netFreeHires)], ["hires pending pricing", n(d.employers.hiresPendingPricing)], ["paying employers", n(d.employers.payingEmployers)], ["trial to paid", d.employers.trialToPaidPct == null ? "not measurable yet" : `${d.employers.trialToPaidPct}%`]]} definitions={d.employers.definitions} />}
+          {d.resumeStudio && show("resumeStudio") && (
             <Figures title="resume studio" icon="file" tone="purple" rows={resumeStudioRows(d.resumeStudio)} definitions={d.resumeStudio.definitions}
               note={Object.keys(d.resumeStudio.failedByReason || {}).length ? `failed: ${Object.entries(d.resumeStudio.failedByReason).map(([k, v]) => `${k.toLowerCase().replace(/_/g, " ")} ${v}`).join(", ")}` : ""} />
           )}
-          {d.discounts.topBrands.length > 0 && (
+          {show("discounts") && d.discounts.topBrands.length > 0 && (
             <section className="k-card pad" style={{ gridColumn: "1 / -1" }}>
               <div className="k-card-head"><Ico kind="store" tone="red" size={30} /><h3>brands by redemptions</h3></div>
               <Table rows={d.discounts.topBrands} rowKey={(r) => r.id} minWidth={560}

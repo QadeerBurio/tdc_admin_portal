@@ -1,628 +1,412 @@
 // src/screens/BrandApprovalScreen.js
-// Brand approvals (design/portal/AdBrands): review new brands, offers and QR codes, approve / reject / draft,
-// and log in as an approved brand.
-import React, { useState, useEffect, useCallback, useContext } from 'react';
+// Brand approvals (feat/admin-approvals-metrics; server routes/brandApproval.routes.js):
+//   search (brand / owner name, email, phone, city, category — on the server, any case, debounced), filters
+//   (status tabs with counts, city, category, joined between), sort, 25 per page; a row opens a drawer with the
+//   business details, documents, branches, offers, contact and the approve / reject history (admin + reason);
+//   approve, reject (reason required), request more info (reason required, the brand is notified), bulk approve /
+//   reject with one reason. Every action is logged on the server; the list updates in place (no reload).
+//   Kept from before: log in as an approved brand, an offer's QR code, permanent delete.
+import React, { useState, useEffect, useCallback, useContext, useRef } from 'react';
 import { AuthContext } from '../context/AuthContext';
 import axios from 'axios';
 import QRCode from 'qrcode';
-import Ico from '../portal/Ico';
 import { TOKEN } from '../portal/tokens';
-import { PageLoading, PageHeader, Button, IconButton, StatCard, Segmented, Modal, EmptyState, Pill, Card, Facts, Field, Textarea, toast as kitToast } from '../portal/kit';
+import {
+  PageHeader, Button, Segmented, Modal, Drawer, EmptyState, Pill, Card, Facts, Field, Textarea, Table, SearchInput,
+  Select, DateInput, Checkbox, toast,
+} from '../portal/kit';
 import DeleteAccountDialog from '../portal/DeleteAccountDialog';
 import './styles/Brands.css';
 import { storeBadge } from '../portal/storeBadge';
 import { API_ORIGIN } from "../config/api";
+import { brandApprovalApi } from '../services/brandApprovalApi';
 
 const API_BASE = `${API_ORIGIN}/api`;
+const PAGE_SIZE = 25;
 const STATUS = {
   pending: { tone: 'orange', label: 'Pending' },
   approved: { tone: 'green', label: 'Approved' },
   rejected: { tone: 'red', label: 'Rejected' },
   draft: { tone: 'blue', label: 'Draft' },
 };
+const ACTION_LABEL = {
+  'brand.approve': 'Approved', 'brand.reject': 'Rejected', 'brand.request_info': 'Asked for more information',
+  'brand.set_pending': 'Moved back to pending', 'brand.set_draft': 'Saved as draft',
+};
+// what each decision needs: a reason for reject and request-info (the brand sees it)
+const DECISIONS = {
+  approved: { title: 'Approve', verb: 'approve', variant: 'success', icon: 'checkCircle', needsReason: false, hint: 'optional: a note for the brand' },
+  rejected: { title: 'Reject', verb: 'reject', variant: 'danger', icon: 'xCircle', needsReason: true, hint: 'required: the brand sees this reason' },
+  info: { title: 'Request more information', verb: 'send the request to', variant: 'primary', icon: 'mail', needsReason: true, hint: 'required: say what the brand needs to send or fix' },
+};
+const fmtDate = (d) => (d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', timeZone: 'Asia/Karachi' }) : '–');
+const fmtTime = (d) => (d ? new Date(d).toLocaleString('en-GB', { day: 'numeric', month: 'short', year: 'numeric', hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Karachi' }) : '–');
+const nameOf = (b) => b?.brandName || b?.name || 'brand';
+
+/** a value that follows `value` after `ms` without changes (the search box) */
+function useDebounced(value, ms = 300) {
+  const [v, setV] = useState(value);
+  useEffect(() => { const t = setTimeout(() => setV(value), ms); return () => clearTimeout(t); }, [value, ms]);
+  return v;
+}
+
+const StatusPill = ({ status }) => { const c = STATUS[status] || STATUS.pending; return <Pill tone={c.tone} dot>{c.label}</Pill>; };
+const Logo = ({ b, lg }) => (b.logo
+  ? <img src={b.logo} alt="" className={`ba-logo ${lg ? 'lg' : ''}`} />
+  : <span className={`ba-logo ph ${lg ? 'lg' : ''}`} aria-hidden="true">{nameOf(b)[0].toUpperCase()}</span>);
 
 const BrandApprovalScreen = () => {
   const { token, user, login } = useContext(AuthContext);
-
-  const [brands, setBrands] = useState([]);
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
-  const [selectedBrand, setSelectedBrand] = useState(null);
-  const [showModal, setShowModal] = useState(false);
-  const [statusNote, setStatusNote] = useState('');
-  const [filter, setFilter] = useState('all');
-  const [stats, setStats] = useState({
-    total: 0,
-    pending: 0,
-    approved: 0,
-    rejected: 0,
-    draft: 0
-  });
-  const [processingId, setProcessingId] = useState(null);
-  const [loadingDetails, setLoadingDetails] = useState(false);
-  const [brandOffers, setBrandOffers] = useState([]);
-  const [brandStats, setBrandStats] = useState({
-    totalOffers: 0,
-    activeOffers: 0,
-    totalClaims: 0,
-    totalSavings: 0
-  });
-  const [autoLoginLoading, setAutoLoginLoading] = useState(false);
-
-  // QR Code States
-  const [showQRModal, setShowQRModal] = useState(false);
-  const [qrImage, setQrImage] = useState(null);
-  const [selectedOfferForQR, setSelectedOfferForQR] = useState(null);
-  const [qrData, setQrData] = useState(null);
-  const [generatingQR, setGeneratingQR] = useState(false);
-  const [copied, setCopied] = useState(false);
-  // permanent delete (DeleteAccountDialog): the brand id being deleted
-  const [deleteId, setDeleteId] = useState(null);
-
   const isAdmin = user?.role === 'admin';
 
-  // Show toast notification
-  const showToast = (message, type = 'success') => {
-    kitToast(message, type === 'error' ? 'bad' : 'ok');
+  // filters (all on the server)
+  const [search, setSearch] = useState('');
+  const q = useDebounced(search.trim(), 300);
+  const [status, setStatus] = useState('pending');
+  const [city, setCity] = useState('all');
+  const [category, setCategory] = useState('all');
+  const [joinedFrom, setJoinedFrom] = useState('');
+  const [joinedTo, setJoinedTo] = useState('');
+  const [sort, setSort] = useState('newest');
+  const [page, setPage] = useState(1);
+
+  const [data, setData] = useState({ brands: [], total: 0, pages: 1, counts: {}, options: { cities: [], categories: [] } });
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const seq = useRef(0);
+
+  const [selected, setSelected] = useState(() => new Set());
+  const [openId, setOpenId] = useState(null);
+  const [detail, setDetail] = useState(null);
+  const [detailError, setDetailError] = useState(null);
+  const [decision, setDecision] = useState(null); // { kind: approved|rejected|info, ids: [] }
+  const [reason, setReason] = useState('');
+  const [reasonError, setReasonError] = useState('');
+  const [busy, setBusy] = useState(false);
+  const [deleteId, setDeleteId] = useState(null);
+  const [autoLoginLoading, setAutoLoginLoading] = useState(false);
+  const [qr, setQr] = useState(null); // { image, offer, payload }
+  const [copied, setCopied] = useState(false);
+
+  // a new search / filter starts again on page 1
+  useEffect(() => { setPage(1); }, [q, status, city, category, joinedFrom, joinedTo, sort]);
+
+  const params = useCallback(() => ({
+    q: q || undefined, status, city: city === 'all' ? undefined : city, category: category === 'all' ? undefined : category,
+    joinedFrom: joinedFrom || undefined, joinedTo: joinedTo || undefined, sort, page, limit: PAGE_SIZE,
+  }), [q, status, city, category, joinedFrom, joinedTo, sort, page]);
+
+  /** quiet: refresh without the loading state (after an action) */
+  const load = useCallback(async ({ quiet = false } = {}) => {
+    if (!isAdmin) return;
+    const mine = ++seq.current;
+    if (!quiet) setLoading(true);
+    setError(null);
+    try {
+      const res = await brandApprovalApi.list(params());
+      if (mine !== seq.current) return; // an older reply arriving late
+      setData({ brands: res.brands || [], total: res.total || 0, pages: res.pages || 1, counts: res.counts || {}, options: res.options || { cities: [], categories: [] } });
+      setSelected((s) => new Set([...s].filter((id) => (res.brands || []).some((b) => b._id === id))));
+    } catch (e) {
+      if (mine === seq.current) setError(e.message || 'could not load brands');
+    } finally {
+      if (mine === seq.current) setLoading(false);
+    }
+  }, [isAdmin, params]);
+  useEffect(() => { load(); }, [load]);
+
+  const openDetail = useCallback(async (id) => {
+    setOpenId(id);
+    setDetail(null);
+    setDetailError(null);
+    try {
+      setDetail(await brandApprovalApi.detail(id));
+    } catch (e) {
+      setDetailError(e.message || 'could not load this brand');
+    }
+  }, []);
+  const closeDetail = () => { setOpenId(null); setDetail(null); setDetailError(null); };
+
+  /** put the server's updated rows into the list (counts kept), then refresh counts quietly */
+  const applyUpdated = (rows) => {
+    const by = new Map(rows.filter(Boolean).map((b) => [b._id, b]));
+    setData((d) => ({ ...d, brands: d.brands.map((b) => (by.has(b._id) ? { ...b, ...by.get(b._id) } : b)) }));
+    if (openId && by.has(openId)) openDetail(openId);
+    load({ quiet: true });
   };
 
-  // Fetch brands from API
-  const fetchBrands = useCallback(async () => {
-    if (!token) {
-      setLoading(false);
-      return;
-    }
-
-    setLoading(true);
+  const startDecision = (kind, ids, bulk = false) => { setDecision({ kind, ids, bulk }); setReason(''); setReasonError(''); };
+  const submitDecision = async () => {
+    const d = DECISIONS[decision.kind];
+    const text = reason.trim();
+    if (d.needsReason && text.length < 3) { setReasonError('a reason is required (at least 3 characters)'); return; }
+    setBusy(true);
     try {
-      const allUrl = `${API_BASE}/brand-approval`;
-      const allResponse = await axios.get(allUrl, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (allResponse.data.success) {
-        setStats(allResponse.data.stats);
-        
-        if (filter !== 'all') {
-          const filteredUrl = `${API_BASE}/brand-approval?status=${filter}`;
-          const filteredResponse = await axios.get(filteredUrl, {
-            headers: { Authorization: `Bearer ${token}` }
-          });
-          if (filteredResponse.data.success) {
-            setBrands(filteredResponse.data.brands);
-          }
-        } else {
-          setBrands(allResponse.data.brands);
-        }
-      } else {
-        showToast('Failed to load brands: ' + (allResponse.data.message || 'Unknown error'), 'error');
-      }
-    } catch (error) {
-      console.error('Error fetching brands:', error);
-      if (error.response?.status === 403) {
-        showToast('Access Denied: You do not have permission to view this page.', 'error');
-      } else if (error.response?.status === 401) {
-        showToast('Session expired. Please login again.', 'error');
-      } else {
-        showToast('Failed to load brands: ' + (error.response?.data?.message || error.message), 'error');
-      }
+      let rows = [];
+      if (decision.kind === 'info') rows = [(await brandApprovalApi.requestInfo(decision.ids[0], text)).brand];
+      else if (decision.ids.length === 1 && !decision.bulk) rows = [(await brandApprovalApi.setStatus(decision.ids[0], decision.kind, text)).brand];
+      else rows = (await brandApprovalApi.bulk(decision.ids, decision.kind, text)).brands || [];
+      toast(decision.kind === 'info' ? 'request sent to the brand' : `${rows.length} brand${rows.length === 1 ? '' : 's'} ${decision.kind}`, 'ok');
+      setDecision(null);
+      if (decision.bulk) setSelected(new Set());
+      applyUpdated(rows);
+    } catch (e) {
+      if (e.code === 'REASON_REQUIRED') setReasonError(e.message);
+      else toast(e.message || 'could not save', 'bad');
     } finally {
-      setLoading(false);
-      setRefreshing(false);
+      setBusy(false);
     }
-  }, [token, filter]);
+  };
 
-  // Fetch brand offers and details
-  const fetchBrandOffers = useCallback(async (brandId) => {
-    if (!token || !brandId) return;
-    
-    setLoadingDetails(true);
-    try {
-      const url = `${API_BASE}/offers/brand/${brandId}`;
-      const response = await axios.get(url, {
-        headers: { Authorization: `Bearer ${token}` }
-      });
-
-      if (response.data.success || Array.isArray(response.data)) {
-        const offers = Array.isArray(response.data) ? response.data : response.data.offers || [];
-        setBrandOffers(offers);
-        
-        // Calculate stats
-        const activeOffers = offers.filter(o => o.isActive !== false).length;
-        const totalClaims = offers.reduce((sum, o) => sum + (o.claimedBy?.length || 0), 0);
-        const totalSavings = offers.reduce((sum, o) => sum + (o.totalSavings || 0), 0);
-        
-        setBrandStats({
-          totalOffers: offers.length,
-          activeOffers,
-          totalClaims,
-          totalSavings
-        });
-      }
-    } catch (error) {
-      console.error('Error fetching brand offers:', error);
-      setBrandOffers([]);
-    } finally {
-      setLoadingDetails(false);
-    }
-  }, [token]);
-
-  useEffect(() => {
-    if (isAdmin) {
-      fetchBrands();
-    }
-  }, [isAdmin, fetchBrands]);
-
-  // ==========================================
-  // AUTO-LOGIN TO BRAND DASHBOARD - FIXED
-  // ==========================================
-  const handleAutoLogin = async (brandId, e) => {
-    if (e) e.stopPropagation();
-    
-    // Make sure we have a valid token
+  // ── kept from before: log in as an approved brand, an offer's QR code
+  const handleAutoLogin = async (brandId) => {
     const currentToken = token || localStorage.getItem('token');
-    if (!currentToken) {
-      showToast('You need to be logged in as admin first', 'error');
-      return;
-    }
-    
+    if (!currentToken) { toast('You need to be logged in as admin first', 'bad'); return; }
     setAutoLoginLoading(true);
-    
     try {
-      console.log('Attempting auto-login for brand:', brandId);
-      
-      // Call the admin login endpoint for this brand
-      const response = await axios.post(`${API_BASE}/auth/admin-login-as-brand`, {
-        brandId: brandId
-      }, {
-        headers: { 
-          Authorization: `Bearer ${currentToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
-
-      console.log('Auto-login response:', response.data);
-
+      const response = await axios.post(`${API_BASE}/auth/admin-login-as-brand`, { brandId }, { headers: { Authorization: `Bearer ${currentToken}`, 'Content-Type': 'application/json' } });
       if (response.data.success && response.data.token) {
-        const newToken = response.data.token;
-        const userData = response.data.user;
-        
-        // Store the new token and user data
-        localStorage.setItem('token', newToken);
-        localStorage.setItem('user', JSON.stringify(userData));
-        
-        // Update auth context using the login function
-        await login(newToken, userData);
-        
-        showToast(`Successfully logged in as ${userData.brandName || userData.name}`, 'success');
-        
-        // Redirect to brand dashboard after a short delay
-        setTimeout(() => {
-          window.location.href = '/brand-dashboard';
-        }, 500);
-        
-      } else {
-        showToast('Failed to login as brand: ' + (response.data.message || 'Unknown error'), 'error');
-      }
+        localStorage.setItem('token', response.data.token);
+        localStorage.setItem('user', JSON.stringify(response.data.user));
+        await login(response.data.token, response.data.user);
+        toast(`Logged in as ${nameOf(response.data.user)}`, 'ok');
+        setTimeout(() => { window.location.href = '/brand-dashboard'; }, 500);
+      } else toast(response.data.message || 'Failed to login as brand', 'bad');
     } catch (error) {
-      console.error('Auto-login error:', error);
-      
-      let errorMessage = 'Failed to login as brand. Please try again.';
-      if (error.response) {
-        console.error('Error response:', error.response.data);
-        if (error.response.data.message) {
-          errorMessage = error.response.data.message;
-        }
-        if (error.response.status === 403) {
-          errorMessage = 'Only admins can login as brands';
-        } else if (error.response.status === 400) {
-          errorMessage = error.response.data.message || 'Brand is not approved yet';
-        } else if (error.response.status === 404) {
-          errorMessage = 'Brand not found';
-        }
-      }
-      
-      showToast(errorMessage, 'error');
+      const s = error.response?.status;
+      toast(s === 403 ? 'Only admins can login as brands' : s === 404 ? 'Brand not found' : error.response?.data?.message || 'Failed to login as brand', 'bad');
     } finally {
       setAutoLoginLoading(false);
     }
   };
-
-  const handleStatusUpdate = async (brandId, status) => {
-    setProcessingId(brandId);
+  const showQr = async (offer, brand) => {
     try {
-      const url = `${API_BASE}/brand-approval/${brandId}/status`;
-      const response = await axios.put(
-        url,
-        { status, note: statusNote || '' },
-        { headers: { Authorization: `Bearer ${token}` } }
-      );
-
-      if (response.data.success) {
-        setShowModal(false);
-        setSelectedBrand(null);
-        setStatusNote('');
-        
-        showToast(`Brand ${status.toUpperCase()} successfully!`, 'success');
-        await fetchBrands();
-      } else {
-        showToast('Failed to update brand: ' + (response.data.message || 'Unknown error'), 'error');
-      }
-    } catch (error) {
-      console.error('Error updating brand:', error);
-      showToast(error.response?.data?.message || 'Failed to update brand status', 'error');
-    } finally {
-      setProcessingId(null);
+      const payload = { type: 'offer', offerId: offer._id, brandId: brand._id, brandName: nameOf(brand), offerTitle: offer.title || 'Offer', discount: offer.discountPercentage || 0, timestamp: new Date().toISOString(), isOnline: !!offer.isOnline, isInStore: !!offer.isInStore };
+      const image = await QRCode.toDataURL(JSON.stringify(payload), { width: 400, margin: 2, color: { dark: TOKEN.ink, light: TOKEN.card }, errorCorrectionLevel: 'H' });
+      setQr({ image, offer, payload });
+    } catch {
+      toast('Failed to generate QR code for this offer', 'bad');
     }
   };
+  const downloadQr = () => { const a = document.createElement('a'); a.download = `qr-${qr.offer.title || 'offer'}.png`; a.href = qr.image; a.click(); };
+  const copyQr = () => { navigator.clipboard?.writeText(JSON.stringify(qr.payload, null, 2)); setCopied(true); setTimeout(() => setCopied(false), 2000); };
 
-  const getStatusBadge = (status) => {
-    const config = STATUS[status] || STATUS.pending;
-    return <Pill tone={config.tone} dot>{config.label}</Pill>;
-  };
-
-  const offerType = (o, long) => (o.isOnline && o.isInStore ? <Pill tone="purple">Online & In-Store</Pill>
-    : o.isOnline ? <Pill tone="blue">{long ? 'Online Only' : 'Online'}</Pill>
-      : o.isInStore ? <Pill tone="green">{long ? 'In-Store Only' : 'In-Store'}</Pill>
-        : long ? <Pill tone="sand">Standard</Pill> : null);
-
-  const logo = (b, cls) => (b.logo
-    ? <img src={b.logo} alt={b.brandName || b.name} className={`ba-logo ${cls || ''}`} />
-    : <span className={`ba-logo ph ${cls || ''}`}>{(b.brandName || b.name || 'B')[0].toUpperCase()}</span>);
-
-  const handleBrandClick = (brand) => {
-    setSelectedBrand(brand);
-    setStatusNote(brand.brandApprovalNote || '');
-    setShowModal(true);
-    fetchBrandOffers(brand._id);
-  };
-
-  const closeModal = () => {
-    setShowModal(false);
-    setSelectedBrand(null);
-    setStatusNote('');
-    setBrandOffers([]);
-    setBrandStats({
-      totalOffers: 0,
-      activeOffers: 0,
-      totalClaims: 0,
-      totalSavings: 0
-    });
-  };
-
-  // QR Code Functions
-  const generateQRForOffer = async (offer, brandUser, e) => {
-    e.stopPropagation();
-    setSelectedOfferForQR(offer);
-    setGeneratingQR(true);
-    
-    try {
-      const qrPayload = {
-        type: 'offer',
-        offerId: offer._id,
-        brandId: brandUser._id,
-        brandName: brandUser.brandName || brandUser.name || 'Brand',
-        offerTitle: offer.title || 'Offer',
-        discount: offer.discountPercentage || 0,
-        timestamp: new Date().toISOString(),
-        isOnline: offer.isOnline || false,
-        isInStore: offer.isInStore || false,
-        promoCode: offer.promoCode || null,
-        expiryDate: offer.expiryDate || null
-      };
-
-      const qrDataUrl = await QRCode.toDataURL(JSON.stringify(qrPayload), {
-        width: 400,
-        margin: 2,
-        color: {
-          dark: TOKEN.ink,
-          light: TOKEN.card
-        },
-        errorCorrectionLevel: 'H'
-      });
-
-      setQrImage(qrDataUrl);
-      setQrData(qrPayload);
-      setShowQRModal(true);
-    } catch (err) {
-      console.error("Error generating QR code:", err);
-      showToast("Failed to generate QR code for this offer", 'error');
-    } finally {
-      setGeneratingQR(false);
-    }
-  };
-
-  const closeQRModal = () => {
-    setShowQRModal(false);
-    setQrImage(null);
-    setQrData(null);
-    setSelectedOfferForQR(null);
-  };
-
-  const downloadQR = () => {
-    if (qrImage) {
-      const link = document.createElement('a');
-      link.download = `qr-${selectedOfferForQR?.title || 'offer'}-${selectedBrand?.brandName || 'brand'}.png`;
-      link.href = qrImage;
-      link.click();
-    }
-  };
-
-  const copyQRData = () => {
-    if (qrData) {
-      navigator.clipboard.writeText(JSON.stringify(qrData, null, 2));
-      setCopied(true);
-      setTimeout(() => setCopied(false), 2000);
-    }
-  };
-
-  const shareQR = async () => {
-    if (qrImage) {
-      try {
-        const response = await fetch(qrImage);
-        const blob = await response.blob();
-        const file = new File([blob], 'qr-code.png', { type: 'image/png' });
-        
-        if (navigator.share) {
-          await navigator.share({
-            title: `${selectedBrand?.brandName || 'Brand'} Discount QR Code`,
-            text: `Scan this QR code to get ${selectedOfferForQR?.discountPercentage || 0}% off at ${selectedBrand?.brandName || selectedBrand?.name || 'Brand'}`,
-            files: [file]
-          });
-        } else {
-          await navigator.clipboard.writeText(qrImage);
-          showToast('QR code copied to clipboard!', 'success');
-        }
-      } catch (err) {
-        console.error("Share error:", err);
-      }
-    }
-  };
-
-  // Check admin access
   if (!isAdmin) {
     return (
       <div className="tdcp k-page">
-        <div className="k-card">
-          <EmptyState icon="lock" tone="red" title="Access Restricted" text="This area is reserved for administrators only. Please contact support if you believe this is an error." />
-        </div>
+        <div className="k-card"><EmptyState icon="lock" tone="red" title="Access Restricted" text="This area is reserved for administrators only." /></div>
       </div>
     );
   }
 
-  if (loading && !refreshing) {
-    return <div className="tdcp k-page"><PageLoading label="Loading brands..." /></div>;
-  }
+  const { brands, counts } = data;
+  const pageIds = brands.map((b) => b._id);
+  const allOnPage = pageIds.length > 0 && pageIds.every((id) => selected.has(id));
+  const toggle = (id) => setSelected((s) => { const n = new Set(s); if (n.has(id)) n.delete(id); else n.add(id); return n; });
+  const toggleAll = () => setSelected((s) => { const n = new Set(s); if (allOnPage) pageIds.forEach((id) => n.delete(id)); else pageIds.forEach((id) => n.add(id)); return n; });
+  const filtered = !!(q || city !== 'all' || category !== 'all' || joinedFrom || joinedTo);
+  const clearFilters = () => { setSearch(''); setCity('all'); setCategory('all'); setJoinedFrom(''); setJoinedTo(''); };
+  const stop = (e) => e.stopPropagation();
 
-  const busy = selectedBrand && processingId === selectedBrand._id;
+  const columns = [
+    { key: 'sel', label: <Checkbox aria-label="select every brand on this page" checked={allOnPage} onChange={toggleAll} />, thStyle: { width: 44 },
+      render: (b) => <span onClick={stop}><Checkbox aria-label={`select ${nameOf(b)}`} checked={selected.has(b._id)} onChange={() => toggle(b._id)} /></span> },
+    { key: 'brand', label: 'brand', render: (b) => (
+      <span className="ba-line" style={{ gap: 12 }}>
+        <Logo b={b} />
+        <span className="ba-info">
+          <button type="button" className="ba-link" onClick={(e) => { stop(e); openDetail(b._id); }}>{nameOf(b)}</button>
+          <span className="ba-email">{b.name && b.brandName ? b.name : b.email}</span>
+        </span>
+      </span>
+    ) },
+    { key: 'category', label: 'category', render: (b) => b.category || 'General' },
+    { key: 'city', label: 'city', render: (b) => b.city || '–' },
+    { key: 'joined', label: 'joined', render: (b) => <span className="ba-date">{fmtDate(b.createdAt)}</span> },
+    { key: 'branches', label: 'branches', render: (b) => b.branchesCount ?? 0, style: { textAlign: 'right' }, thStyle: { textAlign: 'right' } },
+    { key: 'offers', label: 'offers', render: (b) => b.offersCount ?? 0, style: { textAlign: 'right' }, thStyle: { textAlign: 'right' } },
+    { key: 'status', label: 'status', render: (b) => <StatusPill status={b.brandApprovalStatus} /> },
+  ];
+
+  const tab = (value, label) => ({ value, label, count: counts[value] ?? undefined });
+  const d = detail?.brand;
+  const decisionDef = decision ? DECISIONS[decision.kind] : null;
 
   return (
     <div className="tdcp k-page ba" data-screen="brand-approvals">
       <PageHeader
         title="brand approvals"
         sub="review new brands before they go live in the app."
-        actions={
-          <Button variant="secondary" icon="refresh" loading={refreshing} onClick={() => { setRefreshing(true); fetchBrands(); }}>
-            {refreshing ? 'Refreshing...' : 'Refresh'}
-          </Button>
-        }
+        actions={<Button variant="secondary" icon="refresh" loading={loading} onClick={() => load()}>refresh</Button>}
       />
 
-      <div className="k-stats">
-        <StatCard label="Total Brands" value={stats.total || 0} icon="store" tone="sand" />
-        <StatCard label="Pending Review" value={stats.pending || 0} icon="clock" tone="orange" />
-        <StatCard label="Approved" value={stats.approved || 0} icon="checkCircle" tone="green" />
-        <StatCard label="Rejected" value={stats.rejected || 0} icon="xCircle" tone="red" />
-        <StatCard label="Drafts" value={stats.draft || 0} icon="file" tone="blue" />
+      <Segmented label="status" value={status} onChange={setStatus}
+        options={[tab('pending', 'Pending'), tab('approved', 'Approved'), tab('rejected', 'Rejected'), tab('draft', 'Draft'), tab('all', 'All')]} />
+
+      <div className="ba-filters" role="search" aria-label="find brands">
+        <Field label="search" htmlFor="ba-search" style={{ flex: '2 1 260px' }}>
+          <SearchInput id="ba-search" value={search} onChange={(e) => setSearch(e.target.value)} placeholder="brand, owner, email, phone, city, category" autoComplete="off" />
+        </Field>
+        <Field label="city" htmlFor="ba-city" style={{ flex: '1 1 140px' }}>
+          <Select id="ba-city" value={city} onChange={(e) => setCity(e.target.value)}>
+            <option value="all">all cities</option>
+            {data.options.cities.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+        </Field>
+        <Field label="category" htmlFor="ba-cat" style={{ flex: '1 1 140px' }}>
+          <Select id="ba-cat" value={category} onChange={(e) => setCategory(e.target.value)}>
+            <option value="all">all categories</option>
+            {data.options.categories.map((c) => <option key={c} value={c}>{c}</option>)}
+          </Select>
+        </Field>
+        <Field label="joined from" htmlFor="ba-from" style={{ flex: '1 1 140px' }}>
+          <DateInput id="ba-from" value={joinedFrom} max={joinedTo || undefined} onChange={(e) => setJoinedFrom(e.target.value)} />
+        </Field>
+        <Field label="joined to" htmlFor="ba-to" style={{ flex: '1 1 140px' }}>
+          <DateInput id="ba-to" value={joinedTo} min={joinedFrom || undefined} onChange={(e) => setJoinedTo(e.target.value)} />
+        </Field>
+        <Field label="sort" htmlFor="ba-sort" style={{ flex: '1 1 130px' }}>
+          <Select id="ba-sort" value={sort} onChange={(e) => setSort(e.target.value)}>
+            <option value="newest">newest first</option>
+            <option value="oldest">oldest first</option>
+            <option value="name">name A–Z</option>
+          </Select>
+        </Field>
       </div>
 
-      <Segmented
-        label="status"
-        value={filter}
-        onChange={setFilter}
-        options={[
-          { value: 'all', label: 'All', count: stats.total > 0 ? stats.total : undefined },
-          { value: 'pending', label: 'Pending', count: stats.pending > 0 ? stats.pending : undefined },
-          { value: 'approved', label: 'Approved', count: stats.approved > 0 ? stats.approved : undefined },
-          { value: 'rejected', label: 'Rejected', count: stats.rejected > 0 ? stats.rejected : undefined },
-          { value: 'draft', label: 'Draft', count: stats.draft > 0 ? stats.draft : undefined },
-        ]}
-      />
-
-      {brands.length === 0 ? (
-        <div className="k-card">
-          <EmptyState icon="store" tone="sand" title="No brands found" text={filter === 'all' ? 'No brands have registered yet' : `No ${filter} brands to display`} />
-        </div>
-      ) : (
-        <div className="ba-list">
-          {brands.map((brand) => (
-            <div key={brand._id} className="ba-row">
-            <button type="button" className="k-card ba-card" onClick={() => handleBrandClick(brand)}>
-              {logo(brand)}
-              <span className="ba-info">
-                <span className="ba-name">{brand.brandName || brand.name}</span>
-                <span className="ba-email">{brand.email}</span>
-                <span className="ba-pills">
-                  <Pill tone="sand">{brand.category || 'General'}</Pill>
-                  {(() => { const s = storeBadge(brand.onlineStore); return <Pill tone={s.tone}>{s.label}</Pill>; })()}
-                </span>
-              </span>
-              <span className="ba-right">
-                {getStatusBadge(brand.brandApprovalStatus)}
-                <span className="ba-date">
-                  {new Date(brand.createdAt).toLocaleDateString('en-US', {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </span>
-              </span>
-              <Ico kind="chevronRight" tone="plain" size={18} />
-            </button>
-            <IconButton icon="trash" label={`delete ${brand.brandName || brand.name}`} variant="danger" onClick={() => setDeleteId(brand._id)} />
-            </div>
-          ))}
+      {selected.size > 0 && (
+        <div className="k-card pad ba-bulk" role="region" aria-label="bulk actions">
+          <b>{selected.size} selected</b>
+          <Button size="sm" variant="success" icon="checkCircle" onClick={() => startDecision('approved', [...selected], true)}>approve selected</Button>
+          <Button size="sm" variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [...selected], true)}>reject selected</Button>
+          <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>clear</Button>
         </div>
       )}
 
+      {error ? (
+        <div className="k-card" role="alert">
+          <EmptyState icon="alert" tone="red" title="couldn't load brands" text={error} action={<Button icon="refresh" onClick={() => load()}>try again</Button>} />
+        </div>
+      ) : (
+        <Table
+          label="brands"
+          columns={columns}
+          rows={brands}
+          loading={loading}
+          onRowClick={(b) => openDetail(b._id)}
+          minWidth={880}
+          empty={<EmptyState icon="store" tone="sand" title={filtered ? 'no brands match' : status === 'all' ? 'no brands yet' : `no ${status} brands`}
+            text={filtered ? 'try another search or clear the filters' : 'new brands show up here when they sign up'}
+            action={filtered ? <Button variant="secondary" onClick={clearFilters}>clear filters</Button> : null} />}
+        />
+      )}
+
+      {!error && data.total > 0 && (
+        <nav className="ba-pager" aria-label="pages">
+          <span className="k-hint" aria-live="polite">{data.total} brand{data.total === 1 ? '' : 's'} · page {page} of {data.pages}</span>
+          <Button size="sm" variant="secondary" icon="chevronLeft" disabled={page <= 1 || loading} onClick={() => setPage((p) => p - 1)}>previous</Button>
+          <Button size="sm" variant="secondary" iconRight="chevronRight" disabled={page >= data.pages || loading} onClick={() => setPage((p) => p + 1)}>next</Button>
+        </nav>
+      )}
+
       {/* brand detail */}
-      <Modal
-        open={showModal && !!selectedBrand}
-        onClose={closeModal}
-        size="xl"
-        title={selectedBrand ? (selectedBrand.brandName || selectedBrand.name) : ''}
-        sub={selectedBrand?.email}
-        footer={selectedBrand ? <>
-          <Button variant="ghost" icon="trash" onClick={() => setDeleteId(selectedBrand._id)} style={{ color: 'var(--danger)', marginRight: selectedBrand.brandApprovalStatus === 'approved' ? 0 : 'auto' }}>
-            Delete Brand
-          </Button>
-          {selectedBrand.brandApprovalStatus === 'approved' && (
-            <Button
-              variant="ghost"
-              icon="key"
-              onClick={(e) => handleAutoLogin(selectedBrand._id, e)}
-              loading={autoLoginLoading}
-              title="Login as this brand"
-              style={{ marginRight: 'auto' }}
-            >
-              Login as Brand
-            </Button>
-          )}
-          <Button variant="secondary" icon="file" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'draft')}>Save as Draft</Button>
-          <Button variant="danger" icon="xCircle" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'rejected')}>Reject</Button>
-          <Button variant="success" icon="checkCircle" loading={busy} onClick={() => handleStatusUpdate(selectedBrand._id, 'approved')}>Approve</Button>
+      <Drawer
+        open={!!openId}
+        onClose={closeDetail}
+        title={d ? nameOf(d) : 'brand'}
+        sub={d ? <StatusPill status={d.brandApprovalStatus} /> : undefined}
+        footer={d ? <>
+          <Button variant="ghost" icon="trash" onClick={() => setDeleteId(d._id)} style={{ color: 'var(--danger)' }}>delete</Button>
+          {d.brandApprovalStatus === 'approved' && <Button variant="ghost" icon="key" loading={autoLoginLoading} onClick={() => handleAutoLogin(d._id)}>login as brand</Button>}
+          <Button variant="secondary" icon="mail" onClick={() => startDecision('info', [d._id])}>request info</Button>
+          {d.brandApprovalStatus !== 'rejected' && <Button variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [d._id])}>reject</Button>}
+          {d.brandApprovalStatus !== 'approved' && <Button variant="success" icon="checkCircle" onClick={() => startDecision('approved', [d._id])}>approve</Button>}
         </> : null}
       >
-        {selectedBrand && (
-          loadingDetails ? (
-            <PageLoading label="Loading brand details..." minHeight={240} />
-          ) : (
-            <>
-              <div className="ba-who">
-                {logo(selectedBrand, 'lg')}
-                <div style={{ minWidth: 0 }}>{getStatusBadge(selectedBrand.brandApprovalStatus)}</div>
-              </div>
+        {detailError ? (
+          <EmptyState icon="alert" tone="red" title="couldn't load this brand" text={detailError} action={<Button onClick={() => openDetail(openId)}>try again</Button>} />
+        ) : !d ? (
+          <div role="status" className="k-hint">loading brand…</div>
+        ) : (
+          <div className="ba-detail">
+            <div className="ba-who"><Logo b={d} lg /><div><b>{nameOf(d)}</b><div className="k-hint">joined {fmtDate(d.createdAt)}</div></div></div>
+            <Card title="business details" icon="store" tone="purple">
+              <Facts rows={[['brand name', nameOf(d)], ['owner', d.name], ['category', d.category || 'General'], ['city', d.city], ['address', d.address], ['sells', [d.isOnline && 'online', d.isInStore && 'in store'].filter(Boolean).join(' · ') || '–']]} />
+            </Card>
+            <Card title="contact" icon="mail" tone="blue">
+              <Facts rows={[['email', d.email], ['phone', d.phone], ['website', d.websiteUrl]]} />
+            </Card>
+            <Card title="documents" icon="file" tone="sand">
+              <Facts rows={[
+                ['logo', d.logo ? <a key="l" href={d.logo} target="_blank" rel="noreferrer">open logo</a> : 'none'],
+                ['online store', (() => { const s = storeBadge(d.onlineStore); return <Pill key="s" tone={s.tone}>{s.label}</Pill>; })()],
+              ]} />
+              <p className="k-hint" style={{ margin: '8px 0 0' }}>brands don't upload registration documents at sign-up; use “request info” to ask for any you need.</p>
+            </Card>
+            <Card title={`branches (${detail.branches.length})`} icon="pin" tone="green">
+              {detail.branches.length ? (
+                <ul className="ba-ul">{detail.branches.map((b) => <li key={b._id}><b>{b.name}</b> <span className="k-hint">{[b.city, b.location].filter(Boolean).join(' · ')}</span> {!b.isActive && <Pill tone="red">inactive</Pill>}</li>)}</ul>
+              ) : <p className="k-hint" style={{ margin: 0 }}>no branches yet</p>}
+            </Card>
+            <Card title={`offers (${detail.offers.length})`} icon="gift" tone="yellow">
+              {detail.offers.length ? (
+                <div className="ba-offers">{detail.offers.map((o) => (
+                  <div key={o._id} className="ba-offer">
+                    <div className="ba-offer-main"><b>{o.title}</b><span className="ba-ok">{o.discountPercentage}% off</span><Pill tone={o.status === 'archived' ? 'sand' : 'green'} dot>{o.status === 'archived' ? 'archived' : 'live'}</Pill></div>
+                    <div className="ba-offer-side"><Button size="sm" variant="secondary" icon="qr" onClick={() => showQr(o, d)}>QR</Button></div>
+                  </div>
+                ))}</div>
+              ) : <p className="k-hint" style={{ margin: 0 }}>no offers yet</p>}
+            </Card>
+            <Card title="history" icon="clock" tone="sand">
+              {detail.history.length ? (
+                <ol className="ba-history">{detail.history.map((h) => (
+                  <li key={h.id}>
+                    <b>{ACTION_LABEL[h.action] || h.action}</b>
+                    <span className="k-hint"> · {fmtTime(h.at)} · {h.admin ? `by ${h.admin.name}` : 'before the action log (admin not recorded)'}</span>
+                    {h.reason && <div className="ba-reason">“{h.reason}”</div>}
+                  </li>
+                ))}</ol>
+              ) : <p className="k-hint" style={{ margin: 0 }}>no decisions yet</p>}
+            </Card>
+          </div>
+        )}
+      </Drawer>
 
-              <div className="k-stats">
-                <StatCard label="Total Offers" value={brandStats.totalOffers} icon="gift" tone="yellow" />
-                <StatCard label="Active" value={brandStats.activeOffers} icon="checkCircle" tone="green" />
-                <StatCard label="Total Claims" value={brandStats.totalClaims} icon="ticket" tone="blue" />
-                <StatCard label="Savings" value={`rs ${brandStats.totalSavings}`} icon="coin" tone="purple" />
-              </div>
-
-              <div className="ba-grid">
-                <Card title="Brand Information" icon="store" tone="purple">
-                  <Facts rows={[
-                    ['Brand Name', selectedBrand.brandName || selectedBrand.name],
-                    ['Email', selectedBrand.email],
-                    ['Phone', selectedBrand.phone || 'N/A'],
-                    ['Category', selectedBrand.category || 'General'],
-                    ['Address', selectedBrand.address || 'N/A'],
-                    ['Website', selectedBrand.website || 'N/A'],
-                  ]} />
-                </Card>
-
-                <Card title="Presence & Referrals" icon="globe" tone="blue">
-                  <Facts rows={[
-                    ['Online Presence', <Pill key="on" tone={selectedBrand.isOnline ? 'green' : 'red'} dot>{selectedBrand.isOnline ? 'Online' : 'Offline'}</Pill>],
-                    ['In-Store', <Pill key="in" tone={selectedBrand.isInStore ? 'green' : 'red'} dot>{selectedBrand.isInStore ? 'Available' : 'Not Available'}</Pill>],
-                    ['Referral Code', <code key="code" className="ba-code">{selectedBrand.referralCode || 'N/A'}</code>],
-                    ['Referral Count', <span key="count" className="ba-line">{selectedBrand.referralCount || 0}{selectedBrand.referralCount >= 10 && <Ico kind="flame" tone="red" size={22} />}</span>],
-                    ['Referred By', selectedBrand.referredBy?.name || 'None'],
-                  ]} />
-                </Card>
-
-                <Card title={`Brand Offers (${brandOffers.length})`} icon="gift" tone="yellow" style={{ gridColumn: '1 / -1' }}>
-                  {brandOffers.length > 0 ? (
-                    <div className="ba-offers">
-                      {brandOffers.map((offer, index) => (
-                        <div key={index} className="ba-offer">
-                          <div className="ba-offer-main">
-                            <b>{offer.title}</b>
-                            <span className="ba-ok">{offer.discountPercentage}% off</span>
-                            <span className="k-hint">{offer.claimedBy?.length || 0} claims</span>
-                            <Pill tone={offer.isActive !== false ? 'green' : 'red'} dot>{offer.isActive !== false ? 'Active' : 'Inactive'}</Pill>
-                          </div>
-                          <div className="ba-offer-side">
-                            {offerType(offer, false)}
-                            <Button
-                              size="sm"
-                              variant="secondary"
-                              icon="qr"
-                              loading={generatingQR && selectedOfferForQR?._id === offer._id}
-                              disabled={generatingQR}
-                              onClick={(e) => generateQRForOffer(offer, selectedBrand, e)}
-                              title="Generate QR Code for this offer"
-                            >
-                              QR
-                            </Button>
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="k-hint" style={{ margin: 0 }}>No offers created yet</p>
-                  )}
-                </Card>
-
-                <Card title="Timestamps" icon="calendar" tone="sand">
-                  <Facts rows={[
-                    ['Joined', new Date(selectedBrand.createdAt).toLocaleString()],
-                    ['Last Updated', new Date(selectedBrand.updatedAt).toLocaleString()],
-                    ...(selectedBrand.brandApprovedAt ? [['Approved At', new Date(selectedBrand.brandApprovedAt).toLocaleString()]] : []),
-                    ...(selectedBrand.brandRejectedAt ? [['Rejected At', new Date(selectedBrand.brandRejectedAt).toLocaleString()]] : []),
-                  ]} />
-                </Card>
-
-                <Card title="Admin Note" icon="edit" tone="sand">
-                  <Field label="note" htmlFor="ba-note">
-                    <Textarea
-                      id="ba-note"
-                      placeholder="Add a note about this brand (optional)..."
-                      value={statusNote}
-                      onChange={(e) => setStatusNote(e.target.value)}
-                      rows="3"
-                    />
-                  </Field>
-                </Card>
-              </div>
-            </>
-          )
+      {/* approve / reject / request info — one brand or the selection */}
+      <Modal
+        open={!!decision}
+        onClose={busy ? undefined : () => setDecision(null)}
+        size="sm"
+        icon={decisionDef?.icon}
+        tone={decision?.kind === 'rejected' ? 'red' : decision?.kind === 'approved' ? 'green' : 'blue'}
+        title={decision ? `${decisionDef.title}${decision.ids.length > 1 ? ` ${decision.ids.length} brands` : ''}` : ''}
+        sub={decision ? (decision.ids.length > 1 ? 'one reason for all of them; each brand is notified and logged' : 'the brand is notified; this is logged with your name') : undefined}
+        footer={decision ? <>
+          <Button variant="secondary" onClick={() => setDecision(null)} disabled={busy}>cancel</Button>
+          <Button variant={decisionDef.variant} icon={decisionDef.icon} loading={busy} onClick={submitDecision}>{decisionDef.title.toLowerCase()}</Button>
+        </> : null}
+      >
+        {decision && (
+          <Field label={decisionDef.needsReason ? 'reason (required)' : 'note (optional)'} htmlFor="ba-reason" hint={decisionDef.hint} error={reasonError}>
+            <Textarea id="ba-reason" rows={4} maxLength={500} value={reason} onChange={(e) => { setReason(e.target.value); setReasonError(''); }} invalid={!!reasonError} aria-required={decisionDef.needsReason} autoFocus />
+          </Field>
         )}
       </Modal>
 
-      {/* offer QR code */}
       <Modal
-        open={showQRModal && !!qrImage && !!selectedOfferForQR}
-        onClose={closeQRModal}
+        open={!!qr}
+        onClose={() => setQr(null)}
         icon="qr"
         tone="yellow"
-        title={`QR Code - ${selectedBrand?.brandName || 'Brand'}`}
-        sub={selectedOfferForQR ? `${selectedOfferForQR.title} • ${selectedOfferForQR.discountPercentage}% OFF` : undefined}
-        footer={<>
-          <Button variant="secondary" icon="copy" onClick={copyQRData}>{copied ? 'Copied!' : 'Copy Data'}</Button>
-          <Button variant="secondary" icon="share" onClick={shareQR}>Share</Button>
-          <Button icon="download" onClick={downloadQR}>Download</Button>
-        </>}
+        title={`QR code - ${qr ? qr.payload.brandName : ''}`}
+        sub={qr ? `${qr.offer.title} • ${qr.offer.discountPercentage}% OFF` : undefined}
+        footer={qr ? <>
+          <Button variant="secondary" icon="copy" onClick={copyQr}>{copied ? 'copied!' : 'copy data'}</Button>
+          <Button icon="download" onClick={downloadQr}>download</Button>
+        </> : null}
       >
-        {selectedOfferForQR && (
-          <>
-            <div className="ba-qr"><img src={qrImage} alt="QR Code" /></div>
-            <div className="k-card pad" style={{ padding: '6px 18px' }}>
-              <Facts rows={[
-                ['Brand', selectedBrand?.brandName || selectedBrand?.name || 'Brand'],
-                ['Offer', selectedOfferForQR.title],
-                ['Discount', <b key="d">{selectedOfferForQR.discountPercentage}% OFF</b>],
-                ['Type', offerType(selectedOfferForQR, true)],
-                ...(selectedOfferForQR.promoCode ? [['Promo Code', <code key="p" className="ba-code">{selectedOfferForQR.promoCode}</code>]] : []),
-              ]} />
-            </div>
-            <div className="k-note">
-              <b>Students can scan this QR code to claim this discount</b>
-              <div className="k-hint">The QR code contains all necessary information for verification</div>
-            </div>
-          </>
-        )}
+        {qr && <div className="ba-qr"><img src={qr.image} alt={`QR code for ${qr.offer.title}`} /></div>}
       </Modal>
 
       {deleteId && (
@@ -630,10 +414,10 @@ const BrandApprovalScreen = () => {
           userId={deleteId}
           onClose={() => setDeleteId(null)}
           onDeleted={() => {
-            if (selectedBrand?._id === deleteId) closeModal();
-            setBrands((list) => list.filter((b) => b._id !== deleteId));
+            if (openId === deleteId) closeDetail();
+            setData((x) => ({ ...x, brands: x.brands.filter((b) => b._id !== deleteId) }));
             setDeleteId(null);
-            fetchBrands();
+            load({ quiet: true });
           }}
         />
       )}
