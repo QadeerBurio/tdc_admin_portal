@@ -26,6 +26,7 @@ const routesNow = (k) => ({
     resumeStudio: { tailoringStarted: 14, tailoringCompleted: 11, tailoringFailed: 2, inProgress: 1, failedByReason: { TIMED_OUT: 2 }, studentsTailoring: 9, approvals: 7, studentsApproved: 6, applicationsWithTailoredVersion: 4, suggestions: 60, factualCheckRejections: 9, factualCheckRejectionPct: 15, needsConfirmation: 5, timeToDraftSeconds: { p50: 42, p95: 131, count: 11 }, definitions: { approvals: "tailored versions students approved in the range" } },
     employers: { companiesVerified: 1, verificationsPending: 0, suspectedDuplicates: 1, verificationsRejected: 0, trialsIssued: 1, trialsIssuedInRange: 1, trialsActive: 0, trialsUsed: 1, trialsUnderReview: 0, freeHiresConsumed: 1, freeHiresRestored: 0, netFreeHires: 1, hiresPendingPricing: 1, payingEmployers: 0, feesCollected: 0, trialToPaidPct: null, definitions: { payingEmployers: "no pricing exists yet" } },
   }),
+  "GET /api/analytics/admin/metrics": require("./mock-admin-metrics").metrics(),
   "GET /api/analytics/brands/me": okA({ range, minCohort: 5, discounts: { redemptions: 3, uniqueStudents: null, billTotal: 1500, savedTotal: 300, repeatCustomers: null, repeatRatePct: null, note: "hidden: fewer than 5 students", definitions: {} }, loyalty: { countedVisits: 0, creditsNotCounted: 0, reversals: 0, netVisits: 0, members: 0, uniqueStudents: 0, membersByTier: null, membersByTierNote: "hidden: fewer than 5 students" }, surpriseBox: { ordersPlaced: 2, boxesOrdered: 2, verifiedPickups: 1, collectedAtPickup: 450, cancelledByStudent: 0, cancelledByBrand: 0, noShows: 1, disputes: 0, pickupRatePct: 50, pickupRateDenominator: 2 } }),
   "GET /api/analytics/employers/me": okA({ range, hiring: funnel, trial: { status: "used", remainingFreeHires: 0, nextAction: { action: "none", label: "pricing for further hires is coming soon" }, summary: { applicants: 12, completedInterviews: 3, verifiedHires: 1, freeHireUsed: true }, furtherHires: "Pricing for further hires is coming soon." } }),
   "GET /api/career/employers/me/trial": 404,
@@ -80,10 +81,20 @@ http.createServer((q, s) => {
   const adm = await open(admin, "/admin");
   await adm.evaluate(`[...document.querySelectorAll("button, a")].find((e) => e.innerText.trim().toLowerCase() === "overview")?.click(); true`);
   await sleep(2000);
-  expect("admin overview: all six cards with denominators", await text(adm), ["overview", "claims, holds and scheduled interviews never count", "discounts", "redemptions (brand-confirmed)", "36.4% of 11", "of which deleted brands", "1 brand(s) with fewer than 5 students not listed", "loyalty", "members: Regular", "surprise box", "verified pickups", "50% of 6", "hiring", "verified hires", "20.5 h", "employers", "free hires used (net of restored)", "hires pending pricing", "paying employers", "not measurable yet", "resume studio", "tailoring started", "11 / 2 / 1", "applications with a tailored version", "blocked by the factual check", "9 (15% of 60)", "42 s / 2.2 min", "failed: timed out 2", "brands by redemptions", "Alpha Cafe", "export csv", "from", "to"]);
+  // the overview is now the redesigned page (tests in admin-approvals-metrics-ui-check.js); the business figures
+  // that aren't metric groups (employers, Resume Studio) moved to the metrics page's last tab
+  expect("admin overview: the redesigned page", await text(adm), ["overview", "needs your action", "quick actions", "new students", "hiring funnel"]);
+  await adm.evaluate(`[...document.querySelectorAll("aside button, aside a")].find((e) => e.innerText.trim().toLowerCase() === "metrics")?.click(); true`);
+  await sleep(1500);
+  await adm.evaluate(`[...document.querySelectorAll("[role=tab]")].find((e) => /resume studio/.test(e.innerText))?.click(); true`);
+  await sleep(2000);
+  expect("metrics → resume studio & employers", await text(adm), ["employers", "free hires used (net of restored)", "hires pending pricing", "paying employers", "not measurable yet", "resume studio", "tailoring started", "11 / 2 / 1", "applications with a tailored version", "blocked by the factual check", "9 (15% of 60)", "42 s / 2.2 min", "failed: timed out 2", "export csv", "from", "to"]);
+  const notDup = !/redemptions \(brand-confirmed\)/i.test(await text(adm));
+  if (!notDup) bad = 1;
+  console.log(`…without a second version of the discount figures: ${notDup ? "yes" : "NO"}`);
   await adm.evaluate(`[...document.querySelectorAll("button")].find((x) => x.innerText.trim() === "export csv")?.click(); true`);
   await sleep(500);
-  const hasDefs = await adm.evaluate(`document.querySelectorAll("details summary").length >= 5`);
+  const hasDefs = await adm.evaluate(`document.querySelectorAll("details summary").length >= 2`);
   if (!hasDefs) bad = 1;
   console.log(`each card says what it counts: ${hasDefs ? "yes" : "NO"}`);
   adm.errs.forEach((e) => console.log("    " + e));

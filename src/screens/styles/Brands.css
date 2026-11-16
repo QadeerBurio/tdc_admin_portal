@@ -534,8 +534,19 @@
 .tdcp .ba-offer-main, .tdcp .ba-offer-side { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; }
 .tdcp .ba-qr { display: flex; justify-content: center; }
 .tdcp .ba-qr img { width: min(280px, 100%); height: auto; aspect-ratio: 1; border-radius: 18px; border: 1px solid var(--line); background: var(--card); padding: 10px; }
+.tdcp .ba-filters { display: flex; flex-wrap: wrap; gap: 12px; align-items: flex-end; margin: 14px 0; }
+.tdcp .ba-filters .k-field { min-width: 0; margin: 0; }
+.tdcp .ba-bulk { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 12px; }
+.tdcp .ba-pager { display: flex; align-items: center; justify-content: flex-end; gap: 10px; flex-wrap: wrap; margin-top: 12px; }
+.tdcp .ba-pager .k-hint { margin-right: auto; }
+.tdcp .ba-link { background: none; border: 0; padding: 0; font: inherit; font-family: var(--heading); font-weight: 700; font-size: 15px; color: var(--ink); text-align: left; cursor: pointer; text-decoration: underline; text-decoration-color: var(--line); text-underline-offset: 3px; overflow-wrap: anywhere; }
+.tdcp .ba-link:hover, .tdcp .ba-link:focus-visible { text-decoration-color: var(--ink); }
+.tdcp .ba-detail { display: flex; flex-direction: column; gap: 14px; }
+.tdcp .ba-ul, .tdcp .ba-history { margin: 0; padding-left: 18px; display: flex; flex-direction: column; gap: 8px; font-size: 14px; }
+.tdcp .ba-reason { margin-top: 2px; color: var(--ink); overflow-wrap: anywhere; }
 @media (max-width: 760px) {
   .tdcp .ba-grid { grid-template-columns: 1fr; }
+  .tdcp .ba-filters .k-field { flex: 1 1 100% !important; }
   .tdcp .ba-card { flex-wrap: wrap; }
   .tdcp .ba-right { flex-direction: row; align-items: center; width: 100%; justify-content: space-between; }
 }

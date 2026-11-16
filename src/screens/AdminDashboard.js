@@ -30,7 +30,8 @@ import HiringOverview from "./HiringOverview";
 import loyaltyApi from "../services/loyaltyApi";
 import adminActionsApi from "../services/adminActionsApi";
 import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
-import { AdminOverview } from "./BusinessAnalytics";
+import AdminHome from "./AdminHome";
+import AdminMetrics from "./AdminMetrics";
 import trialApi from "../services/trialApi";
 import surplusApi from "../services/surplusApi";
 import AdminUserList from "./AdminUserList";
@@ -51,7 +52,6 @@ import CrewCredentials from "./CrewCredentials";
 
 // 🆕 Engagement
 import DropsSchedule from "./DropsSchedule";
-import EngagementMetrics from "./EngagementMetrics";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
@@ -121,7 +121,8 @@ export default function AdminDashboard() {
       const adminAPI = `${API_BASE}/admin`;
 
       const endpoints = [
-        `${adminAPI}/all`,
+        // live offers from the shared metrics calculation (this used to be /admin/all, which lists home sliders, not offers)
+        `${API_BASE}/analytics/admin/metrics?preset=today`,
         `${adminAPI}/jobs/all`,
         `${adminAPI}/users/student`,
         `${adminAPI}/users/brand`,
@@ -174,8 +175,9 @@ export default function AdminDashboard() {
       }
 
       setStats({
-        offers: Array.isArray(responses[0]) ? responses[0].length : 0,
-        jobs: Array.isArray(responses[1]) ? responses[1].length : 0,
+        offers: responses[0]?.data?.groups?.brands?.activeOffers?.value ?? 0,
+        // open jobs: not switched off and not archived (this used to count every job ever posted)
+        jobs: Array.isArray(responses[1]) ? responses[1].filter((j) => j && j.active !== false && !j.archivedAt).length : 0,
         students: Array.isArray(responses[2]) ? responses[2].length : 0,
         brands: Array.isArray(responses[3]) ? responses[3].length : 0,
         employees: Array.isArray(responses[4]) ? responses[4].length : 0,
@@ -331,6 +333,9 @@ export default function AdminDashboard() {
     document.title = label ? `${label} · tdc admin` : "tdc admin";
   }, [activePage]);
 
+  // the menu as it is now (pilot pages only when set up); the overview links only to pages that are in it
+  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu });
+  const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   const BIG = [
     { id: "students", label: "total students", value: n(stats.students), sub: "registered on tdc", icon: "grad", dark: true },
@@ -340,9 +345,9 @@ export default function AdminDashboard() {
   ];
   const SMALL = [
     { id: "employees", label: "employers", value: n(stats.employees), sub: "companies", icon: "hat", tone: "sky" },
-    { id: "all offer", label: "total offers", value: n(stats.offers), sub: "all offers", icon: "tag", tone: "red" },
+    { id: "all offer", label: "live offers", value: n(stats.offers), sub: "not archived", icon: "tag", tone: "red" },
     { id: "exchange_program", label: "scholarships", value: n(stats.exchange), sub: "study abroad", icon: "grad", tone: "blue" },
-    { id: "events", label: "events", value: n(stats.events), sub: `${fmt(stats.eventRegistrations)} registrations`, icon: "calendar", tone: "purple" },
+    { id: "events", label: "your events", value: n(stats.events), sub: `${fmt(stats.eventRegistrations)} registrations (events you created)`, icon: "calendar", tone: "purple" },
     { id: "card_manager", label: "approved cards", value: n(stats.approvedCards), sub: `${fmt(stats.pendingCards)} pending`, icon: "card", tone: "pink" },
     { id: "travelers", label: "travelers", value: n(stats.travelers), sub: "all time", icon: "compass", tone: "coral" },
     { id: "booking", label: "AI travel plans", value: n(stats.bookings), sub: "all time", icon: "plane", tone: "sky" },
@@ -435,7 +440,7 @@ export default function AdminDashboard() {
       case "hiring_overview": return <HiringOverview />;
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
-      case "business_overview": return <AdminOverview />;
+      case "business_overview": return <AdminHome go={go} pages={menuPages} />;
       case "free_hire_trials": return <FreeHireTrials />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
@@ -459,7 +464,7 @@ export default function AdminDashboard() {
 
       // 🆕 ENGAGEMENT
       case "engagement_drops": return <DropsSchedule />;
-      case "engagement_metrics": return <EngagementMetrics />;
+      case "engagement_metrics": return <AdminMetrics />;
       case "engagement_rewards": return <RewardsAdmin />;
       case "engagement_test_push": return <TestPush />;
 
@@ -479,7 +484,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
-        menu={adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu })}
+        menu={adminMenu}
         active={activePage}
         onSelect={go}
         collapsible

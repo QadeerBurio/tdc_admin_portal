@@ -17,6 +17,8 @@ const unwrap = (request) =>
 export const analyticsApi = {
   // range: { from: "YYYY-MM-DD", to: "YYYY-MM-DD" } (Karachi days)
   adminOverview: (range) => unwrap(api.get("/analytics/admin/overview", { params: range })),
+  // the metrics + overview pages (one calculation). q: { preset: today|7d|30d|month } or { preset: "custom", from, to }
+  adminMetrics: (q) => unwrap(api.get("/analytics/admin/metrics", { params: q })),
   brandInsights: (range) => unwrap(api.get("/analytics/brands/me", { params: range })),
   employerResults: (range) => unwrap(api.get("/analytics/employers/me", { params: range })),
 };
