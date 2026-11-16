@@ -5,7 +5,8 @@ import { AuthContext } from "../context/AuthContext";
 import axios from "axios";
 import QRCode from "qrcode";
 import Ico from "../portal/Ico";
-import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, toast, confirmDialog } from "../portal/kit";
+import { Button, IconButton, Field, Input, Select, Tabs, Modal, EmptyState, Pill, Spinner, Checkbox, toast } from "../portal/kit";
+import { breakdownOf, BillBreakdown } from "../portal/rewardBill";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
 import loyaltyApi from "../services/loyaltyApi";
@@ -91,6 +92,13 @@ const VerifyClaim = () => {
   const [result, setResult] = useState(null);
   const [bill, setBill] = useState("");
   const [paymentInfo, setPaymentInfo] = useState(null);
+  // the live student and payment dialog for the poll (its interval closure would see stale values)
+  const resultRef = useRef(null);
+  const paymentOpenRef = useRef(false);
+  // a waiting loyalty reward: "apply reward to this bill" (on unless the brand unticks it)
+  const [applyRewardOn, setApplyRewardOn] = useState(true);
+  resultRef.current = result;
+  paymentOpenRef.current = showPaymentModal;
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   
@@ -195,7 +203,9 @@ const VerifyClaim = () => {
         { headers: { Authorization: `Bearer ${token}` } }
       );
       
-      if (res.data && res.data.length > 0 && !result) {
+      // the 5-second poll keeps the first render's closure: read the live student / dialog from refs, so a pending
+      // scan never re-verifies (and wipes the bill being entered) while a student is selected or a payment is open
+      if (res.data && res.data.length > 0 && !resultRef.current && !paymentOpenRef.current) {
         const pendingScans = res.data.filter(scan => 
           scan.status === 'pending' && 
           !processedStudentIds.includes(scan.studentId) &&
@@ -462,28 +472,36 @@ const VerifyClaim = () => {
     }
   };
 
-  const calculatePayment = () => {
+  // the reward this bill would use (null: none waiting, or the brand unticked it)
+  const rewardFor = (s) => (applyRewardOn && s?.loyalty?.mode === "reward" && s.loyalty.available ? s.loyalty.available : null);
+  const calculatePayment = async () => {
     if (!result || result === "not_found") {
       return toast("Please verify a student first");
     }
-    
+
     if (!bill || bill <= 0) {
       return toast("Please enter a valid bill amount greater than 0");
     }
 
     const billAmount = Number(bill);
-    const discount = (billAmount * (result.discountPercentage || 0)) / 100;
-
-    setPaymentInfo({
-      total: billAmount - discount,
-      saved: discount
-    });
+    const reward = rewardFor(result);
+    // on the original bill: the offer, the reward (on top, or the bigger one), the total, what the student pays
+    let bd = breakdownOf({ bill: billAmount, offerPct: result.discountPercentage || 0, reward, combine: result.loyalty?.reward?.combine });
+    if (reward) {
+      // the server's numbers (an admin cap included); the local ones if it can't answer
+      try {
+        const q = await loyaltyApi.quote({ studentId: result._id || result.studentId, offerId: result.offerId, billAmount });
+        if (q?.readyReward?.id === reward.id && q.readyReward.breakdown) bd = q.readyReward.breakdown;
+      } catch { /* keep the local breakdown */ }
+    }
+    setPaymentInfo({ total: bd.pay, saved: bd.totalDiscount, breakdown: reward ? bd : null, rewardId: reward ? reward.id : null });
   };
 
   const handleProcessPayment = async () => {
     // Get the offerId from result or scannedStudent
     const offerId = result?.offerId || scannedStudent?.offerId || selectedStudent?.offerId;
-    const userId = result?._id || scannedStudent?.studentId || selectedStudent?._id;
+    // pending scans carry studentId (no _id): a student picked from the list has only that
+    const userId = result?._id || result?.studentId || scannedStudent?.studentId || selectedStudent?._id || selectedStudent?.studentId;
     
     // Validate required fields
     if (!offerId) {
@@ -519,7 +537,9 @@ const VerifyClaim = () => {
           offerId: offerId,
           userId: userId,
           billAmount: Number(bill),
-          savedAmount: Number(paymentInfo.saved)
+          savedAmount: Number(paymentInfo.saved),
+          // the reward the brand applied: used and recorded with this bill, once (a retry gets the same answer)
+          ...(paymentInfo.rewardId ? { applyRewardId: paymentInfo.rewardId } : {}),
         },
         { headers: { Authorization: `Bearer ${token}` } }
       );
@@ -542,7 +562,10 @@ const VerifyClaim = () => {
       }
 
       setRedemptionSuccess(true);
-      toast(`✅ Success! Transaction has been recorded.\n\nOriginal: Rs. ${Number(bill).toLocaleString()}\nDiscount: Rs. ${paymentInfo.saved.toLocaleString()}\nFinal: Rs. ${paymentInfo.total.toLocaleString()}`);
+      const done = redeemed?.data || {};
+      const fb = done.breakdown || { bill: Number(bill), totalDiscount: paymentInfo.saved, pay: paymentInfo.total };
+      if (done.duplicate) toast(`already recorded: this reward was applied to that bill (paid Rs. ${Number(fb.pay).toLocaleString()}).`, "warn");
+      else toast(`✅ Success! Transaction has been recorded.\n\nOriginal: Rs. ${Number(fb.bill).toLocaleString()}\nDiscount: Rs. ${Number(fb.totalDiscount).toLocaleString()}${done.rewardUsed ? ` (incl. reward: ${done.rewardUsed.label})` : ""}${fb.giveItem ? `\nGive: ${fb.giveItem}` : ""}\nFinal: Rs. ${Number(fb.pay).toLocaleString()}`);
       // loyalty: what this bill did ("visit counted", "visit already counted today", "this offer isn't part of your
       // loyalty program…"): said here instead of failing silently
       const loy = redeemed?.data?.loyalty;
@@ -575,21 +598,9 @@ const VerifyClaim = () => {
   };
 
   // the tier and progress, next to the % pill
-  // stamp card: apply a waiting reward once (a retry with the same key gets the same answer)
-  const [usingReward, setUsingReward] = useState(null);
-  const applyReward = async (l) => {
-    if (!l?.available?.id || usingReward) return;
-    if (!(await confirmDialog(`use the reward now? ${l.available.label}. it can only be used once.`, { title: "use the reward?", confirmLabel: "use reward", danger: false }))) return;
-    setUsingReward(l.available.id);
-    try {
-      const key = window.crypto?.randomUUID ? window.crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
-      await loyaltyApi.useReward(l.available.id, {}, key);
-      toast(`reward used: ${l.available.label}`, "ok");
-      const done = (x) => (x?.loyalty?.available?.id === l.available.id ? { ...x, loyalty: { ...x.loyalty, available: null, stamps: 0, visitsToReward: x.loyalty.needed, rewardUsed: true } } : x);
-      setResult((r) => done(r));
-      setSelectedStudent((s) => done(s));
-    } catch (e) { toast(e.message, "bad"); } finally { setUsingReward(null); }
-  };
+  // stamp card: a waiting reward is shown BEFORE confirming; "apply reward to this bill" puts it in the breakdown and
+  // it's used with this bill (one request: redeem-payment with applyRewardId)
+  const toggleReward = (on) => { setApplyRewardOn(on); setPaymentInfo(null); };
   const renderLoyalty = (s) => {
     const l = s?.loyalty;
     if (!l) return null;
@@ -598,7 +609,7 @@ const VerifyClaim = () => {
         <>
           <Pill tone="purple">{`stamps: ${l.stamps} of ${l.needed}`}</Pill>
           {l.available
-            ? <><span className="bb-chip">{`reward waiting: ${l.available.label}`}</span><Button size="sm" loading={usingReward === l.available.id} onClick={() => applyReward(l)}>use reward</Button></>
+            ? <><span className="bb-chip" data-reward-ready>{`reward ready: ${l.available.label}`}</span><Checkbox label="apply reward to this bill" checked={applyRewardOn} onChange={(e) => toggleReward(e.target.checked)} /></>
             : l.rewardUsed ? <span className="bb-chip">reward used</span>
               : l.limitReached ? <span className="bb-chip">reward limit reached</span>
                 : <span className="bb-chip">{`${l.visitsToReward} more visit${l.visitsToReward === 1 ? "" : "s"} to ${l.reward?.label || "the reward"}`}</span>}
@@ -670,9 +681,13 @@ const VerifyClaim = () => {
         <span>Payment Summary</span>
         {scannedStudent && <Pill tone="green">Auto-verified</Pill>}
       </div>
-      <div className="bv-row"><span>Original Amount:</span><span>₨ {Number(bill).toLocaleString()}</span></div>
-      <div className="bv-row off"><span>Student Discount ({String(pct || 0)}%):</span><span>- ₨ {paymentInfo.saved.toLocaleString()}</span></div>
-      <div className="bv-row total"><span>Final Amount:</span><span>₨ {paymentInfo.total.toLocaleString()}</span></div>
+      {paymentInfo.breakdown ? <BillBreakdown bd={paymentInfo.breakdown} /> : (
+        <>
+          <div className="bv-row"><span>Original Amount:</span><span>₨ {Number(bill).toLocaleString()}</span></div>
+          <div className="bv-row off"><span>Student Discount ({String(pct || 0)}%):</span><span>- ₨ {paymentInfo.saved.toLocaleString()}</span></div>
+          <div className="bv-row total"><span>Final Amount:</span><span>₨ {paymentInfo.total.toLocaleString()}</span></div>
+        </>
+      )}
       {redemptionSuccess && <div className="k-note ok">Payment processed successfully!</div>}
       <Button block icon="check" onClick={onComplete} loading={processingPayment} disabled={processingPayment}>
         {processingPayment ? "Processing..." : label}

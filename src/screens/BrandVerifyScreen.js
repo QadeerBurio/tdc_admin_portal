@@ -4,7 +4,8 @@ import React, { useState, useContext, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { AuthContext } from '../context/AuthContext';
 import Ico from '../portal/Ico';
-import { Button, Field, Input, Select, StatCard, EmptyState, Pill, Facts, confirmDialog } from '../portal/kit';
+import { Button, Field, Input, Select, StatCard, EmptyState, Pill, Facts, Checkbox, confirmDialog } from '../portal/kit';
+import { breakdownOf, BillBreakdown } from '../portal/rewardBill';
 import './styles/BrandPortal.css';
 import { API_ORIGIN } from "../config/api";
 
@@ -90,6 +91,15 @@ const BrandVerifyScreen = () => {
     }
   };
 
+  // a waiting loyalty reward (shown BEFORE confirming): "apply reward to this bill"; a code made online already
+  // carries its reward (applied on confirm, no choice)
+  const [applyRewardOn, setApplyRewardOn] = useState(true);
+  const readyReward = verificationResult?.readyReward || null;
+  const rewardApplied = !!readyReward && (readyReward.carried || applyRewardOn);
+  const shownBreakdown = !verificationResult ? null
+    : rewardApplied ? (readyReward.breakdown || breakdownOf({ bill: verificationResult.transaction.billAmount, offerPct: verificationResult.offer.discountPercentage, reward: readyReward, combine: readyReward.combine }))
+      : null;
+
   const handleVerify = async () => {
     // Reset states
     setError(null);
@@ -146,6 +156,8 @@ const BrandVerifyScreen = () => {
             promoCode: promoCode.trim(),
             offerId: offerId,
             billAmount: parseFloat(billAmount),
+            // the reward the brand applied: used and recorded with this bill, once
+            ...(rewardApplied && !readyReward.carried ? { applyRewardId: readyReward.id } : {}),
           }),
         });
 
@@ -154,7 +166,9 @@ const BrandVerifyScreen = () => {
           // your loyalty program…"): said here instead of failing silently
           const loy = data.data.loyalty;
           setSuccess(
-            `✅ Redemption Confirmed! Student saved Rs. ${data.data.transaction.savedAmount}${loy?.message ? ` · loyalty: ${loy.message}` : ""}`
+            data.duplicate
+              ? `already recorded: this reward was applied to that bill (saved Rs. ${data.data.transaction.savedAmount}).`
+              : `✅ Redemption Confirmed! Student saved Rs. ${data.data.transaction.savedAmount}${data.data.rewardUsed ? ` (incl. reward: ${data.data.rewardUsed.label})` : ""}${data.data.breakdown?.giveItem ? ` · give: ${data.data.breakdown.giveItem}` : ""}${loy?.message ? ` · loyalty: ${loy.message}` : ""}`
           );
           // Reset form
           setPromoCode('');
@@ -308,11 +322,23 @@ const BrandVerifyScreen = () => {
                     : 'top tier'],
               ] : []),
             ]} />
+            {readyReward && (
+              <div className="k-note" data-reward-ready>
+                <b>{`reward ready: ${readyReward.label}`}</b>
+                {readyReward.carried
+                  ? <div className="k-hint">this code was made with the reward in it: it's applied on confirm.</div>
+                  : <Checkbox label="apply reward to this bill" checked={applyRewardOn} onChange={(e) => setApplyRewardOn(e.target.checked)} />}
+              </div>
+            )}
             <div className="bv-sum">
               <div className="bv-sum-head"><span>Transaction</span></div>
-              <div className="bv-row"><span>Bill Amount:</span><span>Rs. {verificationResult.transaction.billAmount}</span></div>
-              <div className="bv-row off"><span>Savings:</span><span>- Rs. {verificationResult.transaction.savedAmount}</span></div>
-              <div className="bv-row total"><span>Final Amount:</span><span>Rs. {verificationResult.transaction.finalAmount}</span></div>
+              {shownBreakdown ? <BillBreakdown bd={shownBreakdown} /> : (
+                <>
+                  <div className="bv-row"><span>Bill Amount:</span><span>Rs. {verificationResult.transaction.billAmount}</span></div>
+                  <div className="bv-row off"><span>Savings:</span><span>- Rs. {verificationResult.transaction.savedAmount}</span></div>
+                  <div className="bv-row total"><span>Final Amount:</span><span>Rs. {verificationResult.transaction.finalAmount}</span></div>
+                </>
+              )}
             </div>
             <div className="k-row">
               <Button icon="check" onClick={handleConfirmRedemption}>Confirm Redemption</Button>
