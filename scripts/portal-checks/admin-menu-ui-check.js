@@ -65,7 +65,7 @@ const MENU = [
   ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"]],
   ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],
-  ["employers", ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free"]],
+  ["employers", ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"]],
   ["engagement", ["daily drops", "push test"]],
   ["crew", ["crew inbox", "crew partners", "crew campaigns", "crew credentials"]],
   ["settings", ["features"]],

@@ -4,6 +4,8 @@
 // all/active/inactive filter and table. Anything not marked as employer-only renders exactly as for admin.
 // Employers can duplicate a job (POST /api/jobs/duplicate/:id: a new posting, live for 30 days). Stats come from
 // GET /api/jobs/stats (their own jobs; all jobs for an admin). Server refusals are shown as the server words them.
+// Employers see their free trial / plan (HiringAccess.js); after the trial "post a job", "duplicate" and the CSV
+// upload are disabled with the reason (the server refuses them too: 403 POSTING_LOCKED).
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Ico from "../portal/Ico";
@@ -12,6 +14,7 @@ import "./styles/AdminJobsManager.css";
 import { API_ORIGIN } from "../config/api";
 import SkillTagInput from "../portal/SkillTagInput"; // skills as tags: at most 15, each up to 40 characters
 import { tagsOf } from "../portal/skillTags";
+import { HiringAccessBanner, useHiringAccess } from "./HiringAccess";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -26,6 +29,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const [currentPage, setCurrentPage] = useState(1);
   const [itemsPerPage] = useState(10);
   const [activeSection, setActiveSection] = useState("basic");
+  // employers: free trial / plan; locked = posting refused until tdc grants a plan
+  const [access, reloadAccess] = useHiringAccess(userRole !== "admin");
+  const locked = userRole !== "admin" && !!access.data && !access.data.canPost;
+  const lockHint = locked ? access.data.lock?.message || "posting is locked: request a plan" : undefined;
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   // employer view only: status filter and search over the employer's own jobs
@@ -148,12 +155,14 @@ const AdminJobsManager = ({ userRole, userName }) => {
         setCsvResult({ created, updated, skipped, rejected });
         fetchJobs();
         fetchStats();
+        reloadAccess();
       } else {
         setCsvError(res.data?.message || "Upload failed.");
       }
     } catch (err) {
       const msg = err.response?.data?.message || err.message || "Error uploading jobs file.";
       setCsvError(msg);
+      if (err.response?.data?.code === "POSTING_LOCKED") reloadAccess();
     } finally {
       setCsvUploading(false);
     }
@@ -220,8 +229,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
       resetForm();
       fetchJobs();
       fetchStats();
+      reloadAccess();
     } catch (err) {
       toast(err.response?.data?.error || "Failed to create job", "bad");
+      if (err.response?.data?.code === "POSTING_LOCKED") { setShowJobModal(false); reloadAccess(); }
     }
   };
 
@@ -254,8 +265,10 @@ const AdminJobsManager = ({ userRole, userName }) => {
       toast(`duplicated: "${job.title}" is live for 30 days`, "ok");
       fetchJobs();
       fetchStats();
+      reloadAccess();
     } catch (err) {
       toast(err.response?.data?.error || err.response?.data?.message || "Couldn't duplicate the job", "bad");
+      if (err.response?.data?.code === "POSTING_LOCKED") reloadAccess();
     }
   };
 
@@ -507,11 +520,12 @@ const AdminJobsManager = ({ userRole, userName }) => {
             </div>
           </div>
           <div className="k-actions">
-            <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog}>{isMobile ? "CSV" : "Upload Jobs CSV"}</Button>
-            <Button icon="plus" onClick={openNewJob}>post a job</Button>
+            <Button variant="secondary" icon="upload" onClick={handleOpenCsvDialog} disabled={locked} title={lockHint} aria-describedby={locked ? "hiring-access-title" : undefined}>{isMobile ? "CSV" : "Upload Jobs CSV"}</Button>
+            <Button icon="plus" onClick={openNewJob} disabled={locked} title={lockHint} aria-describedby={locked ? "hiring-access-title" : undefined}>post a job</Button>
           </div>
         </div>
       )}
+      {!isAdmin && <HiringAccessBanner state={access} reload={reloadAccess} />}
 
       {stats && (
         <div className="k-stats">
@@ -660,7 +674,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                     <td>
                       <span className="k-row" style={{ gap: 6, flexWrap: "nowrap", justifyContent: "flex-end" }}>
                         <Button size="sm" variant="secondary" onClick={() => handleEditJob(job)}>edit</Button>
-                        <Button size="sm" variant="secondary" icon="copy" onClick={() => handleDuplicateJob(job)} aria-label={`duplicate ${job.title}`}>duplicate</Button>
+                        <Button size="sm" variant="secondary" icon="copy" onClick={() => handleDuplicateJob(job)} disabled={locked} title={lockHint} aria-label={`duplicate ${job.title}`}>duplicate</Button>
                         <Button size="sm" onClick={() => fetchJobApplications(job._id)}>applicants</Button>
                         <IconButton icon="trash" label="Delete job" variant="danger" size="sm" onClick={() => handleDeleteJob(job._id)} />
                       </span>
@@ -673,7 +687,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
         </div>
         {listJobs.length === 0 && (
           jobs.length === 0
-            ? <EmptyState icon="briefcase" tone="coral" title="No jobs found" action={<Button icon="plus" onClick={openNewJob}>Post Your First Job</Button>} />
+            ? <EmptyState icon="briefcase" tone="coral" title="No jobs found" action={<Button icon="plus" onClick={openNewJob} disabled={locked} title={lockHint}>Post Your First Job</Button>} />
             : <EmptyState icon="search" title="no jobs match" text="try another filter or search." />
         )}
         {listJobs.length > itemsPerPage && (

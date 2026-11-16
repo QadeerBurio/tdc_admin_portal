@@ -33,6 +33,8 @@ import { CompanyVerifications, FreeHireTrials } from "./AdminFirstHireFree";
 import AdminHome from "./AdminHome";
 import AdminMetrics from "./AdminMetrics";
 import trialApi from "../services/trialApi";
+import hiringAccessApi from "../services/hiringAccessApi";
+import AdminHiringPlans from "./AdminHiringPlans";
 import surplusApi from "../services/surplusApi";
 import AdminUserList from "./AdminUserList";
 import AdminJobManager from "./AdminJobsManager";
@@ -57,7 +59,7 @@ import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["company_verifications", "free_hire_trials"];
-const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring)) })).filter((s) => s.items.length > 0);
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans)) })).filter((s) => s.items.length > 0);
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -266,7 +268,8 @@ export default function AdminDashboard() {
       countOf(trialApi.verifications("pending"), (d) => (Array.isArray(d) ? d.length : null)),
       countOf(careerApi.adminDisputes(), (d) => (Array.isArray(d?.disputes) ? d.disputes.length : null)),
       countOf(ratingsApi.adminReports("open"), (d) => (Array.isArray(d) ? d.length : null)),
-    ]).then(([company, disputes, reports]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports }); });
+      countOf(hiringAccessApi.overview(), (d) => (typeof d?.counts?.openRequests === "number" ? d.counts.openRequests : null)),
+    ]).then(([company, disputes, reports, plans]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports, hiring_plans: plans }); });
     return () => { live = false; };
   }, [activePage]); // refreshed when the admin moves between pages (after deciding one, the count drops)
 
@@ -295,6 +298,9 @@ export default function AdminDashboard() {
   // "hiring overview" shows once the admin hiring views answer (the hiring timeline is set up)
   const [hiringMenu, setHiringMenu] = useState(false);
   useEffect(() => { careerApi.adminOverviewAvailable().then(setHiringMenu); }, []);
+  // "hiring plans" (free trials and plans for every employer) shows once the server answers
+  const [plansMenu, setPlansMenu] = useState(false);
+  useEffect(() => { hiringAccessApi.adminAvailable().then(setPlansMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -339,7 +345,7 @@ export default function AdminDashboard() {
   }, [activePage]);
 
   // the menu as it is now (pilot pages only when set up); the overview links only to pages that are in it
-  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu });
+  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu });
   const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   // "including suspended: N" when suspended / banned accounts are left out of the number
@@ -449,6 +455,7 @@ export default function AdminDashboard() {
       case "company_verifications": return <CompanyVerifications />;
       case "business_overview": return <AdminHome go={go} pages={menuPages} />;
       case "free_hire_trials": return <FreeHireTrials />;
+      case "hiring_plans": return <AdminHiringPlans />;
       case "booking": return <AdminPackage />;
       case "card_manager": return <CardManager />;
       case "offers": return <AdminOffersTabs tab={offersTab} onTab={setOffersTab} />;
