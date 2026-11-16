@@ -48,9 +48,10 @@ const SECTIONS = [
   {
     h: "ads and Meta",
     p: [
-      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: when it is installed and opened, and, once you are signed in, sign-up, offer claims, job and scholarship applications, event registrations, AI resume use and social activity counts. we never share your name, email, phone number, messages or what you write.",
-      "on Android, your phone's advertising ID is shared with these events. on iPhone, it is only shared if you allow tracking when Apple asks.",
-      "you can switch this off any time in the app: settings → privacy → ad measurement (Meta). once it is off, the app stops sharing anything with Meta on that phone. you can also reset or turn off your advertising ID in your phone settings.",
+      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: installs, app opens, sign-up, offer claims, job applications, discounts redeemed and AI resume use. by default this is shared without anything that identifies you. we never share messages or what you write.",
+      "on Android, your phone's advertising ID is also shared, unless you turn off \"ads with your details\". on iPhone, it is only shared if you allow it in the app and in Apple's tracking prompt.",
+      "your email and phone number are shared with Meta, in hashed (scrambled) form, only if you allow \"ads with your details\".",
+      "you can turn either off any time in the app: settings → privacy. turning off \"ad measurement\" stops the app sharing anything with Meta. you can also reset or turn off your advertising ID in your phone settings.",
     ],
   },
   {
@@ -58,7 +59,7 @@ const SECTIONS = [
     list: [
       "edit your profile and CV any time in the app.",
       "turn location and notifications on or off in your phone settings.",
-      "switch off ad measurement (Meta) in settings → privacy.",
+      "turn off \"ad measurement\" or \"ads with your details\" in settings → privacy.",
       "delete your account and its data from the app settings, or email us and we will do it for you.",
     ],
   },
