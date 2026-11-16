@@ -98,7 +98,7 @@ export default function AdminHiringPlans() {
       .filter((r) => !t || `${r.employer.companyName} ${r.employer.name}`.toLowerCase().includes(t));
   }, [d, filter, term]);
   if (state.loading) return <PageLoading />;
-  if (!d) return <div className="tdcp k-page"><EmptyState icon="alert" tone="red" title="couldn't load hiring plans" text={state.error || "try again"} action={<Button onClick={load}>retry</Button>} /></div>;
+  if (!d) return <div className="tdcp k-page" data-screen="hiring-plans"><PageHeader title="hiring plans" /><EmptyState icon="alert" tone="red" title="couldn't load hiring plans" text={state.error || "try again"} action={<Button onClick={load}>retry</Button>} /></div>;
   const c = d.counts;
   const open = d.requests.filter((r) => r.status === "open");
   const rowOf = (employerId) => d.employers.find((e) => e.employer.id === employerId);
