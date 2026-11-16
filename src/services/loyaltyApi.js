@@ -30,7 +30,8 @@ export const loyaltyApi = {
   members: (filter = "all") => unwrap(api.get("/loyalty/brands/me/members", { params: { filter } })),
   membersCsv: (filter = "all") => api.get("/loyalty/brands/me/members", { params: { filter, format: "csv" }, responseType: "text" }).then((r) => r.data),
   // the tier and % for this student's visit, before confirming the bill
-  quote: ({ studentId, offerId, branchId }) => unwrap(api.post("/loyalty/quotes", { studentId, offerId, branchId })),
+  // billAmount (optional): the reply's readyReward then carries the breakdown for that bill
+  quote: ({ studentId, offerId, branchId, billAmount }) => unwrap(api.post("/loyalty/quotes", { studentId, offerId, branchId, ...(billAmount != null ? { billAmount } : {}) })),
   // stamp card: apply a student's waiting reward (once; the key makes a retry safe)
   useReward: (rewardId, body = {}, key) => unwrap(api.post(`/loyalty/rewards/${rewardId}/use`, body, { headers: { "Idempotency-Key": key } })),
 

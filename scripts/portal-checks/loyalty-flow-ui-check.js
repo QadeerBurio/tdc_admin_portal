@@ -138,7 +138,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   const p2 = patches[1] || {};
   check("end: PATCH sends only the status (and version)", JSON.stringify(Object.keys(p2).sort()) === JSON.stringify(["status", "version"]) && p2.status === "ended", JSON.stringify(p2));
   t = await text();
-  check("ended: notice shown, no publish/pause/end buttons, fields read-only", t.includes("this program has ended") && !(await btn("end program")).found && !(await btn("pause")).found && !(await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-max").matches(":disabled")`)) === true);
+  check("ended: notice shown, no publish/pause/end buttons, fields read-only", t.includes("this program has ended") && !(await btn("end program")).found && !(await btn("pause")).found && !(await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-day").matches(":disabled")`)) === true);
   await axe(`document.querySelector("main") || document`, "loyalty page (ended)");
 
   // restart: a confirmation, then a new draft (POST /restart with the version); the editor comes back
@@ -152,7 +152,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await sleep(1500);
   check("restart: POST /restart with the ended version only", restarts.length === 1 && JSON.stringify(restarts[0]) === JSON.stringify({ version: 3 }), JSON.stringify(restarts));
   t = await text();
-  check("after restarting: draft, editable, preview and publish again", t.includes("draft") && !t.includes("this program has ended") && (await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-max").matches(":disabled")`)) === false);
+  check("after restarting: draft, editable, preview and publish again", t.includes("draft") && !t.includes("this program has ended") && (await btn("preview and publish")).found && (await pg.evaluate(`document.getElementById("loy-day").matches(":disabled")`)) === false);
 
   // outside the pilot: "coming soon", no loyalty calls
   flags = {};

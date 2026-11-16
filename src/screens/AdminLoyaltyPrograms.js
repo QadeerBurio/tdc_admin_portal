@@ -47,7 +47,7 @@ export default function AdminLoyaltyPrograms() {
                     <td><strong>{p.brandName}</strong><div className="k-muted" style={{ fontSize: 12 }}>v{p.version}</div></td>
                     <td><Pill tone={STATUS_TONE[p.status]} dot>{p.status}</Pill></td>
                     <td style={{ fontSize: 13 }}>{p.tiers.map((t) => `${ruleText(t)}: ${t.discountPct}%`).join(" · ")}</td>
-                    <td>{p.maxDiscountPct}%{p.adminMaxDiscountPct != null ? <div className="k-muted" style={{ fontSize: 12 }}>tdc cap {p.adminMaxDiscountPct}%</div> : null}</td>
+                    <td>{p.adminMaxDiscountPct != null ? <Pill tone="blue">{`max ${p.adminMaxDiscountPct}%`}</Pill> : <span className="k-muted">no cap</span>}</td>
                     <td style={{ fontSize: 13 }}>{p.startsAt || p.endsAt ? `${day(p.startsAt)} – ${day(p.endsAt)}` : "–"}</td>
                     <td>{p.inPilot ? <Pill tone="green">in pilot</Pill> : <Pill tone="sand">not in pilot</Pill>}</td>
                     <td style={{ fontSize: 13 }}>{day(p.updatedAt)}</td>
@@ -132,7 +132,7 @@ function ProgramDrawer({ id, onClose, onChanged }) {
         <h3 style={{ marginTop: 0 }}>rules</h3>
         <Facts rows={[
           ["tiers", p.tiers.map((t) => `${ruleText(t)}: ${t.discountPct}%`).join(" · ")],
-          ["maximum discount", `${p.brandMaxDiscountPct}% (brand)${p.adminMaxDiscountPct != null ? `, ${p.adminMaxDiscountPct}% (tdc cap)` : ""}`],
+          ["per-brand max %", p.adminMaxDiscountPct != null ? `${p.adminMaxDiscountPct}% (set by tdc; the brand sees it)` : "none (the brand can set any %)"],
           ["visits counted per day", p.maxVisitsPerDay ? String(p.maxVisitsPerDay) : "no limit"],
           ["visits expire after", p.resetMonths ? `${p.resetMonths} months` : "never"],
           ["runs", p.startsAt || p.endsAt ? `${day(p.startsAt)} – ${day(p.endsAt)}` : "no dates"],
@@ -161,7 +161,7 @@ function ProgramDrawer({ id, onClose, onChanged }) {
             <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
               <Field label="visits per day" htmlFor="alp-day"><Input id="alp-day" type="number" min={0} max={10} value={edit.maxVisitsPerDay} onChange={(e) => setEdit((x) => ({ ...x, maxVisitsPerDay: e.target.value }))} /></Field>
               <Field label="expire after (months)" htmlFor="alp-reset"><Input id="alp-reset" type="number" min={0} max={60} value={edit.resetMonths} onChange={(e) => setEdit((x) => ({ ...x, resetMonths: e.target.value }))} /></Field>
-              <Field label="tdc cap %" hint="empty = no cap" htmlFor="alp-cap"><Input id="alp-cap" type="number" min={0} max={100} value={edit.adminMaxDiscountPct} onChange={(e) => setEdit((x) => ({ ...x, adminMaxDiscountPct: e.target.value }))} /></Field>
+              <Field label="per-brand max %" hint="the most any tier or % reward can give this brand's students. empty = no cap (the brand sees it only when set)" htmlFor="alp-cap"><Input id="alp-cap" type="number" min={0} max={100} value={edit.adminMaxDiscountPct} onChange={(e) => setEdit((x) => ({ ...x, adminMaxDiscountPct: e.target.value }))} /></Field>
               <Field label="start date" htmlFor="alp-start"><DateInput id="alp-start" value={edit.startDate} onChange={(e) => setEdit((x) => ({ ...x, startDate: e.target.value }))} /></Field>
               <Field label="end date" htmlFor="alp-end" error={dateError ? "the end must be on or after the start" : undefined}><DateInput id="alp-end" value={edit.endDate} onChange={(e) => setEdit((x) => ({ ...x, endDate: e.target.value }))} /></Field>
             </div>
@@ -175,7 +175,7 @@ function ProgramDrawer({ id, onClose, onChanged }) {
 
 function CreateDialog({ onClose, onCreated, existing }) {
   const [brands, setBrands] = useState(null);
-  const [form, setForm] = useState({ brandId: "", reason: "", terms: "", maxDiscountPct: 25, adminMaxDiscountPct: "" });
+  const [form, setForm] = useState({ brandId: "", reason: "", terms: "", adminMaxDiscountPct: "" });
   const [busy, setBusy] = useState(false);
   useEffect(() => {
     api.get("/admin/users/brand").then((r) => {
@@ -187,7 +187,7 @@ function CreateDialog({ onClose, onCreated, existing }) {
   const save = async () => {
     setBusy(true);
     try {
-      const p = await loyaltyApi.adminCreateProgram({ brandId: form.brandId, reason: form.reason.trim(), terms: form.terms, maxDiscountPct: Number(form.maxDiscountPct), ...(form.adminMaxDiscountPct === "" ? {} : { adminMaxDiscountPct: Number(form.adminMaxDiscountPct) }) });
+      const p = await loyaltyApi.adminCreateProgram({ brandId: form.brandId, reason: form.reason.trim(), terms: form.terms, ...(form.adminMaxDiscountPct === "" ? {} : { adminMaxDiscountPct: Number(form.adminMaxDiscountPct) }) });
       toast("created as a draft: the brand or an admin publishes it", "ok");
       onCreated(p);
     } catch (e) { toast(e.message, "bad"); } finally { setBusy(false); }
@@ -204,8 +204,7 @@ function CreateDialog({ onClose, onCreated, existing }) {
             </Select>
           </Field>
           <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(140px, 1fr))", gap: 12 }}>
-            <Field label="maximum discount %" htmlFor="alc-max"><Input id="alc-max" type="number" min={1} max={100} value={form.maxDiscountPct} onChange={set("maxDiscountPct")} /></Field>
-            <Field label="tdc cap % (optional)" htmlFor="alc-cap"><Input id="alc-cap" type="number" min={0} max={100} value={form.adminMaxDiscountPct} onChange={set("adminMaxDiscountPct")} /></Field>
+            <Field label="per-brand max % (optional)" hint="empty = no cap" htmlFor="alc-cap"><Input id="alc-cap" type="number" min={0} max={100} value={form.adminMaxDiscountPct} onChange={set("adminMaxDiscountPct")} /></Field>
           </div>
           <Field label="terms students see (optional)" htmlFor="alc-terms"><Textarea id="alc-terms" rows={2} maxLength={1000} value={form.terms} onChange={set("terms")} /></Field>
           <Field label="reason (logged)" hint={`at least ${MIN_REASON} characters`} htmlFor="alc-reason"><Textarea id="alc-reason" rows={2} maxLength={500} value={form.reason} onChange={set("reason")} placeholder="e.g. brand signed up for the pilot by phone" /></Field>

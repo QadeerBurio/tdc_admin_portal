@@ -1,6 +1,7 @@
 // BrandLoyalty.js: the brand's loyalty program (FLAG_LOYALTY_V2). Tiers by verified visit (default
-// visits 1-5 = 15%, visit 6 onward = 25%), which offers and branches count, the maximum discount, the
-// dates it runs, and the numbers: verified visits, repeat customers, members by tier.
+// visits 1-5 = 15%, visit 6 onward = 25%) or a stamp card (1 to 10 visits = % off, PKR off or a free item, on top of
+// the offer or replacing it), which offers and branches count, the dates it runs, and the numbers. No fixed cap: only
+// a maximum tdc sets for the brand (shown when there is one).
 // Flow: save a draft -> preview the card students will see -> publish -> pause or edit -> end (final).
 // A visit counts only when the brand confirms the bill (verify student / promo confirm, or a paid order
 // on the connected store); claims and QR codes never do.
@@ -21,7 +22,6 @@ const DEFAULT_TIERS = [
 ];
 const blankForm = () => ({
   tiers: DEFAULT_TIERS.map((t) => ({ ...t })),
-  maxDiscountPct: 25,
   maxVisitsPerDay: 1,
   resetMonths: 12,
   terms: "",
@@ -30,9 +30,19 @@ const blankForm = () => ({
   startDate: "",
   endDate: "",
   mode: "tiers",
-  reward: { visitsNeeded: 5, kind: "item", value: "", item: "", maxPerStudent: "", maxPerMonth: "" },
+  reward: { visitsNeeded: 5, kind: "item", value: "", item: "", maxPerStudent: "", maxPerMonth: "", combine: "stack" },
 });
-const QUICK_VISITS = [2, 3, 5];
+const QUICK_VISITS = [1, 2, 3, 5, 10];
+export const MIN_VISITS = 1;
+export const MAX_VISITS = 10;
+// the discount on a bill, as the verify screen applies it (the server's services/loyalty.js breakdownOf)
+export function exampleBill({ bill = 1000, offerPct = 0, reward, combine = "stack" }) {
+  const offer = Math.round((bill * offerPct) / 100);
+  const r = reward.kind === "percent" ? Math.round((bill * (Number(reward.value) || 0)) / 100) : reward.kind === "amount" ? Math.min(Number(reward.value) || 0, bill) : 0;
+  if (reward.kind === "item") return { total: offer, pay: bill - offer };
+  const total = combine === "replace" ? Math.max(offer, r) : Math.min(bill, offer + r);
+  return { total, pay: bill - total };
+}
 
 // keep tiers contiguous: each tier starts right after the previous one ends, the last has no end
 const chain = (tiers) => {
@@ -98,14 +108,13 @@ export default function BrandLoyalty() {
       if (p) {
         setForm({
           tiers: p.tiers.map((t) => ({ name: t.name, minVisit: t.minVisit, maxVisit: t.maxVisit, discountPct: t.discountPct })),
-          maxDiscountPct: p.brandMaxDiscountPct ?? p.maxDiscountPct,
           maxVisitsPerDay: p.maxVisitsPerDay,
           resetMonths: p.resetMonths,
           terms: p.terms || "",
           eligibleOfferIds: p.eligibleOfferIds || [],
           branchIds: p.branchIds || [],
           mode: p.mode === "reward" ? "reward" : "tiers",
-          reward: p.reward ? { visitsNeeded: p.reward.visitsNeeded, kind: p.reward.kind, value: p.reward.value ?? "", item: p.reward.item || "", maxPerStudent: p.reward.maxPerStudent ?? "", maxPerMonth: p.reward.maxPerMonth ?? "" } : blankForm().reward,
+          reward: p.reward ? { visitsNeeded: p.reward.visitsNeeded, kind: p.reward.kind, value: p.reward.value ?? "", item: p.reward.item || "", maxPerStudent: p.reward.maxPerStudent ?? "", maxPerMonth: p.reward.maxPerMonth ?? "", combine: p.reward.combine === "replace" ? "replace" : "stack" } : blankForm().reward,
           startDate: toDay(p.startsAt),
           endDate: toDay(p.endsAt),
         });
@@ -128,19 +137,20 @@ export default function BrandLoyalty() {
     const tiers = f.tiers.map((t) => ({ ...t }));
     const last = tiers[tiers.length - 1];
     last.maxVisit = last.minVisit + 4;
-    tiers.push({ name: `Tier ${tiers.length + 1}`, minVisit: last.maxVisit + 1, maxVisit: null, discountPct: Math.min(Number(last.discountPct) + 5, Number(f.maxDiscountPct) || 100) });
+    tiers.push({ name: `Tier ${tiers.length + 1}`, minVisit: last.maxVisit + 1, maxVisit: null, discountPct: Math.min(Number(last.discountPct) + 5, 100) });
     return { ...f, tiers: chain(tiers) };
   });
   const removeTier = (i) => setForm((f) => ({ ...f, tiers: chain(f.tiers.filter((_, j) => j !== i)) }));
 
   const offerOptions = useMemo(() => offers.map((o) => ({ value: String(o._id), label: `${o.title || "offer"} · ${o.discountPercentage || 0}%` })), [offers]);
   const branchOptions = useMemo(() => branches.map((b) => ({ value: String(b._id), label: b.name + (b.city ? ` · ${b.city}` : "") })), [branches]);
-  const cap = program?.adminMaxDiscountPct != null ? Math.min(Number(form.maxDiscountPct), program.adminMaxDiscountPct) : Number(form.maxDiscountPct);
+  // the only cap: a maximum tdc set for this brand (none by default)
+  const adminCap = program?.adminMaxDiscountPct ?? null;
+  const cap = adminCap ?? 100;
 
   const tiersForSave = () => form.tiers.map((t) => ({ name: t.name, minVisit: Number(t.minVisit), maxVisit: t.maxVisit == null ? null : Number(t.maxVisit), discountPct: Number(t.discountPct) }));
   const body = () => ({
     tiers: tiersForSave(),
-    maxDiscountPct: Number(form.maxDiscountPct),
     maxVisitsPerDay: Number(form.maxVisitsPerDay),
     resetMonths: Number(form.resetMonths),
     terms: form.terms,
@@ -148,7 +158,7 @@ export default function BrandLoyalty() {
     branchIds: form.branchIds,
     mode: form.mode,
     ...(form.mode === "reward" ? { reward: {
-      visitsNeeded: Number(form.reward.visitsNeeded), kind: form.reward.kind,
+      visitsNeeded: Number(form.reward.visitsNeeded), kind: form.reward.kind, combine: form.reward.combine === "replace" ? "replace" : "stack",
       ...(form.reward.kind === "item" ? { item: form.reward.item.trim() } : { value: Number(form.reward.value) }),
       maxPerStudent: form.reward.maxPerStudent === "" ? null : Number(form.reward.maxPerStudent),
       maxPerMonth: form.reward.maxPerMonth === "" ? null : Number(form.reward.maxPerMonth),
@@ -160,10 +170,10 @@ export default function BrandLoyalty() {
   const dateError = form.startDate && form.endDate && form.endDate < form.startDate ? "the end date must be on or after the start date" : null;
   const endInPast = form.endDate && new Date(endOfDay(form.endDate)) < new Date();
   const tierError = form.mode === "tiers" && form.tiers.some((t) => Number(t.discountPct) > cap);
-  // reward mode: visits 2-20; % within the cap, PKR a whole amount, or a named item
+  // reward mode: visits 1-10; % 1-100 (within tdc's maximum, if one is set), PKR a whole amount, or a named item
   const rw = form.reward;
   const rewardError = form.mode !== "reward" ? null
-    : !(Number.isInteger(Number(rw.visitsNeeded)) && rw.visitsNeeded >= 2 && rw.visitsNeeded <= 20) ? "visits needed: 2 to 20"
+    : !(Number.isInteger(Number(rw.visitsNeeded)) && rw.visitsNeeded >= MIN_VISITS && rw.visitsNeeded <= MAX_VISITS) ? `visits needed: ${MIN_VISITS} to ${MAX_VISITS}`
       : rw.kind === "percent" && !(Number(rw.value) >= 1 && Number(rw.value) <= cap) ? `% off: 1 to ${cap}`
         : rw.kind === "amount" && !(Number.isInteger(Number(rw.value)) && Number(rw.value) >= 1) ? "PKR off: a whole amount"
           : rw.kind === "item" && rw.item.trim().length < 2 ? "name the free item"
@@ -310,10 +320,10 @@ export default function BrandLoyalty() {
               <Ico kind="star" tone="yellow" size={36} />
               <h3>stamp card</h3>
             </div>
-            <Field label="visits for a reward" htmlFor="rw-n" hint="quick picks, or any number from 2 to 20">
+            <Field label="visits for a reward" htmlFor="rw-n" hint={`quick picks, or any number from ${MIN_VISITS} to ${MAX_VISITS}`}>
               <div className="k-row" style={{ gap: 8, flexWrap: "wrap", alignItems: "center" }}>
-                {QUICK_VISITS.map((n) => <Button key={n} size="sm" variant={Number(rw.visitsNeeded) === n ? "primary" : "secondary"} aria-pressed={Number(rw.visitsNeeded) === n} onClick={() => setReward("visitsNeeded", n)}>{n} visits</Button>)}
-                <Input id="rw-n" type="number" min={2} max={20} style={{ width: 90 }} value={rw.visitsNeeded} onChange={(e) => setReward("visitsNeeded", e.target.value === "" ? "" : Number(e.target.value))} />
+                {QUICK_VISITS.map((n) => <Button key={n} size="sm" variant={Number(rw.visitsNeeded) === n ? "primary" : "secondary"} aria-pressed={Number(rw.visitsNeeded) === n} onClick={() => setReward("visitsNeeded", n)}>{n === 1 ? "1 visit" : `${n} visits`}</Button>)}
+                <Input id="rw-n" type="number" min={MIN_VISITS} max={MAX_VISITS} aria-label="visits for a reward (any number)" style={{ width: 90 }} value={rw.visitsNeeded} onChange={(e) => setReward("visitsNeeded", e.target.value === "" ? "" : Number(e.target.value))} />
               </div>
             </Field>
             <div className="k-row" style={{ flexWrap: "wrap", gap: 12 }}>
@@ -326,13 +336,24 @@ export default function BrandLoyalty() {
               </Field>
               {rw.kind === "item"
                 ? <Field label="free item" htmlFor="rw-item" style={{ flex: "2 1 220px" }}><Input id="rw-item" maxLength={80} value={rw.item} onChange={(e) => setReward("item", e.target.value)} placeholder="e.g. a free coffee" /></Field>
-                : <Field label={rw.kind === "percent" ? `% off (max ${cap}%)` : "PKR off"} htmlFor="rw-value" style={{ flex: "1 1 160px" }}><Input id="rw-value" type="number" min={1} max={rw.kind === "percent" ? cap : undefined} value={rw.value} onChange={(e) => setReward("value", e.target.value)} /></Field>}
+                : <Field label={rw.kind === "percent" ? (adminCap != null ? `% off (tdc's maximum for you: ${adminCap}%)` : "% off (1 to 100)") : "PKR off (up to the bill)"} htmlFor="rw-value" style={{ flex: "1 1 160px" }}><Input id="rw-value" type="number" min={1} max={rw.kind === "percent" ? cap : undefined} value={rw.value} onChange={(e) => setReward("value", e.target.value)} /></Field>}
             </div>
             <div className="k-row" style={{ flexWrap: "wrap", gap: 12 }}>
               <Field label="most rewards per student" hint="empty = no limit" htmlFor="rw-max" style={{ flex: "1 1 160px" }}><Input id="rw-max" type="number" min={1} max={100} value={rw.maxPerStudent} onChange={(e) => setReward("maxPerStudent", e.target.value)} /></Field>
               <Field label="most rewards per student a month" hint="empty = no limit" htmlFor="rw-month" style={{ flex: "1 1 160px" }}><Input id="rw-month" type="number" min={1} max={31} value={rw.maxPerMonth} onChange={(e) => setReward("maxPerMonth", e.target.value)} /></Field>
             </div>
-            {rewardError ? <p className="k-hint" role="alert" style={{ color: "var(--red, #b3261e)" }}>{rewardError}</p> : <p className="k-hint">students see: {rw.visitsNeeded} visits = {rewardLabelOf(rw)}.</p>}
+            {rw.kind !== "item" && (
+              <Field label="how the reward works with your offer" htmlFor="rw-combine">
+                <Segmented label="how the reward works with your offer" value={rw.combine === "replace" ? "replace" : "stack"} onChange={(v) => setReward("combine", v)}
+                  options={[{ value: "stack", label: "add on top of the offer" }, { value: "replace", label: "replace the offer (use the bigger discount)" }]} />
+              </Field>
+            )}
+            {!rewardError && rw.kind !== "item" && Number(rw.value) > 0 && (() => {
+              const offerPct = Number(offers[0]?.discountPercentage) || 15;
+              const ex = exampleBill({ bill: 1000, offerPct, reward: rw, combine: rw.combine });
+              return <p className="k-hint" data-example>e.g. a PKR 1,000 bill with a {offerPct}% offer and this reward: the student pays PKR {ex.pay.toLocaleString("en-PK")} (PKR {ex.total.toLocaleString("en-PK")} off).</p>;
+            })()}
+            {rewardError ? <p className="k-hint" role="alert" style={{ color: "var(--red, #b3261e)" }}>{rewardError}</p> : <p className="k-hint">students see: {rw.visitsNeeded} {Number(rw.visitsNeeded) === 1 ? "visit" : "visits"} = {rewardLabelOf(rw)}.</p>}
           </section>
         )}
 
@@ -375,9 +396,7 @@ export default function BrandLoyalty() {
             <h3>rules</h3>
           </div>
           <div className="k-row" style={{ flexWrap: "wrap", gap: 12 }}>
-            <Field label="maximum discount %" hint={program?.adminMaxDiscountPct != null ? `tdc caps this program at ${program.adminMaxDiscountPct}%` : "no tier can go above this"} htmlFor="loy-max" style={{ flex: "1 1 160px" }}>
-              <Input id="loy-max" type="number" min={1} max={100} value={form.maxDiscountPct} onChange={(e) => setForm((f) => ({ ...f, maxDiscountPct: e.target.value }))} />
-            </Field>
+            {adminCap != null && <p className="k-hint" data-admin-cap style={{ flex: "1 1 100%" }}><Pill tone="blue">tdc maximum: {adminCap}%</Pill> tdc set a maximum discount for your brand; tiers and % rewards can't go above it.</p>}
             <Field label="max visits counted per day" hint="per student (default 1; 0 = no limit). a second visit that day still gets the discount, and you and the student see: visit already counted today" htmlFor="loy-day" style={{ flex: "1 1 160px" }}>
               <Input id="loy-day" type="number" min={0} max={10} value={form.maxVisitsPerDay} onChange={(e) => setForm((f) => ({ ...f, maxVisitsPerDay: e.target.value }))} />
             </Field>

@@ -90,7 +90,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   check("menu: 'loyalty programs' under oversight", await click("loyalty programs"));
   await sleep(1500);
   let t = await text();
-  check("list: both brands, status, tiers, pilot state", ["Alpha Cafe", "Beta Books", "active", "draft", "visits 1–5: 15%", "in pilot", "not in pilot", "tdc cap 20%"].every((w) => t.includes(w)), t.replace(/\n/g, " | ").slice(0, 300));
+  check("list: both brands, status, tiers, pilot state", ["Alpha Cafe", "Beta Books", "active", "draft", "visits 1–5: 15%", "in pilot", "not in pilot", "max 20%", "no cap"].every((w) => t.includes(w)), t.replace(/\n/g, " | ").slice(0, 300));
   await axe(`document.querySelector("main") || document`, "programs list");
   await click("draft");
   await sleep(800);
@@ -171,7 +171,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await click("create draft", DLG);
   await sleep(1500);
   const c = last().body || {};
-  check("create: POST brand, reason, rules; never a status", last().k === "CREATE" && c.brandId === BC && c.reason === "brand signed up by phone" && c.adminMaxDiscountPct === 20 && c.maxDiscountPct === 25 && !("status" in c), JSON.stringify(c));
+  check("create: POST brand, reason, rules; never a status", last().k === "CREATE" && c.brandId === BC && c.reason === "brand signed up by phone" && c.adminMaxDiscountPct === 20 && !("maxDiscountPct" in c) && !("status" in c), JSON.stringify(c));
   check("…then the new draft opens", (await dlg()).includes("Gamma Grill: loyalty"));
 
   // routes missing on the server: no menu item
