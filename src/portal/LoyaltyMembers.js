@@ -57,6 +57,8 @@ export default function LoyaltyMembers({ load, loadCsv, title = "members" }) {
     { key: "visits", label: "visits", render: (m) => <span>{visitsText(m)}{m.rewardReady && <> <Pill tone="yellow">reward ready</Pill></>}</span> },
     { key: "rewardsEarned", label: "rewards earned" },
     { key: "rewardsUsed", label: "rewards used" },
+    // what the rewards took off their bills (the reward's part), with the latest use
+    { key: "rewardSavings", label: "saved with rewards", render: (m) => (m.rewardsUsed ? <span>{`PKR ${Number(m.rewardSavings || 0).toLocaleString()}`}{m.rewardUses?.[0] ? <span className="k-muted" style={{ display: "block", fontSize: 12 }}>{`last: ${m.rewardUses[0].label} on a PKR ${Number(m.rewardUses[0].bill || 0).toLocaleString()} bill`}</span> : null}</span> : "–") },
     { key: "lastVisitAt", label: "last visit", render: (m) => day(m.lastVisitAt) },
   ];
   const t = view?.totals;
@@ -68,6 +70,7 @@ export default function LoyaltyMembers({ load, loadCsv, title = "members" }) {
           <StatCard label="visits this month" value={t.visitsThisMonth} icon="check" tone="green" />
           <StatCard label="rewards earned" value={t.rewardsEarned} icon="gift" tone="yellow" />
           <StatCard label="rewards used" value={t.rewardsUsed} icon="star" tone="purple" />
+          <StatCard label="saved with rewards" value={`PKR ${Number(t.rewardSavings || 0).toLocaleString()}`} icon="coin" tone="green" />
         </div>
       )}
       <div className="k-row" style={{ display: "flex", gap: 12, alignItems: "center", flexWrap: "wrap", marginBottom: 12 }}>
