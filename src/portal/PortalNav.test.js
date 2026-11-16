@@ -26,7 +26,7 @@ test("the menu: groups in order, names, no duplicates", () => {
     ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"],
     ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"],
     ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"],
-    ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free"],
+    ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"],
     ["daily drops", "push test"],
     ["crew inbox", "crew partners", "crew campaigns", "crew credentials"],
     ["features"],
