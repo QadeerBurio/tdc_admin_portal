@@ -189,20 +189,22 @@ export default function EngagementMetrics() {
   // ═════════════════════════════════════════════
   const primaryStats = [
     { label: 'total profiles', value: fmt(data.totalProfiles), icon: 'users', tone: 'yellow', sub: 'users with profiles', drill: { kind: 'metric', key: 'totalProfiles' } },
-    { label: 'active users', value: fmt(data.activeUsers), icon: 'flame', tone: 'green', sub: 'active in last 30d', drill: { kind: 'metric', key: 'activeUsers' } },
+    { label: 'active students', value: fmt(data.activeUsers), icon: 'flame', tone: 'green', sub: `active in the last ${weeks} weeks`, drill: { kind: 'metric', key: 'activeUsers' } },
     { label: 'total points', value: fmt(data.totalPointsAwarded), icon: 'coin', tone: 'orange', sub: 'points awarded', drill: { kind: 'metric', key: 'totalPointsAwarded' } },
     { label: 'badges earned', value: fmt(data.badgesEarned), icon: 'trophy', tone: 'purple', sub: 'unlocks in period', drill: { kind: 'metric', key: 'badgesEarned' } },
-    { label: 'push sent', value: fmt(data.pushSent), icon: 'send', tone: 'blue', sub: 'notifications sent', drill: { kind: 'metric', key: 'pushSent' } },
-    { label: 'push open rate', value: fmtPct((data.pushOpenRate || 0) * 100), icon: 'chart', tone: 'green', sub: `${fmt(data.pushOpened)} opened`, drill: { kind: 'metric', key: 'pushOpened' } },
-    { label: 'rewards redeemed', value: fmt(data.rewardsRedeemed), icon: 'gift', tone: 'pink', sub: 'codes issued', drill: { kind: 'metric', key: 'rewardsRedeemed' } },
+    { label: 'push delivered', value: fmt(data.pushSent), icon: 'send', tone: 'blue', sub: data.pushFailed != null ? `${fmt(data.pushFailed)} failed · ${fmt(data.pushQueued)} queued · ${fmt(data.pushAwaitingReceipt)} no receipt yet` : 'notifications sent', drill: { kind: 'metric', key: 'pushSent' } },
+    { label: 'push open rate', value: fmtPct((data.pushOpenRate || 0) * 100), icon: 'chart', tone: 'green', sub: `${fmt(data.pushOpened)} opened of delivered`, drill: { kind: 'metric', key: 'pushOpened' } },
+    { label: 'rewards redeemed', value: fmt(data.rewardsRedeemed), icon: 'gift', tone: 'pink', sub: data.codesIssued != null ? `codes used · ${fmt(data.codesIssued)} codes issued` : 'codes used', drill: { kind: 'metric', key: 'rewardsRedeemed' } },
     { label: 'total drops', value: fmt(data.totalDrops), icon: 'spark', tone: 'yellow', sub: `${fmt(data.totalDropReactions)} reactions`, drill: { kind: 'metric', key: 'totalDrops' } },
   ];
 
   const secondaryStats = [
     { label: 'fully sorted', value: fmt(data.fullySortedCount), icon: 'checkCircle', tone: 'green', sub: 'completed all 8', drill: { kind: 'metric', key: 'fullySortedCount' } },
     { label: 'streak average', value: (data.avgStreak ?? 0).toFixed(1), icon: 'flame', tone: 'orange', sub: `longest: ${data.longestStreak ?? 0}d`, drill: { kind: 'metric', key: 'streaks' } },
-    { label: 'exam mode active', value: fmt(data.examModeActive), icon: 'file', tone: 'blue', sub: 'paused', drill: { kind: 'metric', key: 'examModeActive' } },
-    { label: 'referrals', value: fmt(data.totalReferrals), icon: 'link', tone: 'pink', sub: 'users invited', drill: { kind: 'metric', key: 'totalReferrals' } },
+    { label: 'exam mode active', value: fmt(data.examModeActive), icon: 'file', tone: 'blue', sub: 'today (Karachi)', drill: { kind: 'metric', key: 'examModeActive' } },
+    { label: 'students who invited someone', value: fmt(data.totalReferrals), icon: 'link', tone: 'pink', sub: data.invitedSignups != null ? `${fmt(data.invitedSignups)} invited sign-ups in the period` : 'all time', drill: { kind: 'metric', key: 'totalReferrals' } },
+    ...(data.codesIssued != null ? [{ label: 'codes issued', value: fmt(data.codesIssued), icon: 'ticket', tone: 'yellow', sub: 'reward codes taken in the period', drill: { kind: 'metric', key: 'codesIssued' } }] : []),
+    ...(data.invitedSignups != null ? [{ label: 'invited sign-ups', value: fmt(data.invitedSignups), icon: 'users', tone: 'blue', sub: 'joined with an invite code', drill: { kind: 'metric', key: 'invitedSignups' } }] : []),
   ];
 
   const badge = (text) => <Pill tone="sand">{text}</Pill>;
@@ -214,7 +216,8 @@ export default function EngagementMetrics() {
     <div className="tdcp k-page em" data-screen="metrics">
       {header(
         <>
-          are students coming back? goal: 2 to 3 opens a day. click any number to see the exact users ·{' '}
+          are students coming back? goal: 2 to 3 opens a day. click any number to see the exact users · Karachi time
+          {data?.exclusions?.test ? `, ${data.exclusions.test}` : ''} ·{' '}
           {lastUpdated ? `updated ${timeAgo(lastUpdated)}` : 'never'}
         </>,
         <>
@@ -252,7 +255,7 @@ export default function EngagementMetrics() {
             rowKey={(w, i) => i}
             onRowClick={(w) => openDrilldown('week', `${w._id?.year}-W${w._id?.week}`, `week ${w._id?.week} · ${w._id?.year}`)}
             columns={[
-              { key: 'week', label: 'week', render: (w) => <Pill tone="sand">W{String(w._id?.week || 0).padStart(2, '0')}</Pill> },
+              { key: 'week', label: 'week', render: (w) => <span><Pill tone="sand">W{String(w._id?.week || 0).padStart(2, '0')}</Pill>{w.weekStart ? <span className="k-muted"> from {w.weekStart} (Mon, Karachi)</span> : null}</span> },
               { key: 'year', label: 'year', render: (w) => w._id?.year || '–' },
               { key: 'users', label: 'users', thStyle: { textAlign: 'right' }, style: { textAlign: 'right' }, render: (w) => <b>{fmt(w.users)}</b> },
             ]}

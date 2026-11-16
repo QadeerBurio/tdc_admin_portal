@@ -289,6 +289,13 @@ http.createServer((q, s) => {
   await clickText("send push test"); await sleep(1500);
   check("quick action 'send push test' opens push test", await ev(`document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === "engagement_test_push"`));
 
+  // ======== dashboard user counts (fix/metric-audit): the shared calculation, suspended and test accounts out
+  console.log("-- dashboard user counts");
+  await menu("dashboard"); await sleep(2500);
+  t = await text();
+  check("students 840 with 'including suspended: 852'; employers 20 with 'including suspended: 21'; brands without a note", /840/.test(t) && /including suspended: 852/.test(t) && /including suspended: 21/.test(t) && !/including suspended: 46/.test(t), t.slice(0, 600));
+  await audit("dashboard");
+
   // phone width
   console.log("-- phone width");
   await viewport(pg, 390, 844, true, 2);

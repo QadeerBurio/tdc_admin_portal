@@ -222,7 +222,7 @@ export default function AllBrandsRevenue() {
     <div className="tdcp k-page br" data-screen="brands-revenue">
       <PageHeader
         title="brand revenue"
-        sub="what tdc users spend at partner brands, in-store and online."
+        sub="what tdc users spend at partner brands, in-store and online. a store order counts once; test accounts are left out; sales by deleted students are kept (shown without a name); unique students are counted once across brands. same figures as the metrics page and each brand's dashboard."
         actions={<>
           <Button variant="secondary" icon="refresh" onClick={refreshData} loading={refreshing}>Refresh</Button>
           <Button icon="download" onClick={downloadExcel} disabled={brands.length === 0}>Export</Button>
@@ -234,7 +234,7 @@ export default function AllBrandsRevenue() {
         <StatCard label="Total Bills" value={rs(summary.totalBill)} sub="Across all brands" icon="wallet" tone="blue" />
         <StatCard label="Student Saved" value={rs(summary.totalSaved)} sub="Total discounts" icon="gift" tone="yellow" />
         <StatCard label="Redemptions" value={`${(summary.totalRedemptions || 0).toLocaleString()}`} sub="QR + Promo" icon="ticket" tone="purple" />
-        <StatCard label="Unique Students" value={`${(summary.uniqueStudents || 0).toLocaleString()}`} sub="Across all brands" icon="users" tone="pink" />
+        <StatCard label="Unique Students" value={`${(summary.uniqueStudents || 0).toLocaleString()}`} sub="Each student once, across all brands" icon="users" tone="pink" />
         <StatCard label="Total Brands" value={`${summary.totalBrands || 0}`} sub={`${summary.brandsWithRevenue || 0} with revenue`} icon="store" tone="blue" />
       </div>
 

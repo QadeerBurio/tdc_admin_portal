@@ -33,7 +33,7 @@ function handle(method, url) {
   if (p === "/api/admin/features/flags") return ok([{ flag: "loyaltyV2", label: "Loyalty", roles: ["brand", "student"], killed: false, railway: "not set", railwayIdCount: 0, adminAccessCount: 0, forcedOffCount: 0, studentDefaultable: true, studentDefault: { enabled: true }, defaults: { student: { enabled: true, set: false }, brand: { enabled: true, set: false } } }]);
   if (p.startsWith("/api/admin/features/flag/")) return ok({ flag: "loyaltyV2", label: "Loyalty", roles: ["brand", "student"], killed: false, railwayIdCount: 0, total: 0, offset: 0, limit: 50, accounts: [] });
   if (p === "/api/career/ratings/admin/reports") return ok([]);
-  if (p === "/api/admin/card-stats") return { pending: 0, approvedTotal: 0, totalRevenue: 0 };
+  if (p === "/api/admin/card-stats") return { pending: 0, approvedTotal: 0, totalRevenue: null, revenueTracked: false };
   if (p === "/api/admin/bookings/stats") return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, totalRevenue: 0 };
   if (p === "/api/admin/actions") return ok({ rows: [], next: null });
   if (p === "/api/admin/actions/facets") return ok({ actions: [], targetTypes: [], admins: [] });
