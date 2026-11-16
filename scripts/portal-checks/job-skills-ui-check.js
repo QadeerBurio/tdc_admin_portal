@@ -33,7 +33,7 @@ http.createServer((q, s) => {
     if (k === "GET /api/app/flags/me") return send(200, {});
     if (k === "GET /api/jobs/my-jobs") return send(200, [job(J1)]);
     if (k === "GET /api/jobs/all") return send(200, [job(J1), job(J2, { title: "Pasted paragraph", companyName: "Acme", skills: [LONG, "SQL"] })]);
-    if (k === "GET /api/jobs/admin/stats") return send(200, { totalJobs: 2, activeJobs: 2, totalApplications: 0 });
+    if (k === "GET /api/jobs/stats" || k === "GET /api/jobs/admin/stats") return send(200, { totalJobs: 2, activeJobs: 2, totalApplications: 0, pendingApplications: 0, shortlistedApplications: 0 });
     if (k === "GET /api/jobs/admin/skills-report") return send(200, report);
     if (k === `PUT /api/jobs/update/${J1}`) {
       puts += 1;
