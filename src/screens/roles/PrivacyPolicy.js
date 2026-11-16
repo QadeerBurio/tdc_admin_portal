@@ -48,10 +48,10 @@ const SECTIONS = [
   {
     h: "ads and Meta",
     p: [
-      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: the install, counted the first time you open the app, then app opens, sign-up, offer claims, job applications, discounts redeemed and AI resume use. why: so Meta can tell us which ads worked, and we stop paying for the ones that don't. we never share your name, messages or what you write.",
-      "by default this is shared without your email or phone number. on Android, your phone's advertising ID is included unless you turn off \"ads with your details\". on iPhone, nothing that identifies you is shared unless you tap \"continue\" when the app asks and then choose Allow when Apple asks.",
-      "your email and phone number are shared with Meta only after you tap \"continue\" (on iPhone, also Apple's Allow), and only hashed: scrambled one way before they leave your phone, so Meta can match them to an account it already knows but can't read them.",
-      "two switches in the app, settings → privacy: \"ad measurement\" turns off everything the app shares with Meta; \"ads with your details\" turns off the advertising ID and the hashed email and phone. you can also reset or turn off your advertising ID in your phone settings.",
+      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: installs, app opens, sign-up, offer claims, job applications, discounts redeemed and AI resume use. by default this is shared without anything that identifies you. we never share messages or what you write.",
+      "on Android, your phone's advertising ID is also shared, unless you turn off \"ads with your details\". on iPhone, it is only shared if you allow it in the app and in Apple's tracking prompt.",
+      "your email and phone number are shared with Meta, in hashed (scrambled) form, only if you allow \"ads with your details\".",
+      "you can turn either off any time in the app: settings → privacy. turning off \"ad measurement\" stops the app sharing anything with Meta. you can also reset or turn off your advertising ID in your phone settings.",
     ],
   },
   {
