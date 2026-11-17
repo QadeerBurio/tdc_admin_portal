@@ -12,7 +12,7 @@ const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
 const A11Y = process.env.A11Y === "1";
-const WEB = 5194, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5194, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 const D1 = "6ae9d1d1d1d1d1d1d1d1d1d1", D2 = "6ae9d2d2d2d2d2d2d2d2d2d2";
 const now = Date.now();
@@ -65,7 +65,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -83,7 +83,9 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(3500);
+    // the admin shell is up (its menu rendered) and its first requests settled: no fixed wait
+    await pg.waitFor(`document.querySelectorAll(".tdcp-nav [data-page]").length > 3`, { timeout: 25000, label: "the admin menu" });
+    await pg.idle();
     return pg;
   };
   const text = (pg) => pg.evaluate(`document.body.innerText || ""`);
@@ -103,6 +105,7 @@ http.createServer((q, s) => {
   let total = 0;
   const AXE = A11Y ? fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8") : "";
   const audit = async (pg, label, scope = "main") => {
+    await pg.settled(); // requests done and nothing fading in: axe sees the final colours
     await pg.evaluate(AXE + ";true");
     const v = await pg.evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(scope)}) || document; const r = await axe.run(el, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }); return r.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, targets: v.nodes.slice(0, 3).map((n) => n.target.join(" ")) })); })()`);
     total += v.length;
@@ -117,28 +120,33 @@ http.createServer((q, s) => {
   setUp = true;
   const adm = await open(admin, "/admin");
   if (!A11Y) check("set up: 'hire disputes' in the admin menu", /hire disputes/.test(await menu(adm)));
-  await adm.evaluate(`document.querySelector('.tdcp-nav [data-page="hire_disputes"]')?.click(); true`); // by page id (the item shows a badge with the number open)
-  await sleep(2000);
+  // by page id (the item shows a badge with the number open); it appears once its availability call answers
+  await adm.clickWhen(`document.querySelector('.tdcp-nav [data-page="hire_disputes"]')`, { timeout: 25000, label: "'hire disputes' in the admin menu" });
+  await adm.waitForText(["Data intern", "review"], { timeout: 25000 });
+  await adm.idle();
   if (A11Y) await audit(adm, "admin hire disputes: list");
   else expect("disputes list", await text(adm), ["hire disputes", "Data intern", "Bright Labs", "Sana Khan", "Hire Co", "I never started this job", "open", "Ops intern", "timeline switched off", "review"], ["@", "0300"]);
-  await click(adm, /^review$/);
-  await sleep(1500);
+  await adm.clickWhen(`[...document.querySelectorAll("button, a")].find((x) => /^review$/.test(x.innerText.trim()))`, { label: "a 'review' button" });
+  await adm.waitFor(`!!document.querySelector("#dispute-reason")`, { timeout: 15000, label: "the review dialog" });
+  await adm.idle();
   if (A11Y) {
     await audit(adm, "admin hire disputes: review dialog", "[role=dialog]");
     await typeReason(adm, "contract and payslip checked");
-    await sleep(300);
+    await adm.waitFor(`!([...document.querySelectorAll("[role=dialog] button")].find((x) => x.innerText.trim() === "restore the hire")?.disabled)`, { timeout: 10000, label: "restore enabled after the reason" });
     await audit(adm, "admin hire disputes: review dialog, reason typed", "[role=dialog]");
   } else {
     expect("review dialog", await text(adm), ["dispute: Data intern", "the candidate's reason", "timeline", "hire confirmed (verified)", "hire disputed", "your reason (required", "restore the hire", "revoke the hire"]);
     check("restore and revoke are disabled without a reason", (await disabled(adm, "restore the hire")) && (await disabled(adm, "revoke the hire")));
     await typeReason(adm, "ok");
-    await sleep(200);
+    await adm.waitFor(`document.querySelector("#dispute-reason")?.value === "ok"`, { timeout: 5000, label: "the short reason typed" });
     check("…and with a reason under 5 characters", await disabled(adm, "restore the hire"));
     await typeReason(adm, "contract and payslip checked (ticket 77)");
-    await sleep(200);
+    await adm.waitFor(`!([...document.querySelectorAll("[role=dialog] button")].find((x) => x.innerText.trim() === "restore the hire")?.disabled)`, { timeout: 10000, label: "restore enabled with a reason" });
     check("…enabled with a reason", !(await disabled(adm, "restore the hire")) && !(await disabled(adm, "revoke the hire")));
-    await adm.evaluate(`[...document.querySelectorAll("[role=dialog] button")].find((x) => x.innerText.trim() === "restore the hire")?.click(); true`);
-    await sleep(2000);
+    await adm.clickWhen(`[...document.querySelectorAll("[role=dialog] button")].find((x) => x.innerText.trim() === "restore the hire")`, { label: "'restore the hire'" });
+    for (let i = 0; i < 150 && !posted.length; i++) await sleep(100); // the request reaches the mock server
+    // the toast ("hire restored") and the list without the dispute, read together while the toast is up
+    await adm.waitFor(`(() => { const t = document.body.innerText || ""; return t.includes("hire restored") && !t.includes("Data intern"); })()`, { timeout: 15000, label: "'hire restored' and the dispute gone" }).catch(() => {});
     const p = posted[0] || {};
     check("restore sends HIRE_RESTORED with the timeline's version and the reason", posted.length === 1 && p.type === "HIRE_RESTORED" && p.version === 6 && p.note === "contract and payslip checked (ticket 77)");
     expect("after restoring: the dispute left the list", await text(adm), ["hire restored", "Ops intern"], ["Data intern"]);

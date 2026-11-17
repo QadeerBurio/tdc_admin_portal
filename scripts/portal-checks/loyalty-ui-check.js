@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5196, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5196, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 
 const B = "6ae9aaaaaaaaaaaaaaaaaaaa", S = "6ae9bbbbbbbbbbbbbbbbbbbb", O = "6ae9cccccccccccccccccccc";
 const program = { id: "6ae9dddddddddddddddddddd", brand: B, status: "active", version: 3, tiers: [{ name: "Member", minVisit: 1, maxVisit: 5, discountPct: 15 }, { name: "Regular", minVisit: 6, maxVisit: null, discountPct: 25 }], maxDiscountPct: 25, brandMaxDiscountPct: 25, adminMaxDiscountPct: null, eligibleOfferIds: [], branchIds: [], maxVisitsPerDay: 1, resetMonths: 12, terms: "one visit a day counts", startsAt: null, endsAt: null };
@@ -48,7 +48,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -66,7 +66,13 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(4000);
+    // the page is ready when it shows what this visit expects (or, with nothing listed, any content) and its
+    // requests have settled: no fixed wait (a busy machine is slower, a quiet one faster)
+    try {
+      if (expect.length) await pg.waitForText(expect, { timeout: 25000 });
+      else await pg.waitFor(`(document.getElementById("root")?.innerText || "").trim().length >= 20`, { timeout: 25000, label: `${p} to render` });
+    } catch (e) { errs.push(String(e.message)); }
+    await pg.idle();
     const text = await pg.evaluate(`document.getElementById("root")?.innerText || ""`);
     const missing = expect.filter((t) => !text.toLowerCase().includes(t.toLowerCase()));
     if (missing.length || errs.length || text.trim().length < 20) bad = 1;
@@ -81,34 +87,36 @@ http.createServer((q, s) => {
   // the members tab: totals, one row per student ("tdc verified user · university"), visits / needed, filters
   {
     const mp = await visit(brand, "/loyalty", ["members", "program", "max visits counted per day"]);
-    await mp.evaluate(`[...document.querySelectorAll("[role=tab]")].find((e) => e.innerText.trim() === "members")?.click(); true`);
-    await sleep(1800);
-    const mt = await mp.evaluate(`document.querySelector('[data-testid="loyalty-members"]')?.innerText || ""`);
+    await mp.clickWhen(`[...document.querySelectorAll("[role=tab]")].find((e) => e.innerText.trim() === "members")`, { label: "the members tab" });
+    const mt = await mp.waitForText(["visits this month", "export csv"], { scope: '[data-testid="loyalty-members"]', timeout: 20000 }).catch(() => "");
+    await mp.idle();
     const wantM = ["visits this month", "rewards earned", "rewards used", "tdc verified user · NED University", "1 / 2", "reward ready", "export csv"];
     const missM = wantM.filter((w) => !mt.toLowerCase().includes(w.toLowerCase()));
     const leak = /sana|@|0300/i.test(mt);
     if (missM.length || leak) bad = 1;
     console.log(`brand members tab: ${missM.length ? "MISSING " + missM.join(" | ") : "totals, rows and export shown"}${leak ? "; LEAK: a name or contact detail" : "; no name or contact detail"}`);
-    await mp.evaluate(`[...document.querySelectorAll('[data-testid="loyalty-members"] button')].find((e) => e.innerText.trim() === "reward ready")?.click(); true`);
-    await sleep(1200);
-    const asked = urls.some((u) => u.startsWith("/api/loyalty/brands/me/members") && u.includes("filter=reward-ready"));
+    await mp.clickWhen(`[...document.querySelectorAll('[data-testid="loyalty-members"] button')].find((e) => e.innerText.trim() === "reward ready")`, { label: "the 'reward ready' filter" });
+    // the filtered request reaches the mock server (waited for, up to 15 s)
+    const askedNow = () => urls.some((u) => u.startsWith("/api/loyalty/brands/me/members") && u.includes("filter=reward-ready"));
+    for (let i = 0; i < 150 && !askedNow(); i++) await sleep(100);
+    const asked = askedNow();
     if (!asked) bad = 1;
     console.log(`members filter "reward ready": ${asked ? "asked the server with filter=reward-ready" : "MISSING the filtered request"}`);
   }
   await visit(brand, "/home", ["loyalty"]); // the menu item for a pilot brand
   await visit(brand, "/verifyclaim", ["15%", "loyalty: Member · visit 3", "3 more visits to 25%"]);
   const pg = await visit(admin, "/admin", ["loyalty exceptions"]);
-  // open the admin page from the menu
-  await pg.evaluate(`[...document.querySelectorAll("button, a")].find((e) => /loyalty exceptions/i.test(e.innerText))?.click(); true`);
-  await sleep(2500);
-  const t = await pg.evaluate(`document.getElementById("root")?.innerText || ""`);
+  // open the admin page from the menu (the item appears once the admin menu's availability calls answer)
+  await pg.clickWhen(`document.querySelector('.tdcp-nav [data-page="loyalty_exceptions"]')`, { timeout: 25000, label: "'loyalty exceptions' in the admin menu" });
   const want = ["credited", "didn't count", "reversal", "refund: order returned", "reverse", "cap a brand's maximum discount"];
+  const t = await pg.waitForText(want, { timeout: 25000 }).catch(() => pg.evaluate(`document.getElementById("root")?.innerText || ""`));
+  await pg.idle();
   const miss = want.filter((w) => !t.toLowerCase().includes(w.toLowerCase()));
   if (miss.length) bad = 1;
   console.log(`admin loyalty exceptions page: ${miss.length ? "MISSING " + miss.join(" | ") : "all expected text present"}`);
   // the reverse dialog: the button stays disabled without a reason
-  await pg.evaluate(`[...document.querySelectorAll("button")].find((e) => e.innerText.trim() === "reverse")?.click(); true`);
-  await sleep(800);
+  await pg.clickWhen(`[...document.querySelectorAll("button")].find((e) => e.innerText.trim() === "reverse")`, { label: "a 'reverse' button" });
+  await pg.waitFor(`[...document.querySelectorAll("button")].some((e) => e.innerText.trim() === "reverse visit")`, { timeout: 15000, label: "the reverse dialog" }).catch(() => {});
   const dlg = await pg.evaluate(`(() => { const btn = [...document.querySelectorAll("button")].find((e) => e.innerText.trim() === "reverse visit"); return { open: !!btn, disabled: btn ? btn.disabled : null }; })()`);
   if (!dlg.open || dlg.disabled !== true) bad = 1;
   console.log(`reverse dialog: open ${dlg.open}, "reverse visit" disabled without a reason: ${dlg.disabled}`);

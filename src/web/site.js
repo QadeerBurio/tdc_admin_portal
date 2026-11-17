@@ -4,6 +4,8 @@ import { Link } from "react-router-dom";
 import "./web.css";
 import logoInk from "./assets/tdc-logo-ink.png";
 import logoWhite from "./assets/tdc-logo-white.png";
+import helloPakistanLogo from "./assets/press-hello-pakistan.png";
+import startupPakistanLogo from "./assets/press-startup-pakistan.png";
 
 export const LINKS = {
   getApp: "https://go.gettdc.pk",
@@ -17,6 +19,33 @@ export const LINKS = {
   phoneHref: "tel:+923249287649",
   whatsapp: "https://wa.me/923249287649",
 };
+
+// Press coverage. Shown on the home page and /founder. Add new features at the top.
+export const PRESS = [
+  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/", logo: helloPakistanLogo },
+  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/", logo: startupPakistanLogo },
+  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
+  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
+  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees without skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
+];
+
+/** "as featured in" strip: each outlet's logo opens its story. */
+export function FeaturedIn({ style }) {
+  return (
+    <div className="featured" style={style}>
+      <span className="featured-label">as featured in</span>
+      {PRESS.filter((p, i) => PRESS.findIndex((q) => q.outlet === p.outlet) === i).map((p) => (
+        p.logo ? (
+          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
+            <img src={p.logo} alt={p.outlet} height="48" />
+          </a>
+        ) : (
+          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
+        )
+      ))}
+    </div>
+  );
+}
 
 export function Logo({ dark = false, size = "", to = "/" }) {
   return (
@@ -216,6 +245,7 @@ export function WebFooter() {
           <Link to="/AppStoreReviews">reviews</Link>
           <Link to="/ambassador">campus ambassadors</Link>
           <a href="/#campus">for campuses</a>
+          <Link to="/founder">meet the founder</Link>
         </div>
         <div className="footer-col">
           <b>partners</b>
