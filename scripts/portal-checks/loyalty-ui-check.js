@@ -7,7 +7,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5196, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5196, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 
 const B = "6ae9aaaaaaaaaaaaaaaaaaaa", S = "6ae9bbbbbbbbbbbbbbbbbbbb", O = "6ae9cccccccccccccccccccc";
 const program = { id: "6ae9dddddddddddddddddddd", brand: B, status: "active", version: 3, tiers: [{ name: "Member", minVisit: 1, maxVisit: 5, discountPct: 15 }, { name: "Regular", minVisit: 6, maxVisit: null, discountPct: 25 }], maxDiscountPct: 25, brandMaxDiscountPct: 25, adminMaxDiscountPct: null, eligibleOfferIds: [], branchIds: [], maxVisitsPerDay: 1, resetMonths: 12, terms: "one visit a day counts", startsAt: null, endsAt: null };
@@ -48,7 +48,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -107,7 +107,7 @@ http.createServer((q, s) => {
   await visit(brand, "/verifyclaim", ["15%", "loyalty: Member · visit 3", "3 more visits to 25%"]);
   const pg = await visit(admin, "/admin", ["loyalty exceptions"]);
   // open the admin page from the menu (the item appears once the admin menu's availability calls answer)
-  await pg.clickWhen(`[...document.querySelectorAll(".tdcp-nav [data-page], .tdcp-nav a, .tdcp-nav button")].find((e) => /loyalty exceptions/i.test(e.innerText))`, { timeout: 25000, label: "'loyalty exceptions' in the admin menu" });
+  await pg.clickWhen(`document.querySelector('.tdcp-nav [data-page="loyalty_exceptions"]')`, { timeout: 25000, label: "'loyalty exceptions' in the admin menu" });
   const want = ["credited", "didn't count", "reversal", "refund: order returned", "reverse", "cap a brand's maximum discount"];
   const t = await pg.waitForText(want, { timeout: 25000 }).catch(() => pg.evaluate(`document.getElementById("root")?.innerText || ""`));
   await pg.idle();

@@ -65,19 +65,34 @@ async function launch(label = 9333) {
   async function page() {
     const { targetId } = await send("Target.createTarget", { url: "about:blank" });
     const { sessionId } = await send("Target.attachToTarget", { targetId, flatten: true });
-    const s = (m, p, ms) => send(m, p, sessionId, ms);
+    // after an action (navigation, a click, a key, a file) the page is "dirty": its next read first waits until it has
+    // settled (no request in flight, nothing animating). So a check never reads, or clicks into, a page that is still
+    // loading what the action asked for, on a quiet machine or a busy one; a leftover fixed sleep is just extra time.
+    let dirty = false;
+    const ACTIONS = new Set(["Page.navigate", "Page.reload", "Input.dispatchKeyEvent", "Input.dispatchMouseEvent", "Input.insertText", "DOM.setFileInputFiles"]);
+    const s = (m, p, ms) => { if (ACTIONS.has(m)) dirty = true; return send(m, p, sessionId, ms); };
     const waitEvent = (name, ms = 30000) => new Promise((res) => { const t = setTimeout(res, ms); listeners.push((m) => { if (m.sessionId === sessionId && m.method === name) { clearTimeout(t); res(m.params); } }); });
     // requests in flight (for idle())
-    const inflight = new Set();
+    let settledRef = null; // set below (evaluate uses it before an axe scan)
+    const inflight = new Map(); // requestId -> when it started (a long-poll / socket left open isn't "busy")
     let lastNet = Date.now();
     listeners.push((m) => {
       if (m.sessionId !== sessionId) return;
-      if (m.method === "Network.requestWillBeSent") { inflight.add(m.params.requestId); lastNet = Date.now(); }
+      if (m.method === "Network.requestWillBeSent") { inflight.set(m.params.requestId, Date.now()); lastNet = Date.now(); }
       else if (m.method === "Network.loadingFinished" || m.method === "Network.loadingFailed") { inflight.delete(m.params.requestId); lastNet = Date.now(); }
     });
     await s("Page.enable"); await s("Runtime.enable"); await s("Network.enable");
     // an expression's value; a long one (axe) gets a longer command timeout
-    const evaluate = async (expr, ms = COMMAND_MS * 2) => { const r = await s("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true }, ms); if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 400)); return r.result.value; };
+    // an axe scan always runs on a settled page (no request in flight, nothing fading in): a dialog still animating
+    // reads as low contrast; every check gets this, whatever its own audit helper looks like
+    const evaluate = async (expr, ms = COMMAND_MS * 2) => {
+      if ((dirty || expr.includes("axe.run(")) && settledRef) { dirty = false; await settledRef(); }
+      const r = await s("Runtime.evaluate", { expression: expr, awaitPromise: true, returnByValue: true }, ms);
+      // an expression that clicks, dispatches an event or sets a value is an action too
+      if (/\.click\(|dispatchEvent\(|\.focus\(|\.call\(\s*\w+\s*,/.test(expr)) dirty = true;
+      if (r.exceptionDetails) throw new Error(JSON.stringify(r.exceptionDetails).slice(0, 400));
+      return r.result.value;
+    };
     const on = (fn) => listeners.push((m) => { if (m.sessionId === sessionId) fn(m); });
     /** wait until the expression is truthy (polled); returns its value; throws naming `label` after `timeout` ms */
     const waitFor = async (expr, { timeout = WAIT_MS, label = expr.slice(0, 80), interval = 100 } = {}) => {
@@ -104,7 +119,9 @@ async function launch(label = 9333) {
     const idle = async ({ quiet = 400, timeout = 10000 } = {}) => {
       const end = Date.now() + timeout;
       while (Date.now() < end) {
-        if (inflight.size === 0 && Date.now() - lastNet >= quiet) return true;
+        const now = Date.now();
+        const busy = [...inflight.values()].some((t) => now - t < 3000); // open longer than 3 s: a long-poll, not loading
+        if (!busy && now - lastNet >= quiet) return true;
         await sleep(50);
       }
       return false;
@@ -114,6 +131,7 @@ async function launch(label = 9333) {
       await idle({ timeout });
       await waitFor(`(document.getAnimations ? document.getAnimations() : []).every((a) => a.playState !== "running" || a.effect?.getComputedTiming?.().iterations === Infinity)`, { timeout, label: "animations to finish" }).catch(() => {});
     };
+    settledRef = () => settled();
     return { s, waitEvent, evaluate, on, waitFor, waitForText, clickWhen, idle, settled, close: () => send("Target.closeTarget", { targetId }) };
   }
   return { page, close: () => { try { ws.close(); } catch {} cleanup(); } };

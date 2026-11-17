@@ -10,7 +10,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5196, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5196, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 
 const U1 = { _id: "6aea00000000000000000001", name: "SZABIST" };
 const U2 = { _id: "6aea00000000000000000002", name: "IBA Karachi" };
@@ -37,7 +37,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");

@@ -13,7 +13,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5189, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5189, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 const E = "6aea11111111111111111111", ADMIN = "6aeaffffffffffffffffffff", J1 = "6aeab1b1b1b1b1b1b1b1b1b1";
 const now = Date.now();
@@ -71,7 +71,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -91,7 +91,9 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(3000);
+    // rendered, and its requests settled (the admin menu's items appear once their availability calls answer)
+    await pg.waitFor(`(document.getElementById("root")?.innerText || "").trim().length > 20`, { timeout: 25000, label: `${p} to render` });
+    await pg.settled();
     return pg;
   };
   const audit = async (pg, label, scope) => {
@@ -125,16 +127,16 @@ http.createServer((q, s) => {
   check("jobs page: 'post a job', 'Upload Jobs CSV' and 'duplicate' disabled with the reason", post.disabled && csv.disabled && dup.found && dup.disabled && /request a plan/i.test(post.title), JSON.stringify({ post, csv, dup }));
   check("jobs page: the banner is there too", /your free hire is used/.test(await banner(pg)));
   check("request a plan opens the dialog", await click(pg, /^request a plan$/i));
-  await sleep(500);
+  await pg.settled();
   await audit(pg, "request a plan dialog", "[role=dialog]");
   await setVal(pg, "#plan-jobs", "0");
-  await sleep(200);
+  await pg.settled();
   check("0 jobs: 'send request' disabled", (await btn(pg, /^send request$/i, `document.querySelector("[role=dialog]")`)).disabled === true);
   await setVal(pg, "#plan-jobs", "3");
   await setVal(pg, "#plan-note", "hiring for Q1", "HTMLTextAreaElement");
-  await sleep(200);
+  await pg.settled();
   await click(pg, /^send request$/i, `document.querySelector("[role=dialog]")`);
-  await sleep(1500);
+  await pg.settled();
   const sent = calls.filter((c) => c.k === "POST /api/career/employers/me/plan-requests");
   check("the request is sent once with { jobs: 3, note }", sent.length === 1 && sent[0].body.jobs === 3 && sent[0].body.note === "hiring for Q1", JSON.stringify(sent));
   t = await banner(pg);
@@ -154,36 +156,36 @@ http.createServer((q, s) => {
   check("banner: hiring plan, 2 job posts left, valid until a date; posting enabled", /hiring plan/.test(t) && /2 job posts left · valid until/.test(t) && (await btn(pg, /^post a job$/i)).disabled === false, t);
   await audit(pg, "plan banner", '[data-card="hiring-access"]');
   await click(pg, /^duplicate Backend intern$/);
-  await sleep(1200);
+  await pg.settled();
   check("duplicate sends POST /api/jobs/duplicate/:id", calls.some((c) => c.k === `POST /api/jobs/duplicate/${J1}`));
 
   console.log("── admin: hiring plans");
   pg = await open({ _id: ADMIN, id: ADMIN, role: "admin", name: "admin" }, "/admin");
-  check("the menu has 'hiring plans' under employers", await pg.evaluate(`(() => { const e = document.querySelector('.tdcp-nav [data-page="hiring_plans"]'); if (e) e.click(); return !!e; })()`));
-  await sleep(2500);
+  check("the menu has 'hiring plans' under employers", await pg.waitFor(`!!document.querySelector('.tdcp-nav [data-page="hiring_plans"]')`, { timeout: 20000, label: "'hiring_plans' in the menu" }).then(() => pg.evaluate(`(() => { const e = document.querySelector('.tdcp-nav [data-page="hiring_plans"]'); e.click(); return true; })()`)).catch(() => false));
+  await pg.settled();
   t = await pg.evaluate(`document.querySelector('[data-screen="hiring-plans"]')?.innerText || ""`);
   check("the page: counts incl. 'kept open by the fresh start' (3), the open request, the employers", /kept open by the fresh start/i.test(t) && /hiring for Q1/.test(t) && /Bright Labs/.test(t) && /Nova Systems/.test(t) && /Plan Co/.test(t) && /posting locked/.test(t), t.split("\n").join(" | ").slice(0, 500));
   await audit(pg, "admin hiring plans page", '[data-screen="hiring-plans"]');
   await click(pg, /^grant a plan to Bright Labs$/);
-  await sleep(600);
+  await pg.settled();
   check("grant from the request: the dialog is prefilled with 3 job posts", (await pg.evaluate(`document.querySelector("#hp-jobs")?.value`)) === "3");
   await audit(pg, "grant dialog", "[role=dialog]");
   const before = calls.filter((c) => /\/grant$/.test(c.k)).length;
   await click(pg, /^grant plan$/i, `document.querySelector("[role=dialog]")`);
-  await sleep(600);
+  await pg.settled();
   check("no reason: nothing is sent", calls.filter((c) => /\/grant$/.test(c.k)).length === before);
   await setVal(pg, "#hp-reason", "agreed on a call", "HTMLTextAreaElement");
   await click(pg, /^grant plan$/i, `document.querySelector("[role=dialog]")`);
-  await sleep(1200);
+  await pg.settled();
   const g = calls.filter((c) => /\/grant$/.test(c.k)).slice(-1)[0];
   check("grant sends { jobs: 3, validUntil: null, reason, requestId }", g && g.k.includes(E) && g.body.jobs === 3 && g.body.validUntil === null && g.body.reason === "agreed on a call" && g.body.requestId === "r1", JSON.stringify(g));
   await click(pg, /^extend Nova Systems's trial$/);
-  await sleep(600);
+  await pg.settled();
   const day = new Date(now + 20 * DAY).toISOString().slice(0, 10);
   await setVal(pg, "#hp-until", day);
   await setVal(pg, "#hp-reason", "slow season", "HTMLTextAreaElement");
   await click(pg, /^extend trial$/i, `document.querySelector("[role=dialog]")`);
-  await sleep(1200);
+  await pg.settled();
   const x = calls.filter((c) => /\/trial$/.test(c.k)).slice(-1)[0];
   check("extend sends { action: extend, until (end of that day, Pakistan), reason }", x && x.body.action === "extend" && x.body.until === new Date(`${day}T23:59:59+05:00`).toISOString() && x.body.reason === "slow season", JSON.stringify(x));
 

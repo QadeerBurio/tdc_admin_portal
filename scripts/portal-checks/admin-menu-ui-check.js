@@ -15,7 +15,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep, viewport } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5196, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5196, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 
 const student = (i, status) => ({ _id: `6aeb000000000000000000${String(i).padStart(2, "0")}`, name: `Student ${i}`, email: `s${i}@example.com`, role: "student", status, referralCount: 0 });
@@ -56,7 +56,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
@@ -92,11 +92,15 @@ const MENU = [
   };
   const menu = () => pg.evaluate(`[...document.querySelectorAll(".tdcp-nav [data-group]")].map((g) => ({ title: g.querySelector(".tdcp-nav-toggle .lbl")?.innerText.trim() || "", expanded: g.querySelector(".tdcp-nav-toggle")?.getAttribute("aria-expanded"), items: [...g.querySelectorAll("[data-page]")].filter((x) => x.offsetParent !== null).map((x) => ({ id: x.dataset.page, label: x.querySelector(".lbl").innerText.trim(), badge: x.querySelector(".tdcp-nav-badge")?.innerText || null, current: x.getAttribute("aria-current") })) }))`);
   const clickPage = (id) => pg.evaluate(`(() => { const e = document.querySelector('.tdcp-nav [data-page="${id}"]'); if (e) e.click(); return !!e; })()`);
+  // wait for what the next check reads (a timeout is logged, then the check reports what it saw)
+  const w = (expr, label, timeout = 20000) => pg.waitFor(expr, { timeout, label }).catch((e) => console.log("    (" + e.message + ")"));
   const heading = () => pg.evaluate(`(() => { const h = [...document.querySelectorAll("main h1, .tdcp-main h1, h1")].map((x) => x.innerText.trim()).filter(Boolean); return h.join(" | "); })()`);
 
   console.log("── the menu");
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
-  await sleep(4000);
+  // the menu and its waiting badges (from the pages' own calls) are in
+  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8 && !!document.querySelector('.tdcp-nav [data-page="company_verifications"] .tdcp-nav-badge') && !!document.querySelector('.tdcp-nav [data-page="hire_disputes"] .tdcp-nav-badge')`, "the admin menu with its badges");
+  await pg.idle();
   let m = await menu();
   check("groups in order with their items (every pilot set up in this mock)", JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])) === JSON.stringify(MENU), JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])));
   const allIds = m.flatMap((g) => g.items.map((i) => i.id));
@@ -113,7 +117,8 @@ const MENU = [
   for (const [, items] of MENU) for (const label of items) {
     const id = m.flatMap((g) => g.items).find((i) => i.label === label)?.id;
     await clickPage(id);
-    await sleep(700);
+    // the page is open: the tab title, the highlighted item and (but on the dashboard) a heading
+    await w(`document.title === ${JSON.stringify(label + " · tdc admin")} && document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === ${JSON.stringify(id)} && (${label === "dashboard"} || [...document.querySelectorAll("main h1, .tdcp-main h1, h1")].some((x) => x.innerText.trim().length > 0))`, `the ${label} page`);
     const st = await pg.evaluate(`({ title: document.title, current: document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page || "" })`);
     const h = await heading();
     const titleOk = st.title === `${label} · tdc admin` && st.current === id;
@@ -123,45 +128,46 @@ const MENU = [
   }
   check("each of the 35 items opens its page; the browser tab and the page heading use the menu name", titled.length === 0, titled.join(" ;; "));
   await clickPage("offers");
-  await sleep(700);
+  await w(`document.querySelectorAll('[data-screen="admin-offers-tabs"] [role=tab]').length === 2`, "the offers tabs");
   const tabs = await pg.evaluate(`[...document.querySelectorAll('[data-screen="admin-offers-tabs"] [role=tab]')].map((t) => t.innerText.trim() + (t.getAttribute("aria-selected") === "true" ? "*" : ""))`);
   check("offers: one page with tabs 'all offers' (open) and 'new offer'", JSON.stringify(tabs) === JSON.stringify(["all offers*", "new offer"]), JSON.stringify(tabs));
   await pg.evaluate(`[...document.querySelectorAll('[data-screen="admin-offers-tabs"] [role=tab]')].find((t) => t.innerText.trim() === "new offer").click(); true`);
-  await sleep(700);
+  await w(`[...document.querySelectorAll("main h1, .tdcp-main h1, h1")].some((x) => /new offer/i.test(x.innerText))`, "the new offer form");
   check("…'new offer' shows the create form", /new offer/i.test(await heading()));
   await clickPage("student_verifications");
-  await sleep(1500);
+  await w(`/Student 3/.test(document.querySelector(".tdcp-main")?.innerText || "")`, "the students waiting for approval");
+  await pg.idle();
   const sv = await pg.evaluate(`document.querySelector(".tdcp-main")?.innerText || document.body.innerText`);
   check("student verifications: all students filtered to the 2 waiting for approval", /student verifications/.test(sv) && /Student 3/.test(sv) && /Student 5/.test(sv) && !/Student 1\b/.test(sv), sv.slice(0, 300));
 
   console.log("── search, collapse, remember, active group, keyboard");
   await pg.evaluate(`(() => { const i = document.querySelector('[data-nav-search]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; set.call(i, "loyal"); i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
-  await sleep(300);
+  await w(`[...document.querySelectorAll(".tdcp-nav [data-page]")].filter((x) => x.offsetParent !== null).length === 2`, "the search result");
   m = await menu();
   check("search 'loyal': only loyalty programs and loyalty exceptions", JSON.stringify(m.flatMap((g) => g.items.map((i) => i.label))) === JSON.stringify(["loyalty programs", "loyalty exceptions"]), JSON.stringify(m.flatMap((g) => g.items.map((i) => i.label))));
   await axe("admin menu while searching");
   await pg.evaluate(`(() => { const i = document.querySelector('[data-nav-search]'); const set = Object.getOwnPropertyDescriptor(HTMLInputElement.prototype, "value").set; set.call(i, ""); i.dispatchEvent(new Event("input", { bubbles: true })); return true; })()`);
   await clickPage("dashboard");
-  await sleep(500);
+  await w(`document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === "dashboard"`, "the dashboard");
   await pg.evaluate(`[...document.querySelectorAll(".tdcp-nav-toggle")].find((b) => b.innerText.trim().startsWith("brands")).click(); true`);
-  await sleep(300);
+  await w(`[...document.querySelectorAll(".tdcp-nav-toggle")].find((b) => b.innerText.trim().startsWith("brands"))?.getAttribute("aria-expanded") === "false"`, "'brands' collapsed");
   m = await menu();
   const brands = m.find((g) => g.title === "brands");
   check("collapsing 'brands': aria-expanded false, its items hidden", brands.expanded === "false" && brands.items.length === 0);
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
-  await sleep(3500);
+  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8`, "the admin menu"); await pg.idle();
   m = await menu();
   check("…after a reload it stays closed (remembered for this admin); the others stay open", m.find((g) => g.title === "brands").expanded === "false" && m.filter((g) => g.title !== "brands").every((g) => g.expanded === "true"));
   check("…remembered under this admin's key", await pg.evaluate(`localStorage.getItem("tdc.admin.nav.${admin._id}") === JSON.stringify({ brands: false })`));
   // the active item's group opens by itself: open "offers" from an old URL
   await go(pg, `http://127.0.0.1:${WEB}/adminoffers`);
-  await sleep(3500);
+  await w(`location.pathname === "/admin" && document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === "offers"`, "offers opened from the old URL");
   m = await menu();
   const url = await pg.evaluate(`location.pathname`);
   check("old URL /adminoffers: lands on /admin with offers open, and its (closed) group opens by itself", url === "/admin" && m.find((g) => g.title === "brands").expanded === "true" && m.flatMap((g) => g.items).find((i) => i.id === "offers")?.current === "page", `${url} ${JSON.stringify(m.find((g) => g.title === "brands"))}`);
   for (const [old, label] of [["/adminjobsmanager", "jobs & internships"], ["/adminexchangemanage", "scholarships"], ["/admin/brands-revenue", "brand revenue"], ["/crew/inbox", "crew inbox"], ["/crew/partners", "crew partners"], ["/crew/campaigns", "crew campaigns"], ["/crew/credentials", "crew credentials"]]) {
     await go(pg, `http://127.0.0.1:${WEB}${old}`);
-    await sleep(3000);
+    await w(`location.pathname === "/admin" && document.title === ${JSON.stringify(label + " · tdc admin")}`, `${old} to land on ${label}`);
     const st = await pg.evaluate(`({ path: location.pathname, title: document.title })`);
     check(`old URL ${old}: lands on /admin, "${label}"`, st.path === "/admin" && st.title === `${label} · tdc admin`, JSON.stringify(st));
   }
@@ -173,7 +179,7 @@ const MENU = [
   check("keyboard: arrow down from 'general' moves to 'dashboard'", await pg.evaluate(`document.activeElement?.dataset?.page === "dashboard"`));
   await key("ArrowDown", "ArrowDown", 40);
   await key("Enter", "Enter", 13);
-  await sleep(500);
+  await w(`document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === "business_overview"`, "overview opened by Enter");
   check("…Enter opens the focused item (overview)", await pg.evaluate(`document.querySelector('.tdcp-nav [aria-current="page"]')?.dataset.page === "business_overview"`));
   await key("ArrowUp", "ArrowUp", 38); await key("ArrowUp", "ArrowUp", 38);
   await key("Enter", "Enter", 13);
@@ -183,16 +189,18 @@ const MENU = [
   console.log("── mobile: a drawer with the same groups");
   await viewport(pg, 390, 844, true);
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
-  await sleep(3500);
+  await w(`!!document.querySelector('[aria-label="open menu"]')`, "the mobile menu button");
+  await pg.idle();
   await pg.evaluate(`document.querySelector('[aria-label="open menu"]').click(); true`);
-  await sleep(600);
+  await w(`document.querySelector(".tdcp-shell")?.classList.contains("nav-open") && document.querySelectorAll(".tdcp-nav [data-group]").length >= 8`, "the drawer");
+  await pg.settled();
   m = await menu();
   check("the drawer opens with the same groups", JSON.stringify(m.map((g) => g.title)) === JSON.stringify(MENU.map((x) => x[0])), JSON.stringify(m.map((g) => g.title)));
   const user = await pg.evaluate(`(() => { const u = document.querySelector(".tdcp-nav-user").getBoundingClientRect(); return { bottom: Math.round(u.bottom), vh: innerHeight }; })()`);
   check("…the signed-in admin card stays at the bottom of the drawer, on screen", user.bottom <= user.vh && user.bottom >= user.vh - 80, JSON.stringify(user));
   await axe("admin menu (mobile drawer)");
   await clickPage("events");
-  await sleep(700);
+  await w(`!document.querySelector(".tdcp-shell").classList.contains("nav-open") && document.title === "events · tdc admin"`, "events opened from the drawer");
   check("…choosing an item closes the drawer and opens the page", await pg.evaluate(`!document.querySelector(".tdcp-shell").classList.contains("nav-open") && document.title === "events · tdc admin"`));
 
   check("no page errors, no console errors", errs.length === 0, errs.slice(0, 5).join(" | "));
