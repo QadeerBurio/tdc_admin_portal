@@ -14,7 +14,7 @@ const os = require("os");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5192, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5192, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 const E = "6aec11111111111111111111", ADMIN = "6aecffffffffffffffffffff";
 let mode = "not_submitted"; // not_submitted | under_review | needs_info
@@ -55,7 +55,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -75,7 +75,9 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(3000);
+    // rendered, and its requests settled (the admin menu's items appear once their availability calls answer)
+    await pg.waitFor(`(document.getElementById("root")?.innerText || "").trim().length > 20`, { timeout: 25000, label: `${p} to render` });
+    await pg.settled();
     return pg;
   };
   const audit = async (pg, label, scope) => {
@@ -106,20 +108,20 @@ http.createServer((q, s) => {
   await setVal(pg, "#cv-name", "Karachi Tailors");
   await setVal(pg, "#cv-reg", "1234567-8");
   await click(pg, /^send for verification$/);
-  await sleep(600);
+  await pg.settled();
   check("no proof: the error is shown and nothing is sent", /add at least one/.test(await text(pg, '[data-testid="proof-error"]')) && !calls.some((c) => c.k === "POST /api/career/employers/me/company-verification"));
   const tmp = path.join(os.tmpdir(), `tdc-ntn-${Date.now()}.pdf`);
   fs.writeFileSync(tmp, PDF);
   const dom = await pg.s("DOM.getDocument", { depth: -1, pierce: true });
   const { nodeId } = await pg.s("DOM.querySelector", { nodeId: dom.root.nodeId, selector: '[data-screen="company-verification"] input[type=file]' });
   await pg.s("DOM.setFileInputFiles", { files: [tmp], nodeId });
-  await sleep(400);
+  await pg.settled();
   await click(pg, /^add document$/);
-  await sleep(1200);
+  await pg.settled();
   check("the PDF uploads with its kind (multipart) and is listed", uploads.length === 1 && /name="kind"\r\n\r\nntn_certificate/.test(uploads[0]) && /%PDF-1.4/.test(uploads[0]) && /NTN certificate: ntn.pdf/.test(await text(pg, '[data-testid="cv-docs"]')), (uploads[0] || "").slice(0, 200));
   await audit(pg, "form with a document", '[data-screen="company-verification"]');
   await click(pg, /^send for verification$/);
-  await sleep(1500);
+  await pg.settled();
   check("sent with only the document: documentIds, empty domain and website", submitted && JSON.stringify(submitted.documentIds) === JSON.stringify([doc.id]) && submitted.businessEmailDomain === "" && submitted.website === "", JSON.stringify(submitted));
   check("the menu chip turns 'under review'", (await chip(pg)) === "under review", await chip(pg));
   try { fs.unlinkSync(tmp); } catch {}
@@ -132,28 +134,28 @@ http.createServer((q, s) => {
   await audit(pg, "needs info", '[data-screen="company-verification"]');
   submitted = null;
   await click(pg, /^send again$/);
-  await sleep(1500);
+  await pg.settled();
   check("sending again works (the attached document kept)", submitted && JSON.stringify(submitted.documentIds) === JSON.stringify([doc.id]) && (await chip(pg)) === "under review");
 
   console.log("── admin");
   pg = await open({ _id: ADMIN, id: ADMIN, role: "admin", name: "admin" }, "/admin");
-  await pg.evaluate(`document.querySelector('.tdcp-nav [data-page="company_verifications"]')?.click(); true`);
-  await sleep(2500);
+  await pg.waitFor(`!!document.querySelector('.tdcp-nav [data-page="company_verifications"]')`, { timeout: 20000, label: "'company_verifications' in the menu" }).then(() => pg.evaluate(`document.querySelector('.tdcp-nav [data-page="company_verifications"]').click(); true`)).catch(() => false);
+  await pg.settled();
   t = await text(pg, `[data-proof="v1"]`);
   check("proof given: 1 document, with an open button", /1 document/.test(t) && /NTN certificate/.test(t), t);
   check("no own domain / no website are said plainly", /no own domain/.test(await text(pg, '[data-screen="company-verifications"]')) && /no website/.test(await text(pg, '[data-screen="company-verifications"]')));
   await audit(pg, "admin company verifications with proof", '[data-screen="company-verifications"]');
   await click(pg, /^open NTN certificate of Karachi Tailors$/);
-  await sleep(1500);
+  await pg.settled();
   const got = calls.filter((c) => c.k === `GET /api/career/admin/company-verifications/v1/documents/${doc.id}`);
   check("open fetches the document with the admin's sign-in", got.length === 1 && /^Bearer /.test(got[0].auth));
   await click(pg, /^request info$/);
-  await sleep(500);
+  await pg.settled();
   check("request info: the dialog says the employer sees it; the reason is required", /the employer sees it and sends the details again/.test(await text(pg, "[role=dialog]")) && (await pg.evaluate(`[...document.querySelectorAll("[role=dialog] button")].find((x) => x.innerText.trim() === "request info")?.disabled === true`)));
   await audit(pg, "request info dialog", "[role=dialog]");
   await setVal(pg, "#cv-reason", "upload a clearer NTN scan", "HTMLTextAreaElement");
   await click(pg, /^request info$/, `document.querySelector("[role=dialog]")`);
-  await sleep(1200);
+  await pg.settled();
   const rv = calls.filter((c) => c.k === "POST /api/career/admin/company-verifications/v1/review").slice(-1)[0];
   check("sends { action: request_info, reason }", rv && rv.body.action === "request_info" && rv.body.reason === "upload a clearer NTN scan", JSON.stringify(rv?.body));
 
