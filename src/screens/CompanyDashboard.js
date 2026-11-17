@@ -23,6 +23,7 @@ import ReportsManager from "./ReportsManager";
 import "./styles/EmployerPortal.css";
 import { API_ORIGIN } from "../config/api";
 import { FreeHireCard } from "./FirstHireFree";
+import { HiringAccessBanner, useHiringAccess } from "./HiringAccess";
 
 // path -> menu item
 const NAV_FOR_PATH = {
@@ -318,6 +319,9 @@ const STATUS_TONE = { pending: "sand", reviewed: "blue", shortlisted: "yellow", 
 export function EmployerDashboard() {
   const navigate = useNavigate();
   const { stats, recentApplications, upcomingInterviewsList, loading, refreshing, fetchError, fetchAllData, companyName } = useOutletContext();
+  // free trial / hiring plan: after the trial, "post a job" is locked until tdc grants a plan
+  const [access, reloadAccess] = useHiringAccess();
+  const locked = !!access.data && !access.data.canPost;
 
   if (loading) return <div className="tdcp k-page"><PageLoading label="Loading your dashboard..." /></div>;
 
@@ -329,9 +333,12 @@ export function EmployerDashboard() {
           <h1>who are we hiring today<span className="dot" aria-hidden="true">?</span></h1>
         </div>
         <div className="k-actions">
-          <Button icon="plus" onClick={() => navigate("/employee-jobs")}>post a job</Button>
+          <Button icon="plus" onClick={() => navigate("/employee-jobs")} disabled={locked} title={locked ? access.data.lock?.message : undefined} aria-describedby={locked ? "hiring-access-title" : undefined}>post a job</Button>
         </div>
       </div>
+
+      {/* free trial (days left, free hire used or not) or hiring plan (jobs left, valid until); request a plan */}
+      <HiringAccessBanner state={access} reload={reloadAccess} />
 
       {/* First Hire Free (FLAG_EMPLOYER_FIRST_HIRE_FREE): renders nothing outside the pilot */}
       <FreeHireCard />

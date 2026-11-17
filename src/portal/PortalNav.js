@@ -61,6 +61,7 @@ export const ADMIN_MENU = [
       ["hire_disputes", "hire disputes", "alert", "red"],
       ["ratings_reports", "ratings reports", "star", "yellow"],
       ["free_hire_trials", "first hire free", "trophy", "green"],
+      ["hiring_plans", "hiring plans", "coin", "blue"],
     ],
   },
   {
