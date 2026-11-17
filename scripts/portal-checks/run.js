@@ -5,7 +5,9 @@
 //   a11y-*.js       axe-core WCAG 2 A / AA on the same pages and their dialogs
 // Every check serves the build and its own mock API: no server, database or network is needed, only Chrome.
 // Exits 1 if any check fails. --build reuses an existing build (made with the same REACT_APP_API_URL).
-const { spawnSync } = require("child_process");
+// Each check has a hard time limit (CHECK_TIMEOUT_MS, default 4 minutes): past it the check, its Chrome and its mock
+// servers are killed and it's reported as TIMEOUT (cdp.js also times out every DevTools command and every wait).
+const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -44,20 +46,44 @@ if (!fs.existsSync(path.join(build, "index.html"))) {
 
 // Node 20-21 needs the flag for the WebSocket the Chrome driver uses; Node 22+ has it built in
 const nodeArgs = typeof WebSocket === "undefined" ? ["--experimental-websocket"] : [];
-const results = [];
-for (const [name, file] of CHECKS) {
-  if (only && !only.includes(name)) continue;
-  const started = Date.now();
-  const r = spawnSync(process.execPath, [...nodeArgs, path.join(HERE, file), build], { cwd: HERE, encoding: "utf8", timeout: 5 * 60 * 1000 });
-  const out = (r.stdout || "") + (r.stderr || "");
-  const ok = r.status === 0;
-  results.push({ name, ok, secs: Math.round((Date.now() - started) / 1000) });
-  console.log(`\n=== ${ok ? "PASS" : "FAIL"} ${name} (${file}, ${results[results.length - 1].secs}s)`);
-  // the passing output is long; show it all only when the check failed (or with --verbose)
-  const lines = out.split("\n").filter(Boolean);
-  const show = !ok || process.argv.includes("--verbose") ? lines : lines.filter((l) => /MISSING|FAIL|violation|A11Y_TOTAL|errors|FATAL/i.test(l) && !/no WCAG 2/.test(l));
-  for (const l of show) console.log("  " + l);
+// run one check in its own process with a hard time limit (CHECK_TIMEOUT_MS, default 4 minutes): past it, the
+// check and everything it started (Chrome, its mock servers) are killed, so a hung check can't hold the run or the
+// shared mock ports, and it's reported as a TIMEOUT
+const CHECK_TIMEOUT_MS = Number(process.env.CHECK_TIMEOUT_MS) || 4 * 60 * 1000;
+function killTree(child) {
+  if (!child.pid) return;
+  if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(child.pid), "/T", "/F"], { stdio: "ignore" });
+  else { try { process.kill(-child.pid, "SIGKILL"); } catch { try { child.kill("SIGKILL"); } catch {} } }
 }
-const failed = results.filter((r) => !r.ok);
-console.log(`\n${results.length - failed.length}/${results.length} portal checks passed${failed.length ? `; failed: ${failed.map((r) => r.name).join(", ")}` : ""}`);
-process.exit(failed.length ? 1 : 0);
+function runCheck(file) {
+  return new Promise((resolve) => {
+    const child = spawn(process.execPath, [...nodeArgs, path.join(HERE, file), build], { cwd: HERE, detached: process.platform !== "win32", windowsHide: true });
+    let out = "";
+    let timedOut = false;
+    child.stdout.on("data", (c) => (out += c));
+    child.stderr.on("data", (c) => (out += c));
+    const t = setTimeout(() => { timedOut = true; killTree(child); }, CHECK_TIMEOUT_MS);
+    child.on("close", (code) => { clearTimeout(t); resolve({ code: timedOut ? null : code, out, timedOut }); });
+    child.on("error", (e) => { clearTimeout(t); resolve({ code: null, out: out + String(e), timedOut: false }); });
+  });
+}
+
+(async () => {
+  const results = [];
+  for (const [name, file] of CHECKS) {
+    if (only && !only.includes(name)) continue;
+    const started = Date.now();
+    const r = await runCheck(file);
+    const ok = r.code === 0;
+    results.push({ name, ok, secs: Math.round((Date.now() - started) / 1000) });
+    console.log(`\n=== ${ok ? "PASS" : r.timedOut ? "TIMEOUT" : "FAIL"} ${name} (${file}, ${results[results.length - 1].secs}s)`);
+    if (r.timedOut) console.log(`  killed after ${Math.round(CHECK_TIMEOUT_MS / 1000)} s (CHECK_TIMEOUT_MS)`);
+    // the passing output is long; show it all only when the check failed (or with --verbose)
+    const lines = r.out.split("\n").filter(Boolean);
+    const show = !ok || process.argv.includes("--verbose") ? lines : lines.filter((l) => /MISSING|FAIL|violation|A11Y_TOTAL|errors|FATAL/i.test(l) && !/no WCAG 2/.test(l));
+    for (const l of show) console.log("  " + l);
+  }
+  const failed = results.filter((r) => !r.ok);
+  console.log(`\n${results.length - failed.length}/${results.length} portal checks passed${failed.length ? `; failed: ${failed.map((r) => r.name).join(", ")}` : ""}`);
+  process.exit(failed.length ? 1 : 0);
+})();

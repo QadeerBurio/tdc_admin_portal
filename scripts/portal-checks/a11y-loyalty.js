@@ -62,7 +62,13 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(4000);
+    // the page is ready when it shows what this visit expects (or, with nothing listed, any content) and its
+    // requests have settled: no fixed wait (a busy machine is slower, a quiet one faster)
+    try {
+      if (expect.length) await pg.waitForText(expect, { timeout: 25000 });
+      else await pg.waitFor(`(document.getElementById("root")?.innerText || "").trim().length >= 20`, { timeout: 25000, label: `${p} to render` });
+    } catch (e) { errs.push(String(e.message)); }
+    await pg.idle();
     const text = await pg.evaluate(`document.getElementById("root")?.innerText || ""`);
     const missing = expect.filter((t) => !text.toLowerCase().includes(t.toLowerCase()));
     if (missing.length || errs.length || text.trim().length < 20) bad = 1;
@@ -75,6 +81,7 @@ http.createServer((q, s) => {
   const AXE = require("fs").readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
   let total = 0;
   const audit = async (pg, label, scope = "main") => {
+    await pg.settled(); // requests done and nothing fading in: axe sees the final colours
     await pg.evaluate(AXE + ";true");
     const v = await pg.evaluate(`(async () => { const el = document.querySelector(${JSON.stringify(scope)}) || document; const r = await axe.run(el, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] } }); return r.violations.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, targets: v.nodes.slice(0, 3).map((n) => n.target.join(" ")) })); })()`);
     total += v.length;
@@ -82,14 +89,16 @@ http.createServer((q, s) => {
   };
   const brand = { _id: B, id: B, role: "brand", name: "Alpha", brandName: "Alpha Cafe" };
   const admin = { _id: "6ae9ffffffffffffffffffff", id: "6ae9ffffffffffffffffffff", role: "admin", name: "admin" };
-  await audit(await visit(brand, "/loyalty", []), "brand loyalty");
-  await audit(await visit(brand, "/verifyclaim", []), "brand verify (loyalty line)");
+  // each audit runs once the page shows what it's about (so axe never scans a half-rendered page)
+  await audit(await visit(brand, "/loyalty", ["verified visits", "members by tier"]), "brand loyalty");
+  await audit(await visit(brand, "/verifyclaim", ["loyalty: Member · visit 3"]), "brand verify (loyalty line)");
   const pg = await visit(admin, "/admin", []);
-  await pg.evaluate(`[...document.querySelectorAll("button, a")].find((e) => /loyalty exceptions/i.test(e.innerText))?.click(); true`);
-  await sleep(2500);
+  await pg.clickWhen(`[...document.querySelectorAll(".tdcp-nav [data-page], .tdcp-nav a, .tdcp-nav button")].find((e) => /loyalty exceptions/i.test(e.innerText))`, { timeout: 25000, label: "'loyalty exceptions' in the admin menu" });
+  await pg.waitForText(["refund: order returned", "reverse"], { timeout: 25000 });
+  await pg.idle();
   await audit(pg, "admin loyalty exceptions");
-  await pg.evaluate(`[...document.querySelectorAll("button")].find((e) => e.innerText.trim() === "reverse")?.click(); true`);
-  await sleep(800);
+  await pg.clickWhen(`[...document.querySelectorAll("button")].find((e) => e.innerText.trim() === "reverse")`, { label: "a 'reverse' button" });
+  await pg.waitFor(`!!document.querySelector("[role=dialog]") && [...document.querySelectorAll("[role=dialog] button")].some((e) => e.innerText.trim() === "reverse visit")`, { timeout: 15000, label: "the reverse dialog" });
   await audit(pg, "admin reverse dialog", "[role=dialog]");
   console.log(`\nA11Y_TOTAL=${total}`);
   b.close();
