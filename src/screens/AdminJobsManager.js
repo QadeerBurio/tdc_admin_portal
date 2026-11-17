@@ -2,6 +2,8 @@
 // Career portal (design/portal/AdCareer): jobs and internships in the career hub.
 // Also the employer portal's jobs (design/portal/EmpJobs) at /employee-jobs: same calls, its own header,
 // all/active/inactive filter and table. Anything not marked as employer-only renders exactly as for admin.
+// Employers can duplicate a job (POST /api/jobs/duplicate/:id: a new posting, live for 30 days). Stats come from
+// GET /api/jobs/stats (their own jobs; all jobs for an admin). Server refusals are shown as the server words them.
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Ico from "../portal/Ico";
@@ -191,7 +193,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   const fetchStats = async () => {
     try {
-      const res = await axios.get(`${API_URL}/admin/stats`, config);
+      const res = await axios.get(`${API_URL}/stats`, config);
       setStats(res.data);
     } catch (err) {
       console.error("Error fetching stats:", err);
@@ -241,7 +243,19 @@ const AdminJobsManager = ({ userRole, userName }) => {
       await axios.patch(`${API_URL}/toggle/${jobId}`, {}, config);
       fetchJobs();
     } catch (err) {
-      toast("Failed to toggle job status");
+      toast(err.response?.data?.error || err.response?.data?.message || "Failed to toggle job status", "bad");
+    }
+  };
+
+  // a new posting from one of your jobs (same details, live for 30 days)
+  const handleDuplicateJob = async (job) => {
+    try {
+      await axios.post(`${API_URL}/duplicate/${job._id}`, {}, config);
+      toast(`duplicated: "${job.title}" is live for 30 days`, "ok");
+      fetchJobs();
+      fetchStats();
+    } catch (err) {
+      toast(err.response?.data?.error || err.response?.data?.message || "Couldn't duplicate the job", "bad");
     }
   };
 
@@ -646,6 +660,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
                     <td>
                       <span className="k-row" style={{ gap: 6, flexWrap: "nowrap", justifyContent: "flex-end" }}>
                         <Button size="sm" variant="secondary" onClick={() => handleEditJob(job)}>edit</Button>
+                        <Button size="sm" variant="secondary" icon="copy" onClick={() => handleDuplicateJob(job)} aria-label={`duplicate ${job.title}`}>duplicate</Button>
                         <Button size="sm" onClick={() => fetchJobApplications(job._id)}>applicants</Button>
                         <IconButton icon="trash" label="Delete job" variant="danger" size="sm" onClick={() => handleDeleteJob(job._id)} />
                       </span>
