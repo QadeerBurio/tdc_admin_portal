@@ -1,12 +1,14 @@
 // AdminFirstHireFree.js: admin pages for First Hire Free (FLAG_EMPLOYER_FIRST_HIRE_FREE).
-//   CompanyVerifications  the review queue: company details, hints (sign-in e-mail on the domain, website on the
-//                         domain), possible duplicates and what matched; approve / reject / mark duplicate, each
-//                         with a required reason (shown to the employer, written to the audit)
+//   CompanyVerifications  the review queue for every employer (not only the pilot): company details, hints
+//                         (sign-in e-mail on the domain, website on the domain), possible duplicates and what
+//                         matched, and the employer's jobs waiting for it; approve (publishes those jobs) / reject /
+//                         mark duplicate, each with a required reason (shown to the employer, written to the audit)
 //   FreeHireTrials        every company's trial: status, which hire used it, the company's accounts; restore /
 //                         revoke / keep with a reason; and the billing ledger (records only: nothing is charged)
 import React, { useCallback, useEffect, useState } from "react";
 import { PageHeader, PageLoading, Button, Field, Textarea, Select, Checkbox, Tabs, EmptyState, Pill, Table, Modal, toast } from "../portal/kit";
 import trialApi, { TRIAL_LABEL, TRIAL_TONE, VERIFICATION_LABEL, VERIFICATION_TONE, BILLING_LABEL, pkDate } from "../services/trialApi";
+import hiringAccessApi from "../services/hiringAccessApi";
 
 function useAvailable() {
   const [ok, setOk] = useState(null);
@@ -18,28 +20,29 @@ const Off = () => <div className="tdcp k-page"><EmptyState icon="gift" tone="gre
 // ---------- company verifications ----------
 const ACTION_LABEL = { approve: "approve", reject: "reject", mark_duplicate: "mark as duplicate" };
 export function CompanyVerifications() {
-  const available = useAvailable();
+  const [available, setAvailable] = useState(null);
+  useEffect(() => { hiringAccessApi.companyAvailable().then(setAvailable); }, []);
   const [status, setStatus] = useState("pending");
   const [rows, setRows] = useState(null);
   const [review, setReview] = useState(null); // { v, action }
   const [reason, setReason] = useState("");
   const [separate, setSeparate] = useState(false);
   const [busy, setBusy] = useState(false);
-  const load = useCallback(() => trialApi.verifications(status).then(setRows).catch((e) => { toast(e.message, "bad"); setRows([]); }), [status]);
+  const load = useCallback(() => hiringAccessApi.companyVerifications(status).then((d) => setRows(Array.isArray(d) ? d : [])).catch((e) => { toast(e.message, "bad"); setRows([]); }), [status]);
   useEffect(() => { if (available) { setRows(null); load(); } }, [available, load]);
   const decide = async () => {
     setBusy(true);
     try {
-      await trialApi.reviewVerification(review.v.id, { action: review.action, reason, separateGroup: review.action === "approve" && separate });
-      toast(`${ACTION_LABEL[review.action]}: done`, "ok");
+      const d = await hiringAccessApi.reviewCompany(review.v.id, { action: review.action, reason, separateGroup: review.action === "approve" && separate });
+      toast(review.action === "approve" && d?.publishedJobs ? `approved: ${d.publishedJobs} job${d.publishedJobs === 1 ? " is" : "s are"} live now` : `${ACTION_LABEL[review.action]}: done`, "ok");
       setReview(null);
     } catch (e) { toast(e.message, "bad"); } finally { setBusy(false); load(); }
   };
   if (available === null) return <PageLoading />;
-  if (!available) return <Off />;
+  if (!available) return <div className="tdcp k-page" data-screen="company-verifications"><PageHeader title="company verifications" /><EmptyState icon="shield" tone="blue" title="couldn't load company verifications" text="try again in a moment." /></div>;
   return (
     <div className="tdcp k-page" data-screen="company-verifications">
-      <PageHeader title="company verifications" sub="first hire free: one free verified hire per verified company. check the registration number, the e-mail domain and the website." />
+      <PageHeader title="company verifications" sub="a company's jobs go live once it's verified. check the registration number, the e-mail domain and the website." />
       <Select aria-label="status" value={status} onChange={(e) => setStatus(e.target.value)} style={{ maxWidth: 240, marginBottom: 12 }}>
         <option value="pending">to check</option><option value="duplicate_review">possible duplicates</option><option value="approved">verified</option><option value="rejected">not approved</option><option value="all">all</option>
       </Select>
@@ -49,6 +52,7 @@ export function CompanyVerifications() {
           { key: "reg", label: "registration", render: (r) => <>{r.registrationType.toUpperCase()} {r.ntnOrSecp}</> },
           { key: "domain", label: "e-mail domain / website", render: (r) => <>{r.businessEmailDomain}<div className="k-hint">{r.website}</div><div className="k-hint">{r.hints.signInEmailMatchesDomain ? "sign-in e-mail on this domain" : "sign-in e-mail NOT on this domain"} · {r.hints.websiteMatchesDomain ? "website matches" : "website differs"}</div></> },
           { key: "dup", label: "possible duplicate of", render: (r) => (r.duplicateOf.length ? r.duplicateOf.map((d) => <div key={d.verificationId}><Pill tone="orange">{d.employer.name || "another account"}</Pill> <span className="k-hint">same {d.matchedOn.join(", ")}</span></div>) : "–") },
+          { key: "jobs", label: "jobs waiting", render: (r) => ((r.pendingJobs || []).length ? <><Pill tone="yellow">{r.pendingJobs.length} waiting</Pill>{r.pendingJobs.slice(0, 3).map((j) => <div key={j.id} className="k-hint">{j.title}</div>)}{r.pendingJobs.length > 3 && <div className="k-hint">+{r.pendingJobs.length - 3} more</div>}</> : "–") },
           { key: "status", label: "status", render: (r) => <><Pill tone={VERIFICATION_TONE[r.status]}>{VERIFICATION_LABEL[r.status]}</Pill>{r.reason && <div className="k-hint">{r.reason}</div>}</> },
           { key: "act", label: "", render: (r) => (
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
@@ -59,7 +63,7 @@ export function CompanyVerifications() {
           ) },
         ]} />
       <Modal open={!!review} onClose={() => setReview(null)} title={review ? `${ACTION_LABEL[review.action]}: ${review.v.companyName}` : ""}
-        sub={review?.action === "approve" && review.v.duplicateOf.length ? "this account matches another one: approving puts it in the same company (one free hire between them)." : "the employer sees your reason. it's recorded in the audit."}
+        sub={review?.action === "approve" && review.v.duplicateOf.length ? "this account matches another one: approving puts it in the same company (one free hire between them)." : review?.action === "approve" && (review.v.pendingJobs || []).length ? `approving puts their ${review.v.pendingJobs.length} waiting job${review.v.pendingJobs.length === 1 ? "" : "s"} live. the employer sees your reason; it's recorded in the audit.` : "the employer sees your reason. it's recorded in the audit."}
         icon="shield" tone={review?.action === "reject" ? "red" : "blue"}
         footer={<><Button variant="secondary" onClick={() => setReview(null)}>cancel</Button><Button loading={busy} disabled={reason.trim().length < 3} onClick={decide}>{review ? ACTION_LABEL[review.action] : ""}</Button></>}>
         <Field label="reason (required)" htmlFor="cv-reason"><Textarea id="cv-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. NTN checked on FBR; domain owned by the company" /></Field>
