@@ -66,15 +66,18 @@ const JOBS = Math.max(1, Math.min(8, Number(arg("--jobs") || process.env.CHECK_J
 const portsOf = (slot) => ({ CHECK_WEB_PORT: String(5400 + slot * 2), CHECK_API_PORT: String(5401 + slot * 2) });
 function runCheck(file, slot) {
   return new Promise((resolve) => {
-    const env = { ...process.env, ...(JOBS > 1 ? portsOf(slot) : {}) };
+    // its Chrome profiles go in a folder of its own, removed when the check ends (also when it was killed)
+    const profiles = fs.mkdtempSync(path.join(os.tmpdir(), "tdc-check-profiles-"));
+    const dropProfiles = () => { try { fs.rmSync(profiles, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); } catch {} };
+    const env = { ...process.env, CDP_PROFILE_DIR: profiles, ...(JOBS > 1 ? portsOf(slot) : {}) };
     const child = spawn(process.execPath, [...nodeArgs, path.join(HERE, file), build], { cwd: HERE, env, detached: process.platform !== "win32", windowsHide: true });
     let out = "";
     let timedOut = false;
     child.stdout.on("data", (c) => (out += c));
     child.stderr.on("data", (c) => (out += c));
     const t = setTimeout(() => { timedOut = true; killTree(child); }, CHECK_TIMEOUT_MS);
-    child.on("close", (code) => { clearTimeout(t); resolve({ code: timedOut ? null : code, out, timedOut }); });
-    child.on("error", (e) => { clearTimeout(t); resolve({ code: null, out: out + String(e), timedOut: false }); });
+    child.on("close", (code) => { clearTimeout(t); dropProfiles(); resolve({ code: timedOut ? null : code, out, timedOut }); });
+    child.on("error", (e) => { clearTimeout(t); dropProfiles(); resolve({ code: null, out: out + String(e), timedOut: false }); });
   });
 }
 

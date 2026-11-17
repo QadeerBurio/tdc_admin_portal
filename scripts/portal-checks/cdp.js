@@ -12,7 +12,7 @@
 //   - waits on real conditions: page.waitFor(expression), page.waitForText(texts), page.clickWhen(expression),
 //     page.idle() (no network request for a moment), page.settled() (idle and no CSS animation or transition
 //     running: run it before axe, or a dialog still fading in reads as low contrast); each with a timeout
-const { spawn } = require("child_process");
+const { spawn, spawnSync } = require("child_process");
 const fs = require("fs");
 const os = require("os");
 const path = require("path");
@@ -29,8 +29,20 @@ const COMMAND_MS = Number(process.env.CDP_COMMAND_TIMEOUT_MS) || 30000;
 const WAIT_MS = Number(process.env.CDP_WAIT_TIMEOUT_MS) || 20000;
 const PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="; // 1x1 transparent PNG
 
-const browsers = new Set();
-const killAll = () => { for (const p of browsers) { try { p.kill(); } catch {} } browsers.clear(); };
+// every Chrome this process started, with its profile folder. On exit (any exit) each is killed with its child
+// processes and its profile removed right away, synchronously: a check's process ends straight after, so a delayed
+// removal never ran and the profiles piled up in the temp folder (8 GB after a few full runs)
+const browsers = new Map(); // proc -> profile folder
+function stopBrowser(proc, prof) {
+  browsers.delete(proc);
+  if (proc.pid && proc.exitCode === null) {
+    if (process.platform === "win32") spawnSync("taskkill", ["/pid", String(proc.pid), "/T", "/F"], { stdio: "ignore", windowsHide: true });
+    else { try { proc.kill("SIGKILL"); } catch {} }
+  }
+  // Windows releases the profile's files a moment after the process ends: retry
+  try { fs.rmSync(prof, { recursive: true, force: true, maxRetries: 20, retryDelay: 100 }); } catch {}
+}
+const killAll = () => { for (const [p, prof] of [...browsers]) stopBrowser(p, prof); };
 process.on("exit", killAll);
 for (const sig of ["SIGINT", "SIGTERM", "SIGHUP"]) process.on(sig, () => { killAll(); process.exit(130); });
 
@@ -38,8 +50,8 @@ async function launch(label = 9333) {
   if (!CHROME) throw new Error("Chrome not found: set CHROME_PATH to the Chrome (or Chromium) executable");
   const prof = fs.mkdtempSync(path.join(process.env.CDP_PROFILE_DIR || os.tmpdir(), `tdc-portal-checks-${label}-`));
   const proc = spawn(CHROME, ["--headless=new", "--disable-gpu", "--no-first-run", "--no-default-browser-check", "--disable-background-timer-throttling", "--disable-renderer-backgrounding", "--disable-backgrounding-occluded-windows", ...(process.env.CDP_ARGS ? process.env.CDP_ARGS.split(" ") : []), "--remote-debugging-port=0", `--user-data-dir=${prof}`, "about:blank"], { stdio: "ignore" });
-  browsers.add(proc);
-  const cleanup = () => { browsers.delete(proc); try { proc.kill(); } catch {} setTimeout(() => { try { fs.rmSync(prof, { recursive: true, force: true }); } catch {} }, 500).unref(); };
+  browsers.set(proc, prof);
+  const cleanup = () => stopBrowser(proc, prof);
   // the port Chrome picked
   let port = null;
   for (let i = 0; i < 150 && !port; i++) {
