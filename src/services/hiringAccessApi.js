@@ -29,6 +29,10 @@ export const hiringAccessApi = {
   submitCompany: (body) => unwrap(api.post("/career/employers/me/company-verification", body)),
   companyVerifications: (status = "pending") => unwrap(api.get("/career/admin/company-verifications", { params: { status } })),
   reviewCompany: (id, body) => unwrap(api.post(`/career/admin/company-verifications/${id}/review`, body)),
+  // proof: a document (PDF or image, max 5 MB) the employer uploads; returns { id, kind, fileName, ... }
+  uploadDocument: (file, kind) => { const fd = new FormData(); fd.append("kind", kind); fd.append("file", file); return unwrap(api.post("/career/employers/me/company-verification/documents", fd, { headers: { "Content-Type": "multipart/form-data" } })); },
+  // admins: the uploaded document as a blob (opened in a new tab; never a public link)
+  openDocument: (verificationId, documentId) => api.get(`/career/admin/company-verifications/${verificationId}/documents/${documentId}`, { responseType: "blob" }).then((r) => r.data),
   companyAvailable: () => api.get("/career/admin/company-verifications", { params: { status: "pending" } }).then(() => true).catch(() => false),
   // the admin menu item shows once the server answers
   adminAvailable: () => api.get("/career/admin/hiring-plans").then(() => true).catch(() => false),

@@ -120,6 +120,7 @@ export const EMPLOYER_MENU = [
       ["interviews", "interviews", "calendar", "purple", "/interviews"],
       ["reports", "reports", "chart", "green", "/reports"],
       ["results", "hiring results", "trophy", "green", "/hiring-results"],
+      ["company", "company verification", "shield", "blue", "/company-verification"], // always shown, with its status chip
     ],
   },
 ];
@@ -155,8 +156,9 @@ const slug = (t) => String(t || "main").replace(/[^a-z0-9]+/gi, "-").toLowerCase
  * collapsible: groups are buttons (aria-expanded) that open / close their items, open by default, remembered per
  * admin under storageKey; the active item's group opens by itself. searchable: a box that filters items by name.
  * badges: { pageId: count } shown next to the item (hidden at 0).
+ * chips: { pageId: { label, tone } } a short status next to the item (e.g. "under review").
  */
-export default function PortalNav({ menu = ADMIN_MENU, active, onSelect, userName, userRole = "admin", portalLabel = "admin", onLogout, onClose, settingsHref, collapsible = false, searchable = false, badges = {}, storageKey = "tdc.portalNav.groups" }) {
+export default function PortalNav({ menu = ADMIN_MENU, active, onSelect, userName, userRole = "admin", portalLabel = "admin", onLogout, onClose, settingsHref, collapsible = false, searchable = false, badges = {}, chips = {}, storageKey = "tdc.portalNav.groups" }) {
   const initial = (userName || "a").trim().charAt(0).toUpperCase();
   const [open, setOpen] = useState(() => (collapsible ? readOpen(storageKey) : {}));
   const [q, setQ] = useState("");
@@ -223,6 +225,7 @@ export default function PortalNav({ menu = ADMIN_MENU, active, onSelect, userNam
                       <Ico kind={icon} tone={on ? "yellow" : tone} size={32} />
                       <span className="lbl">{label}</span>
                       {n > 0 && <span className="tdcp-nav-badge" aria-label={`${n} waiting`}>{n > 99 ? "99+" : n}</span>}
+                      {chips[id] && <span className="tdcp-nav-chip" data-tone={chips[id].tone || "sand"} data-chip={id}>{chips[id].label}</span>}
                       <span className="pip" />
                     </>
                   );

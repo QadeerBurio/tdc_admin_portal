@@ -1,13 +1,15 @@
 // AdminFirstHireFree.js: admin pages for First Hire Free (FLAG_EMPLOYER_FIRST_HIRE_FREE).
 //   CompanyVerifications  the review queue for every employer (not only the pilot): company details, hints
 //                         (sign-in e-mail on the domain, website on the domain), possible duplicates and what
-//                         matched, and the employer's jobs waiting for it; approve (publishes those jobs) / reject /
-//                         mark duplicate, each with a required reason (shown to the employer, written to the audit)
+//                         matched, the proof given (own e-mail domain, website, documents: "open" fetches the file
+//                         for this admin only), and the employer's jobs waiting for it; approve (publishes those jobs) /
+//                         reject / request info / mark duplicate, each with a required reason (shown to the employer,
+//                         written to the audit)
 //   FreeHireTrials        every company's trial: status, which hire used it, the company's accounts; restore /
 //                         revoke / keep with a reason; and the billing ledger (records only: nothing is charged)
 import React, { useCallback, useEffect, useState } from "react";
 import { PageHeader, PageLoading, Button, Field, Textarea, Select, Checkbox, Tabs, EmptyState, Pill, Table, Modal, toast } from "../portal/kit";
-import trialApi, { TRIAL_LABEL, TRIAL_TONE, VERIFICATION_LABEL, VERIFICATION_TONE, BILLING_LABEL, pkDate } from "../services/trialApi";
+import trialApi, { TRIAL_LABEL, TRIAL_TONE, VERIFICATION_LABEL, VERIFICATION_TONE, BILLING_LABEL, DOCUMENT_KIND_LABEL, pkDate } from "../services/trialApi";
 import hiringAccessApi from "../services/hiringAccessApi";
 
 function useAvailable() {
@@ -18,7 +20,29 @@ function useAvailable() {
 const Off = () => <div className="tdcp k-page"><EmptyState icon="gift" tone="green" title="first hire free isn't switched on" text="set FLAG_EMPLOYER_FIRST_HIRE_FREE on the server to start the pilot." /></div>;
 
 // ---------- company verifications ----------
-const ACTION_LABEL = { approve: "approve", reject: "reject", mark_duplicate: "mark as duplicate" };
+const ACTION_LABEL = { approve: "approve", reject: "reject", request_info: "request info", mark_duplicate: "mark as duplicate" };
+// an uploaded document: fetched with the admin's sign-in and opened from memory in a new tab (no public link);
+// when the browser blocks the new tab, it's saved as a file instead (this page stays where it is)
+async function openDocument(verificationId, doc) {
+  const win = window.open("", "_blank");
+  try {
+    const blob = await hiringAccessApi.openDocument(verificationId, doc.id);
+    const url = URL.createObjectURL(blob);
+    if (win && !win.closed) win.location.href = url;
+    else {
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = doc.fileName || "document";
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    }
+    setTimeout(() => URL.revokeObjectURL(url), 60000);
+  } catch (e) {
+    if (win) win.close();
+    toast("couldn't open the document", "bad");
+  }
+}
 export function CompanyVerifications() {
   const [available, setAvailable] = useState(null);
   useEffect(() => { hiringAccessApi.companyAvailable().then(setAvailable); }, []);
@@ -44,13 +68,19 @@ export function CompanyVerifications() {
     <div className="tdcp k-page" data-screen="company-verifications">
       <PageHeader title="company verifications" sub="a company's jobs go live once it's verified. check the registration number, the e-mail domain and the website." />
       <Select aria-label="status" value={status} onChange={(e) => setStatus(e.target.value)} style={{ maxWidth: 240, marginBottom: 12 }}>
-        <option value="pending">to check</option><option value="duplicate_review">possible duplicates</option><option value="approved">verified</option><option value="rejected">not approved</option><option value="all">all</option>
+        <option value="pending">to check</option><option value="duplicate_review">possible duplicates</option><option value="approved">verified</option><option value="needs_info">needs info</option><option value="rejected">not approved</option><option value="all">all</option>
       </Select>
       <Table loading={!rows} rows={rows || []} rowKey={(r) => r.id} minWidth={980} empty={<EmptyState icon="check" tone="green" title="nothing here" />}
         columns={[
           { key: "company", label: "company", render: (r) => <><strong>{r.companyName}</strong><div className="k-hint">{r.employer.name} · {r.employer.email}</div></> },
           { key: "reg", label: "registration", render: (r) => <>{r.registrationType.toUpperCase()} {r.ntnOrSecp}</> },
-          { key: "domain", label: "e-mail domain / website", render: (r) => <>{r.businessEmailDomain}<div className="k-hint">{r.website}</div><div className="k-hint">{r.hints.signInEmailMatchesDomain ? "sign-in e-mail on this domain" : "sign-in e-mail NOT on this domain"} · {r.hints.websiteMatchesDomain ? "website matches" : "website differs"}</div></> },
+          { key: "domain", label: "e-mail domain / website", render: (r) => <>{r.businessEmailDomain || <span className="k-hint">no own domain</span>}<div className="k-hint">{r.website || "no website"}</div>{r.businessEmailDomain && <div className="k-hint">{r.hints.signInEmailMatchesDomain ? "sign-in e-mail on this domain" : "sign-in e-mail NOT on this domain"}{r.website ? ` · ${r.hints.websiteMatchesDomain ? "website matches" : "website differs"}` : ""}</div>}</> },
+          { key: "proof", label: "proof given", render: (r) => (
+            <div data-proof={r.id}>
+              <div className="k-hint">{[r.proof?.emailDomain && "own e-mail domain", r.proof?.website && "website", r.proof?.documents && `${r.proof.documents} document${r.proof.documents === 1 ? "" : "s"}`].filter(Boolean).join(" · ") || "none"}</div>
+              {(r.documents || []).map((x) => <div key={x.id}><Button size="sm" variant="secondary" icon="file" onClick={() => openDocument(r.id, x)} aria-label={`open ${DOCUMENT_KIND_LABEL[x.kind] || x.kind} of ${r.companyName}`}>{DOCUMENT_KIND_LABEL[x.kind] || x.kind}</Button></div>)}
+            </div>
+          ) },
           { key: "dup", label: "possible duplicate of", render: (r) => (r.duplicateOf.length ? r.duplicateOf.map((d) => <div key={d.verificationId}><Pill tone="orange">{d.employer.name || "another account"}</Pill> <span className="k-hint">same {d.matchedOn.join(", ")}</span></div>) : "–") },
           { key: "jobs", label: "jobs waiting", render: (r) => ((r.pendingJobs || []).length ? <><Pill tone="yellow">{r.pendingJobs.length} waiting</Pill>{r.pendingJobs.slice(0, 3).map((j) => <div key={j.id} className="k-hint">{j.title}</div>)}{r.pendingJobs.length > 3 && <div className="k-hint">+{r.pendingJobs.length - 3} more</div>}</> : "–") },
           { key: "status", label: "status", render: (r) => <><Pill tone={VERIFICATION_TONE[r.status]}>{VERIFICATION_LABEL[r.status]}</Pill>{r.reason && <div className="k-hint">{r.reason}</div>}</> },
@@ -58,12 +88,13 @@ export function CompanyVerifications() {
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {r.status !== "approved" && <Button size="sm" onClick={() => { setReview({ v: r, action: "approve" }); setReason(""); setSeparate(false); }}>approve</Button>}
               {r.status !== "rejected" && <Button size="sm" variant="secondary" onClick={() => { setReview({ v: r, action: "reject" }); setReason(""); }}>reject</Button>}
+              {!["approved", "needs_info"].includes(r.status) && <Button size="sm" variant="secondary" onClick={() => { setReview({ v: r, action: "request_info" }); setReason(""); }}>request info</Button>}
               {r.status === "pending" && <Button size="sm" variant="secondary" onClick={() => { setReview({ v: r, action: "mark_duplicate" }); setReason(""); }}>duplicate</Button>}
             </div>
           ) },
         ]} />
       <Modal open={!!review} onClose={() => setReview(null)} title={review ? `${ACTION_LABEL[review.action]}: ${review.v.companyName}` : ""}
-        sub={review?.action === "approve" && review.v.duplicateOf.length ? "this account matches another one: approving puts it in the same company (one free hire between them)." : review?.action === "approve" && (review.v.pendingJobs || []).length ? `approving puts their ${review.v.pendingJobs.length} waiting job${review.v.pendingJobs.length === 1 ? "" : "s"} live. the employer sees your reason; it's recorded in the audit.` : "the employer sees your reason. it's recorded in the audit."}
+        sub={review?.action === "approve" && review.v.duplicateOf.length ? "this account matches another one: approving puts it in the same company (one free hire between them)." : review?.action === "request_info" ? "say what's missing (e.g. a clearer NTN scan): the employer sees it and sends the details again." : review?.action === "approve" && (review.v.pendingJobs || []).length ? `approving puts their ${review.v.pendingJobs.length} waiting job${review.v.pendingJobs.length === 1 ? "" : "s"} live. the employer sees your reason; it's recorded in the audit.` : "the employer sees your reason. it's recorded in the audit."}
         icon="shield" tone={review?.action === "reject" ? "red" : "blue"}
         footer={<><Button variant="secondary" onClick={() => setReview(null)}>cancel</Button><Button loading={busy} disabled={reason.trim().length < 3} onClick={decide}>{review ? ACTION_LABEL[review.action] : ""}</Button></>}>
         <Field label="reason (required)" htmlFor="cv-reason"><Textarea id="cv-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="e.g. NTN checked on FBR; domain owned by the company" /></Field>

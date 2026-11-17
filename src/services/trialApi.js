@@ -35,8 +35,12 @@ export const trialApi = {
 
 export const TRIAL_LABEL = { not_activated: "not activated", active: "active", used: "used", under_review: "under review" };
 export const TRIAL_TONE = { not_activated: "sand", active: "green", used: "blue", under_review: "orange" };
-export const VERIFICATION_LABEL = { pending: "being checked", approved: "verified", rejected: "not approved", duplicate_review: "being checked (possible duplicate)" };
-export const VERIFICATION_TONE = { pending: "yellow", approved: "green", rejected: "red", duplicate_review: "orange" };
+export const VERIFICATION_LABEL = { pending: "being checked", approved: "verified", rejected: "not approved", duplicate_review: "being checked (possible duplicate)", needs_info: "needs info" };
+export const VERIFICATION_TONE = { pending: "yellow", approved: "green", rejected: "red", duplicate_review: "orange", needs_info: "orange" };
+// the employer menu chip (server: chip on GET /career/employers/me/company-verification)
+export const CHIP_LABEL = { not_submitted: "not submitted", under_review: "under review", verified: "verified", needs_info: "needs info" };
+export const CHIP_TONE = { not_submitted: "sand", under_review: "yellow", verified: "green", needs_info: "orange" };
+export const DOCUMENT_KIND_LABEL = { ntn_certificate: "NTN certificate", secp_certificate: "SECP certificate", business_registration: "business registration", letterhead: "letterhead" };
 export const BILLING_LABEL = { free_hire_consumed: "free hire used", free_hire_restored: "free hire restored", hire_billable_pending_pricing: "hire (pricing pending)" };
 export const pkDate = (iso) => (iso ? new Date(iso).toLocaleString("en-GB", { timeZone: "Asia/Karachi", dateStyle: "medium", timeStyle: "short" }) : "–");
 
