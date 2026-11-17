@@ -122,3 +122,17 @@ test("brand / employer menus are unchanged: no group buttons, no search", () => 
   expect(screen.queryByRole("searchbox")).toBeNull();
   expect(screen.getByRole("link", { name: "dashboard" })).toHaveAttribute("href", "/home");
 });
+
+test("employer menu: 'company verification' is always there, with its status chip", () => {
+  const { EMPLOYER_MENU } = require("./PortalNav");
+  const items = EMPLOYER_MENU.flatMap((g) => g.items);
+  expect(items.find((i) => i[0] === "company")).toEqual(["company", "company verification", "shield", "blue", "/company-verification"]);
+  const { rerender } = render(<MemoryRouter><PortalNav menu={EMPLOYER_MENU} active="dashboard" userName="e" chips={{ company: { label: "under review", tone: "yellow" } }} /></MemoryRouter>);
+  const link = screen.getByRole("link", { name: /company verification/ });
+  expect(link).toHaveAttribute("href", "/company-verification");
+  expect(within(link).getByText("under review")).toHaveAttribute("data-tone", "yellow");
+  rerender(<MemoryRouter><PortalNav menu={EMPLOYER_MENU} active="dashboard" userName="e" /></MemoryRouter>);
+  // no status yet: the item is still there, without a chip
+  expect(screen.getByRole("link", { name: /company verification/ })).toBeInTheDocument();
+  expect(document.querySelector('[data-chip="company"]')).toBeNull();
+});

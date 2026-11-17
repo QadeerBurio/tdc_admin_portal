@@ -552,7 +552,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
           <Ico kind="shield" tone="yellow" size={40} />
           <div style={{ flex: 1, minWidth: 220 }}>
             <h2 id="cv-note-title" style={{ margin: 0, fontSize: 17 }}>your job goes live once your company is verified</h2>
-            <p style={{ margin: "4px 0 0" }}>{company.pendingJobs?.length ? `${company.pendingJobs.length} job${company.pendingJobs.length === 1 ? " is" : "s are"} waiting. ` : ""}{company.verification ? (company.verification.status === "rejected" ? "tdc couldn't verify your company details: check them and send them again." : "tdc is checking your company details.") : "send your company details so tdc can verify them."}</p>
+            <p style={{ margin: "4px 0 0" }}>{company.pendingJobs?.length ? `${company.pendingJobs.length} job${company.pendingJobs.length === 1 ? " is" : "s are"} waiting. ` : ""}{company.verification ? (company.verification.status === "needs_info" ? "tdc needs more information: see what's needed and send your details again." : company.verification.status === "rejected" ? "tdc couldn't verify your company details: check them and send them again." : "tdc is checking your company details.") : "send your company details so tdc can verify them."}</p>
           </div>
           <Button size="sm" icon="shield" onClick={() => { window.location.href = "/company-verification"; }}>{company.verification ? "see verification" : "verify your company"}</Button>
         </section>

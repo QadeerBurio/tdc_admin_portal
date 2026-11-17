@@ -24,6 +24,8 @@ import "./styles/EmployerPortal.css";
 import { API_ORIGIN } from "../config/api";
 import { FreeHireCard } from "./FirstHireFree";
 import { HiringAccessBanner, useHiringAccess } from "./HiringAccess";
+import hiringAccessApi from "../services/hiringAccessApi";
+import { CHIP_LABEL, CHIP_TONE } from "../services/trialApi";
 
 // path -> menu item
 const NAV_FOR_PATH = {
@@ -34,10 +36,10 @@ const NAV_FOR_PATH = {
   "/reports": "reports",
   "/settings": "settings",
   "/first-hire-free": "dashboard",
-  "/company-verification": "dashboard",
+  "/company-verification": "company",
   "/hiring-results": "results",
 };
-const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", results: "hiring results", settings: "settings" };
+const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", results: "hiring results", company: "company verification", settings: "settings" };
 
 const CompanyDashboard = () => {
   const { user, token, logout } = useContext(AuthContext);
@@ -78,6 +80,18 @@ const CompanyDashboard = () => {
   useEffect(() => {
     setIsMobileMenuOpen(false);
   }, [location.pathname]);
+
+  // the menu's company verification chip (not submitted / under review / verified / needs info), refreshed per page
+  const [companyChip, setCompanyChip] = useState(null);
+  useEffect(() => {
+    if (!token) return;
+    let live = true;
+    const load = () => hiringAccessApi.myCompany().then((d) => { if (live) setCompanyChip(d?.chip || null); }).catch(() => {});
+    load();
+    // the company verification page says when it sent the details
+    window.addEventListener("tdc:company-verification", load);
+    return () => { live = false; window.removeEventListener("tdc:company-verification", load); };
+  }, [token, location.pathname]);
 
   // ─── Fetch all data ──────────────────────────────────────────────
   const fetchAllData = async () => {
@@ -239,6 +253,7 @@ const CompanyDashboard = () => {
       <PortalNav
         menu={EMPLOYER_MENU}
         active={active}
+        chips={companyChip ? { company: { label: CHIP_LABEL[companyChip], tone: CHIP_TONE[companyChip] } } : {}}
         onSelect={() => setIsMobileMenuOpen(false)}
         userName={companyName}
         userRole="employer"
