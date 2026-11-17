@@ -15,7 +15,7 @@ const fs = require("fs");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5191, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5191, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const ok = (data) => ({ success: true, data, requestId: "mock" });
 const E = "6aeb11111111111111111111", ADMIN = "6aebffffffffffffffffffff";
 const J = (n) => `6aebb${n}b${n}b${n}b${n}b${n}b${n}b${n}b${n}b${n}b${n}b${n}`.slice(0, 24);
@@ -64,7 +64,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
@@ -84,7 +84,9 @@ http.createServer((q, s) => {
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.evaluate(`localStorage.setItem("token","mock-token"); localStorage.setItem("user", JSON.stringify(${JSON.stringify(who)})); true`);
     await go(pg, `http://127.0.0.1:${WEB}${p}`);
-    await sleep(3000);
+    // rendered, and its requests settled (the admin menu's items appear once their availability calls answer)
+    await pg.waitFor(`(document.getElementById("root")?.innerText || "").trim().length > 20`, { timeout: 25000, label: `${p} to render` });
+    await pg.settled();
     return pg;
   };
   const audit = async (pg, label, scope) => {
@@ -108,20 +110,20 @@ http.createServer((q, s) => {
   check("the filter has live, pending, closed, off", ["live", "pending", "closed", "off"].every((w) => t.includes(w)), t);
   await audit(pg, "jobs table with statuses", ".k-table-card");
   check("reopen a closed job", await click(pg, /^reopen Old analyst$/));
-  await sleep(1200);
+  await pg.settled();
   check("reopen sends the toggle and says 'live for 30 more days'", calls.some((c) => c.k === `PATCH /api/jobs/toggle/${J(2)}`) && /live for 30 more days/.test(await text(pg)));
 
   console.log("── a new job: profile defaults, PKR, waits for verification");
   check("post a job opens the form", await click(pg, /^post a job$/i));
-  await sleep(800);
+  await pg.settled();
   await setVal(pg, "#jm-title", "QA intern");
   await pg.evaluate(`(() => { const t = [...document.querySelectorAll("[role=dialog] [role=tab]")].find((x) => /company/i.test(x.innerText) || x.getAttribute("aria-controls")?.includes("company")) || document.querySelectorAll("[role=dialog] [role=tab]")[4]; t?.click(); return !!t; })()`);
-  await sleep(500);
+  await pg.settled();
   const vals = await pg.evaluate(`({ name: document.querySelector("#jm-company")?.value, logo: document.querySelector("#jm-logo")?.value })`);
   check("company name and logo come from the profile (editable fields)", vals.name === "Bright Labs" && vals.logo === "https://cdn.test/bright.png", JSON.stringify(vals));
   await audit(pg, "job form, company section", "[role=dialog]");
   await pg.evaluate(`document.getElementById("job-form").requestSubmit(); true`);
-  await sleep(1500);
+  await pg.settled();
   const add = calls.filter((c) => c.k === "POST /api/jobs/add").slice(-1)[0];
   check("the post sends currency PKR and the profile's company and logo", add && add.body.currency === "PKR" && add.body.companyName === "Bright Labs" && add.body.companyLogo === "https://cdn.test/bright.png" && add.body.title === "QA intern", JSON.stringify(add?.body || {}).slice(0, 300));
   check("the server's 'goes live once your company is verified' is shown", /goes live once your company is verified/.test(await text(pg)));
@@ -136,7 +138,7 @@ http.createServer((q, s) => {
   await setVal(pg, "#cv-domain", "brightlabs.test");
   await setVal(pg, "#cv-web", "brightlabs.test");
   await click(pg, /^send for verification$/);
-  await sleep(1200);
+  await pg.settled();
   check("the details are sent", submitted && submitted.companyName === "Bright Labs (Pvt) Ltd" && submitted.ntnOrSecp === "1234567-8" && submitted.registrationType === "ntn", JSON.stringify(submitted));
   check("then it shows 'being checked' and 'send again'", /being checked/.test(await text(pg)) && /send again/.test(await text(pg)));
 
@@ -151,17 +153,17 @@ http.createServer((q, s) => {
 
   console.log("── admin company verifications");
   pg = await open({ _id: ADMIN, id: ADMIN, role: "admin", name: "admin" }, "/admin");
-  check("the menu has company verifications (every employer)", await pg.evaluate(`(() => { const e = document.querySelector('.tdcp-nav [data-page="company_verifications"]'); if (e) e.click(); return !!e; })()`));
-  await sleep(2500);
+  check("the menu has company verifications (every employer)", await pg.waitFor(`!!document.querySelector('.tdcp-nav [data-page="company_verifications"]')`, { timeout: 20000, label: "'company_verifications' in the menu" }).then(() => pg.evaluate(`(() => { const e = document.querySelector('.tdcp-nav [data-page="company_verifications"]'); e.click(); return true; })()`)).catch(() => false));
+  await pg.settled();
   t = await text(pg, '[data-screen="company-verifications"]');
   check("each company with its jobs waiting", /jobs waiting/.test(t) && /1 waiting/.test(t) && /Waiting designer/.test(t), t.split("\n").join(" | ").slice(0, 400));
   await audit(pg, "admin company verifications", '[data-screen="company-verifications"]');
   await click(pg, /^approve$/);
-  await sleep(500);
+  await pg.settled();
   check("approving explains the waiting job goes live", /approving puts their 1 waiting job live/.test(await text(pg, "[role=dialog]")));
   await setVal(pg, "#cv-reason", "NTN checked on FBR", "HTMLTextAreaElement");
   await click(pg, /^approve$/, `document.querySelector("[role=dialog]")`);
-  await sleep(1500);
+  await pg.settled();
   const rv = calls.filter((c) => c.k === "POST /api/career/admin/company-verifications/v1/review").slice(-1)[0];
   check("approve sends the review and says '1 job is live now'", rv && rv.body.action === "approve" && rv.body.reason === "NTN checked on FBR" && /1 job is live now/.test(await text(pg)), JSON.stringify(rv));
 

@@ -12,7 +12,7 @@ const os = require("os");
 const path = require("path");
 const { launch, go, sleep } = require("./cdp");
 const BUILD = path.resolve(process.argv[2]);
-const WEB = 5188, API = 5197;
+const WEB = Number(process.env.CHECK_WEB_PORT) || 5188, API = Number(process.env.CHECK_API_PORT) || 5197; // run.js gives each check its own ports when they run side by side
 const E = "6ae9eeeeeeeeeeeeeeeeeeee", ADMIN = "6ae9ffffffffffffffffffff", J1 = "6ae9b1b1b1b1b1b1b1b1b1b1", J2 = "6ae9b2b2b2b2b2b2b2b2b2b2";
 const now = Date.now();
 const job = (id, extra) => ({ _id: id, title: "Backend intern", department: "Engineering", category: "Technology", location: "Karachi", locationType: "On-site", type: "Internship", salary: "PKR 40,000", email: "hr@hireco.test", description: "Build APIs", requirements: [], responsibilities: [], benefits: [], perks: [], skills: ["React", "Node.js"], experienceLevel: "Entry Level", education: "Bachelor's Degree", active: true, applicationDeadline: new Date(now + 20 * 864e5).toISOString(), createdAt: new Date(now - 864e5).toISOString(), totalApplications: 0, ...extra });
@@ -49,7 +49,7 @@ http.createServer((q, s) => {
   let f = path.join(BUILD, decodeURIComponent(q.url.split("?")[0]));
   if (!f.startsWith(BUILD) || !fs.existsSync(f) || fs.statSync(f).isDirectory()) f = path.join(BUILD, "index.html");
   s.writeHead(200, { "content-type": types[path.extname(f)] || "application/octet-stream" });
-  fs.createReadStream(f).pipe(s);
+  require("./serve").send(f, s, API); // the build, with this check's mock API port
 }).listen(WEB);
 
 (async () => {
