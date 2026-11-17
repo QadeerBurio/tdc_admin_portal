@@ -8,6 +8,7 @@
 //   - every DevTools command has a timeout (CDP_COMMAND_TIMEOUT_MS, default 30 s): a stalled Chrome fails the
 //     check instead of hanging it
 //   - Chrome is killed when the check's process exits for any reason
+//   - offline: requests to anything but this machine are answered locally (CDP_ALLOW_INTERNET=1 to let them out)
 //   - waits on real conditions: page.waitFor(expression), page.waitForText(texts), page.clickWhen(expression),
 //     page.idle() (no network request for a moment), page.settled() (idle and no CSS animation or transition
 //     running: run it before axe, or a dialog still fading in reads as low contrast); each with a timeout
@@ -26,6 +27,7 @@ const CHROME = [
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 const COMMAND_MS = Number(process.env.CDP_COMMAND_TIMEOUT_MS) || 30000;
 const WAIT_MS = Number(process.env.CDP_WAIT_TIMEOUT_MS) || 20000;
+const PIXEL = "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII="; // 1x1 transparent PNG
 
 const browsers = new Set();
 const killAll = () => { for (const p of browsers) { try { p.kill(); } catch {} } browsers.clear(); };
@@ -82,6 +84,21 @@ async function launch(label = 9333) {
       else if (m.method === "Network.loadingFinished" || m.method === "Network.loadingFailed") { inflight.delete(m.params.requestId); lastNet = Date.now(); }
     });
     await s("Page.enable"); await s("Runtime.enable"); await s("Network.enable");
+    // offline: anything not on this machine (Google Fonts, placeholder images, a preconnect to the real server) is
+    // answered here with an empty file of the right kind, so a slow or missing internet connection can't time a
+    // request out ("Failed to load resource: net::ERR_CONNECTION_TIMED_OUT" failed checks at random)
+    if (process.env.CDP_ALLOW_INTERNET !== "1") {
+      await s("Fetch.enable", { patterns: [{ urlPattern: "http*", requestStage: "Request" }] });
+      listeners.push((m) => {
+        if (m.sessionId !== sessionId || m.method !== "Fetch.requestPaused") return;
+        const { requestId, request, resourceType } = m.params;
+        let host = "";
+        try { host = new URL(request.url).hostname; } catch {}
+        if (host === "127.0.0.1" || host === "localhost") { send("Fetch.continueRequest", { requestId }, sessionId).catch(() => {}); return; }
+        const kind = resourceType === "Image" ? ["image/png", PIXEL] : resourceType === "Stylesheet" ? ["text/css", ""] : resourceType === "Font" ? ["font/woff2", ""] : ["text/plain", ""];
+        send("Fetch.fulfillRequest", { requestId, responseCode: 200, responseHeaders: [{ name: "Content-Type", value: kind[0] }, { name: "Access-Control-Allow-Origin", value: "*" }], body: Buffer.from(kind[1], kind[0] === "image/png" ? "base64" : "utf8").toString("base64") }, sessionId).catch(() => {});
+      });
+    }
     // an expression's value; a long one (axe) gets a longer command timeout
     // an axe scan always runs on a settled page (no request in flight, nothing fading in): a dialog still animating
     // reads as low contrast; every check gets this, whatever its own audit helper looks like
