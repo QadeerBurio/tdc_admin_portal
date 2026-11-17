@@ -4,7 +4,7 @@
 import React from "react";
 import { WebNav, WebFooter, LINKS, PageHero, usePage } from "../../web/site";
 
-const UPDATED = "16 November 2026";
+const UPDATED = "17 November 2026";
 
 const SECTIONS = [
   {
@@ -48,7 +48,7 @@ const SECTIONS = [
   {
     h: "ads and Meta",
     p: [
-      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: the install, counted the first time you open the app, then app opens, sign-up, offer claims, job applications, discounts redeemed and AI resume use. why: so Meta can tell us which ads worked, and we stop paying for the ones that don't. we never share your name, messages or what you write.",
+      "we advertise tdc on Facebook and Instagram. to see which ads bring students to tdc, the app shares some activity with Meta: the install (counted when the app first connects), app opens, sign-up, finishing the app tour, offer claims, discounts redeemed, job applications, AI resumes, event registrations, scholarship applications, new posts, new confessions, likes and comments, AI chat use, travel assistant use, new skillshare listings and new skillshare offers. only that it happened (and, for some, which offer, job, scholarship or listing), never what you wrote. why: so Meta can tell us which ads worked, and we stop paying for the ones that don't. we never share your name, messages or what you write.",
       "by default this is shared without your email or phone number. on Android, your phone's advertising ID is included unless you turn off \"ads with your details\". on iPhone, nothing that identifies you is shared unless you tap \"continue\" when the app asks and then choose Allow when Apple asks.",
       "your email and phone number are shared with Meta only after you tap \"continue\" (on iPhone, also Apple's Allow), and only hashed: scrambled one way before they leave your phone, so Meta can match them to an account it already knows but can't read them.",
       "two switches in the app, settings → privacy: \"ad measurement\" turns off everything the app shares with Meta; \"ads with your details\" turns off the advertising ID and the hashed email and phone. you can also reset or turn off your advertising ID in your phone settings.",

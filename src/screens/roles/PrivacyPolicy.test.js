@@ -14,7 +14,9 @@ test("the Meta section matches the app on main", () => {
   render(<PrivacyPolicy />);
   const text = document.body.textContent;
   expect(screen.getByRole("heading", { name: /privacy policy/i })).toBeInTheDocument();
-  expect(text).toMatch(/the install, counted the first time you open the app/);
+  // the 17 Meta events, the same words as the app's Privacy Center (app/src/components/Privacy.js)
+  expect(text).toContain("the install (counted when the app first connects), app opens, sign-up, finishing the app tour, offer claims, discounts redeemed, job applications, AI resumes, event registrations, scholarship applications, new posts, new confessions, likes and comments, AI chat use, travel assistant use, new skillshare listings and new skillshare offers");
+  expect(text).not.toMatch(/counted the first time you open the app/);
   expect(text).toMatch(/so Meta can tell us which ads worked/);
   expect(text).toMatch(/on Android, your phone's advertising ID is included unless you turn off "ads with your details"/);
   expect(text).toMatch(/on iPhone, nothing that identifies you is shared unless you tap "continue" when the app asks and then choose Allow when Apple asks/);
@@ -22,7 +24,7 @@ test("the Meta section matches the app on main", () => {
   expect(text).toMatch(/"ad measurement" turns off everything the app shares with Meta; "ads with your details" turns off the advertising ID and the hashed email and phone/);
   // the old wording said email and phone are never shared: no longer true
   expect(text).not.toMatch(/never share your name, email, phone number/);
-  expect(text).toMatch(/last updated 16 November 2026/);
+  expect(text).toMatch(/last updated 17 November 2026/);
 });
 
 test("the route and the footer link", () => {
