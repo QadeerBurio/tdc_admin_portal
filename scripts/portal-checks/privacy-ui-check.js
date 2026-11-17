@@ -46,9 +46,9 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await go(pg, `http://127.0.0.1:${WEB}/privacy`);
   await sleep(2500);
   const t = await pg.evaluate(`document.body.innerText`);
-  check("/privacy opens without signing in: 'privacy policy', updated 16 November 2026", /privacy policy/i.test(t) && t.includes("last updated 16 November 2026"), t.slice(0, 200));
-  check("Meta: install at first open; Android ad ID with the opt-out; iPhone only after continue + Allow; hashed email/phone after continue; the two switches", [
-    "the install, counted the first time you open the app",
+  check("/privacy opens without signing in: 'privacy policy', updated 17 November 2026", /privacy policy/i.test(t) && t.includes("last updated 17 November 2026"), t.slice(0, 200));
+  check("Meta: the 17 events (install when the app first connects); Android ad ID with the opt-out; iPhone only after continue + Allow; hashed email/phone after continue; the two switches", [
+    "the install (counted when the app first connects), app opens, sign-up, finishing the app tour, offer claims, discounts redeemed, job applications, AI resumes, event registrations, scholarship applications, new posts, new confessions, likes and comments, AI chat use, travel assistant use, new skillshare listings and new skillshare offers",
     "unless you turn off \"ads with your details\"",
     "unless you tap \"continue\" when the app asks and then choose Allow when Apple asks",
     "only after you tap \"continue\"",
