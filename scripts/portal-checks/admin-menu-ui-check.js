@@ -98,8 +98,8 @@ const MENU = [
 
   console.log("── the menu");
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
-  // the menu and its waiting badges (from the pages' own calls) are in
-  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8 && !!document.querySelector('.tdcp-nav [data-page="company_verifications"] .tdcp-nav-badge') && !!document.querySelector('.tdcp-nav [data-page="hire_disputes"] .tdcp-nav-badge')`, "the admin menu with its badges");
+  // the menu and all four waiting badges the next check reads (each from its own page's call) are in
+  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8 && ["brand_approval", "student_verifications", "company_verifications", "hire_disputes"].every((id) => !!document.querySelector(\`.tdcp-nav [data-page="\${id}"] .tdcp-nav-badge\`))`, "the admin menu with its four badges");
   await pg.idle();
   let m = await menu();
   check("groups in order with their items (every pilot set up in this mock)", JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])) === JSON.stringify(MENU), JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])));
