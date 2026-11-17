@@ -58,8 +58,8 @@ import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
-const FHF_PAGES = ["company_verifications", "free_hire_trials"];
-const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans)) })).filter((s) => s.items.length > 0);
+const FHF_PAGES = ["free_hire_trials"]; // company verifications: every employer (on.company)
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans) && (i[0] !== "company_verifications" || on.company)) })).filter((s) => s.items.length > 0);
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -265,7 +265,7 @@ export default function AdminDashboard() {
   useEffect(() => {
     let live = true;
     Promise.all([
-      countOf(trialApi.verifications("pending"), (d) => (Array.isArray(d) ? d.length : null)),
+      countOf(hiringAccessApi.companyVerifications("pending"), (d) => (Array.isArray(d) ? d.length : null)),
       countOf(careerApi.adminDisputes(), (d) => (Array.isArray(d?.disputes) ? d.disputes.length : null)),
       countOf(ratingsApi.adminReports("open"), (d) => (Array.isArray(d) ? d.length : null)),
       countOf(hiringAccessApi.overview(), (d) => (typeof d?.counts?.openRequests === "number" ? d.counts.openRequests : null)),
@@ -301,6 +301,9 @@ export default function AdminDashboard() {
   // "hiring plans" (free trials and plans for every employer) shows once the server answers
   const [plansMenu, setPlansMenu] = useState(false);
   useEffect(() => { hiringAccessApi.adminAvailable().then(setPlansMenu); }, []);
+  // "company verifications": every employer's company (their jobs go live once it's verified)
+  const [companyMenu, setCompanyMenu] = useState(false);
+  useEffect(() => { hiringAccessApi.companyAvailable().then(setCompanyMenu); }, []);
   const fetchTodayDrop = useCallback(async () => {
     if (!token) return;
     const key = karachiDayKey(new Date());
@@ -345,7 +348,7 @@ export default function AdminDashboard() {
   }, [activePage]);
 
   // the menu as it is now (pilot pages only when set up); the overview links only to pages that are in it
-  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu });
+  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu, company: companyMenu });
   const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   // "including suspended: N" when suspended / banned accounts are left out of the number

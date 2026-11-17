@@ -57,6 +57,7 @@ const TravelSettings = lazy(() => import("./screens/travel/TravelSettings"));
 const CompanyDashboard = lazy(() => import("./screens/CompanyDashboard"));
 const employerScreen = (name) => lazy(() => import("./screens/CompanyDashboard").then((m) => ({ default: m[name] })));
 const FirstHireFreePage = lazy(() => import("./screens/FirstHireFree")); // FLAG_EMPLOYER_FIRST_HIRE_FREE
+const CompanyVerificationPage = lazy(() => import("./screens/CompanyVerification")); // every employer: jobs go live once verified
 const analyticsScreen = (name) => lazy(() => import("./screens/BusinessAnalytics").then((m) => ({ default: m[name] })));
 const BrandInsights = analyticsScreen("BrandInsights");
 const HiringResults = analyticsScreen("HiringResults");
@@ -201,6 +202,7 @@ export default function AppNavigator() {
           <Route path="/reports" element={<EmployerReports />} />
           <Route path="/settings" element={<EmployerSettings />} />
           <Route path="/first-hire-free" element={<FirstHireFreePage />} />
+          <Route path="/company-verification" element={<CompanyVerificationPage />} />
           <Route path="/hiring-results" element={<HiringResults />} />
         </Route>
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />

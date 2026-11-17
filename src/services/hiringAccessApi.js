@@ -24,6 +24,12 @@ export const hiringAccessApi = {
   grant: (employerId, body) => unwrap(api.post(`/career/admin/hiring-plans/${employerId}/grant`, body)),
   trial: (employerId, body) => unwrap(api.post(`/career/admin/hiring-plans/${employerId}/trial`, body)),
   decline: (id, body) => unwrap(api.post(`/career/admin/plan-requests/${id}/decline`, body)),
+  // company verification (every employer: an unverified company's jobs wait until tdc verifies it)
+  myCompany: () => unwrap(api.get("/career/employers/me/company-verification")),
+  submitCompany: (body) => unwrap(api.post("/career/employers/me/company-verification", body)),
+  companyVerifications: (status = "pending") => unwrap(api.get("/career/admin/company-verifications", { params: { status } })),
+  reviewCompany: (id, body) => unwrap(api.post(`/career/admin/company-verifications/${id}/review`, body)),
+  companyAvailable: () => api.get("/career/admin/company-verifications", { params: { status: "pending" } }).then(() => true).catch(() => false),
   // the admin menu item shows once the server answers
   adminAvailable: () => api.get("/career/admin/hiring-plans").then(() => true).catch(() => false),
 };

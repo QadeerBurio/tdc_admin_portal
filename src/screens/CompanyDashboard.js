@@ -34,6 +34,7 @@ const NAV_FOR_PATH = {
   "/reports": "reports",
   "/settings": "settings",
   "/first-hire-free": "dashboard",
+  "/company-verification": "dashboard",
   "/hiring-results": "results",
 };
 const LABEL_FOR_NAV = { dashboard: "dashboard", jobs: "jobs", candidates: "candidates", interviews: "interviews", reports: "reports", results: "hiring results", settings: "settings" };
@@ -128,6 +129,8 @@ const CompanyDashboard = () => {
       setStats({
         totalJobs: data.totalJobs || 0,
         activeJobs: data.activeJobs || 0,
+        closedJobs: data.closedJobs || 0,
+        pendingJobs: data.pendingJobs || 0,
         totalApplications: data.totalApplications || 0,
         pendingApplications: data.pendingApplications || 0,
         shortlistedCandidates: data.shortlistedApplications || 0,
@@ -351,7 +354,7 @@ export function EmployerDashboard() {
       )}
 
       <div className="k-stats">
-        <StatCard label="jobs posted" value={stats.totalJobs} sub={`${stats.activeJobs} active`} icon="briefcase" tone="coral" onClick={() => navigate("/employee-jobs")} />
+        <StatCard label="jobs posted" value={stats.totalJobs} sub={[`${stats.activeJobs} live`, stats.closedJobs ? `${stats.closedJobs} closed` : null, stats.pendingJobs ? `${stats.pendingJobs} waiting for verification` : null].filter(Boolean).join(" · ")} icon="briefcase" tone="coral" onClick={() => navigate("/employee-jobs")} />
         <StatCard label="applications" value={stats.totalApplications} sub={`${stats.pendingApplications} pending`} icon="users" tone="blue" onClick={() => navigate("/candidate")} />
         <StatCard label="shortlisted" value={stats.shortlistedCandidates} sub="ready for interview" icon="star" tone="orange" onClick={() => navigate("/candidate")} />
         <StatCard label="hired" value={stats.hiredCandidates} sub="successfully placed" icon="trophy" tone="green" onClick={() => navigate("/reports")} />
@@ -388,7 +391,7 @@ export function EmployerDashboard() {
             upcomingInterviewsList.map((interview, index) => {
               const d = interview.interviewDate ? new Date(interview.interviewDate) : null;
               return (
-                <div className="emp-row" key={interview._id || index}>
+                <div className="emp-row" key={interview.interviewId || interview.applicationId || interview._id || index}>
                   <span className="emp-date" aria-hidden="true">
                     <b>{d ? d.getDate() : "??"}</b>
                     <span>{d ? d.toLocaleString("default", { month: "short" }) : "TBD"}</span>
@@ -399,7 +402,11 @@ export function EmployerDashboard() {
                     <span className="k-muted">{d ? d.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" }) : "Time TBD"}</span>
                   </div>
                   {interview.meetingLink ? (
-                    <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="k-btn secondary sm"><Ico kind="play" tone="plain" size={16} />Join</a>
+                    <a href={interview.meetingLink} target="_blank" rel="noopener noreferrer" className="k-btn secondary sm" aria-label={`join the interview with ${interview.fullName || "the candidate"}`}><Ico kind="play" tone="plain" size={16} />Join</a>
+                  ) : interview.location ? (
+                    <span className="k-hint">{interview.location}</span>
+                  ) : interview.mode === "phone" ? (
+                    <span className="k-hint">phone</span>
                   ) : (
                     <span className="k-hint">No link</span>
                   )}

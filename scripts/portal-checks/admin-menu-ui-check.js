@@ -27,7 +27,7 @@ function handle(method, url) {
   if (p === "/api/admin/users/student") return STUDENTS;
   if (p === "/api/brand-approval") return { success: true, stats: { pending: 3, approved: 10, rejected: 1, total: 14 }, brands: [] };
   const verification = (id, companyName) => ({ id, companyName, status: "pending", registrationType: "ntn", ntnOrSecp: "1234567", businessEmailDomain: "example.com", website: "example.com", submittedAt: new Date().toISOString(), hints: { signInEmailMatchesDomain: true, websiteMatchesDomain: true }, duplicateOf: [], reason: "", employer: { id: `e-${id}`, name: "Omar", email: "omar@example.com", accountStatus: "Not Verified" } });
-  if (p === "/api/career/admin/verifications") return ok([verification("v1", "Bright Labs"), verification("v2", "Hire Co")]);
+  if (p === "/api/career/admin/verifications" || p === "/api/career/admin/company-verifications") return ok([verification("v1", "Bright Labs"), verification("v2", "Hire Co")]);
   if (p === "/api/career/admin/disputes") return ok({ disputes: [{ applicationId: "a1", job: { id: "j1", title: "Intern" }, candidate: { id: "c1", name: "Sana" }, employer: { id: "e1", name: "Hire Co" }, reason: "not hired", raisedAt: new Date().toISOString(), resolvable: true }] });
   if (p === "/api/career/admin/applications") return ok({ total: 0, applications: [] });
   if (p === "/api/admin/features/flags") return ok([{ flag: "loyaltyV2", label: "Loyalty", roles: ["brand", "student"], killed: false, railway: "not set", railwayIdCount: 0, adminAccessCount: 0, forcedOffCount: 0, studentDefaultable: true, studentDefault: { enabled: true }, defaults: { student: { enabled: true, set: false }, brand: { enabled: true, set: false } } }]);

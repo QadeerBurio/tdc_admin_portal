@@ -6,6 +6,9 @@
 // GET /api/jobs/stats (their own jobs; all jobs for an admin). Server refusals are shown as the server words them.
 // Employers see their free trial / plan (HiringAccess.js); after the trial "post a job", "duplicate" and the CSV
 // upload are disabled with the reason (the server refuses them too: 403 POSTING_LOCKED).
+// New jobs start in PKR with the company name and logo from the poster's profile (editable). A job of an unverified
+// company waits ("pending verification") until tdc verifies the company; jobs past their deadline show "closed"
+// and reopening one follows the trial / plan lock (30 more days).
 import React, { useState, useEffect, useRef } from "react";
 import axios from "axios";
 import Ico from "../portal/Ico";
@@ -15,6 +18,7 @@ import { API_ORIGIN } from "../config/api";
 import SkillTagInput from "../portal/SkillTagInput"; // skills as tags: at most 15, each up to 40 characters
 import { tagsOf } from "../portal/skillTags";
 import { HiringAccessBanner, useHiringAccess } from "./HiringAccess";
+import hiringAccessApi from "../services/hiringAccessApi";
 
 const AdminJobsManager = ({ userRole, userName }) => {
   const [jobs, setJobs] = useState([]);
@@ -33,6 +37,17 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const [access, reloadAccess] = useHiringAccess(userRole !== "admin");
   const locked = userRole !== "admin" && !!access.data && !access.data.canPost;
   const lockHint = locked ? access.data.lock?.message || "posting is locked: request a plan" : undefined;
+  // the poster's own company (new jobs start with it) and, for employers, whether tdc verified it
+  const [profile, setProfile] = useState({ companyName: "", logo: "" });
+  const [company, setCompany] = useState(null); // { verified, pendingJobs, message } (employers)
+  const loadCompany = () => { if (userRole !== "admin") hiringAccessApi.myCompany().then((d) => setCompany(d || null)).catch(() => setCompany(null)); };
+  useEffect(() => {
+    axios.get(`${API_ORIGIN}/api/auth/me`, { headers: { Authorization: `Bearer ${localStorage.getItem("token")}` } })
+      .then((r) => { const u = r.data?.user || r.data || {}; setProfile({ companyName: u.companyName || u.brandName || "", logo: u.logo || "" }); })
+      .catch(() => {});
+    loadCompany();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
   const [isMobile, setIsMobile] = useState(window.innerWidth <= 768);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   // employer view only: status filter and search over the employer's own jobs
@@ -58,7 +73,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
     salary: "",
     salaryMin: "",
     salaryMax: "",
-    currency: "USD",
+    currency: "PKR",
     email: "",
     description: "",
     requirements: [],
@@ -73,6 +88,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
     urgent: false,
     applicationDeadline: "",
     companyName: "",
+    companyLogo: "",
     companyWebsite: "",
     workSchedule: "Monday - Friday, 9AM - 5PM",
     perks: [],
@@ -223,8 +239,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
   const handleCreateJob = async (e) => {
     e.preventDefault();
     try {
-      await axios.post(`${API_URL}/add`, formData, config);
-      toast("Job created successfully!");
+      const res = await axios.post(`${API_URL}/add`, formData, config);
+      toast(res.data?.message || "Job created successfully!", res.data?.pendingVerification ? "warn" : "ok");
+      if (res.data?.pendingVerification) loadCompany();
       setShowJobModal(false);
       resetForm();
       fetchJobs();
@@ -251,7 +268,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   const handleToggleStatus = async (jobId) => {
     try {
-      await axios.patch(`${API_URL}/toggle/${jobId}`, {}, config);
+      const res = await axios.patch(`${API_URL}/toggle/${jobId}`, {}, config);
+      if (res.data?.message === "Job reopened for 30 days") toast("reopened: live for 30 more days", "ok");
       fetchJobs();
     } catch (err) {
       toast(err.response?.data?.error || err.response?.data?.message || "Failed to toggle job status", "bad");
@@ -261,8 +279,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
   // a new posting from one of your jobs (same details, live for 30 days)
   const handleDuplicateJob = async (job) => {
     try {
-      await axios.post(`${API_URL}/duplicate/${job._id}`, {}, config);
-      toast(`duplicated: "${job.title}" is live for 30 days`, "ok");
+      const res = await axios.post(`${API_URL}/duplicate/${job._id}`, {}, config);
+      toast(res.data?.pendingVerification ? res.data.message : `duplicated: "${job.title}" is live for 30 days`, res.data?.pendingVerification ? "warn" : "ok");
       fetchJobs();
       fetchStats();
       reloadAccess();
@@ -334,7 +352,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
       salary: "",
       salaryMin: "",
       salaryMax: "",
-      currency: "USD",
+      currency: "PKR",
       email: "",
       description: "",
       requirements: [],
@@ -374,7 +392,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
       salary: job.salary || "",
       salaryMin: job.salaryMin || "",
       salaryMax: job.salaryMax || "",
-      currency: job.currency || "USD",
+      currency: job.currency || "PKR",
       email: job.email || "",
       description: job.description || "",
       requirements: safeArray(job.requirements),
@@ -389,6 +407,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
       urgent: job.urgent || false,
       applicationDeadline: job.applicationDeadline || "",
       companyName: job.companyName || "",
+      companyLogo: job.companyLogo || "",
       companyWebsite: job.companyWebsite || "",
       workSchedule: job.workSchedule || "Monday - Friday, 9AM - 5PM",
       perks: safeArray(job.perks),
@@ -448,8 +467,9 @@ const AdminJobsManager = ({ userRole, userName }) => {
     handleEditJob(j);
   };
   const empTerm = empSearch.toLowerCase().trim();
+  const statusOfJob = (j) => j.status || (j.active ? "live" : "inactive");
   const empJobs = jobs.filter((j) =>
-    (empStatus === "all" || (empStatus === "active" ? j.active : !j.active)) &&
+    (empStatus === "all" || (empStatus === "active" ? statusOfJob(j) === "live" : empStatus === "pending" ? statusOfJob(j) === "pending_verification" : empStatus === "closed" ? statusOfJob(j) === "closed" : statusOfJob(j) === "inactive")) &&
     (!empTerm || j.title?.toLowerCase().includes(empTerm) || j.department?.toLowerCase().includes(empTerm))
   );
   const listJobs = isAdmin ? jobs : empJobs;
@@ -478,6 +498,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
 
   const openNewJob = () => {
     resetForm();
+    // the poster's own company name and logo (editable in the form)
+    setFormData((f) => ({ ...f, companyName: f.companyName || profile.companyName, companyLogo: f.companyLogo || profile.logo }));
     setShowJobModal(true);
   };
   const jobBadges = (job) => (
@@ -524,6 +546,16 @@ const AdminJobsManager = ({ userRole, userName }) => {
             <Button icon="plus" onClick={openNewJob} disabled={locked} title={lockHint} aria-describedby={locked ? "hiring-access-title" : undefined}>post a job</Button>
           </div>
         </div>
+      )}
+      {!isAdmin && company && !company.verified && (
+        <section className="k-card pad" data-card="company-verification" aria-labelledby="cv-note-title" style={{ marginBottom: 16, display: "flex", gap: 14, alignItems: "center", flexWrap: "wrap" }}>
+          <Ico kind="shield" tone="yellow" size={40} />
+          <div style={{ flex: 1, minWidth: 220 }}>
+            <h2 id="cv-note-title" style={{ margin: 0, fontSize: 17 }}>your job goes live once your company is verified</h2>
+            <p style={{ margin: "4px 0 0" }}>{company.pendingJobs?.length ? `${company.pendingJobs.length} job${company.pendingJobs.length === 1 ? " is" : "s are"} waiting. ` : ""}{company.verification ? (company.verification.status === "rejected" ? "tdc couldn't verify your company details: check them and send them again." : "tdc is checking your company details.") : "send your company details so tdc can verify them."}</p>
+          </div>
+          <Button size="sm" icon="shield" onClick={() => { window.location.href = "/company-verification"; }}>{company.verification ? "see verification" : "verify your company"}</Button>
+        </section>
       )}
       {!isAdmin && <HiringAccessBanner state={access} reload={reloadAccess} />}
 
@@ -592,7 +624,7 @@ const AdminJobsManager = ({ userRole, userName }) => {
             label="filter by status"
             value={empStatus}
             onChange={(v) => { setEmpStatus(v); setCurrentPage(1); }}
-            options={[{ value: "all", label: "all" }, { value: "active", label: "active" }, { value: "inactive", label: "inactive" }]}
+            options={[{ value: "all", label: "all" }, { value: "active", label: "live" }, { value: "pending", label: "pending" }, { value: "closed", label: "closed" }, { value: "inactive", label: "off" }]}
           />
         </div>
       )}
@@ -667,9 +699,15 @@ const AdminJobsManager = ({ userRole, userName }) => {
                     <td>{job.type}</td>
                     <td><b>{job.totalApplications || 0}</b></td>
                     <td>
-                      <button type="button" className={`jm-status emp${job.active ? " on" : ""}`} onClick={() => handleToggleStatus(job._id)} title={job.active ? "Deactivate" : "Activate"}>
-                        {job.active ? "active" : "inactive"}
-                      </button>
+                      {statusOfJob(job) === "pending_verification" ? (
+                        <Pill tone="yellow" title="goes live once your company is verified">pending verification</Pill>
+                      ) : statusOfJob(job) === "closed" ? (
+                        <button type="button" className="jm-status emp" onClick={() => handleToggleStatus(job._id)} disabled={locked} title={locked ? lockHint : "reopen for 30 days"} aria-label={`reopen ${job.title}`}>closed · reopen</button>
+                      ) : (
+                        <button type="button" className={`jm-status emp${job.active ? " on" : ""}`} onClick={() => handleToggleStatus(job._id)} title={job.active ? "Deactivate" : "Activate"}>
+                          {job.active ? "live" : "off"}
+                        </button>
+                      )}
                     </td>
                     <td>
                       <span className="k-row" style={{ gap: 6, flexWrap: "nowrap", justifyContent: "flex-end" }}>
@@ -936,7 +974,8 @@ const AdminJobsManager = ({ userRole, userName }) => {
             <>
               {sectionHead("store", "Company Information", "Tell candidates about your company")}
               <div className="jm-grid">
-                <Field label="Company Name" htmlFor="jm-company"><Input id="jm-company" type="text" value={formData.companyName} onChange={(e) => set({ companyName: e.target.value })} placeholder="Acme Inc." /></Field>
+                <Field label="Company Name" htmlFor="jm-company"><Input id="jm-company" type="text" value={formData.companyName} onChange={(e) => set({ companyName: e.target.value })} placeholder="your company" /></Field>
+                <Field label="Company logo (image link)" hint="from your profile; change it for this job if you like" htmlFor="jm-logo"><Input id="jm-logo" type="url" value={formData.companyLogo || ""} onChange={(e) => set({ companyLogo: e.target.value })} placeholder="https://" /></Field>
                 <Field label="Company Website" htmlFor="jm-site"><Input id="jm-site" type="url" value={formData.companyWebsite} onChange={(e) => set({ companyWebsite: e.target.value })} placeholder="https://company.com" /></Field>
               </div>
             </>
