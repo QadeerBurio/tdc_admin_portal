@@ -48,6 +48,7 @@ elsewhere.
 | `loyalty` | `loyalty-ui-check.js` | brand loyalty page, verify page loyalty line, admin loyalty exceptions |
 | `hire-disputes` | `disputes-ui-check.js` | admin hire disputes: hidden until the server answers, the list (no contact details), the review dialog, reason required, restore sends the right event |
 | `ratings` | `ratings-ui-check.js` | rate the candidate in the drawer (all three answers needed), the employer's own rating and reporting one, admin ratings reports (hidden until set up, hide with a reason) |
+| `press` | `press-ui-check.js` | home "featured in" strip and university partners row, /founder featured in cards and partners: new-tab links, logo alt text and greyscale, phone width, axe (desktop and phone) |
 | `a11y-surplus`, `a11y-first-hire-free`, `a11y-analytics`, `a11y-career`, `a11y-loyalty`, `a11y-hire-disputes`, `a11y-ratings` | `a11y-*.js` | axe-core WCAG 2 A / AA on the same pages and their open dialogs |
 
 ## How they work

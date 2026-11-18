@@ -23,6 +23,7 @@ const CHECKS = [
   ["hire-disputes", "disputes-ui-check.js"], ["ratings", "ratings-ui-check.js"], ["loyalty-flow", "loyalty-flow-ui-check.js"], ["admin-ids", "admin-ids-ui-check.js"], ["admin-actions", "admin-actions-ui-check.js"], ["admin-loyalty", "admin-loyalty-ui-check.js"], ["admin-surplus-listings", "admin-surplus-listings-ui-check.js"], ["hiring-overview", "hiring-overview-ui-check.js"], ["career-interviews", "career-interviews-ui-check.js"], ["job-funnel", "job-funnel-ui-check.js"], ["loyalty-rewards", "loyalty-rewards-ui-check.js"], ["surplus-photo", "surplus-photo-ui-check.js"], ["flags-refresh", "flags-refresh-ui-check.js"], ["candidate-profile", "candidate-profile-ui-check.js"], ["surplus-boxes", "surplus-boxes-ui-check.js"], ["admin-features", "admin-features-ui-check.js"], ["admin-menu", "admin-menu-ui-check.js"], ["job-skills", "job-skills-ui-check.js"], ["admin-approvals-metrics", "admin-approvals-metrics-ui-check.js"], ["privacy", "privacy-ui-check.js"], ["hiring-trial", "hiring-trial-ui-check.js"], ["hiring-followups", "hiring-followups-ui-check.js"], ["company-proof", "company-proof-ui-check.js"],
   ["modal-scroll", "modal-scroll-ui-check.js"],
   ["universities-unmatched", "universities-unmatched-ui-check.js"],
+  ["press", "press-ui-check.js"],
   ["a11y-surplus", "a11y-surplus.js"], ["a11y-first-hire-free", "a11y-fhf.js"], ["a11y-analytics", "a11y-analytics.js"],
   ["a11y-career", "a11y-career.js"], ["a11y-loyalty", "a11y-loyalty.js"], ["a11y-hire-disputes", "a11y-disputes.js"], ["a11y-ratings", "a11y-ratings.js"],
 ];

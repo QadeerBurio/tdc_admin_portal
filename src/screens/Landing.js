@@ -1,4 +1,4 @@
-// Landing.js — public home page (gettdc.pk), in the same design system as the tdc app.
+// Landing.js: public home page (gettdc.pk), in the same design system as the tdc app.
 import React, { useEffect } from "react";
 import { Link } from "react-router-dom";
 import { WebNav, WebFooter, LINKS, Arrow, pageTitle, IconTile, ICONS, CountUp, FeaturedIn } from "../web/site";
@@ -115,8 +115,10 @@ export default function Landing() {
           </div>
         </div>
 
+        {/* press and university partners */}
+        <div className="wrap"><FeaturedIn withPartners /></div>
+
         {/* app */}
-        <div className="wrap"><FeaturedIn /></div>
 
         <section id="app" className="wrap section">
           <div className="section-head">

@@ -1,8 +1,8 @@
-// Founder.js — /founder: Majid Shah Bukhari (MSB), founder of tdc. Story, path, what tdc stands for,
-// press (PRESS in web/site.js, also shown on the home page) and how to reach him.
+// Founder.js (/founder): Majid Shah Bukhari (MSB), founder of tdc. Story, path, what tdc stands for,
+// featured in (PRESS in web/site.js, also on the home page), university partners (PARTNERS) and how to reach him.
 // Facts only: keep it in step with what MSB has approved for press.
 import React from "react";
-import { WebNav, WebFooter, LINKS, PRESS, FeaturedIn, Arrow, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PRESS, PARTNERS, OutLink, PressLogo, Arrow, usePage } from "../../web/site";
 import photo from "../../web/assets/founder-msb.jpg";
 
 const MSB_LINKEDIN = "https://www.linkedin.com/in/majidshahbukhari1/";
@@ -43,8 +43,6 @@ export default function Founder() {
           </div>
           <img className="founder-photo" src={photo} alt="Majid Shah Bukhari, founder of tdc" width="900" height="1124" />
         </section>
-
-        <div className="wrap"><FeaturedIn /></div>
 
         {/* story */}
         <section className="wrap section">
@@ -93,20 +91,55 @@ export default function Founder() {
           </div>
         </section>
 
-        {/* press */}
-        <section className="wrap section">
+        {/* featured in */}
+        <section className="wrap section" aria-labelledby="featured-in">
           <div className="section-head">
-            <h2 className="h-lg">in the press<span className="dot">.</span></h2>
+            <h2 className="h-lg" id="featured-in">featured in<span className="dot" aria-hidden="true">.</span></h2>
             <p>for interviews, features and speaking: <a href={`mailto:${LINKS.hello}`}>{LINKS.hello}</a></p>
           </div>
           <div className="grid-2">
             {PRESS.map((p) => (
-              <a key={p.href} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
-                {p.logo && <img className="press-logo" src={p.logo} alt="" />}
-                <span className="card-h">{p.outlet}</span>
-                <span className="muted">{p.headline ? `${p.headline}${p.date ? ` (${p.date})` : ""}` : `the tdc story, covered by ${p.outlet}.`}</span>
-                <span style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>read the story <Arrow size={16} /></span>
-              </a>
+              <article key={p.outlet} className="card press-card">
+                <PressLogo src={p.logo} name={p.outlet} />
+                <h3 className="card-h">{p.outlet}</h3>
+                <ul className="press-links">
+                  {p.stories.map((s) => (
+                    <li key={s.href}>
+                      <OutLink href={s.href}>
+                        <span>
+                          {s.headline || s.label}
+                          {s.date && <small>{s.date}</small>}
+                        </span>
+                        <Arrow size={16} />
+                      </OutLink>
+                    </li>
+                  ))}
+                </ul>
+              </article>
+            ))}
+          </div>
+        </section>
+
+        {/* university partners */}
+        <section className="wrap section" aria-labelledby="partners">
+          <div className="section-head">
+            <h2 className="h-lg" id="partners">partners<span className="dot" aria-hidden="true">.</span></h2>
+            <p>universities working with tdc.</p>
+          </div>
+          <div className="grid-2">
+            {PARTNERS.map((u) => (
+              <article key={u.name} className="card press-card">
+                <PressLogo src={u.logo} name={u.name} />
+                <h3 className="card-h">{u.name}</h3>
+                <ul className="press-links">
+                  <li>
+                    <OutLink href={u.href}>
+                      <span>{u.label}</span>
+                      <Arrow size={16} />
+                    </OutLink>
+                  </li>
+                </ul>
+              </article>
             ))}
           </div>
         </section>

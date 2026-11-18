@@ -20,29 +20,105 @@ export const LINKS = {
   whatsapp: "https://wa.me/923249287649",
 };
 
-// Press coverage. Shown on the home page and /founder. Add new features at the top.
+// Logos in public/press/ (served as-is, so they keep their file names).
+const pressLogo = (file) => `${process.env.PUBLIC_URL || ""}/press/${file}`;
+
+// Press coverage, one entry per outlet. Shown on the home page (logo strip) and /founder (a card per outlet).
+// Add new outlets at the top. Facts only: a headline is the outlet's own; no headline means we link the post as is.
 export const PRESS = [
-  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/", logo: helloPakistanLogo },
-  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/", logo: startupPakistanLogo },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees without skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
+  {
+    outlet: "Express Tribune",
+    logo: pressLogo("express-tribune.jpg"),
+    stories: [{ href: "https://www.instagram.com/p/Df1_QhXkeTn/", label: "the post on Instagram" }],
+  },
+  {
+    outlet: "Verified Pakistan",
+    logo: pressLogo("verified-pakistan.jpg"),
+    stories: [{ href: "https://www.linkedin.com/posts/verifiedpakistanvp_during-a-hiring-drive-pakistani-entrepreneur-activity-7528713799072161792-nKX0", label: "the post on LinkedIn" }],
+  },
+  {
+    outlet: "Clap Pakistan",
+    logo: pressLogo("clap-pakistan.jpg"),
+    stories: [
+      { href: "https://clappakistan.com/why-are-fresh-graduates-struggling-to-get-their-first-interview-majid-shah-bukhari-is-investing-in-a-different-approach/", headline: "Why are fresh graduates struggling to get their first interview? Majid Shah Bukhari is investing in a different approach" },
+      { href: "https://www.instagram.com/p/DfzMslugQXu/", label: "the post on Instagram" },
+    ],
+  },
+  {
+    outlet: "The Financial Daily International",
+    logo: pressLogo("the-financial-daily.png"),
+    stories: [
+      { href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees Without Skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
+      { href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
+      { href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
+    ],
+  },
+  { outlet: "Hello Pakistan", logo: helloPakistanLogo, stories: [{ href: "https://www.instagram.com/p/DfrqDLDCdol/", label: "the post on Instagram" }] },
+  { outlet: "Startup Pakistan", logo: startupPakistanLogo, stories: [{ href: "https://www.instagram.com/p/Dfry68Eo-8B/", label: "the post on Instagram" }] },
 ];
 
-/** "as featured in" strip: each outlet's logo opens its story. */
-export function FeaturedIn({ style }) {
+// University partners (not press). Shown on the home page and /founder.
+export const PARTNERS = [
+  {
+    name: "Ziauddin University",
+    logo: pressLogo("ziauddin-university.png"),
+    href: "https://zu.edu.pk/mou-with-the-deft-crew/",
+    label: "MoU signed with The Deft Crew",
+  },
+];
+
+// Links that leave the site open in a new tab; screen readers hear that too. rel="noopener" only, on purpose:
+// the referrer is kept so outlets and partners can see the visits came from tdc.
+export function OutLink({ href, className, children, ...rest }) {
   return (
-    <div className="featured" style={style}>
-      <span className="featured-label">as featured in</span>
-      {PRESS.filter((p, i) => PRESS.findIndex((q) => q.outlet === p.outlet) === i).map((p) => (
-        p.logo ? (
-          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
-            <img src={p.logo} alt={p.outlet} height="48" />
-          </a>
-        ) : (
-          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
-        )
-      ))}
+    // eslint-disable-next-line react/jsx-no-target-blank
+    <a href={href} target="_blank" rel="noopener" className={className} {...rest}>
+      {children}
+      <span className="sr-only"> (opens in a new tab)</span>
+    </a>
+  );
+}
+
+// A press or partner logo. Greyscale until its link is hovered or focused (web.css). If the file is missing
+// it falls back to the name in type, so the strip never shows a broken image.
+export function PressLogo({ src, name, className = "" }) {
+  const [broken, setBroken] = useState(false);
+  if (broken || !src) return <span className={`press-wordmark ${className}`}>{name}</span>;
+  return <img className={`press-img ${className}`} src={src} alt={`${name} logo`} loading="lazy" decoding="async" onError={() => setBroken(true)} />;
+}
+
+/** "featured in" strip: each outlet's logo opens its first story. withPartners adds the university partners row
+ *  and a link to the full story on /founder (home page). */
+export function FeaturedIn({ withPartners = false }) {
+  return (
+    <div className="featured">
+      <div className="featured-row">
+        <h2 className="featured-label">featured in</h2>
+        <ul className="featured-list">
+          {PRESS.map((p) => (
+            <li key={p.outlet}>
+              <OutLink href={p.stories[0].href} className="featured-logo">
+                <PressLogo src={p.logo} name={p.outlet} />
+              </OutLink>
+            </li>
+          ))}
+        </ul>
+      </div>
+      {withPartners && (
+        <div className="featured-row featured-partners">
+          <h2 className="featured-label">university partners</h2>
+          <ul className="featured-list">
+            {PARTNERS.map((u) => (
+              <li key={u.name}>
+                <OutLink href={u.href} className="featured-logo">
+                  <PressLogo src={u.logo} name={u.name} />
+                </OutLink>
+              </li>
+            ))}
+          </ul>
+          <Link to="/founder" className="featured-story">read the story <Arrow size={16} /></Link>
+        </div>
+      )}
     </div>
   );
 }
