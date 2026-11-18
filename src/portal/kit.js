@@ -197,23 +197,99 @@ export function Segmented({ options, value, onChange, label = "filter" }) {
   );
 }
 
-/* ---------------- modal, drawer ---------------- */
-function useEscape(open, onClose) {
-  useEffect(() => {
-    if (!open || !onClose) return undefined;
-    const h = (e) => { if (e.key === "Escape") onClose(); };
-    document.addEventListener("keydown", h);
-    const prev = document.body.style.overflow;
-    document.body.style.overflow = "hidden";
-    return () => { document.removeEventListener("keydown", h); document.body.style.overflow = prev; };
-  }, [open, onClose]);
+/* ---------------- modal, drawer ----------------
+ * Every modal and drawer in the portal (and TypeToConfirm / confirmDialog, which are modals):
+ *  - the header (title + close) and the footer (actions) stay put; only the body scrolls (both are flex items that
+ *    don't shrink; the body has min-height: 0, so it can be shorter than its content and scroll)
+ *  - at most the viewport minus a margin (100dvh: mobile browser bars don't cut it off); full screen on phones
+ *  - wide tables scroll sideways inside the body, never the page
+ *  - the page behind is locked (also on iOS: the body is pinned) and comes back to where it was on close
+ *  - Escape closes; Tab stays inside; focus goes back to what opened it; Page Up / Down, arrows, Home / End scroll
+ *    the body even when the focus is on the close button
+ */
+// one lock for any number of open modals (a confirm on top of a modal): released when the last one closes
+let lockCount = 0;
+let locked = null; // { y, style }
+function lockPage() {
+  if (lockCount++ > 0) return;
+  const b = document.body;
+  locked = { y: window.scrollY || window.pageYOffset || 0, style: { position: b.style.position, top: b.style.top, left: b.style.left, right: b.style.right, width: b.style.width, overflow: b.style.overflow } };
+  Object.assign(b.style, { position: "fixed", top: `-${locked.y}px`, left: "0", right: "0", width: "100%", overflow: "hidden" });
+  b.setAttribute("data-modal-open", "");
 }
+function unlockPage() {
+  if (--lockCount > 0 || !locked) return;
+  const b = document.body;
+  Object.assign(b.style, locked.style);
+  b.removeAttribute("data-modal-open");
+  const y = locked.y;
+  locked = null;
+  window.scrollTo(0, y);
+}
+const FOCUSABLE = 'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])';
+const SCROLL_KEYS = { PageDown: 0.9, PageUp: -0.9, ArrowDown: 40, ArrowUp: -40, Home: "top", End: "bottom", " ": 0.9 };
+const typing = (el) => !!el && (/^(INPUT|TEXTAREA|SELECT)$/.test(el.tagName) || el.isContentEditable);
+
+function useDialog(open, onClose) {
+  const dialogRef = useRef(null);
+  const bodyRef = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    if (!open) return undefined;
+    const opener = document.activeElement;
+    lockPage();
+    // focus: the first field / button in the body, else the dialog itself
+    const t = setTimeout(() => {
+      const d = dialogRef.current;
+      if (!d || d.contains(document.activeElement)) return;
+      const first = bodyRef.current?.querySelector(FOCUSABLE) || d.querySelector(FOCUSABLE);
+      (first || d).focus({ preventScroll: true });
+    }, 0);
+    const onKey = (e) => {
+      const d = dialogRef.current;
+      if (!d) return;
+      // only the top-most dialog answers (a confirm opened over a modal)
+      const all = document.querySelectorAll('[data-kit-dialog="open"]');
+      if (all[all.length - 1] !== d) return;
+      if (e.key === "Escape" && closeRef.current) { e.stopPropagation(); closeRef.current(); return; }
+      if (e.key === "Tab") {
+        const items = [...d.querySelectorAll(FOCUSABLE)].filter((x) => x.offsetParent !== null || x === document.activeElement);
+        if (!items.length) { e.preventDefault(); d.focus(); return; }
+        const first = items[0];
+        const last = items[items.length - 1];
+        if (e.shiftKey && (document.activeElement === first || !d.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+        else if (!e.shiftKey && (document.activeElement === last || !d.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+        return;
+      }
+      const step = SCROLL_KEYS[e.key];
+      const body = bodyRef.current;
+      if (step === undefined || !body || typing(e.target) || (e.key === " " && e.target?.tagName === "BUTTON")) return;
+      // the body scrolls itself when it (or something in it) has the focus; from the header / footer we do it
+      if (body.contains(e.target) && e.target !== body && /^(ArrowDown|ArrowUp)$/.test(e.key) && e.target.closest?.('[role="listbox"],[role="tablist"],[role="radiogroup"]')) return;
+      e.preventDefault();
+      if (step === "top") body.scrollTop = 0;
+      else if (step === "bottom") body.scrollTop = body.scrollHeight;
+      else body.scrollTop += step < 1 && step > -1 ? step * body.clientHeight : step;
+    };
+    document.addEventListener("keydown", onKey);
+    return () => {
+      clearTimeout(t);
+      document.removeEventListener("keydown", onKey);
+      unlockPage();
+      if (opener && typeof opener.focus === "function" && document.contains(opener)) opener.focus({ preventScroll: true });
+    };
+  }, [open]);
+  return { dialogRef, bodyRef };
+}
+
 export function Modal({ open = true, onClose, title, sub, icon, tone = "sand", size, footer, children, closeLabel = "close", bodyStyle }) {
-  useEscape(open, onClose);
+  const { dialogRef, bodyRef } = useDialog(open, onClose);
   if (!open) return null;
+  const label = typeof title === "string" ? title : undefined;
   return createPortal(
     <div className="tdcp k-overlay" onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }} data-kit="modal">
-      <div className={cx("k-modal", size)} role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : undefined}>
+      <div ref={dialogRef} className={cx("k-modal", size)} role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} data-kit-dialog="open">
         {(title || onClose) && (
           <div className="k-modal-head">
             {icon && <Ico kind={icon} tone={tone} size={40} />}
@@ -221,7 +297,7 @@ export function Modal({ open = true, onClose, title, sub, icon, tone = "sand", s
             {onClose && <IconButton icon="close" label={closeLabel} variant="ghost" onClick={onClose} />}
           </div>
         )}
-        <div className="k-modal-body" style={bodyStyle}>{children}</div>
+        <div ref={bodyRef} className="k-modal-body" style={bodyStyle} tabIndex={0} role="region" aria-label={label ? `${label}: content` : "content"} data-kit-body>{children}</div>
         {footer && <div className="k-modal-foot">{footer}</div>}
       </div>
     </div>,
@@ -229,16 +305,17 @@ export function Modal({ open = true, onClose, title, sub, icon, tone = "sand", s
   );
 }
 export function Drawer({ open = true, onClose, title, sub, footer, children }) {
-  useEscape(open, onClose);
+  const { dialogRef, bodyRef } = useDialog(open, onClose);
   if (!open) return null;
+  const label = typeof title === "string" ? title : undefined;
   return createPortal(
     <div className="tdcp k-overlay drawer" onMouseDown={(e) => { if (e.target === e.currentTarget && onClose) onClose(); }} data-kit="drawer">
-      <div className="k-drawer" role="dialog" aria-modal="true" aria-label={typeof title === "string" ? title : undefined}>
+      <div ref={dialogRef} className="k-drawer" role="dialog" aria-modal="true" aria-label={label} tabIndex={-1} data-kit-dialog="open">
         <div className="k-modal-head">
           <div style={{ flex: 1, minWidth: 0 }}>{title && <h2>{title}</h2>}{sub && <p>{sub}</p>}</div>
           {onClose && <IconButton icon="close" label="close" variant="ghost" onClick={onClose} />}
         </div>
-        <div className="k-modal-body" style={{ flex: 1 }}>{children}</div>
+        <div ref={bodyRef} className="k-modal-body" tabIndex={0} role="region" aria-label={label ? `${label}: content` : "content"} data-kit-body>{children}</div>
         {footer && <div className="k-modal-foot">{footer}</div>}
       </div>
     </div>,
