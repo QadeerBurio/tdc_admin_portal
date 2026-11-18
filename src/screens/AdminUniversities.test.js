@@ -4,7 +4,7 @@ import AdminUniversities from "./AdminUniversities";
 import universitiesApi from "../services/universitiesApi";
 
 jest.mock("../services/universitiesApi", () => {
-  const api = { available: jest.fn(), list: jest.fn(), cities: jest.fn(), search: jest.fn(), add: jest.fn(), edit: jest.fn(), hide: jest.fn(), show: jest.fn(), merge: jest.fn(), unmatched: jest.fn(), matchTo: jest.fn(), addUnmatched: jest.fn() };
+  const api = { available: jest.fn(), list: jest.fn(), cities: jest.fn(), search: jest.fn(), add: jest.fn(), edit: jest.fn(), hide: jest.fn(), show: jest.fn(), merge: jest.fn(), unmatched: jest.fn(), unmatchedSummary: jest.fn(), matchBulk: jest.fn(), matchTo: jest.fn(), addUnmatched: jest.fn() };
   return {
     __esModule: true,
     default: api,
@@ -68,25 +68,31 @@ test("add a university, edit, hide", async () => {
   await waitFor(() => expect(universitiesApi.show).toHaveBeenCalledWith("h1"));
 });
 
-test("unmatched names: counts, the suggestion, one-click match, add as new; reading changes nothing", async () => {
-  universitiesApi.unmatched.mockResolvedValue([{ id: "o1", name: "iobm karachi", students: 3, suggestion: { id: "u1", name: IOBM.name, shortName: "IoBM", city: "Karachi" } }, { id: "o2", name: "Some Old College", students: 1, suggestion: null }]);
-  universitiesApi.matchTo.mockResolvedValue({ from: { name: "iobm karachi" }, to: { name: IOBM.name }, moved: { students: 3 } });
+test("unmatched names: suggestions grouped by confidence, bulk match with a confirm, add as new; reading changes nothing", async () => {
+  universitiesApi.unmatched.mockResolvedValue([
+    { id: "o1", name: "iobm karachi", students: 3, confidence: "high", score: 1, reason: "short name / initials", suggestion: { id: "u1", name: IOBM.name, shortName: "IoBM", city: "Karachi" }, alternatives: [] },
+    { id: "o2", name: "Some Old College", students: 1, confidence: "none", score: 0.3, reason: "", suggestion: null, alternatives: [] },
+  ]);
+  universitiesApi.unmatchedSummary.mockResolvedValue({ unmatched: 2, students: 4, matchedToday: 0 });
+  universitiesApi.matchBulk.mockResolvedValue({ matched: 1, students: 3, failed: [] });
   universitiesApi.addUnmatched.mockResolvedValue({ id: "o2", status: "approved" });
   render(<AdminUniversities />);
   fireEvent.click(await screen.findByRole("tab", { name: /unmatched names/ }));
-  const table = await screen.findByRole("region", { name: "unmatched names" });
-  expect(within(table).getByText("iobm karachi")).toBeInTheDocument();
-  expect(within(table).getByText("3")).toBeInTheDocument();
-  expect(within(table).getByText("no close match")).toBeInTheDocument();
+  const high = await screen.findByRole("region", { name: "high confidence names" });
+  expect(within(high).getByText("iobm karachi")).toBeInTheDocument();
+  expect(within(high).getByText(IOBM.name)).toBeInTheDocument();
+  expect(within(screen.getByRole("region", { name: "names with no likely match" })).getByText("Some Old College")).toBeInTheDocument();
+  expect(universitiesApi.matchBulk).not.toHaveBeenCalled();
   expect(universitiesApi.matchTo).not.toHaveBeenCalled();
-  fireEvent.click(screen.getByRole("button", { name: `match iobm karachi to ${IOBM.name}` }));
-  expect(screen.getByText(/3 students move to the university you pick/)).toBeInTheDocument();
-  fireEvent.click(screen.getByRole("button", { name: "move to IoBM" }));
-  await waitFor(() => expect(universitiesApi.matchTo).toHaveBeenCalledWith("o1", "u1"));
-  fireEvent.click(screen.getByRole("button", { name: "add Some Old College as new" }));
+  fireEvent.click(screen.getByRole("button", { name: "match all selected (1)" }));
+  expect(screen.getByText("match 1 name?")).toBeInTheDocument();
+  fireEvent.click(screen.getByRole("button", { name: "match 1" }));
+  await waitFor(() => expect(universitiesApi.matchBulk).toHaveBeenCalledWith([{ id: "o1", toId: "u1" }]));
+  fireEvent.click(await screen.findByRole("button", { name: "add Some Old College as new" }));
   fireEvent.change(screen.getByLabelText("city"), { target: { value: "Hyderabad" } });
   fireEvent.click(screen.getByRole("button", { name: "save" }));
   await waitFor(() => expect(universitiesApi.addUnmatched).toHaveBeenCalledWith("o2", expect.objectContaining({ name: "Some Old College", city: "Hyderabad" })));
+  await waitFor(() => expect(universitiesApi.unmatched).toHaveBeenCalledTimes(3)); // after the bulk match and after adding
 });
 
 test("merge duplicates: pick the university to move students into", async () => {

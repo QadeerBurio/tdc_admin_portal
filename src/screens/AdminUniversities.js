@@ -4,39 +4,19 @@
 //              edit (name, short name, city, aliases), hide / show. Only admins add universities; an addition shows in
 //              the app and portal dropdowns within a minute.
 //   merge:     move every student of one entry into another; the old name stays as an alias
-//   unmatched: old names students typed at signup that aren't on the list yet, with counts: "match to …" or
+//   unmatched: old names students typed at signup that aren't on the list yet (UnmatchedUniversities.js): each with
+//              a suggested official university and a confidence; high ones matched in bulk, the rest one by one or
 //              "add as new". Reading it changes nothing; only a click does.
 import React, { useCallback, useEffect, useState } from "react";
-import { PageHeader, PageLoading, Button, Field, Input, Textarea, Select, Tabs, EmptyState, Pill, Table, Modal, SearchInput, toast } from "../portal/kit";
+import { PageHeader, PageLoading, Button, Field, Input, Select, Tabs, EmptyState, Pill, Table, Modal, SearchInput, toast } from "../portal/kit";
 import universitiesApi, { STATUS_LABEL, STATUS_TONE } from "../services/universitiesApi";
+import UniversitySearch from "./UniversitySearch";
+import UnmatchedUniversities from "./UnmatchedUniversities";
+
+export { UniversitySearch };
 
 const blankForm = { name: "", shortName: "", city: "", aliases: "" };
 const asForm = (u) => ({ name: u.name || "", shortName: u.shortName || "", city: u.city || "", aliases: (u.aliases || []).join(", ") });
-
-// pick an approved university (merge target, "match to …"): a search box over the public list
-export function UniversitySearch({ value, onChange, excludeId, label = "university", id = "uni-target" }) {
-  const [q, setQ] = useState("");
-  const [rows, setRows] = useState([]);
-  useEffect(() => {
-    let live = true;
-    const t = setTimeout(() => universitiesApi.search(q, 15).then((r) => { if (live) setRows((r || []).filter((x) => x.id !== excludeId)); }).catch(() => live && setRows([])), q ? 200 : 0);
-    return () => { live = false; clearTimeout(t); };
-  }, [q, excludeId]);
-  return (
-    <Field label={label} htmlFor={id}>
-      <SearchInput id={id} value={q} onChange={(e) => setQ(e.target.value)} placeholder="name, short name or city" aria-label={`search ${label}`} />
-      <div role="listbox" aria-label={`${label} results`} style={{ maxHeight: 220, overflowY: "auto", marginTop: 6 }}>
-        {rows.map((u) => (
-          <button key={u.id} type="button" role="option" aria-selected={value?.id === u.id} onClick={() => onChange(u)} className={`k-option${value?.id === u.id ? " is-on" : ""}`}
-            style={{ display: "block", width: "100%", textAlign: "left", padding: "8px 10px", minHeight: 44, border: 0, borderBottom: "1px solid var(--k-line, #ece7db)", background: value?.id === u.id ? "var(--k-yellow-soft, #fff1cc)" : "transparent", cursor: "pointer" }}>
-            <strong>{u.name}</strong> <span className="k-hint">{[u.shortName, u.city].filter(Boolean).join(" · ")}</span>
-          </button>
-        ))}
-        {!rows.length && <div className="k-hint" style={{ padding: 8 }}>no match</div>}
-      </div>
-    </Field>
-  );
-}
 
 export default function AdminUniversities() {
   const [available, setAvailable] = useState(null);
@@ -47,7 +27,7 @@ export default function AdminUniversities() {
   const [status, setStatus] = useState("");
   const [cities, setCities] = useState([]);
   const [rows, setRows] = useState(null);
-  const [unmatched, setUnmatched] = useState(null);
+  const [unmatchedKey, setUnmatchedKey] = useState(0); // bump to reload the unmatched names
   const [edit, setEdit] = useState(null); // { u?: row, form, mode: "add" | "edit" | "approve" | "add_unmatched" }
   const [merge, setMerge] = useState(null); // { u, into, mode: "merge" | "match" }
   const [busy, setBusy] = useState(false);
@@ -58,16 +38,14 @@ export default function AdminUniversities() {
       .then((d) => setRows(Array.isArray(d) ? d : []))
       .catch((e) => { toast(e.message, "bad"); setRows([]); });
   }, [search, city, status]);
-  const loadUnmatched = useCallback(() => { setUnmatched(null); universitiesApi.unmatched().then((d) => setUnmatched(Array.isArray(d) ? d : [])).catch((e) => { toast(e.message, "bad"); setUnmatched([]); }); }, []);
   useEffect(() => { if (available) universitiesApi.cities().then((c) => setCities(c || [])).catch(() => {}); }, [available]);
   useEffect(() => { if (!available || tab !== "list") return undefined; const t = setTimeout(load, 250); return () => clearTimeout(t); }, [available, tab, load]);
-  useEffect(() => { if (available && tab === "unmatched") loadUnmatched(); }, [available, tab, loadUnmatched]);
 
   const run = async (task, done) => {
     setBusy(true);
     try { const r = await task(); toast(done(r), "ok"); return r; } catch (e) { toast(e.message, "bad"); return null; } finally { setBusy(false); }
   };
-  const refresh = () => (tab === "list" ? load() : loadUnmatched());
+  const refresh = () => (tab === "list" ? load() : setUnmatchedKey((k) => k + 1));
 
   const saveEdit = async () => {
     const { u, form, mode } = edit;
@@ -129,24 +107,7 @@ export default function AdminUniversities() {
         </div>
       )}
 
-      {tab === "unmatched" && (
-        <div style={{ marginTop: 16 }} data-screen="admin-universities-unmatched">
-          <p className="k-hint">names students typed at signup before the list existed. nothing changes until you click.</p>
-          <Table loading={!unmatched} rows={unmatched || []} rowKey={(r) => r.id} minWidth={820} label="unmatched names" empty={<EmptyState icon="check" tone="green" title="every name is matched" />}
-            columns={[
-              { key: "name", label: "typed name", render: (r) => <strong>{r.name}</strong> },
-              { key: "students", label: "students", render: (r) => r.students },
-              { key: "suggestion", label: "probably", render: (r) => (r.suggestion ? <>{r.suggestion.name}<div className="k-hint">{[r.suggestion.shortName, r.suggestion.city].filter(Boolean).join(" · ")}</div></> : <span className="k-hint">no close match</span>) },
-              { key: "act", label: "", render: (r) => (
-                <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
-                  {r.suggestion && <Button size="sm" onClick={() => setMerge({ u: r, into: r.suggestion, mode: "match" })} aria-label={`match ${r.name} to ${r.suggestion.name}`}>match to {r.suggestion.shortName || r.suggestion.name}</Button>}
-                  <Button size="sm" variant="secondary" onClick={() => setMerge({ u: r, into: null, mode: "match" })} aria-label={`match ${r.name} to another university`}>match to…</Button>
-                  <Button size="sm" variant="secondary" onClick={() => setEdit({ mode: "add_unmatched", u: r, form: { ...blankForm, name: r.name } })} aria-label={`add ${r.name} as new`}>add as new</Button>
-                </div>
-              ) },
-            ]} />
-        </div>
-      )}
+      {tab === "unmatched" && <UnmatchedUniversities reloadKey={unmatchedKey} onAddNew={(r) => setEdit({ mode: "add_unmatched", u: r, form: { ...blankForm, name: r.name } })} />}
 
       <Modal open={!!edit} onClose={() => setEdit(null)} icon="grad" tone="blue"
         title={edit ? { add: "add a university", edit: `edit ${edit.u?.name}`, add_unmatched: `add "${edit.u?.name}" as a new university` }[edit.mode] : ""}
