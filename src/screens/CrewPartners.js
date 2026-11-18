@@ -1,6 +1,7 @@
 // src/screens/CrewPartners.jsx
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
+import { Modal } from '../portal/kit';
 
 export default function CrewPartners() {
   const [partners, setPartners] = useState([]);
@@ -81,9 +82,7 @@ export default function CrewPartners() {
       )}
 
       {open && (
-        <div style={s.backdrop} onClick={() => setOpen(false)}>
-          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>Add Partner</h3>
+        <Modal onClose={() => setOpen(false)} title="Add Partner" footer={<><button style={s.btnGhost} onClick={() => setOpen(false)}>cancel</button><button style={s.btnPrimary} onClick={add}>add</button></>}>
             <div style={s.formGroup}>
               <label style={s.label}>User Email</label>
               <input style={s.input} value={form.email} onChange={(e) => setForm({ ...form, email: e.target.value })} />
@@ -107,12 +106,7 @@ export default function CrewPartners() {
                 <input style={s.input} value={form.handle} onChange={(e) => setForm({ ...form, handle: e.target.value })} />
               </div>
             )}
-            <div style={s.modalActions}>
-              <button style={s.btnGhost} onClick={() => setOpen(false)}>cancel</button>
-              <button style={s.btnPrimary} onClick={add}>add</button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
@@ -132,11 +126,7 @@ const s = {
   btnGhost: { padding: '10px 22px', background: '#f1f5f9', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer' },
   btnDangerSm: { padding: '6px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, cursor: 'pointer', fontSize: 12 },
   empty: { padding: 60, textAlign: 'center', color: '#94a3b8' },
-  backdrop: { position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 },
-  modal: { background: '#fff', borderRadius: 20, padding: 28, maxWidth: 500, width: '100%' },
-  modalTitle: { fontSize: 20, fontWeight: 800, color: '#0f172a', marginTop: 0, marginBottom: 20 },
   formGroup: { marginBottom: 14 },
   label: { display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 },
   input: { width: '100%', padding: '10px 12px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 13, outline: 'none' },
-  modalActions: { display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #f1f5f9', marginTop: 16 },
 };

@@ -90,20 +90,33 @@
 .tdcp .k-seg button { height: 34px; padding: 0 14px; border-radius: 17px; border: 0; background: transparent; font-family: var(--body); font-weight: 600; font-size: 13.5px; color: var(--ink); cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
 .tdcp .k-seg button[aria-pressed="true"] { background: var(--ink); color: var(--card); }
 
-/* ---------- modal, drawer ---------- */
-.tdcp.k-overlay { position: fixed; inset: 0; z-index: 1300; background: rgba(17, 17, 17, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; }
+/* ---------- modal, drawer ----------
+   The dialog is a column: header and footer keep their size (flex: none), the body takes the rest and scrolls
+   (min-height: 0 lets a flex item be shorter than its content: without it the body grew to its full content,
+   never scrolled, and the dialog's overflow: hidden cut the lower rows off). 100vh first, 100dvh where supported
+   (mobile browser bars). Wide content (tables) scrolls sideways inside the body. Phones: full screen. */
+.tdcp.k-overlay { position: fixed; inset: 0; z-index: 1300; background: rgba(17, 17, 17, 0.4); display: flex; align-items: center; justify-content: center; padding: 16px; overscroll-behavior: contain; }
 .tdcp.k-overlay.drawer { justify-content: flex-end; padding: 0; }
-.tdcp .k-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); background: var(--paper); border-radius: 24px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); overflow: hidden; }
+.tdcp .k-modal { width: min(560px, 100%); max-height: calc(100vh - 32px); max-height: calc(100dvh - 32px); min-height: 0; background: var(--paper); border-radius: 24px; display: flex; flex-direction: column; box-shadow: 0 24px 60px rgba(17, 17, 17, 0.16); overflow: hidden; outline: none; }
 .tdcp .k-modal.lg { width: min(820px, 100%); }
 .tdcp .k-modal.xl { width: min(1100px, 100%); }
 .tdcp .k-modal.sm { width: min(420px, 100%); }
-.tdcp .k-drawer { width: min(480px, 100%); height: 100%; background: var(--paper); display: flex; flex-direction: column; box-shadow: -24px 0 60px rgba(17, 17, 17, 0.12); }
-.tdcp .k-modal-head { display: flex; align-items: flex-start; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
+.tdcp .k-drawer { width: min(480px, 100%); height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; min-height: 0; background: var(--paper); display: flex; flex-direction: column; box-shadow: -24px 0 60px rgba(17, 17, 17, 0.12); outline: none; }
+.tdcp .k-modal-head { flex: none; display: flex; align-items: flex-start; gap: 12px; padding: 20px 22px 14px; border-bottom: 1px solid var(--line); background: var(--card); }
 .tdcp .k-modal-head h2 { margin: 0; font-size: 20px; font-weight: 800; letter-spacing: -0.4px; line-height: 1.2; }
 .tdcp .k-modal-head p { margin: 4px 0 0; font-size: 13.5px; color: var(--muted); }
-.tdcp .k-modal-body { padding: 20px 22px; overflow-y: auto; display: flex; flex-direction: column; gap: 16px; }
-.tdcp .k-modal-foot { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--card); }
-@media (max-width: 600px) { .tdcp.k-overlay { padding: 0; align-items: flex-end; } .tdcp .k-modal { width: 100%; max-height: 92vh; border-radius: 24px 24px 0 0; } }
+.tdcp .k-modal-body { flex: 1 1 auto; min-height: 0; min-width: 0; padding: 20px 22px; overflow-y: auto; overflow-x: hidden; overscroll-behavior: contain; -webkit-overflow-scrolling: touch; display: flex; flex-direction: column; gap: 16px; }
+.tdcp .k-modal-body:focus-visible { outline: 2px solid var(--ink); outline-offset: -2px; }
+.tdcp .k-modal-body > * { flex: none; min-width: 0; max-width: 100%; }
+.tdcp .k-modal-body .k-table-card, .tdcp .k-modal-body .k-table-scroll { max-width: 100%; }
+.tdcp .k-modal-foot { flex: none; display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 10px; padding: 14px 22px; border-top: 1px solid var(--line); background: var(--card); }
+@media (max-width: 600px) {
+  .tdcp.k-overlay { padding: 0; align-items: stretch; }
+  .tdcp .k-modal, .tdcp .k-modal.lg, .tdcp .k-modal.xl, .tdcp .k-modal.sm { width: 100%; height: 100vh; height: 100dvh; max-height: 100vh; max-height: 100dvh; border-radius: 0; }
+  .tdcp .k-drawer { width: 100%; }
+  .tdcp .k-modal-head { padding-top: max(16px, env(safe-area-inset-top)); }
+  .tdcp .k-modal-foot { padding-bottom: max(14px, env(safe-area-inset-bottom)); }
+}
 
 /* ---------- toast ---------- */
 .tdcp.k-toasts { position: fixed; z-index: 1400; right: 16px; bottom: 16px; display: flex; flex-direction: column; gap: 8px; width: min(380px, calc(100vw - 32px)); background: transparent; pointer-events: none; }

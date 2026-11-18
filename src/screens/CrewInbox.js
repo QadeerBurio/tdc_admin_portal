@@ -1,6 +1,7 @@
 // src/screens/CrewInbox.jsx
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
+import { Modal } from '../portal/kit';
 
 export default function CrewInbox() {
   const [items, setItems] = useState([]);
@@ -81,11 +82,7 @@ export default function CrewInbox() {
       )}
 
       {selected && (
-        <div style={s.backdrop} onClick={() => setSelected(null)}>
-          <div style={s.modal} onClick={(e) => e.stopPropagation()}>
-            <h3 style={s.modalTitle}>
-              {selected.kind === 'post' ? 'Review Post' : 'Review Application'}
-            </h3>
+        <Modal onClose={() => setSelected(null)} title={selected.kind === 'post' ? 'Review Post' : 'Review Application'} footer={<><button style={s.btnDanger} onClick={reject}>reject</button><button style={s.btnPrimary} onClick={approve}>approve</button></>}>
             <div style={s.modalBody}>
               <p><strong>From:</strong> {selected.user?.name} ({selected.user?.email})</p>
               {selected.platform && <p><strong>Platform:</strong> {selected.platform}</p>}
@@ -96,12 +93,7 @@ export default function CrewInbox() {
               {selected.handle && <p><strong>Handle:</strong> {selected.handle}</p>}
               {(selected.why || selected.summary) && <p><strong>Message:</strong> {selected.why || selected.summary}</p>}
             </div>
-            <div style={s.modalActions}>
-              <button style={s.btnDanger} onClick={reject}>reject</button>
-              <button style={s.btnPrimary} onClick={approve}>approve</button>
-            </div>
-          </div>
-        </div>
+        </Modal>
       )}
     </div>
   );
@@ -121,9 +113,5 @@ const s = {
   btnPrimary: { padding: '8px 16px', background: 'linear-gradient(135deg, #f9c349 0%, #ff961a 100%)', border: 'none', borderRadius: 8, fontWeight: 700, fontSize: 12, cursor: 'pointer', color: '#0f172a' },
   btnDanger: { padding: '10px 22px', background: '#fff', border: '2px solid #ef4444', color: '#ef4444', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' },
   empty: { padding: 60, textAlign: 'center', color: '#94a3b8' },
-  backdrop: { position: 'fixed', inset: 0, background: 'rgba(15,23,42,0.7)', display: 'flex', alignItems: 'center', justifyContent: 'center', zIndex: 9999, padding: 20 },
-  modal: { background: '#fff', borderRadius: 20, padding: 28, maxWidth: 560, width: '100%', maxHeight: '90vh', overflowY: 'auto' },
-  modalTitle: { fontSize: 20, fontWeight: 800, color: '#0f172a', marginTop: 0, marginBottom: 20 },
   modalBody: { fontSize: 14, lineHeight: 1.8 },
-  modalActions: { display: 'flex', gap: 10, justifyContent: 'flex-end', paddingTop: 16, borderTop: '1px solid #f1f5f9', marginTop: 16 },
 };
