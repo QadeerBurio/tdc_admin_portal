@@ -271,8 +271,7 @@ export default function AdminDashboard() {
       countOf(careerApi.adminDisputes(), (d) => (Array.isArray(d?.disputes) ? d.disputes.length : null)),
       countOf(ratingsApi.adminReports("open"), (d) => (Array.isArray(d) ? d.length : null)),
       countOf(hiringAccessApi.overview(), (d) => (typeof d?.counts?.openRequests === "number" ? d.counts.openRequests : null)),
-      countOf(universitiesApi.pendingCount(), (n) => n), // students' "my university isn't listed" requests
-    ]).then(([company, disputes, reports, plans, universities]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports, hiring_plans: plans, universities }); });
+    ]).then(([company, disputes, reports, plans]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports, hiring_plans: plans }); });
     return () => { live = false; };
   }, [activePage]); // refreshed when the admin moves between pages (after deciding one, the count drops)
 
