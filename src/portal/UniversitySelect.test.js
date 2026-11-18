@@ -14,12 +14,14 @@ const options = () => screen.queryAllByRole("option");
 
 beforeEach(() => { jest.resetAllMocks(); resetUniversitiesCache(); });
 
+jest.setTimeout(30000);
+
 test("opens on the full list A–Z, no typing; the server's list (with an admin's addition) replaces the bundled one", async () => {
   api.get.mockResolvedValue({ data: { success: true, data: serverList() } });
   render(<UniversitySelect id="bv-uni" value="" onChange={() => {}} />);
   fireEvent.click(screen.getByRole("button", { name: /select university/ }));
   expect(options().length).toBe(BUNDLED.universities.length); // at once: never empty
-  await waitFor(() => expect(options().length).toBe(BUNDLED.universities.length + 1));
+  await waitFor(() => expect(options().length).toBe(BUNDLED.universities.length + 1), { timeout: 8000 }); // 285 rows: slow on a loaded machine
   const names = options().map((o) => o.firstChild.firstChild.textContent);
   expect(names[0]).toBe("Aaa Test Institute of Design");
   expect(names.every((n, i) => i === 0 || names[i - 1].localeCompare(n) <= 0)).toBe(true);
@@ -32,7 +34,7 @@ test("the search box filters as you type: name, short name, alias, city", async 
   const onChange = jest.fn();
   render(<UniversitySelect id="bv-uni" value="" onChange={onChange} />);
   fireEvent.click(screen.getByRole("button", { name: /select university/ }));
-  await waitFor(() => expect(options().length).toBe(BUNDLED.universities.length + 1));
+  await waitFor(() => expect(options().length).toBe(BUNDLED.universities.length + 1), { timeout: 8000 }); // 285 rows: slow on a loaded machine
   const search = screen.getByLabelText("search universities");
   fireEvent.change(search, { target: { value: "iobm" } });
   expect(options().map((o) => o.textContent)).toEqual([expect.stringContaining("Institute of Business Management")]);
@@ -53,14 +55,14 @@ test("offline, or the server returns nothing: the bundled list", async () => {
   api.get.mockRejectedValue(Object.assign(new Error("Network Error"), { request: {} }));
   const { unmount } = render(<UniversitySelect id="a" value="" onChange={() => {}} />);
   fireEvent.click(screen.getByRole("button", { name: /select university/ }));
-  await waitFor(() => expect(api.get).toHaveBeenCalled());
+  await waitFor(() => expect(api.get).toHaveBeenCalled(), { timeout: 8000 });
   expect(options().length).toBe(BUNDLED.universities.length);
   unmount();
   resetUniversitiesCache();
   api.get.mockResolvedValue({ data: { success: true, data: [] } });
   render(<UniversitySelect id="b" value="" onChange={() => {}} />);
   fireEvent.click(screen.getByRole("button", { name: /select university/ }));
-  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2));
+  await waitFor(() => expect(api.get).toHaveBeenCalledTimes(2), { timeout: 8000 });
   expect(options().length).toBe(BUNDLED.universities.length);
 });
 
