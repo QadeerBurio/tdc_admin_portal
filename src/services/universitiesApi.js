@@ -71,6 +71,9 @@ export const universitiesApi = {
   show: (id) => unwrap(api.post(`${A}/${id}/show`, {})),
   merge: (fromId, toId) => unwrap(api.post(`${A}/merge`, { fromId, toId })),
   unmatched: () => unwrap(api.get(`${A}/unmatched`)),
+  unmatchedSummary: () => unwrap(api.get(`${A}/unmatched/summary`)),
+  // items: [{ id, toId }] -> { matched, students, failed: [{ id, code, message }] }
+  matchBulk: (items) => unwrap(api.post(`${A}/unmatched/match-bulk`, { items })),
   matchTo: (id, toId) => unwrap(api.post(`${A}/unmatched/${id}/match`, { toId })),
   addUnmatched: (id, body) => unwrap(api.post(`${A}/unmatched/${id}/add`, body)),
   // the menu item shows once the server answers
