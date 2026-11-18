@@ -27,7 +27,7 @@ export const ADMIN_MENU = [
       ["employees", "all employers", "hat", "sky"],
       ["travelers", "all travelers", "compass", "pink"],
       ["student_verifications", "student verifications", "check", "green"], // all students, pending approval
-      ["universities", "universities", "grad", "blue"], // the shared list: requests, merges, unmatched names
+      ["universities", "universities", "grad", "blue"], // the shared list: add / edit / hide / merge, unmatched names
       ["card_manager", "student cards", "card", "pink"], // physical card requests: payment, printing, shipping
     ],
   },

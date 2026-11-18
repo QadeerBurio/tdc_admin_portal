@@ -10,7 +10,7 @@ import { breakdownOf, BillBreakdown } from "../portal/rewardBill";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
 import loyaltyApi from "../services/loyaltyApi";
-import universitiesApi from "../services/universitiesApi";
+import UniversitySelect from "../portal/UniversitySelect";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
@@ -42,8 +42,7 @@ const VerifyClaim = () => {
   const [isProcessingScan, setIsProcessingScan] = useState(false);
   const [lastProcessedStudentId, setLastProcessedStudentId] = useState(null);
 
-  // universities: the shared list on the server (the same names students pick at signup), searched as the brand types
-  const universities = [];
+  // universities: the shared list (portal/UniversitySelect), the same names students pick at signup
 
   const [inputs, setInputs] = useState({
     name: "",
@@ -64,10 +63,6 @@ const VerifyClaim = () => {
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState(null);
   
-  const [searchQuery, setSearchQuery] = useState("");
-  const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [filteredUniversities, setFilteredUniversities] = useState(universities);
-  const dropdownRef = useRef(null);
 
   const isBrand = user?.role === 'brand';
 
@@ -76,7 +71,6 @@ const VerifyClaim = () => {
     setBill("");
     setPaymentInfo(null);
     setInputs({ name: "", rollNo: "", university: "" });
-    setSearchQuery("");
     setScannedStudent(null);
     setShowStudentAlert(false);
     setAlertMessage('');
@@ -370,25 +364,6 @@ const VerifyClaim = () => {
     }
   };
 
-  useEffect(() => {
-    let live = true;
-    const t = setTimeout(() => {
-      universitiesApi.search(searchQuery.trim(), 40)
-        .then((rows) => { if (live) setFilteredUniversities((rows || []).map((u) => u.name)); })
-        .catch(() => { if (live) setFilteredUniversities([]); });
-    }, searchQuery.trim() ? 200 : 0);
-    return () => { live = false; clearTimeout(t); };
-  }, [searchQuery]);
-
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setIsDropdownOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
 
   const verify = async () => {
     if (!inputs.name || !inputs.rollNo || !inputs.university) {
@@ -606,22 +581,6 @@ const VerifyClaim = () => {
     setShowPaymentModal(true);
   };
 
-  const handleUniversitySelect = (university) => {
-    setInputs({ ...inputs, university });
-    setSearchQuery(university);
-    setIsDropdownOpen(false);
-  };
-
-  const toggleDropdown = () => {
-    setIsDropdownOpen(!isDropdownOpen);
-    if (!isDropdownOpen) {
-      setSearchQuery(inputs.university || "");
-    }
-  };
-
-  const clearSearch = () => {
-    setSearchQuery("");
-  };
 
   const handleTabChange = (tab) => {
     setActiveTab(tab);
@@ -883,69 +842,7 @@ const VerifyClaim = () => {
               />
             </Field>
             <Field label="University" htmlFor="bv-uni">
-              <div className="k-dd" ref={dropdownRef}>
-                <div className="bv-uni" onClick={toggleDropdown}>
-                  <input
-                    id="bv-uni"
-                    className="k-input"
-                    placeholder="Search or select university..."
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setIsDropdownOpen(true);
-                      if (e.target.value === "") {
-                        setInputs({ ...inputs, university: "" });
-                      }
-                    }}
-                    onFocus={() => setIsDropdownOpen(true)}
-                    onClick={(e) => e.stopPropagation()}
-                  />
-                  {searchQuery && (
-                    <button
-                      type="button"
-                      className="bv-uni-clear"
-                      aria-label="clear university"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        clearSearch();
-                        setInputs({ ...inputs, university: "" });
-                      }}
-                    >
-                      <Ico kind="close" tone="plain" size={14} />
-                    </button>
-                  )}
-                </div>
-
-                {isDropdownOpen && (
-                  <div className="k-dd-pop">
-                    <div className="k-dd-list" role="listbox">
-                      {filteredUniversities.length > 0 ? (
-                        <>
-                          <div className="k-dd-empty">
-                            {filteredUniversities.length} {filteredUniversities.length === 1 ? 'university' : 'universities'} found
-                          </div>
-                          {filteredUniversities.map((uni, index) => (
-                            <div
-                              key={index}
-                              role="option"
-                              aria-selected={inputs.university === uni}
-                              className="k-dd-opt"
-                              onClick={() => handleUniversitySelect(uni)}
-                            >
-                              <span>{String(uni)}</span>
-                              {inputs.university === uni && <Ico kind="check" tone="plain" size={15} />}
-                            </div>
-                          ))}
-                        </>
-                      ) : (
-                        <div className="k-dd-empty">
-                          <b>No universities found</b><br />Try adjusting your search
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
-              </div>
+              <UniversitySelect id="bv-uni" value={inputs.university} onChange={(name) => setInputs({ ...inputs, university: name })} />
             </Field>
 
             <Button

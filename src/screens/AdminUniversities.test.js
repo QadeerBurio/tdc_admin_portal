@@ -4,62 +4,50 @@ import AdminUniversities from "./AdminUniversities";
 import universitiesApi from "../services/universitiesApi";
 
 jest.mock("../services/universitiesApi", () => {
-  const api = { available: jest.fn(), list: jest.fn(), cities: jest.fn(), search: jest.fn(), add: jest.fn(), edit: jest.fn(), hide: jest.fn(), show: jest.fn(), approve: jest.fn(), reject: jest.fn(), merge: jest.fn(), unmatched: jest.fn(), matchTo: jest.fn(), addUnmatched: jest.fn(), pendingCount: jest.fn() };
+  const api = { available: jest.fn(), list: jest.fn(), cities: jest.fn(), search: jest.fn(), add: jest.fn(), edit: jest.fn(), hide: jest.fn(), show: jest.fn(), merge: jest.fn(), unmatched: jest.fn(), matchTo: jest.fn(), addUnmatched: jest.fn() };
   return {
     __esModule: true,
     default: api,
-    STATUS_LABEL: { approved: "approved", pending: "pending request", hidden: "hidden", unmatched: "unmatched (old name)" },
+    STATUS_LABEL: { approved: "shown", pending: "not shown (old request)", hidden: "hidden", unmatched: "unmatched (old name)" },
     STATUS_TONE: { approved: "green", pending: "yellow", hidden: "sand", unmatched: "orange" },
   };
 });
 
 const IOBM = { id: "u1", name: "Institute of Business Management", shortName: "IoBM", city: "Karachi", aliases: ["CBM"], status: "approved", source: "seed", students: 12, rejectReason: "", mergedInto: null };
-const REQ = { id: "p1", name: "Karachi Grammar College of Design", shortName: "", city: "Karachi", aliases: [], status: "pending", source: "student", students: 1, rejectReason: "", mergedInto: null };
+const HID = { id: "h1", name: "Global Institute, Lahore", shortName: "", city: "Lahore", aliases: [], status: "hidden", source: "seed", students: 0, rejectReason: "", mergedInto: null };
+const OLD = { id: "o1", name: "iobm karachi", shortName: "", city: "", aliases: [], status: "unmatched", source: "signup", students: 3, rejectReason: "", mergedInto: null };
 
 beforeEach(() => {
   jest.resetAllMocks();
   universitiesApi.available.mockResolvedValue(true);
   universitiesApi.cities.mockResolvedValue(["Karachi", "Lahore"]);
-  universitiesApi.list.mockResolvedValue([REQ, IOBM]);
+  universitiesApi.list.mockResolvedValue([OLD, IOBM, HID]);
   universitiesApi.search.mockResolvedValue([{ id: "u1", name: "Institute of Business Management", shortName: "IoBM", city: "Karachi", status: "approved" }]);
 });
 
-test("the list: student counts, statuses, search / city / status filters sent to the server", async () => {
+test("every university (shown, hidden, unmatched) with student counts; filters go to the server; no approve / reject / requests", async () => {
   render(<AdminUniversities />);
   expect(await screen.findByText("Institute of Business Management")).toBeInTheDocument();
-  expect(screen.getByText("IoBM")).toBeInTheDocument();
+  expect(screen.getByText("Global Institute, Lahore")).toBeInTheDocument();
+  expect(screen.getByText("iobm karachi")).toBeInTheDocument();
   expect(screen.getByText("12")).toBeInTheDocument();
-  expect(screen.getByText("pending request")).toBeInTheDocument();
-  expect(screen.getByText("a student's request")).toBeInTheDocument();
-  fireEvent.change(screen.getByLabelText("filter by status"), { target: { value: "pending" } });
+  expect(screen.getAllByText("shown").length).toBeGreaterThan(1); // the filter option and the pill
+  expect(screen.getAllByText("hidden").length).toBeGreaterThan(1);
+  expect(screen.queryByRole("button", { name: /^approve/ })).toBeNull();
+  expect(screen.queryByRole("button", { name: /^reject/ })).toBeNull();
+  expect(screen.queryByText(/pending request/)).toBeNull();
+  expect(screen.getByRole("button", { name: "show Global Institute, Lahore" })).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("filter by status"), { target: { value: "hidden" } });
   fireEvent.change(screen.getByLabelText("filter by city"), { target: { value: "Karachi" } });
   fireEvent.change(screen.getByLabelText("search universities"), { target: { value: "iobm" } });
-  await waitFor(() => expect(universitiesApi.list).toHaveBeenLastCalledWith({ search: "iobm", city: "Karachi", status: "pending" }));
-});
-
-test("approve a request with a short name", async () => {
-  universitiesApi.approve.mockResolvedValue({ ...REQ, status: "approved", shortName: "KGCD" });
-  render(<AdminUniversities />);
-  fireEvent.click(await screen.findByRole("button", { name: `approve ${REQ.name}` }));
-  fireEvent.change(screen.getByLabelText("short name"), { target: { value: "KGCD" } });
-  fireEvent.click(screen.getByRole("button", { name: "approve" }));
-  await waitFor(() => expect(universitiesApi.approve).toHaveBeenCalledWith("p1", { name: REQ.name, shortName: "KGCD", city: "Karachi", aliases: "" }));
-});
-
-test("reject needs a reason, and can merge into an existing university", async () => {
-  universitiesApi.reject.mockResolvedValue({ ...REQ, status: "hidden", merged: { to: { name: IOBM.name }, moved: { students: 1 } } });
-  render(<AdminUniversities />);
-  fireEvent.click(await screen.findByRole("button", { name: `reject ${REQ.name}` }));
-  expect(screen.getByRole("button", { name: "reject" })).toBeDisabled();
-  fireEvent.change(screen.getByLabelText("reason (required)"), { target: { value: "duplicate of IoBM" } });
-  fireEvent.click(await screen.findByRole("option", { name: /Institute of Business Management/ }));
-  fireEvent.click(screen.getByRole("button", { name: "reject and merge into IoBM" }));
-  await waitFor(() => expect(universitiesApi.reject).toHaveBeenCalledWith("p1", { reason: "duplicate of IoBM", mergeInto: "u1" }));
+  await waitFor(() => expect(universitiesApi.list).toHaveBeenLastCalledWith({ search: "iobm", city: "Karachi", status: "hidden" }));
+  expect([...screen.getByLabelText("filter by status").options].map((o) => o.value)).toEqual(["", "approved", "hidden", "unmatched"]);
 });
 
 test("add a university, edit, hide", async () => {
   universitiesApi.add.mockResolvedValue({ ...IOBM, id: "n1" });
   universitiesApi.hide.mockResolvedValue({ ...IOBM, status: "hidden" });
+  universitiesApi.show.mockResolvedValue({ ...HID, status: "approved" });
   universitiesApi.edit.mockResolvedValue(IOBM);
   render(<AdminUniversities />);
   fireEvent.click(await screen.findByRole("button", { name: "add university" }));
@@ -76,6 +64,8 @@ test("add a university, edit, hide", async () => {
   await waitFor(() => expect(universitiesApi.edit).toHaveBeenCalledWith("u1", expect.objectContaining({ name: IOBM.name, shortName: "IoBM" })));
   fireEvent.click(await screen.findByRole("button", { name: `hide ${IOBM.name}` }));
   await waitFor(() => expect(universitiesApi.hide).toHaveBeenCalledWith("u1"));
+  fireEvent.click(await screen.findByRole("button", { name: "show Global Institute, Lahore" }));
+  await waitFor(() => expect(universitiesApi.show).toHaveBeenCalledWith("h1"));
 });
 
 test("unmatched names: counts, the suggestion, one-click match, add as new; reading changes nothing", async () => {
