@@ -36,6 +36,7 @@ function handle(method, url) {
   if (p === "/api/admin/card-stats") return { pending: 0, approvedTotal: 0, totalRevenue: null, revenueTracked: false };
   if (p === "/api/admin/bookings/stats") return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, totalRevenue: 0 };
   if (p === "/api/admin/actions") return ok({ rows: [], next: null });
+  if (p === "/api/admin/universities/pending-count") return ok({ pending: 4 }); // students' "my university isn't listed" requests
   if (p === "/api/admin/actions/facets") return ok({ actions: [], targetTypes: [], admins: [] });
   if (p === "/api/analytics/admin/metrics") return require("./mock-admin-metrics").metrics();
   return undefined;
@@ -62,7 +63,7 @@ http.createServer((q, s) => {
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
 const MENU = [
   ["general", ["dashboard", "overview", "metrics", "admin actions"]],
-  ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"]],
+  ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"]],
   ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],
   ["employers", ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"]],
@@ -98,8 +99,8 @@ const MENU = [
 
   console.log("── the menu");
   await go(pg, `http://127.0.0.1:${WEB}/admin`);
-  // the menu and all four waiting badges the next check reads (each from its own page's call) are in
-  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8 && ["brand_approval", "student_verifications", "company_verifications", "hire_disputes"].every((id) => !!document.querySelector(\`.tdcp-nav [data-page="\${id}"] .tdcp-nav-badge\`))`, "the admin menu with its four badges");
+  // the menu and all five waiting badges the next check reads (each from its own page's call) are in
+  await w(`document.querySelectorAll(".tdcp-nav [data-group]").length >= 8 && ["brand_approval", "student_verifications", "company_verifications", "hire_disputes", "universities"].every((id) => !!document.querySelector(\`.tdcp-nav [data-page="\${id}"] .tdcp-nav-badge\`))`, "the admin menu with its five badges");
   await pg.idle();
   let m = await menu();
   check("groups in order with their items (every pilot set up in this mock)", JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])) === JSON.stringify(MENU), JSON.stringify(m.map((g) => [g.title, g.items.map((i) => i.label)])));
@@ -107,7 +108,7 @@ const MENU = [
   check("no duplicate items", new Set(allIds).size === allIds.length);
   check("every group open by default, dashboard highlighted", m.every((g) => g.expanded === "true") && m[0].items[0].current === "page");
   const badge = (id) => m.flatMap((g) => g.items).find((i) => i.id === id)?.badge;
-  check("badges: brand approvals 3, student verifications 2, company verifications 2, hire disputes 1", badge("brand_approval") === "3" && badge("student_verifications") === "2" && badge("company_verifications") === "2" && badge("hire_disputes") === "1", JSON.stringify(m.flatMap((g) => g.items).filter((i) => i.badge)));
+  check("badges: brand approvals 3, student verifications 2, company verifications 2, hire disputes 1, university requests 4", badge("brand_approval") === "3" && badge("student_verifications") === "2" && badge("company_verifications") === "2" && badge("hire_disputes") === "1" && badge("universities") === "4", JSON.stringify(m.flatMap((g) => g.items).filter((i) => i.badge)));
   check("…no badge at 0 (ratings reports) or with nothing waiting (loyalty exceptions)", badge("ratings_reports") === null && badge("loyalty_exceptions") === null);
   check("the signed-in admin at the bottom of the menu", await pg.evaluate(`(() => { const u = document.querySelector(".tdcp-nav-user"); return !!u && u.innerText.includes("Ayesha Admin") && u === document.querySelector(".tdcp-nav").lastElementChild; })()`));
   await axe("admin menu (desktop)");

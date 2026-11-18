@@ -10,6 +10,7 @@ import { breakdownOf, BillBreakdown } from "../portal/rewardBill";
 import "./styles/BrandPortal.css";
 import { API_ORIGIN } from "../config/api";
 import loyaltyApi from "../services/loyaltyApi";
+import universitiesApi from "../services/universitiesApi";
 
 const VerifyClaim = () => {
   const { token, user } = useContext(AuthContext);
@@ -41,47 +42,8 @@ const VerifyClaim = () => {
   const [isProcessingScan, setIsProcessingScan] = useState(false);
   const [lastProcessedStudentId, setLastProcessedStudentId] = useState(null);
 
-  const universities = [
-    "Aga Khan Higher Secondary School", "Aga Khan University", "Air University",
-    "Allama Iqbal Open University", "Alpha College", "Aror University of Art, Architecture, Design & Heritage",
-    "Bahria University Islamabad", "Bahria University Karachi", "Baqai Medical University",
-    "Beaconhouse", "Cedar College", "City School", "COMMECS College", "COMSATS University Islamabad",
-    "COMSATS University Lahore Campus", "COMSATS University Sahiwal Campus", "COMSATS University Vehari Campus",
-    "Dawood University of Engineering & Technology Karachi", "DHA Suffa University", "Dow International Medical College",
-    "Faisalabad Medical University", "FAST-NUCES Karachi", "FAST-NUCES Lahore", "Fatima Jinnah Medical University",
-    "FMH College of Medicine & Dentistry", "Foundation University Medical College", "Gambat Institute of Medical Sciences (GIMS)",
-    "Gilgit Medical College", "Government College University Faisalabad", "Government College University Lahore",
-    "Greenwich University", "Habib University Karachi", "Hamdard University Karachi", "Ilma University Karachi",
-    "Indus Medical College", "Indus University", "Indus Valley School of Art and Architecture (IVS)",
-    "Institute of Business Administration (IBA Karachi)", "Institute of Business Management (IoBM)",
-    "International Islamic University Islamabad", "Iqra University", "Islamabad Medical & Dental College",
-    "Isra Medical College", "Isra University", "Jhalawan Medical College", "Jinnah Medical & Dental College",
-    "Jinnah Sindh Medical University", "Jinnah University for Women", "Karakoram International University",
-    "Karachi Institute of Economics and Technology (KIET)", "Karachi Institute of Medical Sciences",
-    "Karachi Medical & Dental College", "Karachi School of Business and Leadership (KSBL)", "KASBIT",
-    "Khawaja Muhammad Safdar Medical College", "Khyber Medical College", "Khyber Medical University",
-    "King Edward Medical University", "Lahore Medical & Dental College", "Lahore University of Management Sciences (LUMS)",
-    "Liaquat College of Medicine & Dentistry", "Liaquat University of Medical & Health Sciences",
-    "Loralai Medical College", "Lyceum", "Makran Medical College", "Mehran University of Engineering & Technology (MUET)",
-    "Meritorious College", "Mohtarma Benazir Bhutto Shaheed Medical College", "Muhammad Ali Jinnah University",
-    "National Defence University", "National Textile University", "National University of Medical Sciences (NUMS)",
-    "National University of Modern Languages (NUML)", "National University of Sciences & Technology (NUST)",
-    "NCR-CET College", "NED University of Engineering & Technology", "Newports Institute of Communications and Economics",
-    "Nixor College", "Pakistan Institute of Engineering & Applied Sciences (PIEAS)", "Pakistan Institute of Medical Sciences (PIMS)",
-    "Peoples University of Medical & Health Sciences", "Pir Mehr Ali Shah Arid Agriculture University", "Punjab Medical College",
-    "Quaid-e-Awam University of Engineering, Science & Technology (QUEST)", "Quaid-e-Azam Medical College", "Quaid-e-Azam University",
-    "Rawalpindi Medical University", "Riphah International University", "Salim Habib University", "Salim Sohail University",
-    "Sceptre College", "Shah Abdul Latif University", "Shaheed Benazir Bhutto University Nawabshah",
-    "Shaheed Mohtarma Benazir Bhutto Medical University Larkana", "Sindh Madressatul Islam University",
-    "Sir Syed University of Engineering & Technology", "Southshore School", "Sukkur IBA University", "SZABIST",
-    "Tabani's School & College", "The Islamia University of Bahawalpur", "Titan College", "United Medical and Dental College (UMDC)",
-    "University of Agriculture Faisalabad", "University of Azad Jammu & Kashmir", "University of Balochistan",
-    "University of Central Punjab", "University of Chakwal", "University of Engineering & Technology Lahore",
-    "University of Engineering & Technology Peshawar", "University of Gujrat", "University of Karachi",
-    "University of Lahore", "University of Management & Technology", "University of Okara", "University of Peshawar",
-    "University of Sahiwal", "University of Sindh Jamshoro", "University of South Asia", "University of the Punjab",
-    "Women University Multan", "Ziauddin Medical College", "Ziauddin University", "Ziauddin University Sukkur"
-  ];
+  // universities: the shared list on the server (the same names students pick at signup), searched as the brand types
+  const universities = [];
 
   const [inputs, setInputs] = useState({
     name: "",
@@ -409,15 +371,13 @@ const VerifyClaim = () => {
   };
 
   useEffect(() => {
-    if (!searchQuery.trim()) {
-      setFilteredUniversities(universities);
-    } else {
-      const query = searchQuery.toLowerCase().trim();
-      const filtered = universities.filter(uni => 
-        uni.toLowerCase().includes(query)
-      );
-      setFilteredUniversities(filtered);
-    }
+    let live = true;
+    const t = setTimeout(() => {
+      universitiesApi.search(searchQuery.trim(), 40)
+        .then((rows) => { if (live) setFilteredUniversities((rows || []).map((u) => u.name)); })
+        .catch(() => { if (live) setFilteredUniversities([]); });
+    }, searchQuery.trim() ? 200 : 0);
+    return () => { live = false; clearTimeout(t); };
   }, [searchQuery]);
 
   useEffect(() => {
@@ -661,7 +621,6 @@ const VerifyClaim = () => {
 
   const clearSearch = () => {
     setSearchQuery("");
-    setFilteredUniversities(universities);
   };
 
   const handleTabChange = (tab) => {

@@ -170,7 +170,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
       'Role': user.role,
       'Status': user.status,
       'Brand/Company': user.brandName || user.companyName || 'N/A',
-      'University': user.university?.name || 'N/A',
+      'University': (user.university?.name || user.universityName || 'N/A'),
       'Roll No': user.rollNo || 'N/A',
       'Referral Code': user.referralCode || 'N/A',
       'Referral Count': user.referralCount || 0,
@@ -778,7 +778,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
                       )}
                       {role === "student" && (
                         <td>
-                          <Pill tone="sand"><Ico kind="grad" tone="plain" size={13} />{u.university?.name || "N/A"}</Pill>
+                          <Pill tone="sand"><Ico kind="grad" tone="plain" size={13} />{(u.university?.name || u.universityName || "N/A")}</Pill>
                           {u.rollNo && <div className="aul-line aul-sub">#{u.rollNo}</div>}
                         </td>
                       )}
@@ -947,7 +947,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
                   {selectedUser.role === "student" && (
                     <Card title="Academic Information" icon="grad" tone="blue">
                       <Facts rows={[
-                        ["University", selectedUser.university?.name || 'N/A'],
+                        ["University", (selectedUser.university?.name || selectedUser.universityName || 'N/A')],
                         ["Roll No", selectedUser.rollNo || 'N/A'],
                         ["Alumni", selectedUser.isAlumni ? 'Yes' : 'No'],
                       ]} />
