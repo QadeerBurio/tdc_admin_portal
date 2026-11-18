@@ -23,7 +23,7 @@ test("the menu: groups in order, names, no duplicates", () => {
   expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "crew", "settings"]);
   expect(ADMIN_MENU.map((g) => g.items.map((i) => i[1]))).toEqual([
     ["dashboard", "overview", "metrics", "admin actions"],
-    ["all students", "all brands", "all employers", "all travelers", "student verifications", "student cards"],
+    ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"],
     ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"],
     ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"],
     ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"],

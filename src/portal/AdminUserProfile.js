@@ -107,7 +107,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
 
   const r = user.role || role;
   const name = r === "brand" ? user.brandName || user.name : r === "employee" ? user.companyName || user.name : user.name;
-  const uni = user.university?.name;
+  const uni = user.university?.name || user.universityName;
   const sub = r === "student"
     ? [user.academicLevel, uni, user.city].filter(Boolean).join(" · ")
     : r === "brand" ? [user.category, user.city, user.isOnline && user.isInStore ? "online and in-store" : user.isOnline ? "online" : user.isInStore ? "in-store" : ""].filter(Boolean).join(" · ")

@@ -23,6 +23,8 @@ import ratingsApi from "../services/ratingsApi";
 import { careerApi } from "../services/careerApi";
 import SurplusOps from "./SurplusOps";
 import AdminActions from "./AdminActions";
+import AdminUniversities from "./AdminUniversities";
+import universitiesApi from "../services/universitiesApi";
 import AdminFeatures from "./AdminFeatures";
 import featuresApi from "../services/featuresApi";
 import AdminLoyaltyPrograms from "./AdminLoyaltyPrograms";
@@ -59,7 +61,7 @@ import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["free_hire_trials"]; // company verifications: every employer (on.company)
-const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans) && (i[0] !== "company_verifications" || on.company)) })).filter((s) => s.items.length > 0);
+const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans) && (i[0] !== "company_verifications" || on.company) && (i[0] !== "universities" || on.universities)) })).filter((s) => s.items.length > 0);
 
 
 // Today's date in Karachi as YYYY-MM-DD (the drops schedule uses the same key)
@@ -269,7 +271,8 @@ export default function AdminDashboard() {
       countOf(careerApi.adminDisputes(), (d) => (Array.isArray(d?.disputes) ? d.disputes.length : null)),
       countOf(ratingsApi.adminReports("open"), (d) => (Array.isArray(d) ? d.length : null)),
       countOf(hiringAccessApi.overview(), (d) => (typeof d?.counts?.openRequests === "number" ? d.counts.openRequests : null)),
-    ]).then(([company, disputes, reports, plans]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports, hiring_plans: plans }); });
+      countOf(universitiesApi.pendingCount(), (n) => n), // students' "my university isn't listed" requests
+    ]).then(([company, disputes, reports, plans, universities]) => { if (live) setWaiting({ company_verifications: company, hire_disputes: disputes, ratings_reports: reports, hiring_plans: plans, universities }); });
     return () => { live = false; };
   }, [activePage]); // refreshed when the admin moves between pages (after deciding one, the count drops)
 
@@ -286,6 +289,9 @@ export default function AdminDashboard() {
   // "ratings reports" shows only when ratings are set up (FLAG_CAREER_RATINGS)
   const [ratingsMenu, setRatingsMenu] = useState(false);
   useEffect(() => { ratingsApi.adminAvailable().then(setRatingsMenu); }, []);
+  // "universities" shows once the shared university list is on the server
+  const [universitiesMenu, setUniversitiesMenu] = useState(false);
+  useEffect(() => { universitiesApi.available().then(setUniversitiesMenu); }, []);
   // "admin actions" shows once the unified admin action log is on the server
   const [actionsMenu, setActionsMenu] = useState(false);
   useEffect(() => { adminActionsApi.available().then(setActionsMenu); }, []);
@@ -348,7 +354,7 @@ export default function AdminDashboard() {
   }, [activePage]);
 
   // the menu as it is now (pilot pages only when set up); the overview links only to pages that are in it
-  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu, company: companyMenu });
+  const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu, company: companyMenu, universities: universitiesMenu });
   const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   // "including suspended: N" when suspended / banned accounts are left out of the number
@@ -451,6 +457,7 @@ export default function AdminDashboard() {
       case "hire_disputes": return <HireDisputes />;
       case "ratings_reports": return <RatingsReports />;
       case "admin_actions": return <AdminActions />;
+      case "universities": return <AdminUniversities />;
       case "features": return <AdminFeatures />;
       case "loyalty_programs": return <AdminLoyaltyPrograms />;
       case "hiring_overview": return <HiringOverview />;
