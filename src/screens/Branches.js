@@ -293,6 +293,7 @@ export default function Branches() {
                 <Pill tone="yellow">{b.discountPercentage}% off</Pill>
               </div>
               {b.isInStore && b.location && <p className="bb-line"><Ico kind="pin" tone="plain" size={15} />{b.location}</p>}
+              {b.isInStore && !b.geo?.coordinates?.length && <p className="k-hint">Location has not been mapped yet. Check the full street address and city, then save again to retry.</p>}
               {b.phone && <p className="bb-line"><Ico kind="phone" tone="plain" size={15} />{b.phone}</p>}
               {b.description && <p className="bo-desc">{b.description}</p>}
               <div className="bb-actions">
