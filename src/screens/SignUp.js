@@ -15,6 +15,42 @@ const PAKISTAN_CITIES = [
 
 const API = `${API_ORIGIN}/api`;
 
+const SIGNUP_CONTENT = {
+  general: {
+    heading: "your next chapter starts here",
+    subtitle: "choose brand or employer, then add your account details.",
+    steps: [
+      { title: "Choose your partnership", icon: ICONS.userPlus },
+      { title: "Add your business details", icon: ICONS.building },
+      { title: "Manage everything in your portal", icon: ICONS.chart },
+    ],
+    chips: ["Brands", "Employers", "One partner portal"],
+    emailPlaceholder: "you@example.com",
+  },
+  brand: {
+    heading: "bring students to your brand",
+    subtitle: "create your brand account, then set up your student offer.",
+    steps: [
+      { title: "Create your brand account", icon: ICONS.userPlus },
+      { title: "Set your student discount", icon: ICONS.percent },
+      { title: "Manage claims and redemptions", icon: ICONS.chart },
+    ],
+    chips: ["Student offers", "Promo verification", "Redemption tracking"],
+    emailPlaceholder: "you@yourbrand.com",
+  },
+  employee: {
+    heading: "find your next student hire",
+    subtitle: "create your company account, then post your first role.",
+    steps: [
+      { title: "Create your company account", icon: ICONS.building },
+      { title: "Post a job or internship", icon: ICONS.briefcase },
+      { title: "Review applicants and manage interviews", icon: ICONS.userPlus },
+    ],
+    chips: ["Jobs & internships", "Applicants", "Interviews"],
+    emailPlaceholder: "you@company.com",
+  },
+};
+
 export default function Signup() {
   const { setUser, setToken } = useContext(AuthContext);
   const navigate = useNavigate();
@@ -180,6 +216,7 @@ export default function Signup() {
   };
 
   const nameField = role === "brand" ? "brandName" : "fullName";
+  const content = SIGNUP_CONTENT[role] || SIGNUP_CONTENT.general;
 
   return (
     <div className="tdcw">
@@ -189,7 +226,7 @@ export default function Signup() {
           <form className="form-col" onSubmit={handleSignup} noValidate>
             <div>
               <h1 style={{ fontWeight: 800, fontSize: 40, letterSpacing: -1.2, lineHeight: 1.05 }}>partner with tdc<span className="dot" aria-hidden="true">.</span></h1>
-              <p className="muted" style={{ marginTop: 10, fontSize: 16 }}>takes about a minute. we'll review and get you live.</p>
+              <p className="muted" style={{ marginTop: 10, fontSize: 16 }}>{content.subtitle}</p>
             </div>
 
             {error && <div className="alert alert-error" role="alert">{error}</div>}
@@ -222,7 +259,7 @@ export default function Signup() {
 
             <div className="field">
               <label htmlFor="email">email</label>
-              <input id="email" name="email" type="email" className={`input ${isFieldInvalid("email") ? "invalid" : ""}`} value={formData.email} onChange={handleChange} onBlur={() => touch("email")} placeholder="you@yourbrand.com" autoComplete="email" />
+              <input id="email" name="email" type="email" className={`input ${isFieldInvalid("email") ? "invalid" : ""}`} value={formData.email} onChange={handleChange} onBlur={() => touch("email")} placeholder={content.emailPlaceholder} autoComplete="email" />
               {errorFor("email")}
             </div>
 
@@ -322,16 +359,14 @@ export default function Signup() {
         <aside className="split-aside on-dark">
           <div style={{ maxWidth: 500 }}>
             <div className="eyebrow">what you get</div>
-            <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>live on tdc in 3 steps<span className="dot" aria-hidden="true">.</span></h2>
+            <h2 style={{ marginTop: 12, fontWeight: 800, fontSize: 44, letterSpacing: -1.3, lineHeight: 1.05 }}>{content.heading}<span className="dot" aria-hidden="true">.</span></h2>
             <ol>
-              <li><IconTile d={ICONS.userPlus} n={1} /><div><b>create your account</b><span>pick brand or employer and add your basic details.</span></div></li>
-              <li><IconTile d={ICONS.percent} n={2} /><div><b>set your student offer</b><span>brands: a flat discount from 15–60%. employers: post your first role.</span></div></li>
-              <li><IconTile d={ICONS.chart} n={3} /><div><b>track it in your portal</b><span>see every claim or applicant live, and which institutes they come from.</span></div></li>
+              {content.steps.map((step, index) => (
+                <li key={step.title}><IconTile d={step.icon} n={index + 1} /><div><b>{step.title}</b></div></li>
+              ))}
             </ol>
             <div className="aside-chips">
-              <span>free in year one</span>
-              <span>100+ brands already live</span>
-              <span>exit anytime, 15 days notice</span>
+              {content.chips.map((chip) => <span key={chip}>{chip}</span>)}
             </div>
           </div>
         </aside>
