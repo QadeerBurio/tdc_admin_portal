@@ -23,6 +23,8 @@ export const safetyApi = {
   resolveHeld: (confessionId, action, note, commentId = null) => unwrap(api.post(`/admin/safety/confession/${confessionId}/resolve`, { action, note, commentId })),
   // who wrote it (logged, a reason is required)
   author: (reportId, reason) => unwrap(api.post(`/admin/safety/${reportId}/author`, { reason })),
+  // observe mode: what would have acted → { days, checked, wouldHaveActed, byOutcome, byReason, items }
+  observed: (days = 7) => unwrap(api.get("/admin/safety/observed", { params: { days } })),
   settings: () => unwrap(api.get("/admin/safety/settings")),
   saveSettings: (patch) => unwrap(api.put("/admin/safety/settings", patch)),
 };

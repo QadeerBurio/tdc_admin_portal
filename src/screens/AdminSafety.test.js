@@ -4,7 +4,7 @@ import AdminSafety from "./AdminSafety";
 import safetyApi from "../services/safetyApi";
 
 jest.mock("../services/safetyApi", () => {
-  const api = { queue: jest.fn(), resolve: jest.fn(), resolveHeld: jest.fn(), author: jest.fn(), settings: jest.fn(), saveSettings: jest.fn() };
+  const api = { observed: jest.fn(), queue: jest.fn(), resolve: jest.fn(), resolveHeld: jest.fn(), author: jest.fn(), settings: jest.fn(), saveSettings: jest.fn() };
   return { __esModule: true, default: api, safetyApi: api };
 });
 
@@ -21,7 +21,11 @@ beforeEach(() => {
   safetyApi.resolve.mockResolvedValue({ id: "r1" });
   safetyApi.resolveHeld.mockResolvedValue({ id: "c9" });
   safetyApi.author.mockResolvedValue({ author: "author-cccccccccc", account: { id: "u1", name: "Real Name", role: "student", university: "Alpha", accountStatus: "active" } });
-  safetyApi.settings.mockResolvedValue({ reportThreshold: 3, bannedWords: ["chamcha"], helplines: [{ name: "national mental health helpline", number: "1166", note: "" }], suspendOnSingleEvidenceReport: false });
+  safetyApi.observed.mockResolvedValue({ days: 7, checked: 40, wouldHaveActed: 2, byOutcome: { block: 1, remove: 1 }, byReason: { politics: 1, personal_info: 1 }, items: [
+    { id: "o1", kind: "confession", verdict: "edit", wouldHave: "block", reasons: [{ code: "politics" }], text: "who will win the election", author: "author-eeeeeeeeee", createdAt: "2026-11-21T10:00:00Z", aiOk: true },
+    { id: "o2", kind: "report", verdict: "confirmed", wouldHave: "remove", reasons: [{ code: "personal_info" }], text: "call 0300", author: "author-ffffffffff", createdAt: "2026-11-21T09:00:00Z", aiOk: true },
+  ] });
+  safetyApi.settings.mockResolvedValue({ mode: "observe", reportThreshold: 3, bannedWords: ["chamcha"], helplines: [{ name: "national mental health helpline", number: "1166", note: "" }], suspendOnSingleEvidenceReport: false });
   safetyApi.saveSettings.mockImplementation(async (x) => ({ ...x, bannedWords: ["a", "b"], helplines: x.helplines }));
 });
 
@@ -78,4 +82,27 @@ test("settings: shows the helplines and saves", async () => {
   fireEvent.change(screen.getByLabelText("unique reports that hide a post"), { target: { value: "5" } });
   fireEvent.click(screen.getByRole("button", { name: "save" }));
   await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ reportThreshold: 5, bannedWords: "chamcha", suspendOnSingleEvidenceReport: false })));
+});
+
+test("would have blocked: the summary, the items, a period filter", async () => {
+  render(<AdminSafety />);
+  fireEvent.click(await screen.findByRole("tab", { name: "would have blocked" }));
+  expect(await screen.findByText("who will win the election")).toBeInTheDocument();
+  expect(screen.getByText("40")).toBeInTheDocument(); // checked
+  expect(screen.getAllByText("would have blocked").length).toBeGreaterThan(1); // tab + pill / summary
+  expect(screen.getByText(/politics 1/)).toBeInTheDocument();
+  expect(screen.getByText("author-eeeeeeeeee")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("period"), { target: { value: "30" } });
+  await waitFor(() => expect(safetyApi.observed).toHaveBeenLastCalledWith(30));
+});
+
+test("settings: the mode (off / observe / enforce) is shown and saved", async () => {
+  render(<AdminSafety />);
+  fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+  const mode = await screen.findByLabelText("mode");
+  expect(mode.value).toBe("observe");
+  expect([...mode.querySelectorAll("option")].map((o) => o.value)).toEqual(["off", "observe", "enforce"]);
+  fireEvent.change(mode, { target: { value: "enforce" } });
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ mode: "enforce" })));
 });
