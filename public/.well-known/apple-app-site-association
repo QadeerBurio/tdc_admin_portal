@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appIDs": ["REPLACE_WITH_APPLE_TEAM_ID.com.aqkhan110.tdc"],
+        "components": [{ "/": "/i/*", "comment": "invite links (P1-2): open the app at signup with the code" }]
+      }
+    ]
+  }
+}
