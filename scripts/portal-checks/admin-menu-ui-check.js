@@ -37,6 +37,7 @@ function handle(method, url) {
   if (p === "/api/admin/bookings/stats") return { totalBookings: 0, pendingBookings: 0, confirmedBookings: 0, totalRevenue: 0 };
   if (p === "/api/admin/actions") return ok({ rows: [], next: null });
   if (p === "/api/admin/actions/facets") return ok({ actions: [], targetTypes: [], admins: [] });
+  if (p === "/api/admin/safety/queue") return ok({ tab: "reported", items: [] });
   if (p === "/api/analytics/admin/metrics") return require("./mock-admin-metrics").metrics();
   return undefined;
 }
@@ -61,7 +62,7 @@ http.createServer((q, s) => {
 
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
 const MENU = [
-  ["general", ["dashboard", "overview", "metrics", "admin actions"]],
+  ["general", ["dashboard", "overview", "metrics", "admin actions", "safety"]],
   ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"]],
   ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],

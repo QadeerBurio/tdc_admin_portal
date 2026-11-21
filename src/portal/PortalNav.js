@@ -17,6 +17,7 @@ export const ADMIN_MENU = [
       ["business_overview", "overview", "chart", "green"],
       ["engagement_metrics", "metrics", "chart", "blue"],
       ["admin_actions", "admin actions", "receipt", "ink"], // the audit log
+      ["safety", "safety", "shield", "red"], // confession safety log: reports for all content, held posts (plan P4-7)
     ],
   },
   {
