@@ -97,6 +97,9 @@ export const engagementApi = {
   // ─── Metrics ───
   metrics: (weeks = 8) =>
     api.get('/admin/engagement/metrics', { params: { weeks } }).then((r) => r.data),
+  // N-6: the push report (tracked pushes only)
+  pushReport: (days = 14) =>
+    api.get('/admin/engagement/push-report', { params: { days } }).then((r) => r.data),
 // ─── Drilldown (click a metric → see users) ───  🆕
   drilldown: (params = {}) =>
     api.get('/admin/engagement/drilldown', { params }).then((r) => r.data),
