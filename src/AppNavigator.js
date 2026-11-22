@@ -13,6 +13,7 @@ import ResetPassword from "./screens/ResetPassword";
 
 // ── Public / Landing ────────────────────────────────────────────────────
 import Landing from "./screens/Landing";
+import InviteRedirect from "./screens/InviteRedirect";
 import Ambassador from "./screens/Ambassador";
 import BrandsProfile from "./screens/roles/BrandsProfile";
 import CompanyProfile from "./screens/roles/CompanyProfile";
@@ -100,6 +101,8 @@ export default function AppNavigator() {
         <Route path="/login" element={<SignIn />} />
         <Route path="/signup" element={<SignupScreen />} />
         <Route path="/ambassador" element={<Ambassador />} />
+        {/* P1-2: invite links; normally the host serves public/i/index.html itself (vercel.json) */}
+        <Route path="/i/:code" element={<InviteRedirect />} />
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/verify-otp" element={<VerifyOTP />} />
         <Route path="/reset-password" element={<ResetPassword />} />

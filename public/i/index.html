@@ -1,0 +1,118 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="robots" content="noindex, nofollow">
+<meta name="referrer" content="no-referrer">
+<meta name="theme-color" content="#111111">
+<title>you're invited to tdc</title>
+<!-- P1-2 invite page (gettdc.pk/i/<CODE>?c=wa). One small file: no React, no web fonts, no images, so it opens fast on
+     slow mobile data. It reports the open to the server (POST /api/invites/:code/open: the code's referrer and the
+     channel; the server keeps only a hash of the address) and shows the inviter's first name when the code is real.
+     Android: the Play Store button carries the code (referrer=ref%3D<CODE>), read on first launch by the 1.3.0 app.
+     iPhone: "copy code & get the app" copies the code, then opens the App Store; signup has "paste invite code". -->
+<style>
+  :root { --ink:#111111; --yellow:#F9C349; --paper:#FAF8F3; --card:#FFFFFF; --sand:#F5F2EA; --line:#ECE7DB; --muted:#6B675E; }
+  * { box-sizing: border-box; }
+  body { margin:0; background:var(--paper); color:var(--ink); font:16px/1.45 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; }
+  main { max-width: 440px; margin: 0 auto; padding: 28px 16px 40px; }
+  .logo { display:inline-block; background:var(--ink); color:var(--yellow); font-weight:800; letter-spacing:.5px; padding:6px 12px; border-radius:12px; font-size:18px; }
+  h1 { font-size: 28px; line-height:1.15; margin: 22px 0 6px; text-transform: lowercase; }
+  p.sub { color: var(--muted); margin: 0 0 18px; }
+  .code { display:flex; align-items:center; justify-content:space-between; gap:12px; background:var(--card); border:1px solid var(--line); border-radius:18px; padding:14px 16px; margin: 0 0 18px; }
+  .code small { display:block; color:var(--muted); font-size:13px; }
+  .code b { font-size: 24px; letter-spacing: 2px; }
+  ul { list-style:none; padding:0; margin: 0 0 22px; }
+  li { background:var(--card); border:1px solid var(--line); border-radius:16px; padding:12px 14px; margin-bottom:8px; }
+  li b { display:block; }
+  li span { color:var(--muted); font-size:14px; }
+  .btn { display:flex; align-items:center; justify-content:center; width:100%; min-height:52px; border-radius:26px; border:0; font:700 16px/1 inherit; text-decoration:none; cursor:pointer; margin-bottom:10px; }
+  .primary { background:var(--ink); color:var(--yellow); }
+  .secondary { background:var(--sand); color:var(--ink); }
+  .copy { background:none; border:1px solid var(--line); border-radius:14px; min-height:44px; padding:0 14px; font:600 14px/1 inherit; color:var(--ink); cursor:pointer; }
+  .note { color:var(--muted); font-size:13px; text-align:center; margin-top:14px; }
+  .hidden { display:none; }
+  #msg { min-height: 20px; text-align:center; font-size:14px; color:var(--ink); }
+</style>
+</head>
+<body>
+<main>
+  <span class="logo" aria-label="tdc">tdc</span>
+  <h1 id="title">your friend invited you to tdc</h1>
+  <p class="sub">the student app for pakistan. join free with their code: you both get 100 points when you start using tdc.</p>
+
+  <div class="code" id="codeBox">
+    <div><small>invite code</small><b id="code">—</b></div>
+    <button class="copy" id="copyBtn" type="button" aria-label="copy the invite code">copy</button>
+  </div>
+
+  <ul>
+    <li><b>student deals near you</b><span>discounts at cafés, food and brands around campus</span></li>
+    <li><b>internships and jobs</b><span>apply in the app, with a resume builder that works for freshers</span></li>
+    <li><b>your campus</b><span>confessions, events and people from your university</span></li>
+  </ul>
+
+  <a class="btn primary hidden" id="play" href="#" rel="noopener">get tdc on google play</a>
+  <button class="btn primary hidden" id="ios" type="button">copy code &amp; get the app</button>
+  <a class="btn secondary" id="other" href="#" rel="noopener">other phone? get the app</a>
+  <div id="msg" role="status" aria-live="polite"></div>
+  <p class="note">on iPhone, tap "paste invite code" when you sign up.</p>
+</main>
+<script>
+(function () {
+  var PLAY = "com.aqkhan110.tdc";
+  var APPLE = "6765877675";
+  var PROD = "https://the-deft-crew-production.up.railway.app";
+  // a staging or preview page may point at the staging server; nothing else is accepted
+  var ALLOWED = [PROD, "https://tdc-server-staging.up.railway.app"];
+  var q = new URLSearchParams(location.search);
+  var api = ALLOWED.indexOf(q.get("api")) >= 0 ? q.get("api") : PROD;
+
+  // the code: /i/<CODE> (or ?code= when the host serves this file without the rewrite)
+  var m = location.pathname.match(/\/i\/([A-Za-z0-9]{4,12})\/?$/);
+  var code = ((m && m[1]) || q.get("code") || "").toUpperCase().replace(/[^A-Z0-9]/g, "").slice(0, 12);
+  var channel = (q.get("c") || "direct").toLowerCase();
+
+  var $ = function (id) { return document.getElementById(id); };
+  var ua = navigator.userAgent || "";
+  var isAndroid = /android/i.test(ua);
+  var isIOS = /iphone|ipad|ipod/i.test(ua) || (/macintosh/i.test(ua) && "ontouchend" in document);
+  var playUrl = "https://play.google.com/store/apps/details?id=" + PLAY + (code ? "&referrer=" + encodeURIComponent("ref=" + code + "&utm_source=invite&utm_medium=referral&utm_campaign=" + code) : "");
+  var appleUrl = "https://apps.apple.com/app/id" + APPLE;
+
+  $("code").textContent = code || "—";
+  if (!code) $("codeBox").className += " hidden";
+  $("play").href = playUrl;
+  if (isAndroid) { $("play").className = "btn primary"; $("other").href = appleUrl; $("other").textContent = "iphone? get the app"; }
+  else if (isIOS) { $("ios").className = "btn primary"; $("other").href = playUrl; $("other").textContent = "android? get the app"; }
+  else { $("play").className = "btn primary"; $("other").href = appleUrl; $("other").textContent = "get it on the app store"; }
+
+  function copy(done) {
+    var ok = function () { $("msg").textContent = "code " + code + " copied"; if (done) done(); };
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) return navigator.clipboard.writeText(code).then(ok, function () { fallback(); ok(); });
+    } catch (e) {}
+    fallback(); ok();
+  }
+  function fallback() {
+    var t = document.createElement("textarea"); t.value = code; t.setAttribute("readonly", ""); t.style.position = "absolute"; t.style.left = "-9999px";
+    document.body.appendChild(t); t.select(); try { document.execCommand("copy"); } catch (e) {} document.body.removeChild(t);
+  }
+  $("copyBtn").onclick = function () { if (code) copy(); };
+  $("ios").onclick = function () { if (code) copy(function () { setTimeout(function () { location.href = appleUrl; }, 600); }); else location.href = appleUrl; };
+
+  // report the open (and learn the inviter's first name); the page works the same if this fails
+  if (code) {
+    try {
+      fetch(api + "/api/invites/" + encodeURIComponent(code) + "/open", {
+        method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ channel: channel }), keepalive: true
+      }).then(function (r) { return r.json(); }).then(function (d) {
+        if (d && d.valid && d.firstName) $("title").textContent = String(d.firstName).toLowerCase() + " invited you to tdc";
+      }).catch(function () {});
+    } catch (e) {}
+  }
+})();
+</script>
+</body>
+</html>
