@@ -14,8 +14,15 @@ const TABS = [
   { id: "reported", label: "reported" },
   { id: "held", label: "held" },
   { id: "resolved", label: "resolved" },
+  { id: "observed", label: "would have blocked" },
   { id: "settings", label: "settings" },
 ];
+const MODE_LABEL = {
+  off: "off: no checks",
+  observe: "observe: check every post and log it, never block or hide",
+  enforce: "enforce: block, hold and hide (students with the confession safety feature)",
+};
+const WOULD = { block: "would have blocked", hold: "would have held", support: "self-harm signal (support)", hide: "would have hidden", remove: "would have removed" };
 const KIND = { confession: "confession", confession_comment: "confession comment", post: "post", post_comment: "post comment", user: "account" };
 const ACTIONS = [
   ["approve", "approve (no rule broken)"],
@@ -40,7 +47,7 @@ export default function AdminSafety() {
   const [revealed, setRevealed] = useState(null);
 
   const load = useCallback(async () => {
-    if (tab === "settings") return;
+    if (tab === "settings" || tab === "observed") return;
     setItems(null); setError("");
     try { setItems((await safetyApi.queue(tab)).items || []); } catch (e) { setError(e.message); }
   }, [tab]);
@@ -74,6 +81,7 @@ export default function AdminSafety() {
   ];
 
   if (tab === "settings") return <div className="tdcp k-page"><PageHeader title="safety" sub="confession safety: automatic checks, reports and strikes" /><Tabs tabs={TABS} value={tab} onChange={setTab} label="safety" /><SafetySettings /></div>;
+  if (tab === "observed") return <div className="tdcp k-page"><PageHeader title="safety" sub="observe mode: what the checks would have done on real posts. nothing was blocked or hidden." /><Tabs tabs={TABS} value={tab} onChange={setTab} label="safety" /><Observed /></div>;
 
   return (
     <div className="tdcp k-page">
@@ -141,27 +149,77 @@ export default function AdminSafety() {
   );
 }
 
+function Observed() {
+  const [days, setDays] = useState(7);
+  const [d, setD] = useState(null);
+  const [error, setError] = useState("");
+  useEffect(() => {
+    setD(null); setError("");
+    safetyApi.observed(days).then(setD).catch((e) => setError(e.message || "could not load"));
+  }, [days]);
+  if (error) return <EmptyState icon="alert" tone="red" title="could not load" text={error} />;
+  if (!d) return <PageLoading label="loading…" />;
+  const reasons = Object.entries(d.byReason || {}).sort((a, b) => b[1] - a[1]);
+  return (
+    <>
+      <Field label="period" htmlFor="safety-days">
+        <Select id="safety-days" value={days} onChange={(e) => setDays(Number(e.target.value))}>
+          {[1, 7, 30, 90].map((n) => <option key={n} value={n}>last {n} day{n === 1 ? "" : "s"}</option>)}
+        </Select>
+      </Field>
+      <Card title="summary" icon="chart" tone="sand">
+        <Facts rows={[
+          ["checked", String(d.checked)],
+          ["would have acted", String(d.wouldHaveActed)],
+          ...Object.entries(d.byOutcome || {}).map(([k, v]) => [WOULD[k] || k, String(v)]),
+        ]} />
+        {reasons.length > 0 && <p style={{ marginBottom: 0 }}>by reason: {reasons.map(([k, v]) => `${k.replace(/_/g, " ")} ${v}`).join(" · ")}</p>}
+      </Card>
+      <Table
+        label="would have acted"
+        columns={[
+          { key: "when", label: "when", render: (r) => when(r.createdAt) },
+          { key: "kind", label: "what", render: (r) => r.kind },
+          { key: "would", label: "would have", render: (r) => <Pill tone={r.wouldHave === "block" || r.wouldHave === "remove" ? "red" : "yellow"}>{WOULD[r.wouldHave] || r.wouldHave}</Pill> },
+          { key: "reasons", label: "reasons", render: (r) => (r.reasons || []).map((x) => x.code.replace(/_/g, " ")).join(", ") || (r.aiOk ? "–" : "check unavailable") },
+          { key: "text", label: "content", style: { maxWidth: 380, overflowWrap: "anywhere" }, render: (r) => String(r.text || "").slice(0, 160) || "–" },
+          { key: "author", label: "author", render: (r) => r.author || "–" },
+        ]}
+        rows={d.items || []}
+        rowKey={(r) => r.id}
+        empty={<EmptyState icon="shield" title="nothing would have been blocked" text="in observe mode, every new post and report is checked and listed here when enforcement would have acted." />}
+      />
+    </>
+  );
+}
+
 function SafetySettings() {
   const [s, setS] = useState(null);
   const [words, setWords] = useState("");
   const [threshold, setThreshold] = useState(3);
   const [helplines, setHelplines] = useState([]);
   const [single, setSingle] = useState(false);
+  const [mode, setMode] = useState("enforce");
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); }).catch((e) => toast(e.message || "could not load the settings"));
+    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); }).catch((e) => toast(e.message || "could not load the settings"));
   }, []);
   if (!s) return <PageLoading label="loading settings…" />;
   const setLine = (i, k, v) => setHelplines((prev) => prev.map((h, j) => (j === i ? { ...h, [k]: v } : h)));
   const save = async () => {
     setBusy(true);
     try {
-      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single });
+      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single, mode });
       setS(x); toast("saved");
     } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
   };
   return (
     <Card title="settings" icon="settings" tone="sand" action={<Button onClick={save} loading={busy}>save</Button>}>
+      <Field label="mode" htmlFor="safety-mode" hint="start with observe for a few days, check 'would have blocked', then enforce">
+        <Select id="safety-mode" value={mode} onChange={(e) => setMode(e.target.value)}>
+          {["off", "observe", "enforce"].map((m) => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
+        </Select>
+      </Field>
       <Field label="unique reports that hide a post" htmlFor="safety-threshold"><Input id="safety-threshold" type="number" min={1} max={50} value={threshold} onChange={(e) => setThreshold(e.target.value)} /></Field>
       <Field label="extra banned words (comma-separated)" htmlFor="safety-words"><Textarea id="safety-words" rows={3} value={words} onChange={(e) => setWords(e.target.value)} /></Field>
       <Field label="helplines shown after a self-harm signal (call-test each before launch)">
