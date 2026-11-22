@@ -80,3 +80,8 @@ test("/i/:code in the React app sends the browser to the static page with the co
   expect(replace).toHaveBeenCalledWith("/i/index.html?code=AISHA1&c=wa");
   window.location = orig;
 });
+
+test("the reward line: 100 for the new student, 150 for the friend, after the e-mail is verified (owner, P1 follow-up)", () => {
+  expect(body).toMatch(/you get 100 points and your friend gets 150 when you join and verify your email\./);
+  expect(body).not.toMatch(/you both get 100 points/);
+});

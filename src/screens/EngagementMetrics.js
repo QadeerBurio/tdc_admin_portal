@@ -5,6 +5,7 @@ import { engagementApi } from '../services/api';
 import Ico from '../portal/Ico';
 import { PageHeader, PageLoading, Button, Select, StatCard, Card, Table, EmptyState, Modal, Pill } from '../portal/kit';
 import './styles/EngagementMetrics.css';
+import PushReport from './PushReport';
 
 // ─────────────────────────────────────────────
 // HELPERS
@@ -341,6 +342,9 @@ export default function EngagementMetrics() {
           </div>
         </Card>
       )}
+
+      {/* N-6: the push report (tracked pushes only; rates only with enough data) */}
+      <PushReport />
 
       <p className="k-hint" style={{ textAlign: 'center', margin: 0 }}>
         metrics computed from events + profiles ·{' '}
