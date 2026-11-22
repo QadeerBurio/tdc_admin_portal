@@ -1,0 +1,185 @@
+// AdminSafety.js: the Safety log ("general" menu, after admin actions; plan P4-7). No daily reviewing: this is the record behind the safety
+// e-mails and the place to change an automatic decision. Tabs:
+//   reported  open reports for ALL content (posts, post comments, users, confessions, confession comments), self-harm first
+//   held      confessions / comments held by the pre-post check or hidden after reports
+//   resolved  the decided ones
+//   settings  report threshold, banned words, helplines, the single-report rule
+// Authors are anonymous references (the same as in the safety e-mails). "who wrote it" asks for a reason and is logged.
+// Every decision asks for a note and is written to the admin actions log.
+import React, { useCallback, useEffect, useState } from "react";
+import safetyApi from "../services/safetyApi";
+import { PageHeader, PageLoading, Tabs, Table, Button, Pill, EmptyState, Card, Drawer, Field, Input, Textarea, Select, Facts, toast } from "../portal/kit";
+
+const TABS = [
+  { id: "reported", label: "reported" },
+  { id: "held", label: "held" },
+  { id: "resolved", label: "resolved" },
+  { id: "settings", label: "settings" },
+];
+const KIND = { confession: "confession", confession_comment: "confession comment", post: "post", post_comment: "post comment", user: "account" };
+const ACTIONS = [
+  ["approve", "approve (no rule broken)"],
+  ["remove", "remove the content"],
+  ["warn", "warn the author"],
+  ["suspend24h", "suspend the account 24 h"],
+  ["suspend7d", "suspend the account 7 days"],
+  ["ban", "ban the account"],
+];
+const when = (d) => (d ? new Date(d).toLocaleString("en-GB", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" }) : "–");
+const statusTone = (s) => (s === "removed" ? "red" : s === "hidden" || s === "pending" ? "yellow" : s === "live" ? "green" : "sand");
+
+export default function AdminSafety() {
+  const [tab, setTab] = useState("reported");
+  const [items, setItems] = useState(null);
+  const [error, setError] = useState("");
+  const [open, setOpen] = useState(null); // the row in the drawer
+  const [action, setAction] = useState("approve");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [revealReason, setRevealReason] = useState("");
+  const [revealed, setRevealed] = useState(null);
+
+  const load = useCallback(async () => {
+    if (tab === "settings") return;
+    setItems(null); setError("");
+    try { setItems((await safetyApi.queue(tab)).items || []); } catch (e) { setError(e.message); }
+  }, [tab]);
+  useEffect(() => { load(); }, [load]);
+
+  const openRow = (row) => { setOpen(row); setAction("approve"); setNote(""); setRevealReason(""); setRevealed(null); };
+  const decide = async () => {
+    if (!note.trim()) return toast("add a short note: it goes into the admin actions log");
+    setBusy(true);
+    try {
+      if (open.id) await safetyApi.resolve(open.id, action, note.trim());
+      else await safetyApi.resolveHeld(open.confessionId, action, note.trim(), open.commentId || null);
+      toast("saved");
+      setOpen(null);
+      load();
+    } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
+  };
+  const reveal = async () => {
+    setBusy(true);
+    try { setRevealed((await safetyApi.author(open.id, revealReason.trim())).account); } catch (e) { toast(e.message || "could not show the account"); } finally { setBusy(false); }
+  };
+
+  const content = (r) => r.content || r;
+  const columns = [
+    { key: "when", label: "when", render: (r) => when(r.createdAt) },
+    { key: "kind", label: "what", render: (r) => KIND[content(r).kind] || content(r).kind || "–" },
+    { key: "text", label: "content", style: { maxWidth: 380, overflowWrap: "anywhere" }, render: (r) => (content(r).gone ? <em>(deleted)</em> : String(content(r).text || "").slice(0, 160) || "–") },
+    { key: "reason", label: "reason", render: (r) => (r.reason ? <Pill tone={r.reason === "Self Harm Risk" ? "red" : "sand"}>{r.reason}</Pill> : r.statusReason || "–") },
+    { key: "status", label: "status", render: (r) => { const s = content(r).status || r.status; return s ? <Pill tone={statusTone(s)}>{s}</Pill> : "–"; } },
+    { key: "author", label: "author", render: (r) => content(r).author || "–" },
+  ];
+
+  if (tab === "settings") return <div className="tdcp k-page"><PageHeader title="safety" sub="confession safety: automatic checks, reports and strikes" /><Tabs tabs={TABS} value={tab} onChange={setTab} label="safety" /><SafetySettings /></div>;
+
+  return (
+    <div className="tdcp k-page">
+      <PageHeader title="safety" sub="the record behind the safety e-mails. change an automatic decision here." />
+      <Tabs tabs={TABS} value={tab} onChange={setTab} label="safety" />
+      {error ? (
+        <EmptyState icon="alert" tone="red" title="could not load" text={error} action={<Button onClick={load}>try again</Button>} />
+      ) : !items ? (
+        <PageLoading label="loading…" />
+      ) : (
+        <Table
+          label={`${tab} items`}
+          columns={columns}
+          rows={items}
+          rowKey={(r, i) => r.id || `${r.confessionId}-${r.commentId || ""}-${i}`}
+          onRowClick={tab === "resolved" ? undefined : openRow}
+          empty={<EmptyState icon="shield" title={tab === "held" ? "nothing held" : tab === "reported" ? "no open reports" : "nothing decided yet"} text="" />}
+        />
+      )}
+
+      {open && (
+        <Drawer
+          open
+          onClose={busy ? undefined : () => setOpen(null)}
+          title={KIND[content(open).kind] || "item"}
+          sub={open.reason ? `reported: ${open.reason}` : open.statusReason || ""}
+          footer={<Button onClick={decide} loading={busy} disabled={busy}>save decision</Button>}
+        >
+          <Card title="content" icon="file" tone="sand">
+            <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{content(open).gone ? "(deleted)" : content(open).text}</p>
+            {content(open).image ? <p><a href={content(open).image} target="_blank" rel="noreferrer">open the image</a></p> : null}
+          </Card>
+          <Facts rows={[
+            ["author", content(open).author || "–"],
+            ["status", content(open).status || "–"],
+            ["reports", String(content(open).reportCount ?? "–")],
+            ...(open.evidence ? [["evidence", `“${open.evidence}”`]] : []),
+            ...(open.description ? [["reporter's note", open.description]] : []),
+            ...(open.recheck ? [["re-check", open.recheck.confirmed ? `confirmed (${(open.recheck.reasons || []).join(", ")})` : "not confirmed"]] : []),
+          ]} />
+          <Field label="decision" htmlFor="safety-action">
+            <Select id="safety-action" value={action} onChange={(e) => setAction(e.target.value)}>
+              {(open.id ? ACTIONS : ACTIONS.slice(0, 2)).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+            </Select>
+          </Field>
+          <Field label="note (goes into the admin actions log)" htmlFor="safety-note">
+            <Textarea id="safety-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={500} />
+          </Field>
+          {open.id && content(open).author && (
+            <Card title="who wrote it" icon="shield" tone="red">
+              {revealed ? (
+                <Facts rows={[["name", revealed.name], ["role", revealed.role], ["university", revealed.university || "–"], ["account", revealed.accountStatus]]} />
+              ) : (
+                <>
+                  <p style={{ marginTop: 0 }}>only when it's needed. a reason is required and every reveal is logged.</p>
+                  <Field label="reason" htmlFor="safety-reveal"><Input id="safety-reveal" value={revealReason} onChange={(e) => setRevealReason(e.target.value)} /></Field>
+                  <Button variant="secondary" onClick={reveal} disabled={busy || revealReason.trim().length < 5}>show the account</Button>
+                </>
+              )}
+            </Card>
+          )}
+        </Drawer>
+      )}
+    </div>
+  );
+}
+
+function SafetySettings() {
+  const [s, setS] = useState(null);
+  const [words, setWords] = useState("");
+  const [threshold, setThreshold] = useState(3);
+  const [helplines, setHelplines] = useState([]);
+  const [single, setSingle] = useState(false);
+  const [busy, setBusy] = useState(false);
+  useEffect(() => {
+    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); }).catch((e) => toast(e.message || "could not load the settings"));
+  }, []);
+  if (!s) return <PageLoading label="loading settings…" />;
+  const setLine = (i, k, v) => setHelplines((prev) => prev.map((h, j) => (j === i ? { ...h, [k]: v } : h)));
+  const save = async () => {
+    setBusy(true);
+    try {
+      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single });
+      setS(x); toast("saved");
+    } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
+  };
+  return (
+    <Card title="settings" icon="settings" tone="sand" action={<Button onClick={save} loading={busy}>save</Button>}>
+      <Field label="unique reports that hide a post" htmlFor="safety-threshold"><Input id="safety-threshold" type="number" min={1} max={50} value={threshold} onChange={(e) => setThreshold(e.target.value)} /></Field>
+      <Field label="extra banned words (comma-separated)" htmlFor="safety-words"><Textarea id="safety-words" rows={3} value={words} onChange={(e) => setWords(e.target.value)} /></Field>
+      <Field label="helplines shown after a self-harm signal (call-test each before launch)">
+        {helplines.map((h, i) => (
+          <div key={i} style={{ display: "flex", gap: 8, marginBottom: 6 }}>
+            <Input aria-label={`helpline ${i + 1} name`} value={h.name} onChange={(e) => setLine(i, "name", e.target.value)} />
+            <Input aria-label={`helpline ${i + 1} number`} value={h.number} onChange={(e) => setLine(i, "number", e.target.value)} style={{ maxWidth: 160 }} />
+            <Input aria-label={`helpline ${i + 1} note`} value={h.note || ""} onChange={(e) => setLine(i, "note", e.target.value)} style={{ maxWidth: 120 }} />
+          </div>
+        ))}
+        <Button variant="secondary" size="sm" onClick={() => setHelplines((p) => [...p, { name: "", number: "", note: "" }])}>add a helpline</Button>
+      </Field>
+      <Field label="one report with evidence, confirmed by the re-check, suspends the account at once" htmlFor="safety-single">
+        <Select id="safety-single" value={single ? "on" : "off"} onChange={(e) => setSingle(e.target.value === "on")}>
+          <option value="off">off (recommended: strikes decide)</option>
+          <option value="on">on</option>
+        </Select>
+      </Field>
+    </Card>
+  );
+}

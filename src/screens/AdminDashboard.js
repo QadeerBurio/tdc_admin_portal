@@ -26,6 +26,7 @@ import AdminActions from "./AdminActions";
 import AdminUniversities from "./AdminUniversities";
 import universitiesApi from "../services/universitiesApi";
 import AdminFeatures from "./AdminFeatures";
+import AdminSafety from "./AdminSafety";
 import featuresApi from "../services/featuresApi";
 import AdminLoyaltyPrograms from "./AdminLoyaltyPrograms";
 import HiringOverview from "./HiringOverview";
@@ -458,6 +459,7 @@ export default function AdminDashboard() {
       case "admin_actions": return <AdminActions />;
       case "universities": return <AdminUniversities />;
       case "features": return <AdminFeatures />;
+      case "safety": return <AdminSafety />;
       case "loyalty_programs": return <AdminLoyaltyPrograms />;
       case "hiring_overview": return <HiringOverview />;
       case "surplus_ops": return <SurplusOps />;
