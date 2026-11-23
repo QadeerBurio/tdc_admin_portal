@@ -20,16 +20,18 @@ const group = (title) => screen.getByRole("button", { name: new RegExp(`^${title
 beforeEach(() => window.localStorage.clear());
 
 test("the menu: groups in order, names, no duplicates", () => {
-  expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "crew", "settings"]);
+  // Phase A (owner): safety has its own group; settings adds team & access
+  expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "crew", "safety", "settings"]);
   expect(ADMIN_MENU.map((g) => g.items.map((i) => i[1]))).toEqual([
-    ["dashboard", "overview", "metrics", "admin actions", "safety"],
+    ["dashboard", "overview", "metrics", "admin actions"],
     ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"],
     ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"],
     ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"],
     ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"],
     ["daily drops", "push test"],
     ["crew inbox", "crew partners", "crew campaigns", "crew credentials"],
-    ["features"],
+    ["safety"],
+    ["features", "team & access"],
   ]);
   const ids = ADMIN_MENU.flatMap((g) => g.items.map((i) => i[0]));
   const labels = ADMIN_MENU.flatMap((g) => g.items.map((i) => i[1]));
@@ -104,7 +106,7 @@ test("arrow keys move between the group buttons and items", () => {
   fireEvent.keyDown(document.activeElement, { key: "ArrowUp" });
   expect(document.activeElement).toBe(first);
   fireEvent.keyDown(document.activeElement, { key: "End" });
-  expect(document.activeElement).toBe(screen.getByRole("button", { name: "features" }));
+  expect(document.activeElement).toBe(screen.getByRole("button", { name: "team & access" })); // the last item (Phase A)
 });
 
 test("storage that throws (private mode): everything still works, all groups open", () => {

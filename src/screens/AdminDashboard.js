@@ -60,6 +60,9 @@ import DropsSchedule from "./DropsSchedule";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
+import { useAdminAccess } from "../portal/adminAccess";
+import NoAccess from "../portal/NoAccess";
+import AdminTeam from "./AdminTeam";
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["free_hire_trials"]; // company verifications: every employer (on.company)
 const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans) && (i[0] !== "company_verifications" || on.company) && (i[0] !== "universities" || on.universities)) })).filter((s) => s.items.length > 0);
@@ -76,6 +79,7 @@ const resolvePage = (id) => (ADMIN_PAGE_ALIASES[id] ? ADMIN_PAGE_ALIASES[id] : [
 
 export default function AdminDashboard() {
   const { user, token, loading, logout } = useContext(AuthContext);
+  const access = useAdminAccess(user?.role === "admin");
   const navigate = useNavigate();
 
   const { role: profileRole, id: profileId } = useParams();
@@ -354,8 +358,10 @@ export default function AdminDashboard() {
   }, [activePage]);
 
   // the menu as it is now (pilot pages only when set up); the overview links only to pages that are in it
+  // Phase A: only the pages this admin may open (GET /api/admin/me/access); an older server: every page, as before
   const adminMenu = adminMenuFor({ surplus: surplusMenu, fhf: fhfMenu, disputes: disputesMenu, ratings: ratingsMenu, actions: actionsMenu, features: featuresMenu, loyaltyPrograms: loyaltyProgramsMenu, hiring: hiringMenu, plans: plansMenu, company: companyMenu, universities: universitiesMenu });
-  const menuPages = adminMenu.flatMap((s) => s.items.map((i) => i[0]));
+  const allowedMenu = adminMenu.map((s) => ({ ...s, items: s.items.filter((i) => access.canOpen(i[0])) })).filter((s) => s.items.length > 0);
+  const allowedPages = allowedMenu.flatMap((s) => s.items.map((i) => i[0]));
   const n = (v) => (isFetching ? <span className="tdcp-skel" /> : fmt(v));
   // "including suspended: N" when suspended / banned accounts are left out of the number
   const susp = (k, plain) => { const all = stats.withSuspended?.[k]; return all != null && all !== stats[k] ? `including suspended: ${fmt(all)}` : plain; };
@@ -389,12 +395,12 @@ export default function AdminDashboard() {
           <h1 className="tdcp-title">the whole crew, at a glance<span className="dot" aria-hidden="true">.</span></h1>
         </div>
         <div className="tdcp-actions">
-          <button type="button" className="tdcp-btn tdcp-btn-primary" onClick={() => go("offer")}>create offer</button>
+          {access.canOpen("offers") && <button type="button" className="tdcp-btn tdcp-btn-primary" onClick={() => go("offer")}>create offer</button>}
         </div>
       </div>
 
       <section aria-label="headline numbers" className="tdcp-grid-big">
-        {BIG.map((s) => (
+        {BIG.filter((s) => access.canOpen(s.id)).map((s) => ( /* Phase A: only cards for their areas */
           <button type="button" key={s.id} className={`tdcp-stat${s.dark ? " dark" : ""}`} onClick={() => go(s.id)}>
             <div className="ico"><Ico kind={s.icon} tone={s.dark ? "yellow" : s.tone} size={52} /></div>
             <div className="lbl">{s.label}</div>
@@ -405,7 +411,7 @@ export default function AdminDashboard() {
       </section>
 
       <section aria-label="more numbers" className="tdcp-grid-small">
-        {SMALL.map((s) => (
+        {SMALL.filter((s) => access.canOpen(s.id)).map((s) => (
           <button type="button" key={s.id + s.label} className="tdcp-stat small" onClick={() => go(s.id)}>
             <div className="ico"><Ico kind={s.icon} tone={s.tone} size={40} /></div>
             <div className="lbl">{s.label}</div>
@@ -418,7 +424,7 @@ export default function AdminDashboard() {
       <div className="tdcp-grid-2">
         <section className="tdcp-card" style={{ overflow: "hidden" }}>
           <div className="tdcp-card-head"><h2>needs your attention</h2></div>
-          {TODO.map((t) => (
+          {TODO.filter((t) => access.canOpen(t.id)).map((t) => (
             <button type="button" key={t.label} className="tdcp-row" onClick={() => go(t.id)}>
               <span style={{ fontWeight: 600, fontSize: 14.5 }}>{t.label}</span>
               <span className={`tdcp-count${!t.count ? " zero" : ""}`}>{t.count == null ? "–" : fmt(t.count)}</span>
@@ -437,7 +443,7 @@ export default function AdminDashboard() {
           ) : (
             <p style={{ margin: "10px 0 0", fontSize: 14, color: "var(--ink-soft)" }}>no drop scheduled for today.</p>
           )}
-          <button type="button" className="tdcp-btn tdcp-btn-secondary" style={{ marginTop: 14, borderColor: "var(--card)" }} onClick={() => go("engagement_drops")}>drops schedule</button>
+          {access.canOpen("engagement_drops") && <button type="button" className="tdcp-btn tdcp-btn-secondary" style={{ marginTop: 14, borderColor: "var(--card)" }} onClick={() => go("engagement_drops")}>drops schedule</button>}
         </section>
       </div>
     </>
@@ -445,6 +451,9 @@ export default function AdminDashboard() {
 
   // Render Content
   const renderContent = () => {
+    // Phase A: paused access, or a page this admin can't open (an old link): say so, show nothing else
+    if (access.level === "suspended") return <NoAccess paused />;
+    if (access.loaded && !access.canOpen(activePage)) return <NoAccess />;
     switch (activePage) {
       case "dashboard":
         return renderDashboard();
@@ -464,7 +473,8 @@ export default function AdminDashboard() {
       case "hiring_overview": return <HiringOverview />;
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
-      case "business_overview": return <AdminHome go={go} pages={menuPages} />;
+      case "business_overview": return <AdminHome go={go} pages={allowedPages} />;
+      case "team_access": return <AdminTeam />;
       case "free_hire_trials": return <FreeHireTrials />;
       case "hiring_plans": return <AdminHiringPlans />;
       case "booking": return <AdminPackage />;
@@ -509,7 +519,7 @@ export default function AdminDashboard() {
   return (
     <div className={`tdcp tdcp-shell${isMobileMenuOpen ? " nav-open" : ""}`}>
       <PortalNav
-        menu={adminMenu}
+        menu={allowedMenu}
         active={activePage}
         onSelect={go}
         collapsible

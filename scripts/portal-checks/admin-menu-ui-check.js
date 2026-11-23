@@ -1,6 +1,6 @@
 // node --experimental-websocket admin-menu-ui-check.js <buildDir>    (or: node scripts/portal-checks/run.js)
 // The admin side menu (feat/admin-menu), against a mock API:
-// - groups in order (general, users, student app, brands, employers, engagement, settings) with their items, every item
+// - groups in order (general, users, student app, brands, employers, engagement, crew, safety, settings) with their items, every item
 //   opening its page with a matching title (heading and browser tab); no duplicates
 // - badges for what's waiting (brand approvals 3, student verifications 2, company verifications 2, hire disputes 1),
 //   none at 0 (ratings reports)
@@ -62,13 +62,16 @@ http.createServer((q, s) => {
 
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
 const MENU = [
-  ["general", ["dashboard", "overview", "metrics", "admin actions", "safety"]],
+  ["general", ["dashboard", "overview", "metrics", "admin actions"]],
   ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"]],
   ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],
   ["employers", ["company verifications", "hiring overview", "hiring funnel", "hire disputes", "ratings reports", "first hire free", "hiring plans"]],
   ["engagement", ["daily drops", "push test"]],
   ["crew", ["crew inbox", "crew partners", "crew campaigns", "crew credentials"]],
+  // Phase A (owner): safety has its own group. This mock has no /api/admin/me/access (an older server): every page an
+  // admin had before, so not the super admins' team & access page
+  ["safety", ["safety"]],
   ["settings", ["features"]],
 ];
 

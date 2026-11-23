@@ -17,7 +17,6 @@ export const ADMIN_MENU = [
       ["business_overview", "overview", "chart", "green"],
       ["engagement_metrics", "metrics", "chart", "blue"],
       ["admin_actions", "admin actions", "receipt", "ink"], // the audit log
-      ["safety", "safety", "shield", "red"], // confession safety log: reports for all content, held posts (plan P4-7)
     ],
   },
   {
@@ -84,8 +83,16 @@ export const ADMIN_MENU = [
     ],
   },
   {
+    // owner (Phase A): safety has its own group (confession safety log: reports for all content, held posts, plan P4-7)
+    title: "safety",
+    items: [["safety", "safety", "shield", "red"]],
+  },
+  {
     title: "settings",
-    items: [["features", "features", "settings", "green"]],
+    items: [
+      ["features", "features", "settings", "green"],
+      ["team_access", "team & access", "users", "ink"], // Phase A: super admins only (team.manage)
+    ],
   },
 ];
 // page ids from before the reorganisation, still accepted (state.page, old links): [page id, offers tab]
