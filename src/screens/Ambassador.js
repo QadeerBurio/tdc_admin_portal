@@ -3,6 +3,7 @@
 // pre-filled email to hr@gettdc.pk. Swap `submitApplication` for an API call once one exists.
 import React, { useEffect, useState } from "react";
 import { WebNav, WebFooter, LINKS, pageTitle, IconTile, ICONS } from "../web/site";
+import { crewPublicApi } from "../services/api";
 
 const CITIES = ["Karachi", "Lahore", "Islamabad", "Other"];
 const LEVELS = ["university", "college", "O/A levels"];
@@ -39,10 +40,16 @@ export default function Ambassador() {
   const [form, setForm] = useState(EMPTY);
   const [touched, setTouched] = useState({});
   const [sent, setSent] = useState(false);
+  // P2: when the in-app programme is on for everyone (server GET /api/crew/config), students apply in the app; until
+  // the server says so (or if it can't be reached) the form below works as before
+  const [inApp, setInApp] = useState(false);
 
   useEffect(() => {
     document.title = pageTitle("campus ambassadors");
     window.scrollTo(0, 0);
+    let live = true;
+    crewPublicApi.config().then((c) => live && setInApp(c?.applyInApp === true)).catch(() => {});
+    return () => { live = false; };
   }, []);
 
   const set = (e) => setForm({ ...form, [e.target.name]: e.target.value });
@@ -94,7 +101,16 @@ export default function Ambassador() {
             <p className="muted" style={{ marginTop: 20, fontSize: 14 }}>questions? <a href={`mailto:${LINKS.hr}`}>{LINKS.hr}</a></p>
           </div>
 
-          {sent ? (
+          {inApp ? (
+            <div className="card" data-testid="apply-in-app" style={{ padding: 32, borderRadius: 28 }}>
+              <h2 style={{ fontWeight: 800, fontSize: 26, letterSpacing: -0.6 }}>apply in the app<span className="dot" aria-hidden="true">.</span></h2>
+              <p style={{ fontSize: 16 }}>get tdc, sign in with your student account and open <strong>the crew</strong> from the menu. your name and university are filled in for you, and you'll see your application's status there.</p>
+              <div style={{ display: "flex", gap: 10, flexWrap: "wrap", marginTop: 20 }}>
+                <a className="btn btn-primary" href={LINKS.playStore} target="_blank" rel="noreferrer">get it on google play</a>
+                <a className="btn btn-secondary" href={LINKS.appStore} target="_blank" rel="noreferrer">download on the app store</a>
+              </div>
+            </div>
+          ) : sent ? (
             <div className="card" style={{ padding: 32, borderRadius: 28 }}>
               <h2 className="h-md">almost sorted<span className="dot" aria-hidden="true">.</span></h2>
               <p style={{ fontSize: 16 }}>your email app should have opened with your application filled in. hit send and we'll get back to you.</p>
