@@ -5,6 +5,7 @@ import { useNavigate, Link } from "react-router-dom";
 import { AuthContext } from "../context/AuthContext";
 import { Logo, LINKS, pageTitle } from "../web/site";
 import { API_ORIGIN } from "../config/api";
+import { deviceId } from "../portal/adminAccess";
 
 export default function SignIn() {
   const { setUser, setToken } = useContext(AuthContext);
@@ -15,6 +16,10 @@ export default function SignIn() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
+  // Phase A: an admin from a new device enters an e-mailed code; why the last admin session ended
+  const [codeStep, setCodeStep] = useState(null); // { sessionId, email }
+  const [code, setCode] = useState("");
+  const [notice] = useState(() => { try { const r = sessionStorage.getItem("tdc.signoutReason"); sessionStorage.removeItem("tdc.signoutReason"); return r || ""; } catch { return ""; } });
 
   const validateEmail = (e) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(e);
 
@@ -41,32 +46,54 @@ export default function SignIn() {
 
       const res = await axios.post(
         `${API_ORIGIN}/api/auth/login`,
-        { email, password }
+        { email, password, deviceId: deviceId() }
       );
 
-      const { token, user } = res.data;
-
-      const allowedRoles = ["brand", "admin", "employee", "traveler"];
-
-      if (!allowedRoles.includes(user.role)) {
-        setError("this login is for brand and employer partners. students, please use the tdc app.");
+      if (res.data?.requiresAdminCode) {
+        setCodeStep({ sessionId: res.data.sessionId, email: res.data.email, message: res.data.message });
         return;
       }
-
-      axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
-      setToken(token);
-      setUser(user);
-
-      if (user.role === "admin") navigate("/admin");
-      else if (user.role === "brand") navigate("/discount");
-      else if (user.role === "employee") navigate("/employee-dashboard");
-      else if (user.role === "traveler") navigate("/traveler-dashboard");
-      else navigate("/home");
+      finishLogin(res.data);
     } catch (err) {
       setError(err.response?.data?.message || "login failed. please try again.");
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCode = async (e) => {
+    e.preventDefault();
+    setError("");
+    try {
+      setLoading(true);
+      const res = await axios.post(`${API_ORIGIN}/api/auth/admin/verify-code`, { sessionId: codeStep.sessionId, code, deviceId: deviceId() });
+      finishLogin(res.data);
+    } catch (err) {
+      setError(err.response?.data?.message || "that code didn't work. try again.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const finishLogin = (data) => {
+    const { token, user } = data;
+
+    const allowedRoles = ["brand", "admin", "employee", "traveler"];
+
+    if (!allowedRoles.includes(user.role)) {
+      setError("this login is for brand and employer partners. students, please use the tdc app.");
+      return;
+    }
+
+    axios.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+    setToken(token);
+    setUser(user);
+
+    if (user.role === "admin") navigate("/admin");
+    else if (user.role === "brand") navigate("/discount");
+    else if (user.role === "employee") navigate("/employee-dashboard");
+    else if (user.role === "traveler") navigate("/traveler-dashboard");
+    else navigate("/home");
   };
 
   return (
@@ -78,12 +105,28 @@ export default function SignIn() {
         </header>
 
         <main>
+          {codeStep ? (
+          <form className="auth-card" onSubmit={handleCode} noValidate>
+            <div style={{ textAlign: "center" }}>
+              <h1 style={{ fontWeight: 800, fontSize: 30, letterSpacing: -1 }}>check your e-mail<span className="dot" aria-hidden="true">.</span></h1>
+              <p className="muted" style={{ marginTop: 8, fontSize: 15 }}>{codeStep.message || "we e-mailed you a 6-digit code."} it went to {codeStep.email}.</p>
+            </div>
+            {error && <div className="alert alert-error" role="alert">{error}</div>}
+            <div className="field">
+              <label htmlFor="admin-code">sign-in code</label>
+              <input id="admin-code" className="input" inputMode="numeric" autoComplete="one-time-code" maxLength={6} value={code} onChange={(e) => { setCode(e.target.value.replace(/[^0-9]/g, "")); setError(""); }} required />
+            </div>
+            <button className="btn btn-primary btn-block" type="submit" disabled={loading || code.length !== 6}>{loading ? "checking" : "sign in"}</button>
+            <button type="button" className="link-btn" onClick={() => { setCodeStep(null); setCode(""); }}>back</button>
+          </form>
+          ) : (
           <form className="auth-card" onSubmit={handleLogin} noValidate>
             <div style={{ textAlign: "center" }}>
               <h1 style={{ fontWeight: 800, fontSize: 36, letterSpacing: -1 }}>welcome back<span className="dot" aria-hidden="true">.</span></h1>
               <p className="muted" style={{ marginTop: 8, fontSize: 15 }}>log in to your brand or employer portal.</p>
             </div>
 
+            {notice && !error && <div className="alert" role="status">{notice}</div>}
             {error && <div className="alert alert-error" role="alert">{error}</div>}
 
             <div className="field">
@@ -148,6 +191,7 @@ export default function SignIn() {
               student? tdc lives in the app. <a href={LINKS.getApp} className="tap-link" style={{ fontWeight: 700 }}>get it here</a>
             </div>
           </form>
+          )}
         </main>
 
         <footer style={{ padding: "0 24px 28px", textAlign: "center", fontSize: 13.5 }} className="muted help-foot">

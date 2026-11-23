@@ -77,6 +77,7 @@ const BrandApprovalScreen = lazy(() => import("./screens/BrandApprovalScreen"));
 
 // ── 🆕 Engagement (Admin) ───────────────────────────────────────────────
 const DropsSchedule = lazy(() => import("./screens/DropsSchedule"));
+const AcceptInvite = lazy(() => import("./screens/AcceptInvite"));
 const EngagementMetrics = lazy(() => import("./screens/EngagementMetrics"));
 const RewardsAdmin = lazy(() => import("./screens/RewardsAdmin"));
 const TestPush = lazy(() => import("./screens/TestPush"));
@@ -113,6 +114,8 @@ export default function AppNavigator() {
         <Route path="/universities" element={<UniversitiesSection />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/founder" element={<Founder />} />
+        {/* Phase A: an admin invitation e-mail's link */}
+        <Route path="/admin/accept-invite" element={<AcceptInvite />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );

@@ -33,6 +33,8 @@ api.interceptors.response.use(
   (res) => res,
   (err) => {
     if (err.response?.status === 401) {
+      // Phase A: an admin session that ended (12 hours idle, signed out elsewhere): the sign-in page says why
+      if (/^ADMIN_SESSION_/.test(err.response?.data?.code || "")) { try { sessionStorage.setItem('tdc.signoutReason', err.response.data.message || ""); } catch { /* private mode */ } }
       localStorage.removeItem('token');
       localStorage.removeItem('user');
       if (window.location.pathname !== '/login') {
