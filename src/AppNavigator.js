@@ -15,6 +15,8 @@ import ResetPassword from "./screens/ResetPassword";
 import Landing from "./screens/Landing";
 import InviteRedirect from "./screens/InviteRedirect";
 import Ambassador from "./screens/Ambassador";
+// P2-5: the public credential check (the QR on certificates and letters), signed in or not
+import VerifyCredential from "./screens/VerifyCredential";
 import BrandsProfile from "./screens/roles/BrandsProfile";
 import CompanyProfile from "./screens/roles/CompanyProfile";
 import OfferImagesGallery from "./screens/OfferImagesGallery";
@@ -116,6 +118,7 @@ export default function AppNavigator() {
         <Route path="/founder" element={<Founder />} />
         {/* Phase A: an admin invitation e-mail's link */}
         <Route path="/admin/accept-invite" element={<AcceptInvite />} />
+        <Route path="/verify/:id" element={<VerifyCredential />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     );
@@ -163,6 +166,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Navigate to="/admin" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/founder" element={<Founder />} />
+        <Route path="/verify/:id" element={<VerifyCredential />} />
         <Route path="*" element={<Navigate to="/admin" replace />} />
       </Routes>
       </PortalShell>
@@ -189,6 +193,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Navigate to="/traveler-dashboard" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/founder" element={<Founder />} />
+        <Route path="/verify/:id" element={<VerifyCredential />} />
         <Route path="*" element={<Navigate to="/traveler-dashboard" replace />} />
       </Routes>
       </PortalShell>
@@ -218,6 +223,7 @@ export default function AppNavigator() {
         <Route path="/" element={<Navigate to="/employee-dashboard" replace />} />
         <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="/founder" element={<Founder />} />
+        <Route path="/verify/:id" element={<VerifyCredential />} />
         <Route path="*" element={<Navigate to="/employee-dashboard" replace />} />
       </Routes>
       </PortalShell>
@@ -251,6 +257,7 @@ export default function AppNavigator() {
       <Route path="/" element={<Navigate to="/home" replace />} />
       <Route path="/privacy" element={<PrivacyPolicy />} />
       <Route path="/founder" element={<Founder />} />
+      <Route path="/verify/:id" element={<VerifyCredential />} />
       <Route path="*" element={<Navigate to="/home" replace />} />
     </Routes>
     </PortalShell>
