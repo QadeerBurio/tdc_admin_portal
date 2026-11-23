@@ -55,7 +55,8 @@ export const crewApi = {
   inbox: () => api.get('/admin/crew/inbox').then((r) => r.data),
 
   // Partners
-  partners: () => api.get('/admin/crew/partners').then((r) => r.data),
+  // P2: optional { university } (a University id or name); none = every partner, as before
+  partners: (params) => api.get('/admin/crew/partners', params ? { params } : undefined).then((r) => r.data),
   partner: (userId) => api.get(`/admin/crew/partners/${userId}`).then((r) => r.data),
   addPartner: (payload) => api.post('/admin/crew/partners', payload).then((r) => r.data),
   removePartner: (userId) => api.delete(`/admin/crew/partners/${userId}`),
@@ -63,8 +64,9 @@ export const crewApi = {
   // Reviews
   reviewPost: (postId, status, reach) =>
     api.post(`/admin/crew/posts/${postId}/review`, { status, reach }).then((r) => r.data),
-  reviewApplication: (appId, status) =>
-    api.post(`/admin/crew/partners/applications/${appId}/review`, { status }).then((r) => r.data),
+  // P2: an optional note to the student (shown in the app)
+  reviewApplication: (appId, status, note) =>
+    api.post(`/admin/crew/partners/applications/${appId}/review`, note ? { status, note } : { status }).then((r) => r.data),
 
   // Campaigns
   campaigns: () => api.get('/admin/crew/campaigns').then((r) => r.data),
@@ -80,6 +82,10 @@ export const crewApi = {
   issueCredential: (payload) =>
     api.post('/admin/crew/credentials', payload).then((r) => r.data),
   revokeCredential: (id) => api.delete(`/admin/crew/credentials/${id}`),
+  // P2-5: a draft letter's text, approve (→ issued), the PDF (a Blob, drafts too)
+  updateCredential: (id, payload) => api.put(`/admin/crew/credentials/${id}`, payload).then((r) => r.data),
+  approveCredential: (id) => api.post(`/admin/crew/credentials/${id}/approve`).then((r) => r.data),
+  credentialPdf: (id) => api.get(`/admin/crew/credentials/${id}/pdf`, { responseType: 'blob' }).then((r) => r.data),
 
   // Points & Badges
   adjustPoints: (userId, delta, note) =>
@@ -89,6 +95,13 @@ export const crewApi = {
 
   // Settings
   settings: () => api.get('/admin/crew/settings').then((r) => r.data),
+};
+
+// P2: public crew calls (no sign-in): verify a credential (the QR on the PDF), and whether the web ambassador page
+// sends students to the app (ambassadorV2 on for everyone)
+export const crewPublicApi = {
+  verify: (id) => api.get(`/crew/verify/${encodeURIComponent(id)}`).then((r) => r.data?.data),
+  config: () => api.get('/crew/config').then((r) => r.data),
 };
 
 // ═════════════════════════════════════════════

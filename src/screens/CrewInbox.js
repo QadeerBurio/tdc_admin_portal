@@ -7,6 +7,8 @@ export default function CrewInbox() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
+  const [note, setNote] = useState(''); // P2: a note to the student with the decision (shown in the app)
+  const pick = (r) => { setNote(''); setSelected(r); };
 
   const load = async () => {
     setLoading(true);
@@ -25,7 +27,7 @@ export default function CrewInbox() {
       if (selected.kind === 'post') {
         await crewApi.reviewPost(selected._id, 'approved', 'posted');
       } else {
-        await crewApi.reviewApplication(selected._id, 'approved');
+        await crewApi.reviewApplication(selected._id, 'approved', note.trim());
       }
       setSelected(null); load();
     } catch (e) { alert(e?.response?.data?.message || 'failed'); }
@@ -37,7 +39,7 @@ export default function CrewInbox() {
       if (selected.kind === 'post') {
         await crewApi.reviewPost(selected._id, 'rejected');
       } else {
-        await crewApi.reviewApplication(selected._id, 'rejected');
+        await crewApi.reviewApplication(selected._id, 'rejected', note.trim());
       }
       setSelected(null); load();
     } catch (e) { alert(e?.response?.data?.message || 'failed'); }
@@ -67,12 +69,12 @@ export default function CrewInbox() {
             <tbody>
               {items.map((r) => (
                 <tr key={r._id} style={s.tr}>
-                  <td style={s.td}><span style={s.badge}>{r.kind}</span></td>
+                  <td style={s.td}><span style={s.badge}>{r.postKind === 'moment' ? 'moment' : r.kind}</span></td>
                   <td style={s.td}>{r.user?.name || '—'}</td>
                   <td style={s.td}>{r.summary}</td>
                   <td style={s.td}>{new Date(r.createdAt).toLocaleDateString()}</td>
                   <td style={s.td}>
-                    <button style={s.btnPrimary} onClick={() => setSelected(r)}>review</button>
+                    <button style={s.btnPrimary} onClick={() => pick(r)}>review</button>
                   </td>
                 </tr>
               ))}
@@ -82,16 +84,31 @@ export default function CrewInbox() {
       )}
 
       {selected && (
-        <Modal onClose={() => setSelected(null)} title={selected.kind === 'post' ? 'Review Post' : 'Review Application'} footer={<><button style={s.btnDanger} onClick={reject}>reject</button><button style={s.btnPrimary} onClick={approve}>approve</button></>}>
+        <Modal onClose={() => setSelected(null)} title={selected.kind === 'post' ? (selected.postKind === 'moment' ? 'Review Campus Moment' : 'Review Post') : 'Review Application'} footer={<><button style={s.btnDanger} onClick={reject}>reject</button><button style={s.btnPrimary} onClick={approve}>approve</button></>}>
             <div style={s.modalBody}>
               <p><strong>From:</strong> {selected.user?.name} ({selected.user?.email})</p>
               {selected.platform && <p><strong>Platform:</strong> {selected.platform}</p>}
               {selected.url && (
                 <p><strong>URL:</strong> <a href={selected.url} target="_blank" rel="noreferrer" style={{ color: '#f9c349' }}>{selected.url}</a></p>
               )}
+              {/* P2-5: a campus moment (photo + caption) */}
+              {selected.postKind === 'moment' && !!selected.imageUrl && (
+                <a href={selected.imageUrl} target="_blank" rel="noreferrer"><img src={selected.imageUrl} alt={selected.caption || 'campus moment'} style={s.momentImg} /></a>
+              )}
+              {selected.postKind === 'moment' && !!selected.caption && <p><strong>Caption:</strong> {selected.caption}</p>}
               {selected.university && <p><strong>University:</strong> {selected.university}</p>}
               {selected.handle && <p><strong>Handle:</strong> {selected.handle}</p>}
-              {(selected.why || selected.summary) && <p><strong>Message:</strong> {selected.why || selected.summary}</p>}
+              {/* P2-3: the in-app application's details */}
+              {selected.kind === 'application' && selected.whyChips?.length > 0 && <p><strong>Why:</strong> {selected.whyChips.join(' · ')}</p>}
+              {selected.kind === 'application' && selected.groups?.length > 0 && <p><strong>Campus groups:</strong> {selected.groups.join(', ')}</p>}
+              {selected.kind === 'application' && selected.source && <p><strong>Sent from:</strong> {selected.source === 'app' ? 'the app' : selected.source}{selected.appliedAt ? `, ${new Date(selected.appliedAt).toLocaleDateString()}` : ''}</p>}
+              {selected.postKind !== 'moment' && (selected.why || selected.summary) && <p><strong>Message:</strong> {selected.why || selected.summary}</p>}
+              {selected.kind === 'application' && (
+                <div style={{ marginTop: 8 }}>
+                  <label htmlFor="crew-review-note" style={s.label}>note to the student (optional, shown in the app)</label>
+                  <textarea id="crew-review-note" style={s.note} maxLength={500} value={note} onChange={(e) => setNote(e.target.value)} placeholder="e.g. tell us more about your campus groups" />
+                </div>
+              )}
             </div>
         </Modal>
       )}
@@ -114,4 +131,7 @@ const s = {
   btnDanger: { padding: '10px 22px', background: '#fff', border: '2px solid #ef4444', color: '#ef4444', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer' },
   empty: { padding: 60, textAlign: 'center', color: '#94a3b8' },
   modalBody: { fontSize: 14, lineHeight: 1.8 },
+  momentImg: { display: 'block', maxWidth: '100%', maxHeight: 320, borderRadius: 12, marginBottom: 8 },
+  label: { display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 },
+  note: { width: '100%', minHeight: 70, padding: '10px 12px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 13, outline: 'none', boxSizing: 'border-box' },
 };

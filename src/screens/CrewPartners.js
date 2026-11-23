@@ -8,11 +8,14 @@ export default function CrewPartners() {
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({ email: '', type: 'ambassador', university: '', handle: '' });
+  // P2: filter by university (name or id; older partners match by name)
+  const [uni, setUni] = useState('');
+  const [applied, setApplied] = useState('');
 
-  const load = async () => {
+  const load = async (university = applied) => {
     setLoading(true);
     try {
-      const data = await crewApi.partners();
+      const data = await crewApi.partners(university ? { university } : undefined);
       setPartners(Array.isArray(data) ? data : []);
     } catch (e) { console.error(e); }
     finally { setLoading(false); }
@@ -43,6 +46,12 @@ export default function CrewPartners() {
         <h1 style={s.title}>crew partners</h1>
         <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ add partner</button>
       </div>
+      <form style={s.filter} onSubmit={(e) => { e.preventDefault(); const v = uni.trim(); setApplied(v); load(v); }}>
+        <label htmlFor="crew-uni-filter" style={s.filterLabel}>university</label>
+        <input id="crew-uni-filter" style={{ ...s.input, maxWidth: 280 }} value={uni} onChange={(e) => setUni(e.target.value)} placeholder="e.g. NED University" />
+        <button type="submit" style={s.btnGhostSm}>filter</button>
+        {applied && <button type="button" style={s.btnGhostSm} onClick={() => { setUni(''); setApplied(''); load(''); }}>clear</button>}
+      </form>
 
       {partners.length === 0 ? <div style={s.empty}>no partners yet.</div> : (
         <div style={s.card}>
@@ -54,6 +63,7 @@ export default function CrewPartners() {
                 <th style={s.th}>% SORTED</th>
                 <th style={s.th}>POINTS</th>
                 <th style={s.th}>REFERRALS</th>
+                <th style={s.th} title="friends who joined with their code and verified their e-mail">VERIFIED (MONTH)</th>
                 <th style={s.th}></th>
               </tr>
             </thead>
@@ -70,6 +80,7 @@ export default function CrewPartners() {
                     <td style={s.td}><span style={{ fontWeight: 700, color: pct < 40 ? '#ef4444' : '#10b981' }}>{pct}%</span></td>
                     <td style={s.td}>{(p.points?.lifetime || 0).toLocaleString()}</td>
                     <td style={s.td}>{p.stats?.referralsCredited || 0}</td>
+                    <td style={s.td}>{typeof p.stats?.verified === 'number' ? `${p.stats.verified} (${p.stats.verifiedThisMonth ?? 0})` : '—'}</td>
                     <td style={s.td}>
                       <button style={s.btnDangerSm} onClick={() => remove(p.user?._id)}>remove</button>
                     </td>
@@ -113,6 +124,9 @@ export default function CrewPartners() {
 }
 
 const s = {
+  filter: { display: 'flex', alignItems: 'center', gap: 8, marginBottom: 16, flexWrap: 'wrap' },
+  filterLabel: { fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase' },
+  btnGhostSm: { padding: '8px 14px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontWeight: 600, fontSize: 12 },
   header: { display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
   title: { fontSize: 24, fontWeight: 800, color: '#0f172a', margin: 0 },
   card: { background: '#fff', borderRadius: 14, border: '1px solid #f1f5f9', overflow: 'hidden' },

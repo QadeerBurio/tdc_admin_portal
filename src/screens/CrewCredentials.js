@@ -1,4 +1,8 @@
 // src/screens/CrewCredentials.jsx
+// P2-5: certificates are made as PDFs on the server (name, role, university, dates, credential id, verify link + QR).
+// Recommendation letters: for a student with the ambassador programme on, the server makes a draft; an admin writes /
+// edits the text and approves it before it is issued (never generated). Revoking makes its verify page say "revoked".
+// Older servers / students without the programme: issued at once, as before.
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
 import { Modal } from '../portal/kit';
@@ -9,12 +13,16 @@ const TYPES = [
   { id: 'recommendation', label: 'Recommendation' },
   { id: 'founder_card', label: 'Founder Card' },
 ];
+const LETTERS = ['letter', 'recommendation'];
+export const VERIFY_BASE = 'https://gettdc.pk/verify/';
 
 export default function CrewCredentials() {
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
-  const [form, setForm] = useState({ userId: '', type: 'certificate', note: '' });
+  const [form, setForm] = useState({ userId: '', type: 'certificate', note: '', letterText: '' });
+  const [letter, setLetter] = useState(null); // { id, text } the draft letter being written
+  const [busy, setBusy] = useState(false);
 
   const load = async () => {
     setLoading(true);
@@ -29,17 +37,41 @@ export default function CrewCredentials() {
 
   const issue = async () => {
     try {
-      await crewApi.issueCredential(form);
+      const payload = { userId: form.userId, type: form.type, note: form.note };
+      if (LETTERS.includes(form.type) && form.letterText.trim()) payload.letterText = form.letterText.trim();
+      await crewApi.issueCredential(payload);
       setOpen(false);
-      setForm({ userId: '', type: 'certificate', note: '' });
+      setForm({ userId: '', type: 'certificate', note: '', letterText: '' });
       load();
     } catch (e) { alert(e?.response?.data?.message || 'failed'); }
   };
 
   const revoke = async (id) => {
-    if (!window.confirm('revoke this credential?')) return;
+    if (!window.confirm('revoke this credential? its verify page will say "revoked".')) return;
     try { await crewApi.revokeCredential(id); load(); }
     catch (e) { alert('failed'); }
+  };
+
+  const saveLetter = async (andApprove) => {
+    if (!letter) return;
+    if (andApprove && !window.confirm('approve and issue this letter? it can no longer be edited.')) return;
+    setBusy(true);
+    try {
+      await crewApi.updateCredential(letter.id, { letterText: letter.text });
+      if (andApprove) await crewApi.approveCredential(letter.id);
+      setLetter(null);
+      load();
+    } catch (e) { alert(e?.response?.data?.message || 'failed'); }
+    finally { setBusy(false); }
+  };
+
+  const preview = async (id) => {
+    try {
+      const blob = await crewApi.credentialPdf(id);
+      const url = URL.createObjectURL(blob);
+      window.open(url, '_blank', 'noopener');
+      setTimeout(() => URL.revokeObjectURL(url), 60000);
+    } catch (e) { alert(e?.response?.status === 400 ? 'write the letter first.' : 'could not open the pdf.'); }
   };
 
   if (loading) return <div style={s.empty}>loading...</div>;
@@ -71,9 +103,22 @@ export default function CrewCredentials() {
                     <div style={{ fontSize: 11, color: '#94a3b8' }}>{c.user?.email || ''}</div>
                   </td>
                   <td style={s.td}>{TYPES.find((t) => t.id === c.type)?.label || c.type}</td>
-                  <td style={s.td}>{c.status}</td>
-                  <td style={s.td}>{c.issuedAt ? new Date(c.issuedAt).toLocaleDateString() : '—'}</td>
                   <td style={s.td}>
+                    <span style={c.status === 'draft' ? s.draft : c.status === 'revoked' ? s.revoked : undefined}>{c.status}</span>
+                    {c.status === 'issued' && (
+                      <div style={{ fontSize: 11, marginTop: 2 }}>
+                        <a href={`${VERIFY_BASE}${c._id}`} target="_blank" rel="noreferrer" style={{ color: '#b8860b' }}>verify page</a>
+                      </div>
+                    )}
+                  </td>
+                  <td style={s.td}>{c.status !== 'draft' && c.issuedAt ? new Date(c.issuedAt).toLocaleDateString() : '—'}</td>
+                  <td style={{ ...s.td, whiteSpace: 'nowrap' }}>
+                    {c.status === 'draft' && LETTERS.includes(c.type) && (
+                      <button style={s.btnSm} onClick={() => setLetter({ id: c._id, name: c.user?.name || '', text: c.letterText || '' })}>write letter</button>
+                    )}
+                    {(c.status !== 'draft' || (c.letterText || '').trim()) && (
+                      <button style={s.btnSm} onClick={() => preview(c._id)}>pdf</button>
+                    )}
                     {c.status === 'issued' && (
                       <button style={s.btnDangerSm} onClick={() => revoke(c._id)}>revoke</button>
                     )}
@@ -97,10 +142,27 @@ export default function CrewCredentials() {
                 {TYPES.map((t) => <option key={t.id} value={t.id}>{t.label}</option>)}
               </select>
             </div>
+            {LETTERS.includes(form.type) && (
+              <div style={s.formGroup}>
+                <label style={s.label}>Letter text (optional now: you can write it on the draft)</label>
+                <textarea style={{ ...s.input, minHeight: 120 }} value={form.letterText} maxLength={6000} onChange={(e) => setForm({ ...form, letterText: e.target.value })} />
+                <div style={s.hint}>for students in the ambassador programme a letter starts as a draft: you approve it before it is issued.</div>
+              </div>
+            )}
             <div style={s.formGroup}>
               <label style={s.label}>Internal Note</label>
               <textarea style={{ ...s.input, minHeight: 80 }} value={form.note} onChange={(e) => setForm({ ...form, note: e.target.value })} />
             </div>
+        </Modal>
+      )}
+
+      {letter && (
+        <Modal onClose={() => setLetter(null)} title={`Letter${letter.name ? ` for ${letter.name}` : ''}`} footer={<><button style={s.btnGhost} onClick={() => setLetter(null)}>cancel</button><button style={s.btnGhost} disabled={busy} onClick={() => saveLetter(false)}>save draft</button><button style={s.btnPrimary} disabled={busy || !letter.text.trim()} onClick={() => saveLetter(true)}>approve & issue</button></>}>
+          <div style={s.formGroup}>
+            <label htmlFor="crew-letter-text" style={s.label}>Letter text</label>
+            <textarea id="crew-letter-text" style={{ ...s.input, minHeight: 260 }} value={letter.text} maxLength={6000} onChange={(e) => setLetter({ ...letter, text: e.target.value })} />
+            <div style={s.hint}>{letter.text.length}/6000 · printed as written, with the student's name, role, university, dates and a verify link + QR.</div>
+          </div>
         </Modal>
       )}
     </div>
@@ -118,9 +180,13 @@ const s = {
   td: { padding: '14px 16px', fontSize: 13, color: '#1e293b' },
   btnPrimary: { padding: '10px 20px', background: 'linear-gradient(135deg, #f9c349 0%, #ff961a 100%)', border: 'none', borderRadius: 10, fontWeight: 700, fontSize: 13, cursor: 'pointer', color: '#0f172a' },
   btnGhost: { padding: '10px 22px', background: '#f1f5f9', border: 'none', borderRadius: 10, fontWeight: 600, fontSize: 13, cursor: 'pointer' },
+  btnSm: { padding: '6px 12px', background: '#f1f5f9', border: '1px solid #e2e8f0', borderRadius: 8, cursor: 'pointer', fontSize: 12, marginRight: 6 },
   btnDangerSm: { padding: '6px 12px', background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)', color: '#ef4444', borderRadius: 8, cursor: 'pointer', fontSize: 12 },
+  draft: { color: '#b8860b', fontWeight: 700 },
+  revoked: { color: '#ef4444', fontWeight: 700 },
   empty: { padding: 60, textAlign: 'center', color: '#94a3b8' },
   formGroup: { marginBottom: 14 },
   label: { display: 'block', fontSize: 11, fontWeight: 700, color: '#64748b', textTransform: 'uppercase', marginBottom: 6 },
-  input: { width: '100%', padding: '10px 12px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 13, outline: 'none' },
+  hint: { fontSize: 11, color: '#94a3b8', marginTop: 6 },
+  input: { width: '100%', padding: '10px 12px', border: '2px solid #e2e8f0', borderRadius: 10, fontSize: 13, outline: 'none', boxSizing: 'border-box' },
 };
