@@ -16,6 +16,7 @@ export const ADMIN_MENU = [
       ["dashboard", "dashboard", "home", "orange"],
       ["business_overview", "overview", "chart", "green"],
       ["engagement_metrics", "metrics", "chart", "blue"],
+      ["resume_metrics", "resume metrics", "chart", "sky"], // P3d: templates, applications, interviews, public pages
       ["admin_actions", "admin actions", "receipt", "ink"], // the audit log
     ],
   },

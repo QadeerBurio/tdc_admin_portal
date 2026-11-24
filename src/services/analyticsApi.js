@@ -21,6 +21,8 @@ export const analyticsApi = {
   adminMetrics: (q) => unwrap(api.get("/analytics/admin/metrics", { params: q })),
   brandInsights: (range) => unwrap(api.get("/analytics/brands/me", { params: range })),
   employerResults: (range) => unwrap(api.get("/analytics/employers/me", { params: range })),
+  // P3d: resume templates, applications with "my tdc resume", interviews, hires, public pages (analytics.view)
+  resumeMetrics: () => unwrap(api.get("/analytics/admin/resume-metrics")),
 };
 
 const day = (d) => new Date(d.getTime() + 5 * 3600e3).toISOString().slice(0, 10); // Karachi date

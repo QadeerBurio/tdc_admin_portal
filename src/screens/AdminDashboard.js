@@ -63,6 +63,7 @@ import { API_ORIGIN } from "../config/api";
 import { useAdminAccess } from "../portal/adminAccess";
 import NoAccess from "../portal/NoAccess";
 import AdminTeam from "./AdminTeam";
+import AdminResumeMetrics from "./AdminResumeMetrics"; // P3d
 // pilot pages show only once their pilot is set up on the server: Surprise Boxes, First Hire Free, hire disputes
 const FHF_PAGES = ["free_hire_trials"]; // company verifications: every employer (on.company)
 const adminMenuFor = (on) => ADMIN_MENU.map((s) => ({ ...s, items: s.items.filter((i) => (i[0] !== "surplus_ops" || on.surplus) && (!FHF_PAGES.includes(i[0]) || on.fhf) && (i[0] !== "hire_disputes" || on.disputes) && (i[0] !== "ratings_reports" || on.ratings) && (i[0] !== "admin_actions" || on.actions) && (i[0] !== "features" || on.features) && (i[0] !== "loyalty_programs" || on.loyaltyPrograms) && (i[0] !== "hiring_overview" || on.hiring) && (i[0] !== "hiring_plans" || on.plans) && (i[0] !== "company_verifications" || on.company) && (i[0] !== "universities" || on.universities)) })).filter((s) => s.items.length > 0);
@@ -474,6 +475,7 @@ export default function AdminDashboard() {
       case "surplus_ops": return <SurplusOps />;
       case "company_verifications": return <CompanyVerifications />;
       case "business_overview": return <AdminHome go={go} pages={allowedPages} />;
+      case "resume_metrics": return <AdminResumeMetrics />;
       case "team_access": return <AdminTeam />;
       case "free_hire_trials": return <FreeHireTrials />;
       case "hiring_plans": return <AdminHiringPlans />;
