@@ -10,8 +10,10 @@ import { renderHook } from "@testing-library/react";
 import { AdminAccessContext, useAdminCan } from "./adminAccess";
 import { crewApi } from "../services/api";
 import CrewPartners from "../screens/CrewPartners";
+import CrewInbox from "../screens/CrewInbox";
+import CrewCampaigns from "../screens/CrewCampaigns";
 
-jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn() }, crewApi: { partners: jest.fn(), addPartner: jest.fn(), removePartner: jest.fn() } }));
+jest.mock("../services/api", () => ({ __esModule: true, default: { get: jest.fn() }, crewApi: { partners: jest.fn(), addPartner: jest.fn(), removePartner: jest.fn(), inbox: jest.fn(), reviewPost: jest.fn(), reviewApplication: jest.fn(), campaigns: jest.fn(), createCampaign: jest.fn(), endCampaign: jest.fn() } }));
 jest.mock("./kit", () => ({ Modal: ({ title, children, footer }) => (<div role="dialog" aria-label={title}>{children}{footer}</div>) }));
 
 const member = (permissions) => ({ loaded: true, level: "member", permissions, can: (p) => !p || permissions.includes(p) });
@@ -49,6 +51,35 @@ test("crew partners: crew.manage → add and remove show", async () => {
   expect(await screen.findByText("Sana")).toBeInTheDocument();
   expect(screen.getByText("+ add partner")).toBeInTheDocument();
   expect(screen.getByText("remove")).toBeInTheDocument();
+});
+
+// Q-a (owner): every crew screen is rendered by a test, so a syntax error fails jest, not only the build
+const INBOX = [{ _id: "p1", kind: "post", postKind: "moment", caption: "tdc stall at the NED fair", summary: "campus moment", user: { name: "Sana" }, createdAt: "2026-11-20T10:00:00Z" }];
+const CAMPAIGNS = [{ _id: "c1", name: "winter fair", brand: { brandName: "Chai Spot" }, partner: { name: "Sana" }, followerPercent: 10, status: "live", stats: { followersJoined: 7 } }];
+const asAdmin = (perms, el) => render(<AdminAccessContext.Provider value={member(perms)}>{el}</AdminAccessContext.Provider>);
+
+test("crew inbox renders; review only with crew.manage", async () => {
+  crewApi.inbox.mockResolvedValue(INBOX);
+  const { unmount } = asAdmin(["crew.view"], <CrewInbox />);
+  expect(await screen.findByText(/Sana/)).toBeInTheDocument();
+  expect(screen.queryByText("review")).toBeNull();
+  unmount();
+  asAdmin(["crew.view", "crew.manage"], <CrewInbox />);
+  expect(await screen.findByText("review")).toBeInTheDocument();
+});
+
+test("crew campaigns renders; new / end only with crew.manage", async () => {
+  crewApi.campaigns.mockResolvedValue(CAMPAIGNS);
+  const { unmount } = asAdmin(["crew.view"], <CrewCampaigns />);
+  expect(await screen.findByText("winter fair")).toBeInTheDocument();
+  expect(screen.getByText("Chai Spot")).toBeInTheDocument();
+  expect(screen.queryByText("+ new campaign")).toBeNull();
+  expect(screen.queryByText("end")).toBeNull();
+  unmount();
+  asAdmin(["crew.view", "crew.manage"], <CrewCampaigns />);
+  expect(await screen.findByText("winter fair")).toBeInTheDocument();
+  expect(screen.getByText("+ new campaign")).toBeInTheDocument();
+  expect(screen.getByText("end")).toBeInTheDocument();
 });
 
 // every guarded button names the permission of the server route it calls
