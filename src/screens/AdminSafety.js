@@ -8,6 +8,7 @@
 // Every decision asks for a note and is written to the admin actions log.
 import React, { useCallback, useEffect, useState } from "react";
 import safetyApi from "../services/safetyApi";
+import { useAdminCan } from "../portal/adminAccess";
 import { PageHeader, PageLoading, Tabs, Table, Button, Pill, EmptyState, Card, Drawer, Field, Input, Textarea, Select, Facts, toast } from "../portal/kit";
 
 const TABS = [
@@ -45,6 +46,10 @@ export default function AdminSafety() {
   const [busy, setBusy] = useState(false);
   const [revealReason, setRevealReason] = useState("");
   const [revealed, setRevealed] = useState(null);
+  // P5a: deciding needs safety.act (suspend / ban also students.suspend), showing the author identity.reveal (as on the server)
+  const can = useAdminCan();
+  const canAct = can("safety.act");
+  const actions = (open && open.id ? ACTIONS : ACTIONS.slice(0, 2)).filter(([v]) => !["suspend24h", "suspend7d", "ban"].includes(v) || can("students.suspend"));
 
   const load = useCallback(async () => {
     if (tab === "settings" || tab === "observed") return;
@@ -108,7 +113,7 @@ export default function AdminSafety() {
           onClose={busy ? undefined : () => setOpen(null)}
           title={KIND[content(open).kind] || "item"}
           sub={open.reason ? `reported: ${open.reason}` : open.statusReason || ""}
-          footer={<Button onClick={decide} loading={busy} disabled={busy}>save decision</Button>}
+          footer={canAct ? <Button onClick={decide} loading={busy} disabled={busy}>save decision</Button> : null}
         >
           <Card title="content" icon="file" tone="sand">
             <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{content(open).gone ? "(deleted)" : content(open).text}</p>
@@ -122,15 +127,19 @@ export default function AdminSafety() {
             ...(open.description ? [["reporter's note", open.description]] : []),
             ...(open.recheck ? [["re-check", open.recheck.confirmed ? `confirmed (${(open.recheck.reasons || []).join(", ")})` : "not confirmed"]] : []),
           ]} />
-          <Field label="decision" htmlFor="safety-action">
-            <Select id="safety-action" value={action} onChange={(e) => setAction(e.target.value)}>
-              {(open.id ? ACTIONS : ACTIONS.slice(0, 2)).map(([v, l]) => <option key={v} value={v}>{l}</option>)}
-            </Select>
-          </Field>
-          <Field label="note (goes into the admin actions log)" htmlFor="safety-note">
-            <Textarea id="safety-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={500} />
-          </Field>
-          {open.id && content(open).author && (
+          {canAct ? (
+            <>
+              <Field label="decision" htmlFor="safety-action">
+                <Select id="safety-action" value={action} onChange={(e) => setAction(e.target.value)}>
+                  {actions.map(([v, l]) => <option key={v} value={v}>{l}</option>)}
+                </Select>
+              </Field>
+              <Field label="note (goes into the admin actions log)" htmlFor="safety-note">
+                <Textarea id="safety-note" value={note} onChange={(e) => setNote(e.target.value)} rows={3} maxLength={500} />
+              </Field>
+            </>
+          ) : <p className="tdcp-sub">deciding needs the "decide reports" permission. ask a super admin.</p>}
+          {open.id && content(open).author && can("identity.reveal") && (
             <Card title="who wrote it" icon="shield" tone="red">
               {revealed ? (
                 <Facts rows={[["name", revealed.name], ["role", revealed.role], ["university", revealed.university || "–"], ["account", revealed.accountStatus]]} />
@@ -204,6 +213,7 @@ function SafetySettings() {
   const [tags, setTags] = useState(null);
   const [prompts, setPrompts] = useState(null);
   const [busy, setBusy] = useState(false);
+  const canSave = useAdminCan()("safety.act"); // P5a: saving the settings needs safety.act (as on the server)
   useEffect(() => {
     safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); setTags(Array.isArray(x.tags) ? x.tags : null); setPrompts(Array.isArray(x.prompts) ? x.prompts.join("\n") : null); }).catch((e) => toast(e.message || "could not load the settings"));
   }, []);
@@ -218,7 +228,7 @@ function SafetySettings() {
     } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
   };
   return (
-    <Card title="settings" icon="settings" tone="sand" action={<Button onClick={save} loading={busy}>save</Button>}>
+    <Card title="settings" icon="settings" tone="sand" action={canSave ? <Button onClick={save} loading={busy}>save</Button> : null}>
       <Field label="mode" htmlFor="safety-mode" hint="start with observe for a few days, check 'would have blocked', then enforce">
         <Select id="safety-mode" value={mode} onChange={(e) => setMode(e.target.value)}>
           {["off", "observe", "enforce"].map((m) => <option key={m} value={m}>{MODE_LABEL[m]}</option>)}
