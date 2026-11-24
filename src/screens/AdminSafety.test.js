@@ -106,3 +106,36 @@ test("settings: the mode (off / observe / enforce) is shown and saved", async ()
   fireEvent.click(screen.getByRole("button", { name: "save" }));
   await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ mode: "enforce" })));
 });
+
+test("settings (P4a): post tags (rename, hide, add) and prompt chips; an older server without them gets nothing new", async () => {
+  safetyApi.settings.mockResolvedValueOnce({ mode: "enforce", reportThreshold: 3, bannedWords: [], helplines: [{ name: "x", number: "1166", note: "" }], suspendOnSingleEvidenceReport: false,
+    tags: [{ id: "crush", label: "crush", hidden: false }, { id: "rant", label: "rant", hidden: false }], prompts: ["a hostel story nobody believes", "a small win this week"] });
+  const { container } = render(<AdminSafety />);
+  fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+  expect(await screen.findByDisplayValue("crush")).toBeInTheDocument();
+  expect(screen.getByText("#rant")).toBeInTheDocument();
+  fireEvent.change(screen.getByLabelText("tag 1 name"), { target: { value: "crushes" } });
+  fireEvent.change(screen.getByLabelText("tag 2 shown or hidden"), { target: { value: "hidden" } });
+  fireEvent.click(screen.getByRole("button", { name: "add a tag" }));
+  fireEvent.change(screen.getByLabelText("tag 3 name"), { target: { value: "exam stress" } });
+  fireEvent.change(screen.getByLabelText("composer prompt chips, one per line (3 are shown each week, in turn)"), { target: { value: "one\n\n two \nthree" } });
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalledWith(expect.objectContaining({
+    tags: [{ id: "crush", label: "crushes", hidden: false }, { id: "rant", label: "rant", hidden: true }, { label: "exam stress", hidden: false }],
+    prompts: ["one", "two", "three"],
+  })));
+  const axe = require("axe-core");
+  const r = await axe.run(container, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] }, rules: { "color-contrast": { enabled: false } } });
+  expect(r.violations.map((v) => v.id)).toEqual([]);
+});
+
+test("settings: an older server (no tags / prompts) gets the same save as before", async () => {
+  render(<AdminSafety />);
+  fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+  await screen.findByDisplayValue("1166");
+  expect(screen.queryByText(/post tags/)).toBeNull();
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalled());
+  const sent = safetyApi.saveSettings.mock.calls.slice(-1)[0][0];
+  expect("tags" in sent || "prompts" in sent).toBe(false);
+});
