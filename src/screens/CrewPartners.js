@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
 import { Modal } from '../portal/kit';
+import { useAdminCan } from '../portal/adminAccess';
 
 export default function CrewPartners() {
+  const canManage = useAdminCan()('crew.manage'); // P5a: changes need crew.manage (as on the server); crew.view only reads
   const [partners, setPartners] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -44,7 +46,7 @@ export default function CrewPartners() {
     <div>
       <div style={s.header}>
         <h1 style={s.title}>crew partners</h1>
-        <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ add partner</button>
+        {canManage && <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ add partner</button>}
       </div>
       <form style={s.filter} onSubmit={(e) => { e.preventDefault(); const v = uni.trim(); setApplied(v); load(v); }}>
         <label htmlFor="crew-uni-filter" style={s.filterLabel}>university</label>
@@ -82,7 +84,7 @@ export default function CrewPartners() {
                     <td style={s.td}>{p.stats?.referralsCredited || 0}</td>
                     <td style={s.td}>{typeof p.stats?.verified === 'number' ? `${p.stats.verified} (${p.stats.verifiedThisMonth ?? 0})` : '—'}</td>
                     <td style={s.td}>
-                      <button style={s.btnDangerSm} onClick={() => remove(p.user?._id)}>remove</button>
+                      {canManage && <button style={s.btnDangerSm} onClick={() => remove(p.user?._id)}>remove</button>}
                     </td>
                   </tr>
                 );

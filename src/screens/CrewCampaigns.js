@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
 import { Modal } from '../portal/kit';
+import { useAdminCan } from '../portal/adminAccess';
 
 export default function CrewCampaigns() {
+  const canManage = useAdminCan()('crew.manage'); // P5a: changes need crew.manage (as on the server); crew.view only reads
   const [campaigns, setCampaigns] = useState([]);
   const [loading, setLoading] = useState(true);
   const [open, setOpen] = useState(false);
@@ -45,7 +47,7 @@ export default function CrewCampaigns() {
     <div>
       <div style={s.header}>
         <h1 style={s.title}>crew campaigns</h1>
-        <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ new campaign</button>
+        {canManage && <button style={s.btnPrimary} onClick={() => setOpen(true)}>+ new campaign</button>}
       </div>
 
       {campaigns.length === 0 ? <div style={s.empty}>no campaigns yet.</div> : (
@@ -72,7 +74,7 @@ export default function CrewCampaigns() {
                   <td style={s.td}>{c.status}</td>
                   <td style={s.td}>{c.stats?.followersJoined || 0}</td>
                   <td style={s.td}>
-                    {c.status === 'live' && (
+                    {c.status === 'live' && canManage && (
                       <button style={s.btnDangerSm} onClick={() => end(c._id)}>end</button>
                     )}
                   </td>

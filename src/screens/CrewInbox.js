@@ -2,8 +2,10 @@
 import React, { useEffect, useState } from 'react';
 import { crewApi } from '../services/api';
 import { Modal } from '../portal/kit';
+import { useAdminCan } from '../portal/adminAccess';
 
 export default function CrewInbox() {
+  const canManage = useAdminCan()('crew.manage'); // P5a: changes need crew.manage (as on the server); crew.view only reads
   const [items, setItems] = useState([]);
   const [loading, setLoading] = useState(true);
   const [selected, setSelected] = useState(null);
@@ -74,7 +76,7 @@ export default function CrewInbox() {
                   <td style={s.td}>{r.summary}</td>
                   <td style={s.td}>{new Date(r.createdAt).toLocaleDateString()}</td>
                   <td style={s.td}>
-                    <button style={s.btnPrimary} onClick={() => pick(r)}>review</button>
+                    {canManage && <button style={s.btnPrimary} onClick={() => pick(r)}>review</button>}
                   </td>
                 </tr>
               ))}
