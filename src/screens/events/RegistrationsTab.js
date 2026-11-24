@@ -5,6 +5,7 @@ import React, { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { format } from "date-fns";
 import Ico from "../../portal/Ico";
 import { Button, IconButton, SearchInput, Select, Field, Textarea, Modal, Drawer, Table, EmptyState, PageLoading } from "../../portal/kit";
+import { useAdminCan } from "../../portal/adminAccess";
 import { eventsApi, authProblem, errorMessage, API_BASE } from "./eventsApi";
 
 const STATUSES = [
@@ -84,6 +85,7 @@ export const StatusChip = ({ status }) => {
 
 export default function RegistrationsTab({ token, events, onAuthError, notify, isMobile, onChanged }) {
   const [eventId, setEventId] = useState("");
+  const canExport = useAdminCan()("data.export"); // P5a: the CSV needs data.export (as on the server)
   const [status, setStatus] = useState("all");
   const [search, setSearch] = useState("");
   const [q, setQ] = useState("");
@@ -350,9 +352,11 @@ export default function RegistrationsTab({ token, events, onAuthError, notify, i
               </option>
             ))}
           </Select>
-          <Button variant="secondary" icon="download" onClick={exportCsv} loading={exporting}>
-            {isMobile ? "CSV" : "Export CSV"}
-          </Button>
+          {canExport && (
+            <Button variant="secondary" icon="download" onClick={exportCsv} loading={exporting}>
+              {isMobile ? "CSV" : "Export CSV"}
+            </Button>
+          )}
         </div>
       </div>
 
