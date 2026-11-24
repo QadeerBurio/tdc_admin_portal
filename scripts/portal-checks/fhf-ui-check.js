@@ -27,7 +27,8 @@ const routesNow = (k) => {
   if (k === "POST /api/career/employers/me/trial/activate") { stage = "active"; return ok(trialView()); }
   return ({
     "GET /api/app/flags/me": { metaEvents: false, careerTimeline: true, employerFirstHireFree: flagOn },
-    "GET /api/auth/me": { user: { _id: E, name: "Hina", role: "employee", companyName: "Bright Labs" } },
+    // the real reply: the account itself, flat (server GET /api/auth/me adds logo, companyName, brandName), not { user }
+    "GET /api/auth/me": { _id: E, name: "Hina", role: "employee", email: "hina@brightlabs.example", companyName: "Bright Labs", brandName: "", logo: "" },
     "GET /api/career/employers/me/trial": flagOn ? ok(trialView()) : 404,
     "GET /api/career/employers/me/trial/summary": ok({ jobs: 2, applicants: 7, completedInterviews: 2, verifiedHires: stage === "used" ? 1 : 0, freeHireUsed: stage === "used", feeWaivedHires: 0, hiresPendingPricing: 0 }),
     "GET /api/career/admin/verifications": ok([{ id: "v2", employer: { id: E2, name: "Omar Bright", email: "omar@brightlabs.example", accountStatus: "Not Verified" }, companyName: "Bright Labs", registrationType: "ntn", ntnOrSecp: "12345678", businessEmailDomain: "brightlabs.example", website: "brightlabs.example", companyGroupKey: "reg:12345678", status: "duplicate_review", reason: "", submittedAt: new Date().toISOString(), hints: { signInEmailMatchesDomain: true, websiteMatchesDomain: true }, duplicateOf: [{ verificationId: "v1", employer: { id: E, name: "Hina Bright" }, matchedOn: ["registration number"] }], history: [] }]),
