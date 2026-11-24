@@ -9,6 +9,7 @@
 //                         revoke / keep with a reason; and the billing ledger (records only: nothing is charged)
 import React, { useCallback, useEffect, useState } from "react";
 import { PageHeader, PageLoading, Button, Field, Textarea, Select, Checkbox, Tabs, EmptyState, Pill, Table, Modal, toast } from "../portal/kit";
+import { useAdminCan } from "../portal/adminAccess";
 import trialApi, { TRIAL_LABEL, TRIAL_TONE, VERIFICATION_LABEL, VERIFICATION_TONE, BILLING_LABEL, DOCUMENT_KIND_LABEL, pkDate } from "../services/trialApi";
 import hiringAccessApi from "../services/hiringAccessApi";
 
@@ -45,6 +46,7 @@ async function openDocument(verificationId, doc) {
 }
 export function CompanyVerifications() {
   const [available, setAvailable] = useState(null);
+  const canVerify = useAdminCan()("employers.verify"); // P5a: documents and decisions need employers.verify (as on the server)
   useEffect(() => { hiringAccessApi.companyAvailable().then(setAvailable); }, []);
   const [status, setStatus] = useState("pending");
   const [rows, setRows] = useState(null);
@@ -78,13 +80,13 @@ export function CompanyVerifications() {
           { key: "proof", label: "proof given", render: (r) => (
             <div data-proof={r.id}>
               <div className="k-hint">{[r.proof?.emailDomain && "own e-mail domain", r.proof?.website && "website", r.proof?.documents && `${r.proof.documents} document${r.proof.documents === 1 ? "" : "s"}`].filter(Boolean).join(" · ") || "none"}</div>
-              {(r.documents || []).map((x) => <div key={x.id}><Button size="sm" variant="secondary" icon="file" onClick={() => openDocument(r.id, x)} aria-label={`open ${DOCUMENT_KIND_LABEL[x.kind] || x.kind} of ${r.companyName}`}>{DOCUMENT_KIND_LABEL[x.kind] || x.kind}</Button></div>)}
+              {canVerify && (r.documents || []).map((x) => <div key={x.id}><Button size="sm" variant="secondary" icon="file" onClick={() => openDocument(r.id, x)} aria-label={`open ${DOCUMENT_KIND_LABEL[x.kind] || x.kind} of ${r.companyName}`}>{DOCUMENT_KIND_LABEL[x.kind] || x.kind}</Button></div>)}
             </div>
           ) },
           { key: "dup", label: "possible duplicate of", render: (r) => (r.duplicateOf.length ? r.duplicateOf.map((d) => <div key={d.verificationId}><Pill tone="orange">{d.employer.name || "another account"}</Pill> <span className="k-hint">same {d.matchedOn.join(", ")}</span></div>) : "–") },
           { key: "jobs", label: "jobs waiting", render: (r) => ((r.pendingJobs || []).length ? <><Pill tone="yellow">{r.pendingJobs.length} waiting</Pill>{r.pendingJobs.slice(0, 3).map((j) => <div key={j.id} className="k-hint">{j.title}</div>)}{r.pendingJobs.length > 3 && <div className="k-hint">+{r.pendingJobs.length - 3} more</div>}</> : "–") },
           { key: "status", label: "status", render: (r) => <><Pill tone={VERIFICATION_TONE[r.status]}>{VERIFICATION_LABEL[r.status]}</Pill>{r.reason && <div className="k-hint">{r.reason}</div>}</> },
-          { key: "act", label: "", render: (r) => (
+          { key: "act", label: "", render: (r) => (!canVerify ? null :
             <div style={{ display: "flex", gap: 6, flexWrap: "wrap" }}>
               {r.status !== "approved" && <Button size="sm" onClick={() => { setReview({ v: r, action: "approve" }); setReason(""); setSeparate(false); }}>approve</Button>}
               {r.status !== "rejected" && <Button size="sm" variant="secondary" onClick={() => { setReview({ v: r, action: "reject" }); setReason(""); }}>reject</Button>}
