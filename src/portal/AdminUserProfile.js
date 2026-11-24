@@ -6,6 +6,7 @@ import api, { usersApi, offersApi, engagementApi } from "../services/api";
 import Ico from "./Ico";
 import DeleteAccountDialog from "./DeleteAccountDialog";
 import AccountFeatures from "./AccountFeatures";
+import { useAdminCan } from "./adminAccess";
 
 const ROLE = {
   student: { list: "all students", icon: "grad", tone: "orange", label: "student" },
@@ -57,6 +58,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
   const [error, setError] = useState("");
   const [tab, setTab] = useState("overview");
   const [deleting, setDeleting] = useState(false);
+  const can = useAdminCan(); // P5a: the delete button and the features tab follow the admin's permissions
   const [extra, setExtra] = useState({});
 
   useEffect(() => {
@@ -122,7 +124,8 @@ export default function AdminUserProfile({ role, id, onBack }) {
   if (r === "brand" && user.brandApprovalStatus) chips.push([user.brandApprovalStatus === "approved" ? "approved" : user.brandApprovalStatus, user.brandApprovalStatus === "approved" ? "ok" : user.brandApprovalStatus === "rejected" ? "bad" : "warn"]);
   if (user.accountStatus && user.accountStatus !== "active") chips.push([user.accountStatus, "bad"]);
 
-  const tabs = r === "student" ? ["overview", "crew", "features", "account"] : r === "brand" ? ["overview", "offers", "redemptions", "features", "account"] : r === "employee" ? ["overview", "features", "account"] : ["overview", "account"];
+  const allTabs = r === "student" ? ["overview", "crew", "features", "account"] : r === "brand" ? ["overview", "offers", "redemptions", "features", "account"] : r === "employee" ? ["overview", "features", "account"] : ["overview", "account"];
+  const tabs = allTabs.filter((t) => t !== "features" || can("features.manage"));
   const p = extra.profile;
 
   const account = (
@@ -248,7 +251,7 @@ export default function AdminUserProfile({ role, id, onBack }) {
             {chips.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 10 }}>{chips.map(([t, c]) => <span key={t} className={`tdcp-chip ${c}`}>{t}</span>)}</div>}
           </div>
         </div>
-        {r === "student" && (
+        {r === "student" && can("students.delete") && (
           <div className="tdcp-actions">
             <button type="button" className="tdcp-btn tdcp-btn-secondary" onClick={() => setDeleting(true)} style={{ color: "var(--danger)" }}>
               <Ico kind="trash" tone="plain" size={16} /> delete account
