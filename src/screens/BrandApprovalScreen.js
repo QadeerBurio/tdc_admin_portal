@@ -16,6 +16,7 @@ import {
   Select, DateInput, Checkbox, toast,
 } from '../portal/kit';
 import DeleteAccountDialog from '../portal/DeleteAccountDialog';
+import { useAdminCan } from '../portal/adminAccess';
 import './styles/Brands.css';
 import { storeBadge } from '../portal/storeBadge';
 import { API_ORIGIN } from "../config/api";
@@ -84,6 +85,9 @@ const BrandApprovalScreen = () => {
   const [reasonError, setReasonError] = useState('');
   const [busy, setBusy] = useState(false);
   const [deleteId, setDeleteId] = useState(null);
+  // P5a: approve / reject / request info / log in as brand need brands.approve, delete needs students.delete (as on the server)
+  const can = useAdminCan();
+  const canDecide = can('brands.approve');
   const [autoLoginLoading, setAutoLoginLoading] = useState(false);
   const [qr, setQr] = useState(null); // { image, offer, payload }
   const [copied, setCopied] = useState(false);
@@ -277,8 +281,8 @@ const BrandApprovalScreen = () => {
       {selected.size > 0 && (
         <div className="k-card pad ba-bulk" role="region" aria-label="bulk actions">
           <b>{selected.size} selected</b>
-          <Button size="sm" variant="success" icon="checkCircle" onClick={() => startDecision('approved', [...selected], true)}>approve selected</Button>
-          <Button size="sm" variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [...selected], true)}>reject selected</Button>
+          {canDecide && <Button size="sm" variant="success" icon="checkCircle" onClick={() => startDecision('approved', [...selected], true)}>approve selected</Button>}
+          {canDecide && <Button size="sm" variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [...selected], true)}>reject selected</Button>}
           <Button size="sm" variant="ghost" onClick={() => setSelected(new Set())}>clear</Button>
         </div>
       )}
@@ -316,11 +320,11 @@ const BrandApprovalScreen = () => {
         title={d ? nameOf(d) : 'brand'}
         sub={d ? <StatusPill status={d.brandApprovalStatus} /> : undefined}
         footer={d ? <>
-          <Button variant="ghost" icon="trash" onClick={() => setDeleteId(d._id)} style={{ color: 'var(--danger)' }}>delete</Button>
-          {d.brandApprovalStatus === 'approved' && <Button variant="ghost" icon="key" loading={autoLoginLoading} onClick={() => handleAutoLogin(d._id)}>login as brand</Button>}
-          <Button variant="secondary" icon="mail" onClick={() => startDecision('info', [d._id])}>request info</Button>
-          {d.brandApprovalStatus !== 'rejected' && <Button variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [d._id])}>reject</Button>}
-          {d.brandApprovalStatus !== 'approved' && <Button variant="success" icon="checkCircle" onClick={() => startDecision('approved', [d._id])}>approve</Button>}
+          {can('students.delete') && <Button variant="ghost" icon="trash" onClick={() => setDeleteId(d._id)} style={{ color: 'var(--danger)' }}>delete</Button>}
+          {canDecide && d.brandApprovalStatus === 'approved' && <Button variant="ghost" icon="key" loading={autoLoginLoading} onClick={() => handleAutoLogin(d._id)}>login as brand</Button>}
+          {canDecide && <Button variant="secondary" icon="mail" onClick={() => startDecision('info', [d._id])}>request info</Button>}
+          {canDecide && d.brandApprovalStatus !== 'rejected' && <Button variant="danger" icon="xCircle" onClick={() => startDecision('rejected', [d._id])}>reject</Button>}
+          {canDecide && d.brandApprovalStatus !== 'approved' && <Button variant="success" icon="checkCircle" onClick={() => startDecision('approved', [d._id])}>approve</Button>}
         </> : null}
       >
         {detailError ? (
