@@ -60,7 +60,7 @@ import DropsSchedule from "./DropsSchedule";
 import RewardsAdmin from "./RewardsAdmin";
 import TestPush from "./TestPush";
 import { API_ORIGIN } from "../config/api";
-import { useAdminAccess } from "../portal/adminAccess";
+import { AdminAccessContext, useAdminAccess } from "../portal/adminAccess";
 import NoAccess from "../portal/NoAccess";
 import AdminTeam from "./AdminTeam";
 import AdminResumeMetrics from "./AdminResumeMetrics"; // P3d
@@ -548,9 +548,12 @@ export default function AdminDashboard() {
           </button>
         </header>
         <main className="tdcp-main" ref={mainRef}>
-          {profileId
-            ? <AdminUserProfile role={profileRole} id={profileId} onBack={() => navigate("/admin", { state: { page: ROLE_PAGE[profileRole] || "dashboard" } })} />
-            : renderContent()}
+          {/* P5a: the pages' own buttons follow the admin's permissions (useAdminCan) */}
+          <AdminAccessContext.Provider value={access}>
+            {profileId
+              ? <AdminUserProfile role={profileRole} id={profileId} onBack={() => navigate("/admin", { state: { page: ROLE_PAGE[profileRole] || "dashboard" } })} />
+              : renderContent()}
+          </AdminAccessContext.Provider>
         </main>
       </div>
     </div>

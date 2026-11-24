@@ -6,7 +6,7 @@
 //   useAdminAccess()   { loaded, level, permissions, can(permission), canOpen(pageId) }
 //   deviceId()         this browser's id for the admin sign-in code (sent in the login body: no extra header, so no
 //                      cross-origin preflight change; older servers ignore it)
-import { useCallback, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import api from "../services/api";
 import perms from "./adminPermissions";
 
@@ -100,4 +100,13 @@ export function useAdminAccess(enabled = true) {
   const can = useCallback((permission) => !permission || state.level === "super" || state.permissions.includes(permission), [state]);
   const canOpen = useCallback((page) => can(PAGE_PERMISSIONS[page] ?? null), [can]);
   return { ...state, can, canOpen, reload: () => load(true) };
+}
+
+// P5a: buttons inside a page follow the same permissions as the server routes they call. AdminDashboard shares its
+// useAdminAccess() through this context; useAdminCan() gives can(permission). Without the provider (a page rendered on
+// its own, tests) or before the access has loaded, every button shows, as before (the server still checks each call).
+export const AdminAccessContext = createContext(null);
+export function useAdminCan() {
+  const access = useContext(AdminAccessContext);
+  return useCallback((permission) => !access || !access.loaded || access.can(permission), [access]);
 }
