@@ -3,7 +3,7 @@
 //   reported  open reports for ALL content (posts, post comments, users, confessions, confession comments), self-harm first
 //   held      confessions / comments held by the pre-post check or hidden after reports
 //   resolved  the decided ones
-//   settings  report threshold, banned words, helplines, the single-report rule
+//   settings  report threshold, banned words, helplines, the single-report rule; P4a: post tags and prompt chips
 // Authors are anonymous references (the same as in the safety e-mails). "who wrote it" asks for a reason and is logged.
 // Every decision asks for a note and is written to the admin actions log.
 import React, { useCallback, useEffect, useState } from "react";
@@ -200,17 +200,21 @@ function SafetySettings() {
   const [helplines, setHelplines] = useState([]);
   const [single, setSingle] = useState(false);
   const [mode, setMode] = useState("enforce");
+  // P4a (confessionsV2): post tags (the id stays when renamed) and the composer's prompt chips; only when the server has them
+  const [tags, setTags] = useState(null);
+  const [prompts, setPrompts] = useState(null);
   const [busy, setBusy] = useState(false);
   useEffect(() => {
-    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); }).catch((e) => toast(e.message || "could not load the settings"));
+    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); setTags(Array.isArray(x.tags) ? x.tags : null); setPrompts(Array.isArray(x.prompts) ? x.prompts.join("\n") : null); }).catch((e) => toast(e.message || "could not load the settings"));
   }, []);
   if (!s) return <PageLoading label="loading settings…" />;
+  const setTag = (i, k, v) => setTags((prev) => prev.map((t, j) => (j === i ? { ...t, [k]: v } : t)));
   const setLine = (i, k, v) => setHelplines((prev) => prev.map((h, j) => (j === i ? { ...h, [k]: v } : h)));
   const save = async () => {
     setBusy(true);
     try {
-      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single, mode });
-      setS(x); toast("saved");
+      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single, mode, ...(tags ? { tags: tags.filter((t) => String(t.label || "").trim()) } : {}), ...(prompts != null ? { prompts: prompts.split("\n").map((p) => p.trim()).filter(Boolean) } : {}) });
+      setS(x); if (Array.isArray(x.tags)) setTags(x.tags); toast("saved");
     } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
   };
   return (
@@ -232,6 +236,26 @@ function SafetySettings() {
         ))}
         <Button variant="secondary" size="sm" onClick={() => setHelplines((p) => [...p, { name: "", number: "", note: "" }])}>add a helpline</Button>
       </Field>
+      {tags && (
+        <Field label="post tags (confessions v2): rename, hide or add; a renamed tag keeps its posts">
+          {tags.map((t, i) => (
+            <div key={t.id || `new-${i}`} style={{ display: "flex", gap: 8, marginBottom: 6, alignItems: "center" }}>
+              <Input aria-label={`tag ${i + 1} name`} value={t.label} onChange={(e) => setTag(i, "label", e.target.value)} maxLength={24} />
+              <Select aria-label={`tag ${i + 1} shown or hidden`} value={t.hidden ? "hidden" : "shown"} onChange={(e) => setTag(i, "hidden", e.target.value === "hidden")} style={{ maxWidth: 120 }}>
+                <option value="shown">shown</option>
+                <option value="hidden">hidden</option>
+              </Select>
+              {t.id ? <span className="k-hint">#{t.id}</span> : <span className="k-hint">new</span>}
+            </div>
+          ))}
+          <Button variant="secondary" size="sm" onClick={() => setTags((p) => [...p, { label: "", hidden: false }])}>add a tag</Button>
+        </Field>
+      )}
+      {prompts != null && (
+        <Field label="composer prompt chips, one per line (3 are shown each week, in turn)" htmlFor="safety-prompts">
+          <Textarea id="safety-prompts" rows={6} value={prompts} onChange={(e) => setPrompts(e.target.value)} />
+        </Field>
+      )}
       <Field label="one report with evidence, confirmed by the re-check, suspends the account at once" htmlFor="safety-single">
         <Select id="safety-single" value={single ? "on" : "off"} onChange={(e) => setSingle(e.target.value === "on")}>
           <option value="off">off (recommended: strikes decide)</option>
