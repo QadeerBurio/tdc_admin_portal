@@ -99,7 +99,7 @@ export default function PrivacyPolicy() {
           <div className="card" style={{ padding: 28 }}>
             <h2 className="card-h" style={{ fontSize: 22 }}>contact us<span className="dot" aria-hidden="true">.</span></h2>
             <p style={{ marginTop: 8 }}>
-              email <a href={`mailto:${LINKS.hello}`}>{LINKS.hello}</a>, call or WhatsApp <a href={LINKS.phoneHref}>{LINKS.phone}</a>, or write to us at DHA Phase 6, Karachi.
+              email <a href={`mailto:${LINKS.privacy}`}>{LINKS.privacy}</a>, call or WhatsApp <a href={LINKS.phoneHref}>{LINKS.phone}</a>, or write to us at DHA Phase 6, Karachi.
             </p>
           </div>
         </section>

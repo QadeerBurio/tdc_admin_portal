@@ -15,6 +15,7 @@ export const LINKS = {
   linkedin: "https://www.linkedin.com/company/thedeftcrew/",
   hello: "hello@gettdc.pk",
   hr: "hr@gettdc.pk",
+  privacy: "privacy@gettdc.pk", // P5a (owner): the one privacy contact, same as the app
   phone: "0324-9287649",
   phoneHref: "tel:+923249287649",
   whatsapp: "https://wa.me/923249287649",

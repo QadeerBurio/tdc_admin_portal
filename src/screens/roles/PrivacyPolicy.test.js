@@ -33,3 +33,12 @@ test("the route and the footer link", () => {
   expect(nav).toMatch(/<Route path="\/privacy" element={<PrivacyPolicy \/>} \/>/);
   expect(site).toMatch(/<Link to="\/privacy">privacy<\/Link>/);
 });
+
+test("P5a: the contact is the one privacy address, privacy@gettdc.pk (same as the app)", () => {
+  render(<PrivacyPolicy />);
+  // the policy's own "contact us" card (the site footer keeps its general hello / hr addresses)
+  const card = screen.getByRole("heading", { name: /contact us/i }).closest(".card");
+  const mail = [...card.querySelectorAll('a[href^="mailto:"]')].map((a) => a.getAttribute("href"));
+  expect(mail).toEqual(["mailto:privacy@gettdc.pk"]);
+  expect(document.body.textContent).toContain("privacy@gettdc.pk");
+});
