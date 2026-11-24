@@ -7,9 +7,19 @@ const vercel = require("../../vercel.json");
 const req = (url, headers = {}, method = "GET") => ({ url, method, headers: { get: (k) => headers[k.toLowerCase()] ?? null } });
 const SECRET = "test-only-portal-proxy-secret-0123456789";
 
-test("runs only for /r/*; the rewrite in vercel.json stays as the fallback", () => {
-  expect(config.matcher).toBe("/r/:path*");
+test("runs only for /r/* and /c/* (P4c); the rewrites in vercel.json stay as the fallback", () => {
+  expect(config.matcher).toEqual(["/r/:path*", "/c/:path*"]);
   expect(vercel.rewrites.some((r) => r.source === "/r/:path*")).toBe(true);
+  expect(vercel.rewrites.some((r) => r.source === "/c/:path*" && r.destination === "https://the-deft-crew-production.up.railway.app/c/:path*")).toBe(true);
+  expect(vercel.headers.find((x) => x.source === "/c/(.*)").headers).toEqual([{ key: "X-Robots-Tag", value: "noindex, nofollow" }]);
+  const spa = vercel.rewrites.findIndex((r) => r.destination === "/index.html");
+  expect(vercel.rewrites.findIndex((r) => r.source === "/c/:path*")).toBeLessThan(spa);
+});
+
+test("a confession page (/c/<id>) is forwarded the same way, with the visitor's address and the secret", () => {
+  const r = req("https://gettdc.pk/c/0123456789abcdef01234567", { "x-real-ip": "203.0.113.9" });
+  expect(upstreamUrl(r, {})).toBe("https://the-deft-crew-production.up.railway.app/c/0123456789abcdef01234567");
+  expect(forwardHeaders(r, { PORTAL_PROXY_SECRET: SECRET })["x-tdc-visitor-ip"]).toBe("203.0.113.9");
 });
 
 test("forwards to the same path and query on the production server (or RESUME_PAGE_ORIGIN)", () => {

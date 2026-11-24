@@ -1,5 +1,6 @@
-// middleware.js (Vercel Routing Middleware, project root): gettdc.pk/r/<link> → the server's public resume page (P3d).
-// It does what the /r/* rewrite in vercel.json does (that rewrite stays as the fallback), and also tells the server
+// middleware.js (Vercel Routing Middleware, project root): gettdc.pk/r/<link> → the server's public resume page (P3d)
+// and gettdc.pk/c/<id> → a shared confession's page (P4c).
+// It does what the /r/* and /c/* rewrites in vercel.json do (those rewrites stay as the fallback), and also tells the server
 // who the visitor is, so views and the rate limit count real visitors instead of Vercel's own address:
 //   x-tdc-visitor-ip  the address Vercel's edge set for this request (x-real-ip; Vercel overwrites what a client sends)
 //   x-tdc-proxy       PORTAL_PROXY_SECRET (Vercel environment variable, the same value as on the server; never in the
@@ -7,7 +8,7 @@
 // Only GET / HEAD, only a small allow-list of request headers (no cookies), the server's answer passed back as is.
 //   RESUME_PAGE_ORIGIN (optional Vercel variable): the server to forward to; default the production server. A staging
 //   portal sets it to the staging server (docs/STAGING.md on the server).
-export const config = { matcher: "/r/:path*" };
+export const config = { matcher: ["/r/:path*", "/c/:path*"] };
 
 const DEFAULT_ORIGIN = "https://the-deft-crew-production.up.railway.app";
 const PASS = ["user-agent", "accept", "accept-language"];
