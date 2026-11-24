@@ -14,6 +14,7 @@ import { redemptionPlace } from "../portal/storeBadge";
 import { API_ORIGIN } from "../config/api";
 import trialApi from "../services/trialApi";
 import { formatIds, universityOptions, matchesUniversity, copyText } from "../portal/idSelection";
+import { useAdminCan } from "../portal/adminAccess";
 
 // Header copy from the design boards; the number is the count of loaded accounts.
 const fmtCount = (n) => (n == null ? "" : Number(n).toLocaleString("en-US"));
@@ -43,7 +44,9 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
   const [copyFallback, setCopyFallback] = useState("");
   // "Features…": turn a feature on / off for the selected rows (brands, employers, students)
   const [bulkOpen, setBulkOpen] = useState(false);
-  const canFeatures = role === "student" || role === "brand" || role === "employee";
+  // P5a: buttons follow the permission of the route they call (same as the server)
+  const can = useAdminCan();
+  const canFeatures = (role === "student" || role === "brand" || role === "employee") && can("features.manage");
   const [togglingId, setTogglingId] = useState(null);
   // permanent delete (students only here; brands are deleted from Brand Approvals)
   const [deleteId, setDeleteId] = useState(null);
@@ -633,7 +636,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
         sub={BOARD[role] ? BOARD[role].sub(loading ? null : users.length) : `all ${role} accounts.`}
         actions={<>
           <Button variant="secondary" icon="refresh" onClick={refreshUsers} loading={refreshing}>Refresh</Button>
-          <Button icon="download" onClick={downloadExcel} disabled={users.length === 0}>Export</Button>
+          {can("data.export") && <Button icon="download" onClick={downloadExcel} disabled={users.length === 0}>Export</Button>}
         </>}
       />
 
@@ -818,7 +821,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
                               viewUserDetails(u._id);
                             }}
                           />
-                          <button
+                          {can("students.verify") && <button
                             type="button"
                             className={`k-icon-btn sm ${verified ? "danger" : "success"}`}
                             onClick={(e) => toggleVerification(u._id, e)}
@@ -827,7 +830,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
                             aria-label={verified ? "Revoke Access" : "Approve User"}
                           >
                             {togglingId === u._id ? <Spinner size="sm" /> : <Ico kind={verified ? "xCircle" : "check"} tone="plain" size={15} />}
-                          </button>
+                          </button>}
                           <IconButton
                             icon="chevronRight"
                             label="View Details"
@@ -837,7 +840,7 @@ export default function AdminUserList({ role, title, heading = "", initialStatus
                               openUserModal(u);
                             }}
                           />
-                          {u.role === "student" && (
+                          {u.role === "student" && can("students.delete") && (
                             <IconButton
                               icon="trash"
                               label={`Delete ${u.name || "student"}`}
