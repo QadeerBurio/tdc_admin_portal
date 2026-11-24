@@ -62,7 +62,7 @@ http.createServer((q, s) => {
 
 const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [path.resolve(__dirname, "..", "..")] }), "utf8");
 const MENU = [
-  ["general", ["dashboard", "overview", "metrics", "admin actions"]],
+  ["general", ["dashboard", "overview", "metrics", "resume metrics", "admin actions"]], // P3d: resume metrics
   ["users", ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"]],
   ["student app", ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"]],
   ["brands", ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"]],
