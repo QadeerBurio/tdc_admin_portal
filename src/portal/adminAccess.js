@@ -14,6 +14,7 @@ export const PAGE_PERMISSIONS = {
   dashboard: null,
   business_overview: "analytics.view",
   engagement_metrics: "analytics.view",
+  resume_metrics: "analytics.view", // P3d
   admin_actions: "audit.view",
   safety: "safety.view",
   students: "students.view",

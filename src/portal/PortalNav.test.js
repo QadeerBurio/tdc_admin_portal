@@ -23,7 +23,7 @@ test("the menu: groups in order, names, no duplicates", () => {
   // Phase A (owner): safety has its own group; settings adds team & access
   expect(ADMIN_MENU.map((g) => g.title)).toEqual(["general", "users", "student app", "brands", "employers", "engagement", "crew", "safety", "settings"]);
   expect(ADMIN_MENU.map((g) => g.items.map((i) => i[1]))).toEqual([
-    ["dashboard", "overview", "metrics", "admin actions"],
+    ["dashboard", "overview", "metrics", "resume metrics", "admin actions"], // P3d: resume metrics (analytics.view)
     ["all students", "all brands", "all employers", "all travelers", "student verifications", "universities", "student cards"],
     ["jobs & internships", "scholarships", "events", "travel", "AI travel plans", "rewards"],
     ["brand approvals", "offers", "loyalty programs", "loyalty exceptions", "surprise boxes", "brand revenue"],
