@@ -361,7 +361,7 @@ const AXE = fs.readFileSync(require.resolve("axe-core/axe.min.js", { paths: [pat
   await pick("loyaltyV2", "Loyalty: forced off");
   await sleep(500);
   t = await text();
-  check("force off: the dialog says it beats the default and the Railway list", t.includes("force off: Loyalty") && /off even if the default for all students or the Railway list turns it on/.test(t));
+  check("force off: the dialog says it beats the default, Launch and the Railway list", t.includes("force off: Loyalty") && /off even if the default for all students, Launch: all v2 features or the Railway list turns it on/.test(t)); // r11: Launch named too
   await type("#feature-reason", "abuse report 123");
   await sleep(200);
   await click(/^force off$/i);
