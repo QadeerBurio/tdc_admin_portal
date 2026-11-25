@@ -101,6 +101,9 @@ export default function AdminFeatures() {
             <span className="k-hint">for {f.roles.map((r) => ROLE_LABEL[r] || r).join(" / ")} accounts</span>
             {f.killed ? <Pill tone="red">kill switch on in Railway: off for everyone</Pill> : <Pill tone="sand">Railway: {f.railway || "not set"}</Pill>}
             {f.railwayIdCount > 0 && <Pill tone="blue">also on through Railway: {f.railwayIdCount} id{f.railwayIdCount === 1 ? "" : "s"}</Pill>}
+            {/* r11: a flag a launch switch covers says so (the server: f.launch { by, onForStudents }) */}
+            {f.launch?.by === "launchV2" && (f.launch.onForStudents ? <Pill tone="green">on for students via Launch: all v2 features</Pill> : <Pill tone="sand">Launch: all v2 features is off for students</Pill>)}
+            {f.launch?.by === "launchLinks" && (f.launch.onForStudents ? <Pill tone="green">on for students via Launch: gettdc.pk links</Pill> : <Pill tone="sand">off: waits for Launch: gettdc.pk links</Pill>)}
           </div>
           {roleDefaults.map((role) => {
             const d = defaults[role];

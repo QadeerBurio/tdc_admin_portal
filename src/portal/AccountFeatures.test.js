@@ -77,3 +77,62 @@ test("defaultOf names the account's role: brands, employers, students", () => {
   expect(defaultOf({ defaultForRole: false }, "employee")).toEqual({ on: false, from: "the default for all employers" });
   expect(defaultOf({ defaultForRole: true })).toEqual({ on: true, from: "the default for all students" });
 });
+
+// r11 (owner): the tab matches what the app gets for flags turned on by "Launch: all v2 features"
+const L = (extra) => flag({ defaultForRole: null, fromRailway: false, launch: { by: "launchV2", on: true }, ...extra });
+const launchView = (flags, appFlags) => ({ account: { id: "s2", role: "student", name: "Sana" }, flags, appView: { flags: appFlags, at: "2026-11-26T01:00:00Z", loaded: true } });
+
+test("r11: a student with no settings: launch flags show 'on: via launch', the default choice is 'default (on)', and match what the app sees", async () => {
+  const flags = [
+    L({ flag: "resumeV2", label: "Resume v2", effective: true, source: "launch" }),
+    L({ flag: "confessionsV2", label: "Confessions v2", effective: true, source: "launch" }),
+    flag({ flag: "confessionShare", label: "Confession share card + link", launch: { by: "launchLinks", on: false }, effective: false, source: "railway" }),
+    flag({ flag: "confessionsVoting", label: "Confession voting (auto-hide only)", launch: null, effective: false, source: "railway" }),
+  ];
+  featuresApi.account.mockResolvedValueOnce(launchView(flags, { resumeV2: true, confessionsV2: true, confessionShare: false, confessionsVoting: false }));
+  const { container } = render(<AccountFeatures accountId="s2" />);
+  expect(await screen.findByLabelText("Resume v2: default (on)")).toBeChecked();
+  const li = (f) => container.querySelector(`li[data-flag="${f}"]`);
+  expect(li("resumeV2")).toHaveTextContent("on: via launch");
+  expect(li("resumeV2")).toHaveTextContent("Default here: on, turned on by Launch: all v2 features.");
+  expect(li("resumeV2")).not.toHaveTextContent("off: default");
+  expect(li("confessionShare")).toHaveTextContent("off: waits for Launch: gettdc.pk links");
+  expect(li("confessionsVoting")).toHaveTextContent("off: default");
+  expect(li("confessionsVoting")).toHaveTextContent("nothing turns it on");
+  // the badge and "what the app sees" agree, flag by flag
+  const app = screen.getByRole("list", { name: "what the app sees" });
+  for (const f of flags) {
+    const badgeOn = /^on/.test(li(f.flag).querySelector("strong + *").textContent);
+    const appOn = /on in the app/.test(app.querySelector(`[data-flag="${f.flag}"]`).textContent);
+    expect([f.flag, badgeOn]).toEqual([f.flag, appOn]);
+  }
+});
+
+test("r11: forced off wins over launch (badge, help line, dialog); launchV2 forced off → 'off: default'", async () => {
+  featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeWriter", label: "Cover letter + LinkedIn writer", forced: "off", effective: false, source: "account" })], { resumeWriter: false }));
+  const { container, unmount } = render(<AccountFeatures accountId="s2" />);
+  expect(await screen.findByText("off: forced off")).toBeInTheDocument();
+  expect(screen.getByLabelText("Cover letter + LinkedIn writer: default (on)")).not.toBeChecked();
+  expect(container.querySelector('li[data-flag="resumeWriter"]')).toHaveTextContent("Forced off wins over Launch: all v2 features");
+  unmount();
+  featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeV2", label: "Resume v2", launch: { by: "launchV2", on: false }, effective: false, source: "railway" })], { resumeV2: false }));
+  render(<AccountFeatures accountId="s2" />);
+  expect(await screen.findByText("off: default")).toBeInTheDocument();
+  expect(screen.getByLabelText("Resume v2: default (off)")).toBeChecked();
+  expect(screen.queryByText("on: via launch")).toBeNull();
+});
+
+test("r11: the force-off dialog says it wins over Launch: all v2 features", async () => {
+  featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeV2", label: "Resume v2", effective: true, source: "launch" })], { resumeV2: true }));
+  render(<AccountFeatures accountId="s2" />);
+  fireEvent.click(await screen.findByLabelText("Resume v2: forced off"));
+  expect(await screen.findByText(/off even if the default for all students, Launch: all v2 features or the Railway list turns it on/)).toBeInTheDocument();
+});
+
+test("r11: defaultOf: on via a launch switch only when it is on for the account and nothing set a default", () => {
+  expect(defaultOf(L({}))).toEqual({ on: true, from: "Launch: all v2 features", launch: "launchV2" });
+  expect(defaultOf(L({ launch: { by: "launchV2", on: false } })).on).toBe(false);
+  expect(defaultOf(L({ killed: true })).on).toBe(false);
+  expect(defaultOf(flag({ launch: { by: "launchLinks", on: false } }))).toEqual({ on: false, from: "nothing yet", waits: "launchLinks" });
+  expect(defaultOf(flag({ defaultForRole: true, launch: { by: "launchV2", on: true } })).from).toBe("the default for all students");
+});

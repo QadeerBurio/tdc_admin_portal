@@ -37,10 +37,16 @@ export function Switch({ checked, disabled, onClick, label }) {
 }
 
 const MANY = { student: "students", brand: "brands", employee: "employers" };
-// what "default" means for this account: its role's default (on unless an admin turned it off), else the Railway rules
+// r11: the launch switches by their admin label
+export const LAUNCH_LABEL = { launchV2: "Launch: all v2 features", launchLinks: "Launch: gettdc.pk links" };
+// what "default" means for this account: its role's default (on unless an admin turned it off), else a launch switch
+// that is on for this account (r11, server: f.launch { by, on }), else the Railway rules
 export function defaultOf(f, role = "student") {
   if (f.defaultForRole === true || f.defaultForRole === false) return { on: f.defaultForRole, from: `the default for all ${MANY[role] || "accounts of this kind"}` };
-  return { on: !!f.fromRailway, from: f.fromRailway ? "Railway (its id, role or a percentage)" : "nothing turns it on" };
+  if (f.fromRailway) return { on: true, from: "Railway (its id, role or a percentage)" };
+  if (f.launch && f.launch.on && !f.killed) return { on: true, from: LAUNCH_LABEL[f.launch.by] || f.launch.by, launch: f.launch.by };
+  if (f.launch && f.launch.by === "launchLinks") return { on: false, from: "nothing yet", waits: "launchLinks" };
+  return { on: false, from: "nothing turns it on" };
 }
 export const modeOf = (f) => (f.forced === "on" ? "on" : f.forced === "off" ? "off" : "default");
 function stateOf(f) {
@@ -48,6 +54,9 @@ function stateOf(f) {
   const d = defaultOf(f);
   if (f.forced === "on") return { text: "on: forced on", tone: "green", locked: false };
   if (f.forced === "off") return { text: "off: forced off", tone: "red", locked: false };
+  if (d.launch === "launchV2") return { text: "on: via launch", tone: "green", locked: false }; // r11
+  if (d.launch) return { text: `on: via ${LAUNCH_LABEL[d.launch]}`, tone: "green", locked: false };
+  if (d.waits) return { text: `off: waits for ${LAUNCH_LABEL[d.waits]}`, tone: "sand", locked: false };
   return { text: `${d.on ? "on" : "off"}: default`, tone: d.on ? "blue" : "sand", locked: false };
 }
 const ACTION = { on: "force on", off: "force off", default: "reset to default" };
@@ -168,7 +177,7 @@ export default function AccountFeatures({ accountId }) {
                 ))}
                 {mode !== "default" && <Button size="sm" variant="secondary" onClick={() => choose("default")} aria-label={`reset ${f.label} to default`}>reset to default</Button>}
               </fieldset>
-              <div className="k-hint" style={{ marginTop: 6 }}>Default here: {d.on ? "on" : "off"}, from {d.from}.{f.killed ? " Locked: the FLAG_* value on Railway is the kill switch (off for everyone)." : ""}</div>
+              <div className="k-hint" style={{ marginTop: 6 }}>{d.launch ? <>Default here: on, turned on by {d.from}.</> : d.waits ? <>Default here: off, waits for {LAUNCH_LABEL[d.waits]} (after gettdc.pk moves to Vercel).</> : <>Default here: {d.on ? "on" : "off"}, from {d.from}.</>}{f.killed ? " Locked: the FLAG_* value on Railway is the kill switch (off for everyone)." : ""}{mode === "off" && f.launch?.on ? ` Forced off wins over ${LAUNCH_LABEL[f.launch.by]}: this account doesn't get it.` : ""}</div>
               {f.lastChange && (
                 <div className="k-hint" style={{ marginTop: 6 }}>
                   last change: forced {f.lastChange.enabled ? "on" : "off"} by {f.lastChange.setBy?.name || "admin"} on {date(f.lastChange.setAt)}: “{f.lastChange.reason}”
@@ -183,7 +192,7 @@ export default function AccountFeatures({ accountId }) {
       {pending && (
         <FeatureReasonDialog
           title={`${ACTION[pending.state]}: ${pending.label}`}
-          sub={`for ${view.account.name || "this account"}${pending.state === "off" ? ": off even if the default for all students or the Railway list turns it on" : pending.state === "default" ? ": the default decides again" : ""}`}
+          sub={`for ${view.account.name || "this account"}${pending.state === "off" ? ": off even if the default for all students, Launch: all v2 features or the Railway list turns it on" : pending.state === "default" ? ": the default decides again" : ""}`}
           confirmLabel={ACTION[pending.state]}
           onConfirm={save}
           onClose={() => setPending(null)}
