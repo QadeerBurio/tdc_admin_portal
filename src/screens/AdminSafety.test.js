@@ -137,5 +137,22 @@ test("settings: an older server (no tags / prompts) gets the same save as before
   fireEvent.click(screen.getByRole("button", { name: "save" }));
   await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalled());
   const sent = safetyApi.saveSettings.mock.calls.slice(-1)[0][0];
-  expect("tags" in sent || "prompts" in sent).toBe(false);
+  expect("tags" in sent || "prompts" in sent || "blockedHandleWords" in sent).toBe(false);
+  expect(screen.queryByText(/blocked from confession handles/)).toBeNull();
+});
+
+test("settings (r7): words blocked from confession handles, saved as typed (the server keeps plain words only)", async () => {
+  safetyApi.settings.mockResolvedValueOnce({ mode: "enforce", reportThreshold: 3, bannedWords: [], helplines: [{ name: "x", number: "1166", note: "" }], suspendOnSingleEvidenceReport: false, blockedHandleWords: ["sleepy"] });
+  safetyApi.saveSettings.mockImplementationOnce(async (x) => ({ ...x, blockedHandleWords: ["sleepy", "quiet"] }));
+  const { container } = render(<AdminSafety />);
+  fireEvent.click(await screen.findByRole("tab", { name: "settings" }));
+  const box = await screen.findByLabelText("words blocked from confession handles (comma-separated, letters only)");
+  expect(box.value).toBe("sleepy");
+  fireEvent.change(box, { target: { value: "sleepy, Quiet" } });
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await waitFor(() => expect(safetyApi.saveSettings).toHaveBeenCalledWith(expect.objectContaining({ blockedHandleWords: "sleepy, Quiet" })));
+  await waitFor(() => expect(box.value).toBe("sleepy, quiet"));
+  const axe = require("axe-core");
+  const r = await axe.run(container, { runOnly: { type: "tag", values: ["wcag2a", "wcag2aa"] }, rules: { "color-contrast": { enabled: false } } });
+  expect(r.violations.map((v) => v.id)).toEqual([]);
 });

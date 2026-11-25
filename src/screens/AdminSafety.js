@@ -212,10 +212,12 @@ function SafetySettings() {
   // P4a (confessionsV2): post tags (the id stays when renamed) and the composer's prompt chips; only when the server has them
   const [tags, setTags] = useState(null);
   const [prompts, setPrompts] = useState(null);
+  // owner (25 Nov 2026): a word taken out of confession handles later (no app update); only when the server has it
+  const [handleWords, setHandleWords] = useState(null);
   const [busy, setBusy] = useState(false);
   const canSave = useAdminCan()("safety.act"); // P5a: saving the settings needs safety.act (as on the server)
   useEffect(() => {
-    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); setTags(Array.isArray(x.tags) ? x.tags : null); setPrompts(Array.isArray(x.prompts) ? x.prompts.join("\n") : null); }).catch((e) => toast(e.message || "could not load the settings"));
+    safetyApi.settings().then((x) => { setS(x); setWords((x.bannedWords || []).join(", ")); setThreshold(x.reportThreshold); setHelplines(x.helplines || []); setSingle(!!x.suspendOnSingleEvidenceReport); setMode(x.mode || "enforce"); setTags(Array.isArray(x.tags) ? x.tags : null); setPrompts(Array.isArray(x.prompts) ? x.prompts.join("\n") : null); setHandleWords(Array.isArray(x.blockedHandleWords) ? x.blockedHandleWords.join(", ") : null); }).catch((e) => toast(e.message || "could not load the settings"));
   }, []);
   if (!s) return <PageLoading label="loading settings…" />;
   const setTag = (i, k, v) => setTags((prev) => prev.map((t, j) => (j === i ? { ...t, [k]: v } : t)));
@@ -223,8 +225,8 @@ function SafetySettings() {
   const save = async () => {
     setBusy(true);
     try {
-      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single, mode, ...(tags ? { tags: tags.filter((t) => String(t.label || "").trim()) } : {}), ...(prompts != null ? { prompts: prompts.split("\n").map((p) => p.trim()).filter(Boolean) } : {}) });
-      setS(x); if (Array.isArray(x.tags)) setTags(x.tags); toast("saved");
+      const x = await safetyApi.saveSettings({ reportThreshold: Number(threshold), bannedWords: words, helplines: helplines.filter((h) => h.number.trim()), suspendOnSingleEvidenceReport: single, mode, ...(tags ? { tags: tags.filter((t) => String(t.label || "").trim()) } : {}), ...(prompts != null ? { prompts: prompts.split("\n").map((p) => p.trim()).filter(Boolean) } : {}), ...(handleWords != null ? { blockedHandleWords: handleWords } : {}) });
+      setS(x); if (Array.isArray(x.tags)) setTags(x.tags); if (Array.isArray(x.blockedHandleWords)) setHandleWords(x.blockedHandleWords.join(", ")); toast("saved");
     } catch (e) { toast(e.message || "could not save"); } finally { setBusy(false); }
   };
   return (
@@ -264,6 +266,11 @@ function SafetySettings() {
       {prompts != null && (
         <Field label="composer prompt chips, one per line (3 are shown each week, in turn)" htmlFor="safety-prompts">
           <Textarea id="safety-prompts" rows={6} value={prompts} onChange={(e) => setPrompts(e.target.value)} />
+        </Field>
+      )}
+      {handleWords != null && (
+        <Field label="words blocked from confession handles (comma-separated, letters only)" htmlFor="safety-handle-words" hint="a handle with one of these shows 'anon.' at once; that student gets a new handle on their next post">
+          <Textarea id="safety-handle-words" rows={2} value={handleWords} onChange={(e) => setHandleWords(e.target.value)} />
         </Field>
       )}
       <Field label="one report with evidence, confirmed by the re-check, suspends the account at once" htmlFor="safety-single">
