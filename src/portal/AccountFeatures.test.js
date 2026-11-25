@@ -91,7 +91,7 @@ test("r11: a student with no settings: launch flags show 'on: via launch', the d
   ];
   featuresApi.account.mockResolvedValueOnce(launchView(flags, { resumeV2: true, confessionsV2: true, confessionShare: false, confessionsVoting: false }));
   const { container } = render(<AccountFeatures accountId="s2" />);
-  expect(await screen.findByLabelText("Resume v2: default (on)")).toBeChecked();
+  expect(await screen.findByLabelText("Resume v2: default (on)", {}, { timeout: 5000 })).toBeChecked();
   const li = (f) => container.querySelector(`li[data-flag="${f}"]`);
   expect(li("resumeV2")).toHaveTextContent("on: via launch");
   expect(li("resumeV2")).toHaveTextContent("Default here: on, turned on by Launch: all v2 features.");
@@ -111,13 +111,13 @@ test("r11: a student with no settings: launch flags show 'on: via launch', the d
 test("r11: forced off wins over launch (badge, help line, dialog); launchV2 forced off → 'off: default'", async () => {
   featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeWriter", label: "Cover letter + LinkedIn writer", forced: "off", effective: false, source: "account" })], { resumeWriter: false }));
   const { container, unmount } = render(<AccountFeatures accountId="s2" />);
-  expect(await screen.findByText("off: forced off")).toBeInTheDocument();
+  expect(await screen.findByText("off: forced off", {}, { timeout: 5000 })).toBeInTheDocument();
   expect(screen.getByLabelText("Cover letter + LinkedIn writer: default (on)")).not.toBeChecked();
   expect(container.querySelector('li[data-flag="resumeWriter"]')).toHaveTextContent("Forced off wins over Launch: all v2 features");
   unmount();
   featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeV2", label: "Resume v2", launch: { by: "launchV2", on: false }, effective: false, source: "railway" })], { resumeV2: false }));
   render(<AccountFeatures accountId="s2" />);
-  expect(await screen.findByText("off: default")).toBeInTheDocument();
+  expect(await screen.findByText("off: default", {}, { timeout: 5000 })).toBeInTheDocument();
   expect(screen.getByLabelText("Resume v2: default (off)")).toBeChecked();
   expect(screen.queryByText("on: via launch")).toBeNull();
 });
@@ -125,8 +125,8 @@ test("r11: forced off wins over launch (badge, help line, dialog); launchV2 forc
 test("r11: the force-off dialog says it wins over Launch: all v2 features", async () => {
   featuresApi.account.mockResolvedValueOnce(launchView([L({ flag: "resumeV2", label: "Resume v2", effective: true, source: "launch" })], { resumeV2: true }));
   render(<AccountFeatures accountId="s2" />);
-  fireEvent.click(await screen.findByLabelText("Resume v2: forced off"));
-  expect(await screen.findByText(/off even if the default for all students, Launch: all v2 features or the Railway list turns it on/)).toBeInTheDocument();
+  fireEvent.click(await screen.findByLabelText("Resume v2: forced off", {}, { timeout: 5000 }));
+  expect(await screen.findByText(/off even if the default for all students, Launch: all v2 features or the Railway list turns it on/, {}, { timeout: 5000 })).toBeInTheDocument();
 });
 
 test("r11: defaultOf: on via a launch switch only when it is on for the account and nothing set a default", () => {

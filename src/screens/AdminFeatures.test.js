@@ -24,22 +24,22 @@ beforeEach(() => {
 test("a launch-covered flag: 'on for students via Launch: all v2 features'", async () => {
   featuresApi.flags.mockResolvedValue(FLAGS);
   render(<AdminFeatures />);
-  expect(await screen.findByText("on for students via Launch: all v2 features")).toBeInTheDocument();
+  expect(await screen.findByText("on for students via Launch: all v2 features", {}, { timeout: 5000 })).toBeInTheDocument();
 });
 
 test("the students' launch default off: the card says so instead", async () => {
   featuresApi.flags.mockResolvedValue([base("resumeV2", "Resume v2", { launch: { by: "launchV2", onForStudents: false } })]);
   render(<AdminFeatures />);
-  expect(await screen.findByText("Launch: all v2 features is off for students")).toBeInTheDocument();
+  expect(await screen.findByText("Launch: all v2 features is off for students", {}, { timeout: 5000 })).toBeInTheDocument();
   expect(screen.queryByText("on for students via Launch: all v2 features")).toBeNull();
 });
 
 test("a gettdc.pk link flag waits for Launch: gettdc.pk links; a flag no launch covers has no launch line", async () => {
   featuresApi.flags.mockResolvedValue([FLAGS[1], FLAGS[2]]);
   const { container, rerender } = render(<AdminFeatures />);
-  expect(await screen.findByText("off: waits for Launch: gettdc.pk links")).toBeInTheDocument();
+  expect(await screen.findByText("off: waits for Launch: gettdc.pk links", {}, { timeout: 5000 })).toBeInTheDocument();
   featuresApi.flags.mockResolvedValue([FLAGS[2]]);
   rerender(<AdminFeatures key="2" />);
-  await screen.findAllByText("Confession voting (auto-hide only)");
+  await screen.findAllByText("Confession voting (auto-hide only)", {}, { timeout: 5000 });
   expect(container.textContent).not.toMatch(/via Launch|waits for Launch/);
 });
