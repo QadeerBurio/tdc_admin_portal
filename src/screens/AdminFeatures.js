@@ -11,6 +11,7 @@ import featuresApi from "../services/featuresApi";
 import { PageHeader, PageLoading, Tabs, Table, Button, Pill, EmptyState, Card, toast } from "../portal/kit";
 import FeatureReasonDialog from "../portal/FeatureReasonDialog";
 import { Switch } from "../portal/AccountFeatures";
+import HiddenTemplates from "../portal/HiddenTemplates"; // owner (25 Nov 2026): hide a resume template, no app update
 
 const ONE = { student: "student", brand: "brand", employee: "employer" };
 const MANY = { student: "students", brand: "brands", employee: "employers" };
@@ -121,6 +122,7 @@ export default function AdminFeatures() {
           })}
         </Card>
       )}
+      {f?.flag === "resumeTemplatesV2" && <HiddenTemplates key="hidden-templates" />}
       <Table
         label={`accounts with ${f?.label || "this feature"}`}
         columns={columns}
