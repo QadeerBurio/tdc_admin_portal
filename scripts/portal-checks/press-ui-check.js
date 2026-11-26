@@ -8,6 +8,8 @@
 // - /founder: a card per outlet (logo, name, one line, read / view link); Clap Pakistan shows its article headline;
 //   then a "partners" section (Ziauddin University, "MoU signed with The Deft Crew"); the reworded story line;
 //   the meta description mentions the coverage
+// - every logo (strip, partners row, founder cards, partners) loads from /press/logos/ (naturalWidth > 0, WebP
+//   chosen) and every PNG fallback is served (fix/press-logos)
 // - axe-core WCAG 2 A / AA on both pages; no page or console errors
 const http = require("http");
 const fs = require("fs");
@@ -72,6 +74,20 @@ const HEADLINE = "Why are fresh graduates struggling to get their first intervie
   };
   const links = (scope) => ev(`[...document.querySelectorAll(${JSON.stringify(scope)} + " a")].map((a) => ({ href: a.getAttribute("href"), target: a.getAttribute("target"), rel: a.getAttribute("rel") || "", label: a.getAttribute("aria-label") || a.innerText.trim(), alt: a.querySelector("img")?.getAttribute("alt") || null, lazy: a.querySelector("img")?.getAttribute("loading") || null }))`);
   const ext = (l) => l.target === "_blank" && /\bnoopener\b/.test(l.rel);
+  // lazy logos: bring each into view, then wait until every one has finished (loaded or failed)
+  const settle = async (sel) => {
+    await ev(`(async () => { for (const i of document.querySelectorAll(${JSON.stringify(sel)})) { i.scrollIntoView({ block: "center" }); await new Promise((r) => setTimeout(r, 120)); } return true; })()`);
+    await pg.waitFor(`[...document.querySelectorAll(${JSON.stringify(sel)})].every((i) => i.complete)`, { label: "the logos finished loading" });
+  };
+  // every logo loaded (naturalWidth > 0), from /press/logos/, the WebP chosen; a broken one is named, not a timeout
+  const pngs = new Set();
+  const logosLoad = async (label, sel, n) => {
+    const imgs = await ev(`[...document.querySelectorAll(${JSON.stringify(sel)})].map((i) => ({ alt: i.alt, w: i.naturalWidth, src: i.getAttribute("src"), current: i.currentSrc }))`);
+    imgs.forEach((i) => pngs.add(i.src));
+    const broken = imgs.filter((i) => !(i.w > 0));
+    check(`${label}: all ${n} logos load (naturalWidth > 0)`, imgs.length === n && broken.length === 0, JSON.stringify({ count: imgs.length, broken }));
+    check(`${label}: every logo from /press/logos/, WebP in Chrome, PNG as the fallback src`, imgs.every((i) => /^\/press\/logos\/[a-z0-9-]+\.png$/.test(i.src) && /\/press\/logos\/[a-z0-9-]+\.webp$/.test(i.current)), JSON.stringify(imgs.map((i) => [i.src, i.current])));
+  };
 
   for (const [label, w, h, mobile] of [["desktop", 1366, 860, false], ["phone", 390, 800, true]]) {
     console.log(`-- ${label} ${w}x${h}`);
@@ -81,7 +97,8 @@ const HEADLINE = "Why are fresh graduates struggling to get their first intervie
     await go(pg, `http://127.0.0.1:${WEB}/`);
     await pg.waitFor(`!!document.querySelector('[data-press="strip"] img')`, { label: "the featured in strip" });
     await ev(`document.querySelector('[data-press="strip"]').scrollIntoView({ block: "center" }); true`);
-    await pg.waitFor(`[...document.querySelectorAll('[data-press="strip"] img')].every((i) => i.complete && i.naturalWidth > 0)`, { label: "the logos loaded" });
+    await settle('[data-press="strip"] img, [data-partners="row"] img');
+    await ev(`document.querySelector('[data-press="strip"]').scrollIntoView({ block: "center" }); true`);
     const strip = await ev(`(() => {
       const s = document.querySelector('[data-press="strip"]');
       const stats = document.querySelector('[aria-label="tdc in numbers"]');
@@ -109,13 +126,15 @@ const HEADLINE = "Why are fresh graduates struggling to get their first intervie
     const pr = await ev(`(() => { const r = document.querySelector('[data-partners="row"]'); const s = document.querySelector('[data-press="strip"]'); const i = r && r.querySelector("img"); return r && { label: r.querySelector(".featured-label")?.innerText.trim(), after: !!(s.compareDocumentPosition(r) & Node.DOCUMENT_POSITION_FOLLOWING), h: i && Math.round(i.getBoundingClientRect().height), inStrip: !!s.querySelector('img[alt="Ziauddin University"]') }; })()`);
     const prl = (await links('[data-partners="row"]'))[0];
     check(`${label} home: "university partners" row after the strip: Ziauddin University (alt, lazy, 48 px) links to the MoU page in a new tab`, pr && pr.label === "university partners" && pr.after && !pr.inStrip && pr.h === 48 && prl && prl.alt === "Ziauddin University" && prl.lazy === "lazy" && prl.href === "https://zu.edu.pk/mou-with-the-deft-crew/" && ext(prl), JSON.stringify({ pr, prl }));
+    await logosLoad(`${label} home`, '[data-press="strip"] img, [data-partners="row"] img', 7);
     await audit(`${label} home`);
 
     // founder page
     await go(pg, `http://127.0.0.1:${WEB}/founder`);
     await pg.waitFor(`!!document.querySelector('[data-press="cards"] .press-card')`, { label: "the featured in cards" });
     await ev(`document.querySelector('[data-press="cards"]').scrollIntoView(); true`);
-    await pg.waitFor(`[...document.querySelectorAll('[data-press="cards"] img')].every((i) => i.complete && i.naturalWidth > 0)`, { label: "the card logos loaded" });
+    await settle('[data-press="cards"] img, [data-partners="cards"] img');
+    await ev(`document.querySelector('[data-press="cards"]').scrollIntoView(); true`);
     const f = await ev(`(() => {
       const s = document.querySelector('[data-press="cards"]');
       const cards = [...s.querySelectorAll(".press-card")].map((c) => ({ name: c.querySelector("h3")?.innerText.trim(), alt: c.querySelector("img")?.alt || null, lazy: c.querySelector("img")?.getAttribute("loading") || null, text: c.innerText }));
@@ -143,8 +162,15 @@ const HEADLINE = "Why are fresh graduates struggling to get their first intervie
     check(`${label} founder: "partners" section after "featured in": Ziauddin University, "MoU signed with The Deft Crew", link in a new tab`, pa && /^partners/.test(pa.heading) && pa.after && /MoU signed with The Deft Crew/.test(pa.text) && pa.alt === "Ziauddin University" && pa.lazy === "lazy" && pal && pal.href === "https://zu.edu.pk/mou-with-the-deft-crew/" && ext(pal), JSON.stringify({ pa, pal }));
     const storyText = await ev(`document.querySelector("main").innerText`);
     check(`${label} founder: the story says "his views on Pakistan's youth skills gap have been featured in The Financial Daily."`, storyText.includes("his views on Pakistan's youth skills gap have been featured in The Financial Daily.") && !/speaks and writes/.test(storyText));
+    await logosLoad(`${label} founder`, '[data-press="cards"] img, [data-partners="cards"] img', 7);
     await audit(`${label} founder`);
   }
+  // the PNG fallbacks are served too (browsers without WebP use them)
+  for (const src of pngs) {
+    const r = await ev(`fetch(${JSON.stringify(src)}).then((x) => x.status + " " + x.headers.get("content-type")).catch((e) => String(e))`);
+    check(`PNG fallback ${src}: ${r}`, /^200 image\/png/.test(r));
+  }
+  check("7 different logos, each with its PNG fallback", pngs.size === 7, [...pngs].join(" "));
   const text = await ev(`document.body.innerText`);
   check("plain copy: no em dashes, no \"as seen on\" / \"as featured in\"", !/—/.test(text) && !/as seen on|as featured in/i.test(text));
   check("no page or console errors", errs.length === 0, errs.slice(0, 3).join(" | "));

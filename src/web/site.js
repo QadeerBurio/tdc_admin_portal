@@ -4,13 +4,6 @@ import { Link } from "react-router-dom";
 import "./web.css";
 import logoInk from "./assets/tdc-logo-ink.png";
 import logoWhite from "./assets/tdc-logo-white.png";
-import expressTribuneLogo from "./assets/press-express-tribune.webp";
-import verifiedPakistanLogo from "./assets/press-verified-pakistan.webp";
-import clapPakistanLogo from "./assets/press-clap-pakistan.webp";
-import financialDailyLogo from "./assets/press-financial-daily.webp";
-import ziauddinLogo from "./assets/partner-ziauddin-university.webp";
-import helloPakistanLogo from "./assets/press-hello-pakistan.png";
-import startupPakistanLogo from "./assets/press-startup-pakistan.png";
 
 export const LINKS = {
   getApp: "https://go.gettdc.pk",
@@ -28,14 +21,16 @@ export const LINKS = {
 
 // Press coverage: one entry per outlet, each with its pieces (real coverage only; add new outlets at the top).
 // Shown as the "featured in" logo strip on the home page and as cards on /founder.
-//   logo: { src, w, h }  the file's size; logos are shown at the same height (greyscale, full colour on hover / focus)
+//   logo: { file, w, h }  public/press/logos/<file>.webp and .png (fallback), both committed; w / h the files' size.
+//         Shown at the same height, greyscale, full colour on hover / focus. scripts/check-press-logos.js (run before every
+//         build) and src/web/press.test.js fail if a file is missing.
 //   pieces: kind instagram | linkedin (a post: "featured on Instagram") or article (its headline, optional date)
 //   summary: one line for the whole card; then each piece is a link titled with its headline (The Financial Daily)
 export const PRESS = [
-  { outlet: "Express Tribune", logo: { src: expressTribuneLogo, w: 285, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Df1_QhXkeTn/" }] },
-  { outlet: "Verified Pakistan", logo: { src: verifiedPakistanLogo, w: 102, h: 96 }, pieces: [{ kind: "linkedin", href: "https://www.linkedin.com/posts/verifiedpakistanvp_during-a-hiring-drive-pakistani-entrepreneur-activity-7528713799072161792-nKX0" }] },
+  { outlet: "Express Tribune", logo: { file: "express-tribune", w: 285, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Df1_QhXkeTn/" }] },
+  { outlet: "Verified Pakistan", logo: { file: "verified-pakistan", w: 102, h: 96 }, pieces: [{ kind: "linkedin", href: "https://www.linkedin.com/posts/verifiedpakistanvp_during-a-hiring-drive-pakistani-entrepreneur-activity-7528713799072161792-nKX0" }] },
   {
-    outlet: "Clap Pakistan", logo: { src: clapPakistanLogo, w: 96, h: 96 },
+    outlet: "Clap Pakistan", logo: { file: "clap-pakistan", w: 96, h: 96 },
     pieces: [
       { kind: "article", href: "https://clappakistan.com/why-are-fresh-graduates-struggling-to-get-their-first-interview-majid-shah-bukhari-is-investing-in-a-different-approach/", headline: "Why are fresh graduates struggling to get their first interview? Majid Shah Bukhari is investing in a different approach" },
       { kind: "instagram", href: "https://www.instagram.com/p/DfzMslugQXu/" },
@@ -43,15 +38,15 @@ export const PRESS = [
   },
   {
     // staff-written pieces (filed under Press Releases), so "featuring", not "by"; no author page: the strip links the first
-    outlet: "The Financial Daily", logo: { src: financialDailyLogo, w: 96, h: 96 }, summary: "articles featuring Majid Shah Bukhari",
+    outlet: "The Financial Daily", logo: { file: "the-financial-daily", w: 96, h: 96 }, summary: "articles featuring Majid Shah Bukhari",
     pieces: [
       { kind: "article", href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees without skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
       { kind: "article", href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
       { kind: "article", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
     ],
   },
-  { outlet: "Hello Pakistan", logo: { src: helloPakistanLogo, w: 668, h: 299 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/DfrqDLDCdol/" }] },
-  { outlet: "Startup Pakistan", logo: { src: startupPakistanLogo, w: 228, h: 174 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Dfry68Eo-8B/" }] },
+  { outlet: "Hello Pakistan", logo: { file: "hello-pakistan", w: 214, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/DfrqDLDCdol/" }] },
+  { outlet: "Startup Pakistan", logo: { file: "startup-pakistan", w: 126, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Dfry68Eo-8B/" }] },
 ];
 const PIECE = {
   instagram: { line: "featured on Instagram", link: "view on Instagram" },
@@ -68,10 +63,21 @@ export const pieceLabel = (o, p) => (o.summary ? `${o.outlet}: ${p.headline} (op
 export const PRESS_LOGO_H = 48; // every logo is shown this tall
 /** a logo's width at PRESS_LOGO_H (from the file's size), so the space is kept while it loads */
 export const logoWidth = (l) => Math.round((l.w / l.h) * PRESS_LOGO_H);
+/** a logo's committed file in public/: logoPath(logo, "webp" | "png") */
+export const logoPath = (l, ext) => `${process.env.PUBLIC_URL || ""}/press/logos/${l.file}.${ext}`;
+/** a press / partner logo: WebP, with the PNG for browsers without WebP; lazy, its size kept while it loads */
+export function PressLogo({ logo, alt, className }) {
+  return (
+    <picture className="press-pic">
+      <source type="image/webp" srcSet={logoPath(logo, "webp")} />
+      <img className={className} src={logoPath(logo, "png")} alt={alt} height={PRESS_LOGO_H} width={logoWidth(logo)} loading="lazy" decoding="async" />
+    </picture>
+  );
+}
 
 // University partners (a signed agreement, not press): a small row on the home page and a section on /founder.
 export const PARTNERS = [
-  { name: "Ziauddin University", logo: { src: ziauddinLogo, w: 264, h: 96 }, href: "https://zu.edu.pk/mou-with-the-deft-crew/", line: "MoU signed with The Deft Crew", link: "read about the MoU" },
+  { name: "Ziauddin University", logo: { file: "ziauddin-university", w: 264, h: 96 }, href: "https://zu.edu.pk/mou-with-the-deft-crew/", line: "MoU signed with The Deft Crew", link: "read about the MoU" },
 ];
 export const partnerLabel = (p) => `${p.name}: ${p.link} (opens in a new tab)`;
 
@@ -85,7 +91,7 @@ export function PartnersRow({ style }) {
         {PARTNERS.map((p) => (
           <li key={p.name}>
             <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={partnerLabel(p)}>
-              <img src={p.logo.src} alt={p.name} height={PRESS_LOGO_H} width={logoWidth(p.logo)} loading="lazy" decoding="async" />
+              <PressLogo logo={p.logo} alt={p.name} />
             </a>
           </li>
         ))}
@@ -108,7 +114,7 @@ export function FeaturedIn({ style, story = false }) {
             <li key={o.outlet}>
               {o.logo ? (
                 <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={pieceLabel(o, p)}>
-                  <img src={o.logo.src} alt={o.outlet} height={PRESS_LOGO_H} width={logoWidth(o.logo)} loading="lazy" decoding="async" />
+                  <PressLogo logo={o.logo} alt={o.outlet} />
                 </a>
               ) : (
                 <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name" aria-label={pieceLabel(o, p)}>{o.outlet}</a>

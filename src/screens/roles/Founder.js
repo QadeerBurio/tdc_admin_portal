@@ -2,7 +2,7 @@
 // (a card per outlet from PRESS in web/site.js; the home page shows the same outlets as a logo strip) and how to reach him.
 // Facts only: keep it in step with what MSB has approved for press.
 import React from "react";
-import { WebNav, WebFooter, LINKS, PRESS, PARTNERS, PRESS_LOGO_H, logoWidth, pieceLine, pieceLink, pieceLabel, partnerLabel, Arrow, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PRESS, PARTNERS, PressLogo, pieceLine, pieceLink, pieceLabel, partnerLabel, Arrow, usePage } from "../../web/site";
 import photo from "../../web/assets/founder-msb.jpg";
 
 const MSB_LINKEDIN = "https://www.linkedin.com/in/majidshahbukhari1/";
@@ -104,7 +104,7 @@ export default function Founder() {
           <ul className="press-grid">
             {PRESS.map((o) => (
               <li key={o.outlet} className="card press-card">
-                {o.logo && <img className="press-logo" src={o.logo.src} alt={o.outlet} height={PRESS_LOGO_H} width={logoWidth(o.logo)} loading="lazy" decoding="async" />}
+                {o.logo && <PressLogo className="press-logo" logo={o.logo} alt={o.outlet} />}
                 <h3 className="card-h">{o.outlet}</h3>
                 {o.summary && <p className="muted press-summary">{o.summary}</p>}
                 <ul className={`press-pieces${o.summary ? " press-titles" : ""}`}>
@@ -137,7 +137,7 @@ export default function Founder() {
           <ul className="press-grid">
             {PARTNERS.map((p) => (
               <li key={p.name} className="card press-card">
-                <img className="press-logo" src={p.logo.src} alt={p.name} height={PRESS_LOGO_H} width={logoWidth(p.logo)} loading="lazy" decoding="async" />
+                <PressLogo className="press-logo" logo={p.logo} alt={p.name} />
                 <h3 className="card-h">{p.name}</h3>
                 <ul className="press-pieces">
                   <li>

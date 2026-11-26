@@ -10,7 +10,7 @@ import { render, screen, within } from "@testing-library/react";
 jest.mock("react-router-dom", () => ({ Link: ({ to, children, ...rest }) => <a href={to} {...rest}>{children}</a>, NavLink: ({ to, children }) => <a href={to}>{children}</a>, useNavigate: () => jest.fn(), useLocation: () => ({ pathname: "/" }) }), { virtual: true });
 jest.mock("./useOffers", () => ({ useOffers: () => ({ brands: [], loading: false, live: false }) }));
 // eslint-disable-next-line import/first
-import { FeaturedIn, PRESS, pieceLine } from "./site";
+import { FeaturedIn, PRESS, PARTNERS, pieceLine, logoPath } from "./site";
 // eslint-disable-next-line import/first
 import Founder, { FOUNDER_DESCRIPTION } from "../screens/roles/Founder";
 // eslint-disable-next-line import/first
@@ -153,4 +153,36 @@ test("partners: a separate section on /founder after \"featured in\"; the story 
   expect(external(a)).toBe(true);
   expect(screen.getByText("his views on Pakistan's youth skills gap have been featured in The Financial Daily.")).toBeInTheDocument();
   expect(document.body.textContent).not.toMatch(/speaks and writes/);
+});
+
+// eslint-disable-next-line import/first
+import fs from "fs";
+// eslint-disable-next-line import/first
+import path from "path";
+test("every logo in the press and partner lists is committed in public/ (WebP and PNG fallback); the build checks it too", () => {
+  const logos = [...PRESS.filter((o) => o.logo).map((o) => o.logo), ...PARTNERS.map((p) => p.logo)];
+  expect(logos.map((l) => l.file)).toEqual(["express-tribune", "verified-pakistan", "clap-pakistan", "the-financial-daily", "hello-pakistan", "startup-pakistan", "ziauddin-university"]);
+  const publicDir = path.join(__dirname, "..", "..", "public");
+  for (const l of logos) {
+    for (const ext of ["webp", "png"]) {
+      const rel = logoPath(l, ext);
+      expect(rel).toBe(`/press/logos/${l.file}.${ext}`);
+      expect(fs.readdirSync(path.join(publicDir, "press", "logos"))).toContain(`${l.file}.${ext}`); // exact case
+      expect(fs.statSync(path.join(publicDir, rel)).size).toBeGreaterThan(200);
+    }
+  }
+  // the same check runs before every build (package.json "prebuild")
+  const { check } = require("../../scripts/check-press-logos");
+  expect(check().problems).toEqual([]);
+  expect(JSON.parse(fs.readFileSync(path.join(__dirname, "..", "..", "package.json"), "utf8")).scripts.prebuild).toBe("node scripts/check-press-logos.js");
+});
+
+test("each logo is a <picture>: WebP first, the PNG as the img src", () => {
+  render(<FeaturedIn />);
+  const img = screen.getByAltText("Express Tribune");
+  expect(img.parentElement.tagName).toBe("PICTURE");
+  expect(img.parentElement.querySelector("source")).toHaveAttribute("srcset", "/press/logos/express-tribune.webp");
+  expect(img.parentElement.querySelector("source")).toHaveAttribute("type", "image/webp");
+  expect(img).toHaveAttribute("src", "/press/logos/express-tribune.png");
+  expect(img).toHaveAttribute("width", "143");
 });
