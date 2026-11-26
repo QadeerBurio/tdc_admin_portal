@@ -1,8 +1,8 @@
-// Founder.js — /founder: Majid Shah Bukhari (MSB), founder of tdc. Story, path, what tdc stands for,
-// press (PRESS in web/site.js, also shown on the home page) and how to reach him.
+// Founder.js: /founder, Majid Shah Bukhari (MSB), founder of tdc. Story, path, what tdc stands for, "featured in"
+// (a card per outlet from PRESS in web/site.js; the home page shows the same outlets as a logo strip) and how to reach him.
 // Facts only: keep it in step with what MSB has approved for press.
 import React from "react";
-import { WebNav, WebFooter, LINKS, PRESS, FeaturedIn, Arrow, usePage } from "../../web/site";
+import { WebNav, WebFooter, LINKS, PRESS, PARTNERS, PressLogo, pieceLine, pieceLink, pieceLabel, partnerLabel, Arrow, usePage } from "../../web/site";
 import photo from "../../web/assets/founder-msb.jpg";
 
 const MSB_LINKEDIN = "https://www.linkedin.com/in/majidshahbukhari1/";
@@ -21,8 +21,12 @@ const STANDS_FOR = [
   { h: "useful, not noisy", p: "student life is loud enough. tdc should be the app you open because it helps, not because it nags." },
 ];
 
+// the meta description mentions the coverage (outlets from PRESS)
+const outlets = PRESS.map((o) => o.outlet);
+export const FOUNDER_DESCRIPTION = `Majid Shah Bukhari (MSB), founder of tdc, the free app for students in Pakistan. featured in ${outlets.slice(0, -1).join(", ")} and ${outlets[outlets.length - 1]}.`;
+
 export default function Founder() {
-  usePage("meet the founder");
+  usePage("meet the founder", FOUNDER_DESCRIPTION);
   return (
     <div className="tdcw">
       <WebNav />
@@ -44,8 +48,6 @@ export default function Founder() {
           <img className="founder-photo" src={photo} alt="Majid Shah Bukhari, founder of tdc" width="900" height="1124" />
         </section>
 
-        <div className="wrap"><FeaturedIn /></div>
-
         {/* story */}
         <section className="wrap section">
           <div className="grid-2" style={{ gap: 48, alignItems: "start" }}>
@@ -54,7 +56,7 @@ export default function Founder() {
               <p>MSB has been building in tech since 2016. he started at Smartchoice.pk, then led growth and marketing at startups, including PayActiv, a US fintech, and GiftKarte Technologies.</p>
               <p>in 2022 he founded The Deft Crew, a full-service digital growth agency based in DHA Phase 6, Karachi. building it meant working every day with students and fresh grads from universities across Pakistan, and he kept seeing the same gap between what students need and what they can actually find.</p>
               <p>tdc is his answer to that gap. the idea took shape in 2025 and tdc launched in early 2026. today it is live in Karachi, Lahore and Islamabad, with 100+ partner brands.</p>
-              <p className="muted">he speaks and writes about Pakistan's youth skills gap, including in The Financial Daily.</p>
+              <p className="muted">his views on Pakistan's youth skills gap have been featured in The Financial Daily.</p>
             </div>
           </div>
         </section>
@@ -93,22 +95,59 @@ export default function Founder() {
           </div>
         </section>
 
-        {/* press */}
-        <section className="wrap section">
+        {/* featured in: a card per outlet */}
+        <section className="wrap section" aria-labelledby="featured-h" data-press="cards">
           <div className="section-head">
-            <h2 className="h-lg">in the press<span className="dot">.</span></h2>
+            <h2 id="featured-h" className="h-lg">featured in<span className="dot" aria-hidden="true">.</span></h2>
             <p>for interviews, features and speaking: <a href={`mailto:${LINKS.hello}`}>{LINKS.hello}</a></p>
           </div>
-          <div className="grid-2">
-            {PRESS.map((p) => (
-              <a key={p.href} href={p.href} target="_blank" rel="noopener noreferrer" className="card press-card">
-                {p.logo && <img className="press-logo" src={p.logo} alt="" />}
-                <span className="card-h">{p.outlet}</span>
-                <span className="muted">{p.headline ? `${p.headline}${p.date ? ` (${p.date})` : ""}` : `the tdc story, covered by ${p.outlet}.`}</span>
-                <span style={{ fontWeight: 700, display: "inline-flex", alignItems: "center", gap: 8 }}>read the story <Arrow size={16} /></span>
-              </a>
+          <ul className="press-grid">
+            {PRESS.map((o) => (
+              <li key={o.outlet} className="card press-card">
+                {o.logo && <PressLogo className="press-logo" logo={o.logo} alt={o.outlet} />}
+                <h3 className="card-h">{o.outlet}</h3>
+                {o.summary && <p className="muted press-summary">{o.summary}</p>}
+                <ul className={`press-pieces${o.summary ? " press-titles" : ""}`}>
+                  {o.pieces.map((p) => (
+                    <li key={p.href}>
+                      {o.summary ? (
+                        <>
+                          <a href={p.href} target="_blank" rel="noopener noreferrer" aria-label={pieceLabel(o, p)}>{p.headline} <Arrow size={16} /></a>
+                          {p.date && <span className="muted press-date">{p.date}</span>}
+                        </>
+                      ) : (
+                        <>
+                          <p className="muted">{pieceLine(p)}</p>
+                          <a href={p.href} target="_blank" rel="noopener noreferrer" aria-label={pieceLabel(o, p)}>{pieceLink(p)} <Arrow size={16} /></a>
+                        </>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </li>
             ))}
+          </ul>
+        </section>
+
+        {/* partners (after "featured in") */}
+        <section className="wrap section" aria-labelledby="partners-h" data-partners="cards" style={{ paddingTop: 0 }}>
+          <div className="section-head">
+            <h2 id="partners-h" className="h-lg">partners<span className="dot" aria-hidden="true">.</span></h2>
           </div>
+          <ul className="press-grid">
+            {PARTNERS.map((p) => (
+              <li key={p.name} className="card press-card">
+                <PressLogo className="press-logo" logo={p.logo} alt={p.name} />
+                <h3 className="card-h">{p.name}</h3>
+                <ul className="press-pieces">
+                  <li>
+                    <p className="muted">{p.line}</p>
+                    <a href={p.href} target="_blank" rel="noopener noreferrer" aria-label={partnerLabel(p)}>{p.link} <Arrow size={16} /></a>
+                  </li>
+                </ul>
+              </li>
+            ))}
+          </ul>
         </section>
 
         {/* cta */}

@@ -4,8 +4,6 @@ import { Link } from "react-router-dom";
 import "./web.css";
 import logoInk from "./assets/tdc-logo-ink.png";
 import logoWhite from "./assets/tdc-logo-white.png";
-import helloPakistanLogo from "./assets/press-hello-pakistan.png";
-import startupPakistanLogo from "./assets/press-startup-pakistan.png";
 
 export const LINKS = {
   getApp: "https://go.gettdc.pk",
@@ -21,29 +19,112 @@ export const LINKS = {
   whatsapp: "https://wa.me/923249287649",
 };
 
-// Press coverage. Shown on the home page and /founder. Add new features at the top.
+// Press coverage: one entry per outlet, each with its pieces (real coverage only; add new outlets at the top).
+// Shown as the "featured in" logo strip on the home page and as cards on /founder.
+//   logo: { file, w, h }  public/press/logos/<file>.webp and .png (fallback), both committed; w / h the files' size.
+//         Shown at the same height, greyscale, full colour on hover / focus. scripts/check-press-logos.js (run before every
+//         build) and src/web/press.test.js fail if a file is missing.
+//   pieces: kind instagram | linkedin (a post: "featured on Instagram") or article (its headline, optional date)
+//   summary: one line for the whole card; then each piece is a link titled with its headline (The Financial Daily)
 export const PRESS = [
-  { outlet: "Hello Pakistan", href: "https://www.instagram.com/p/DfrqDLDCdol/", logo: helloPakistanLogo },
-  { outlet: "Startup Pakistan", href: "https://www.instagram.com/p/Dfry68Eo-8B/", logo: startupPakistanLogo },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
-  { outlet: "The Financial Daily", href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees without skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
+  { outlet: "Express Tribune", logo: { file: "express-tribune", w: 285, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Df1_QhXkeTn/" }] },
+  { outlet: "Verified Pakistan", logo: { file: "verified-pakistan", w: 102, h: 96 }, pieces: [{ kind: "linkedin", href: "https://www.linkedin.com/posts/verifiedpakistanvp_during-a-hiring-drive-pakistani-entrepreneur-activity-7528713799072161792-nKX0" }] },
+  {
+    outlet: "Clap Pakistan", logo: { file: "clap-pakistan", w: 96, h: 96 },
+    pieces: [
+      { kind: "article", href: "https://clappakistan.com/why-are-fresh-graduates-struggling-to-get-their-first-interview-majid-shah-bukhari-is-investing-in-a-different-approach/", headline: "Why are fresh graduates struggling to get their first interview? Majid Shah Bukhari is investing in a different approach" },
+      { kind: "instagram", href: "https://www.instagram.com/p/DfzMslugQXu/" },
+    ],
+  },
+  {
+    // staff-written pieces (filed under Press Releases), so "featuring", not "by"; no author page: the strip links the first
+    outlet: "The Financial Daily", logo: { file: "the-financial-daily", w: 96, h: 96 }, summary: "articles featuring Majid Shah Bukhari",
+    pieces: [
+      { kind: "article", href: "https://thefinancialdaily.com/degrees-without-skills-majid-shah-calls-out-pakistans-broken-talent-pipeline/", headline: "Degrees without skills: Majid Shah calls out Pakistan's broken talent pipeline", date: "May 2026" },
+      { kind: "article", href: "https://thefinancialdaily.com/64-of-nation-wasted-to-ignorance-the-talent-shortage-is-a-corporate-myth-majid-shah/", headline: "64% of nation wasted to ignorance: the talent shortage is a corporate myth", date: "May 2026" },
+      { kind: "article", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
+    ],
+  },
+  // each Instagram post checked against the account that posted it (hellopakistan, startuppakistansp)
+  { outlet: "Hello Pakistan", logo: { file: "hello-pakistan", w: 214, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Dfry68Eo-8B/" }] },
+  { outlet: "Startup Pakistan", logo: { file: "startup-pakistan", w: 126, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/DfrqDLDCdol/" }] },
 ];
-
-/** "as featured in" strip: each outlet's logo opens its story. */
-export function FeaturedIn({ style }) {
+const PIECE = {
+  instagram: { line: "featured on Instagram", link: "view on Instagram" },
+  linkedin: { line: "featured on LinkedIn", link: "view on LinkedIn" },
+  article: { line: "", link: "read the article" },
+};
+/** one line about a piece: its headline (and date), or "featured on Instagram / LinkedIn" */
+export const pieceLine = (p) => (p.headline ? `${p.headline}${p.date ? ` (${p.date})` : ""}` : PIECE[p.kind].line);
+/** the link text for a piece: "read the article", "view on Instagram", "view on LinkedIn" */
+export const pieceLink = (p) => PIECE[p.kind].link;
+/** the link's full label, e.g. "Express Tribune: view on Instagram (opens in a new tab)"; for an outlet with a summary
+ *  (links titled with the headline): "The Financial Daily: <headline> (opens in a new tab)" */
+export const pieceLabel = (o, p) => (o.summary ? `${o.outlet}: ${p.headline} (opens in a new tab)` : `${o.outlet}: ${pieceLink(p)}${p.headline ? `, ${p.headline}` : ""} (opens in a new tab)`);
+export const PRESS_LOGO_H = 48; // every logo is shown this tall
+/** a logo's width at PRESS_LOGO_H (from the file's size), so the space is kept while it loads */
+export const logoWidth = (l) => Math.round((l.w / l.h) * PRESS_LOGO_H);
+/** a logo's committed file in public/: logoPath(logo, "webp" | "png") */
+export const logoPath = (l, ext) => `${process.env.PUBLIC_URL || ""}/press/logos/${l.file}.${ext}`;
+/** a press / partner logo: WebP, with the PNG for browsers without WebP; lazy, its size kept while it loads */
+export function PressLogo({ logo, alt, className }) {
   return (
-    <div className="featured" style={style}>
-      <span className="featured-label">as featured in</span>
-      {PRESS.filter((p, i) => PRESS.findIndex((q) => q.outlet === p.outlet) === i).map((p) => (
-        p.logo ? (
-          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={`tdc on ${p.outlet}`}>
-            <img src={p.logo} alt={p.outlet} height="48" />
-          </a>
-        ) : (
-          <a key={p.outlet} href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name">{p.outlet}</a>
-        )
-      ))}
+    <picture className="press-pic">
+      <source type="image/webp" srcSet={logoPath(logo, "webp")} />
+      <img className={className} src={logoPath(logo, "png")} alt={alt} height={PRESS_LOGO_H} width={logoWidth(logo)} loading="lazy" decoding="async" />
+    </picture>
+  );
+}
+
+// University partners (a signed agreement, not press): a small row on the home page and a section on /founder.
+export const PARTNERS = [
+  { name: "Ziauddin University", logo: { file: "ziauddin-university", w: 264, h: 96 }, href: "https://zu.edu.pk/mou-with-the-deft-crew/", line: "MoU signed with The Deft Crew", link: "read about the MoU" },
+];
+export const partnerLabel = (p) => `${p.name}: ${p.link} (opens in a new tab)`;
+
+/** "university partners" row (home page): each partner's logo opens its page in a new tab. */
+export function PartnersRow({ style }) {
+  const id = React.useId();
+  return (
+    <div className="featured partners-row" style={style} data-partners="row">
+      <p className="featured-label" id={id}>university partners</p>
+      <ul className="featured-list" aria-labelledby={id}>
+        {PARTNERS.map((p) => (
+          <li key={p.name}>
+            <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={partnerLabel(p)}>
+              <PressLogo logo={p.logo} alt={p.name} />
+            </a>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+/** "featured in" strip: each outlet's logo (or name) opens its main piece in a new tab. story: a "read the story" link
+ *  to /founder (the home page). */
+export function FeaturedIn({ style, story = false }) {
+  const id = React.useId();
+  return (
+    <div className="featured" style={style} data-press="strip">
+      <p className="featured-label" id={id}>featured in</p>
+      <ul className="featured-list" aria-labelledby={id}>
+        {PRESS.map((o) => {
+          const p = o.pieces[0];
+          return (
+            <li key={o.outlet}>
+              {o.logo ? (
+                <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-logo" aria-label={pieceLabel(o, p)}>
+                  <PressLogo logo={o.logo} alt={o.outlet} />
+                </a>
+              ) : (
+                <a href={p.href} target="_blank" rel="noopener noreferrer" className="featured-name" aria-label={pieceLabel(o, p)}>{o.outlet}</a>
+              )}
+            </li>
+          );
+        })}
+      </ul>
+      {story && <Link to="/founder" className="featured-story">read the story <Arrow size={16} /></Link>}
     </div>
   );
 }
@@ -310,12 +391,21 @@ export function CardTitle({ title, sub, mark = "." }) {
 // Tab titles follow the design boards: "tdc. partner log in", "tdc. for brands", ...
 export const pageTitle = (name) => `tdc. ${String(name).replace(/\s*·\s*tdc\.?\s*$/, "").replace(/^tdc\.\s*/, "")}`;
 
-// Sets the tab title and starts each page at the top.
-export function usePage(title) {
+// Sets the tab title (and, when given, the page's meta description, put back on leaving) and starts each page at the top.
+export function usePage(title, description) {
   React.useEffect(() => {
     document.title = pageTitle(title);
     if (!window.location.hash) window.scrollTo(0, 0);
   }, [title]);
+  React.useEffect(() => {
+    if (!description) return undefined;
+    let meta = document.querySelector('meta[name="description"]');
+    const made = !meta;
+    if (made) { meta = document.createElement("meta"); meta.setAttribute("name", "description"); document.head.appendChild(meta); }
+    const before = meta.getAttribute("content");
+    meta.setAttribute("content", description);
+    return () => { if (made) meta.remove(); else meta.setAttribute("content", before || ""); };
+  }, [description]);
 }
 
 // aside: optional second column (the boards' hero cards), side by side from 760px up
