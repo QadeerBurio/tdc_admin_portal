@@ -451,7 +451,20 @@
 @media (prefers-reduced-motion: reduce) { .tdcw .featured-logo, .tdcw .featured-logo img, .tdcw .press-logo { transition: none; } }
 
 /* ---------- founder page ---------- */
-.tdcw .founder-photo { width: 100%; max-width: 480px; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 28px; display: block; justify-self: center; background: var(--sand); }
+/* the founder photo (hero, /founder): always 4:5. height: auto matters: without it the img's height="…" attribute
+   wins over aspect-ratio and the photo is drawn that many pixels tall. desktop: next to the text, top-aligned, up to
+   380 px wide; tablet: 360 px, phone: up to 352 px (440 px tall), centred above the text */
+.tdcw .hero-founder { grid-template-columns: minmax(0, 1fr) minmax(0, 380px); align-items: start; }
+.tdcw .founder-photo-wrap { display: block; width: 100%; max-width: 380px; justify-self: end; }
+.tdcw .founder-photo { display: block; width: 100%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; object-position: 50% 22%; border-radius: 22px; background: var(--sand); }
+@media (max-width: 960px) {
+  .tdcw .hero-founder { grid-template-columns: 1fr; gap: 32px; }
+  .tdcw .founder-photo-wrap { order: -1; max-width: 360px; justify-self: center; }
+}
+@media (max-width: 600px) {
+  .tdcw .founder-photo-wrap { max-width: 352px; }
+  .tdcw .founder-photo { max-height: 440px; }
+}
 .tdcw .timeline { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
 .tdcw .timeline li { display: grid; grid-template-columns: 92px 1fr; gap: 16px; align-items: baseline; padding: 20px 24px; background: var(--card); border: 1px solid var(--line); border-radius: 22px; }
 .tdcw .timeline b { font-family: var(--heading); font-weight: 800; font-size: 20px; }

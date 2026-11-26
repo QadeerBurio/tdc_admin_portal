@@ -3,7 +3,13 @@
 // Facts only: keep it in step with what MSB has approved for press.
 import React from "react";
 import { WebNav, WebFooter, LINKS, PRESS, PARTNERS, PressLogo, pieceLine, pieceLink, pieceLabel, partnerLabel, Arrow, usePage } from "../../web/site";
-import photo from "../../web/assets/founder-msb.jpg";
+// the photo: 4:5, WebP with a JPG fallback, 400 px (1x) and 800 px (2x) wide; shown at most 380 px (desktop),
+// 360 px (tablet), 352 px (phone, i.e. 440 px tall)
+import photo400 from "../../web/assets/founder-msb-400.jpg";
+import photo800 from "../../web/assets/founder-msb-800.jpg";
+import photo400w from "../../web/assets/founder-msb-400.webp";
+import photo800w from "../../web/assets/founder-msb-800.webp";
+const PHOTO_SIZES = "(max-width: 600px) min(352px, calc(100vw - 48px)), (max-width: 960px) 360px, 380px";
 
 const MSB_LINKEDIN = "https://www.linkedin.com/in/majidshahbukhari1/";
 
@@ -32,7 +38,7 @@ export default function Founder() {
       <WebNav />
       <main>
         {/* hero */}
-        <section className="wrap hero">
+        <section className="wrap hero hero-founder">
           <div className="hero-copy">
             <span className="chip"><span className="chip-dot" />founder, tdc</span>
             <h1 className="h-xl">meet MSB<span className="dot" aria-hidden="true">.</span></h1>
@@ -45,7 +51,12 @@ export default function Founder() {
               <a href={`mailto:${LINKS.hello}?subject=Press%20%2F%20founder`} className="btn btn-secondary">press and speaking</a>
             </div>
           </div>
-          <img className="founder-photo" src={photo} alt="Majid Shah Bukhari, founder of tdc" width="900" height="1124" />
+          {/* above the fold: loaded first, not lazily; width / height + aspect-ratio keep its space while it loads */}
+          <picture className="founder-photo-wrap">
+            <source type="image/webp" srcSet={`${photo400w} 400w, ${photo800w} 800w`} sizes={PHOTO_SIZES} />
+            <img className="founder-photo" src={photo400} srcSet={`${photo400} 400w, ${photo800} 800w`} sizes={PHOTO_SIZES}
+              alt="Majid Shah Bukhari, founder of tdc" width="400" height="500" loading="eager" fetchPriority="high" decoding="async" />
+          </picture>
         </section>
 
         {/* story */}
