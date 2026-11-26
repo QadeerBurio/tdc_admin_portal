@@ -45,8 +45,9 @@ export const PRESS = [
       { kind: "article", href: "https://thefinancialdaily.com/pakistans-youth-budget-grows-while-employment-stagnates-majid-shah/", headline: "Pakistan's youth budget grows while employment stagnates", date: "Jul 2026" },
     ],
   },
-  { outlet: "Hello Pakistan", logo: { file: "hello-pakistan", w: 214, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/DfrqDLDCdol/" }] },
-  { outlet: "Startup Pakistan", logo: { file: "startup-pakistan", w: 126, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Dfry68Eo-8B/" }] },
+  // each Instagram post checked against the account that posted it (hellopakistan, startuppakistansp)
+  { outlet: "Hello Pakistan", logo: { file: "hello-pakistan", w: 214, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/Dfry68Eo-8B/" }] },
+  { outlet: "Startup Pakistan", logo: { file: "startup-pakistan", w: 126, h: 96 }, pieces: [{ kind: "instagram", href: "https://www.instagram.com/p/DfrqDLDCdol/" }] },
 ];
 const PIECE = {
   instagram: { line: "featured on Instagram", link: "view on Instagram" },

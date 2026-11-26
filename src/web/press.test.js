@@ -186,3 +186,14 @@ test("each logo is a <picture>: WebP first, the PNG as the img src", () => {
   expect(img).toHaveAttribute("src", "/press/logos/express-tribune.png");
   expect(img).toHaveAttribute("width", "143");
 });
+
+// every link checked by hand against who posted it (Instagram account / site): a swapped link fails here
+test("each outlet links to its own pieces (Hello Pakistan and Startup Pakistan not swapped)", () => {
+  const links = Object.fromEntries(PRESS.map((o) => [o.outlet, o.pieces.map((p) => p.href)]));
+  expect(links).toEqual({
+    ...NEW,
+    "Hello Pakistan": ["https://www.instagram.com/p/Dfry68Eo-8B/"], // posted by hellopakistan
+    "Startup Pakistan": ["https://www.instagram.com/p/DfrqDLDCdol/"], // posted by startuppakistansp
+  });
+  expect(PARTNERS.map((p) => p.href)).toEqual(["https://zu.edu.pk/mou-with-the-deft-crew/"]);
+});
