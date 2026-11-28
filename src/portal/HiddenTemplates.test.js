@@ -47,3 +47,22 @@ test("an admin without features.manage sees the list but can't change it (no sav
   expect(await screen.findByLabelText("Campus shown in the gallery")).toBeDisabled();
   expect(screen.queryByRole("button", { name: "save" })).toBeNull();
 });
+
+// resume full fix: 50 templates, their names and collections from the server's catalog (the shared registry)
+test("the catalog: all 50 by collection, with their names and the ATS badge; hiding one saves its id", async () => {
+  const COLS = { ats: "ATS Pro", fresher: "Fresher & Student", tech: "Tech / IT", twocol: "Two-column", executive: "Executive" };
+  const catalog = [
+    ...TEMPLATES.map((id, i) => ({ id, name: i < 5 ? ["Modern", "Classic", "Compact", "Minimal", "Executive"][i] : id.replace(/_/g, " "), collection: i < 5 || i > 11 ? "ats" : "fresher", ats: "safe" })),
+    ...Array.from({ length: 35 }, (_, i) => ({ id: `new_${i}`, name: `New ${i}`, collection: ["tech", "twocol", "executive"][i % 3], ats: i % 3 === 1 ? "design" : "safe" })),
+  ].map((t) => ({ ...t, collectionName: COLS[t.collection] }));
+  api.get.mockResolvedValue({ data: { ok: true, data: { hiddenTemplates: [], templates: catalog.map((t) => t.id), catalog } } });
+  render(<HiddenTemplates />);
+  await screen.findByLabelText("New 34 shown in the gallery");
+  expect(screen.getAllByRole("checkbox")).toHaveLength(50);
+  expect(screen.getByText(/50 of 50 shown/)).toBeTruthy();
+  for (const name of ["ATS Pro", "Fresher & Student", "Tech / IT", "Two-column", "Executive"]) expect(screen.getByTestId(`template-group-${name}`)).toBeTruthy();
+  expect(screen.getByTestId("template-group-Two-column").textContent).not.toMatch(/ATS-safe/); // the design ones carry no ATS badge
+  fireEvent.click(screen.getByLabelText("New 1 shown in the gallery"));
+  fireEvent.click(screen.getByRole("button", { name: "save" }));
+  await waitFor(() => expect(api.put).toHaveBeenCalledWith("/admin/resume-settings", { hiddenTemplates: ["new_1"] }));
+});
