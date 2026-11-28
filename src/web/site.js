@@ -353,6 +353,7 @@ export function WebFooter() {
           <a href={LINKS.instagram}>Instagram</a>
           <a href={LINKS.linkedin}>LinkedIn</a>
           <Link to="/privacy">privacy</Link>
+          <Link to="/child-safety">Child Safety Standards</Link>
         </span>
       </div>
     </footer>

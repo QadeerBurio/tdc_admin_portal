@@ -6,12 +6,14 @@
 //   settings  report threshold, banned words, helplines, the single-report rule; P4a: post tags and prompt chips
 // Authors are anonymous references (the same as in the safety e-mails). "who wrote it" asks for a reason and is logged.
 // Every decision asks for a note and is written to the admin actions log.
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useContext, useEffect, useState } from "react";
 import safetyApi from "../services/safetyApi";
-import { useAdminCan } from "../portal/adminAccess";
+import SafetyReportQueue from "./SafetyReportQueue";
+import { AdminAccessContext, useAdminCan } from "../portal/adminAccess";
 import { PageHeader, PageLoading, Tabs, Table, Button, Pill, EmptyState, Card, Drawer, Field, Input, Textarea, Select, Facts, toast } from "../portal/kit";
 
 const TABS = [
+  { id: "intake", label: "safety concerns" },
   { id: "reported", label: "reported" },
   { id: "held", label: "held" },
   { id: "resolved", label: "resolved" },
@@ -48,15 +50,19 @@ export default function AdminSafety() {
   const [revealed, setRevealed] = useState(null);
   // P5a: deciding needs safety.act (suspend / ban also students.suspend), showing the author identity.reveal (as on the server)
   const can = useAdminCan();
+  const access = useContext(AdminAccessContext);
+  const intakeAllowed = access?.level !== "legacy" && can("safety.intake.view");
+  const tabs = intakeAllowed ? TABS : TABS.filter(({ id }) => id !== "intake");
   const canAct = can("safety.act");
   const actions = (open && open.id ? ACTIONS : ACTIONS.slice(0, 2)).filter(([v]) => !["suspend24h", "suspend7d", "ban"].includes(v) || can("students.suspend"));
 
   const load = useCallback(async () => {
-    if (tab === "settings" || tab === "observed") return;
+    if (["intake", "settings", "observed"].includes(tab)) return;
     setItems(null); setError("");
     try { setItems((await safetyApi.queue(tab)).items || []); } catch (e) { setError(e.message); }
   }, [tab]);
   useEffect(() => { load(); }, [load]);
+  useEffect(() => { if (tab === "intake" && !intakeAllowed) setTab("reported"); }, [tab, intakeAllowed]);
 
   const openRow = (row) => { setOpen(row); setAction("approve"); setNote(""); setRevealReason(""); setRevealed(null); };
   const decide = async () => {
@@ -91,8 +97,8 @@ export default function AdminSafety() {
   return (
     <div className="tdcp k-page">
       <PageHeader title="safety" sub="the record behind the safety e-mails. change an automatic decision here." />
-      <Tabs tabs={TABS} value={tab} onChange={setTab} label="safety" />
-      {error ? (
+      <Tabs tabs={tabs} value={tab} onChange={setTab} label="safety" />
+      {tab === "intake" && intakeAllowed ? <SafetyReportQueue /> : error ? (
         <EmptyState icon="alert" tone="red" title="could not load" text={error} action={<Button onClick={load}>try again</Button>} />
       ) : !items ? (
         <PageLoading label="loading…" />
